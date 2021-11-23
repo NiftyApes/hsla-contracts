@@ -60,6 +60,16 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
 
     // ---------- STRUCTS --------------- //
 
+     struct MintLocalVars {
+        Error err;
+        MathError mathErr;
+        uint exchangeRateMantissa;
+        uint mintTokens;
+        uint totalSupplyNew;
+        uint accountTokensNew;
+        uint mintAmount;
+    }
+    
     struct RedeemLocalVars {
         Error err;
         MathError mathErr;
@@ -69,6 +79,7 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
         uint totalSupplyNew;
         uint accountTokensNew;
     }
+
 
     // ---------- STATE VARIABLES --------------- //
 
@@ -126,18 +137,33 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
         } else {
 
             // transferFrom ERC20 from depositors address
-            underlying.transferFrom(msg.sender, address(this), _numTokensToSupply);
+            bool tfResult = underlying.transferFrom(msg.sender, address(this), _numTokensToSupply);
+
+            console.log("tfResult", tfResult);
 
             // Approve transfer on the ERC20 contract from LiquidityProviders contract
-            underlying.approve(_cErc20Contract, _numTokensToSupply);
+            bool approveResult = underlying.approve(_cErc20Contract, _numTokensToSupply);
+
+            console.log("approveResult", approveResult);
+
+            // calculate expectedAmountToBeMinted
+            MintLocalVars memory vars;
+
+            vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
+
+            vars.mintAmount = _numTokensToSupply;
+
+            (vars.mathErr, vars.mintTokens) = divScalarByExpTruncate(vars.mintAmount, Exp({mantissa: vars.exchangeRateMantissa}));
+
+            console.log("vars.mintTokens", vars.mintTokens);
 
             // Mint cTokens
             uint mintResult = cToken.mint(_numTokensToSupply);
 
-            console.log("mintResult", mintResult);
-
             // updating the depositors cErc20 balance
-            cErc20Balances[_cErc20Contract][msg.sender] = cErc20Balances[_cErc20Contract][msg.sender] += mintResult;
+            cErc20Balances[_cErc20Contract][msg.sender] = cErc20Balances[_cErc20Contract][msg.sender] += vars.mintTokens;
+
+            console.log("cErc20Balances[_cErc20Contract][msg.sender] 1", cErc20Balances[_cErc20Contract][msg.sender]);
 
             supplyResult = mintResult;
         }
