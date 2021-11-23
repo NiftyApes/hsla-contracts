@@ -118,6 +118,10 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
 
         // depositType == false >> mint cErc20 and add to balance
         } else {
+
+            // Approve transfer on the ERC20 contract to LiquidityProviders contract from depositor
+            underlying.approve(address(this), _numTokensToSupply);
+
             // transferFrom ERC20 from depositors address
             underlying.transferFrom(msg.sender, address(this), _numTokensToSupply);
 
