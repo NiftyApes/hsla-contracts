@@ -98,6 +98,12 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
         bool depositType,
         uint256 _numTokensToSupply
     ) public returns (uint) {
+
+        console.log("_erc20Contract", _erc20Contract);
+        console.log("_cErc20Contract", _cErc20Contract);
+        console.log("depositType", depositType);
+        console.log("_numTokensToSupply", _numTokensToSupply);
+
         // Create a reference to the underlying asset contract, like DAI.
         Erc20 underlying = Erc20(_erc20Contract);
 
@@ -119,9 +125,6 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
         // depositType == false >> mint cErc20 and add to balance
         } else {
 
-            // Approve transfer on the ERC20 contract to LiquidityProviders contract from depositor
-            underlying.approve(address(this), _numTokensToSupply);
-
             // transferFrom ERC20 from depositors address
             underlying.transferFrom(msg.sender, address(this), _numTokensToSupply);
 
@@ -130,6 +133,8 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
 
             // Mint cTokens
             uint mintResult = cToken.mint(_numTokensToSupply);
+
+            console.log("mintResult", mintResult);
 
             // updating the depositors cErc20 balance
             cErc20Balances[_cErc20Contract][msg.sender] = cErc20Balances[_cErc20Contract][msg.sender] += mintResult;
