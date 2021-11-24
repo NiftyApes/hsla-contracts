@@ -86,6 +86,10 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
     // Mapping of cErc20Balance to cErc20Address to depositor address
     mapping(address => mapping(address => uint256)) public cErc20Balances;
 
+    // will need to track withdrawableBalance or utilizedBalance
+    // Mapping of cErc20Balance to cErc20Address to depositor address
+    // mapping(address => mapping(address => uint256)) public cErc20Balances;
+
     // Mapping of ethBalance to depositorAddress
     mapping(address => uint256) public cEthBalances;
 
