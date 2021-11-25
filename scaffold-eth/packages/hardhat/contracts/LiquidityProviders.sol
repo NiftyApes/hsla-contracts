@@ -129,6 +129,7 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
 
         // depositType == true >> add cErc20 to balance
         if (depositType == true) {
+            // should have require statement to ensure tranfer is successful before updating the balance
              // transferFrom ERC20 from depositors address
             cToken.transferFrom(msg.sender, address(this), _numTokensToSupply);
 
@@ -139,16 +140,12 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
 
         // depositType == false >> mint cErc20 and add to balance
         } else {
-
+            // should have require statement to ensure tranfer is successful before proceeding
             // transferFrom ERC20 from depositors address
-            bool tfResult = underlying.transferFrom(msg.sender, address(this), _numTokensToSupply);
-
-            console.log("tfResult", tfResult);
+            underlying.transferFrom(msg.sender, address(this), _numTokensToSupply);
 
             // Approve transfer on the ERC20 contract from LiquidityProviders contract
-            bool approveResult = underlying.approve(_cErc20Contract, _numTokensToSupply);
-
-            console.log("approveResult", approveResult);
+            underlying.approve(_cErc20Contract, _numTokensToSupply);
 
             // calculate expectedAmountToBeMinted
             MintLocalVars memory vars;
@@ -159,15 +156,12 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
 
             (vars.mathErr, vars.mintTokens) = divScalarByExpTruncate(vars.mintAmount, Exp({mantissa: vars.exchangeRateMantissa}));
 
-            console.log("vars.mintTokens", vars.mintTokens);
-
+            // should have require statement to ensure mint is successful before proceeding
             // Mint cTokens
             uint mintResult = cToken.mint(_numTokensToSupply);
 
             // updating the depositors cErc20 balance
             cErc20Balances[_cErc20Contract][msg.sender] = cErc20Balances[_cErc20Contract][msg.sender] += vars.mintTokens;
-
-            console.log("cErc20Balances[_cErc20Contract][msg.sender] 1", cErc20Balances[_cErc20Contract][msg.sender]);
 
             supplyResult = mintResult;
         }
@@ -175,6 +169,11 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
         return supplyResult;
     }
 
+    // currently implemented as "true" optino in withdrawErc20. 
+    function withdrawCErc20() public {}
+
+    // need to implement withdraw erc20 by cerc20 amount or underlying amount. 
+    // currently not possible for user to withdraw all cErc20 as underlying. can only withdraw all cErc20 as cErc20. 
     function withdrawErc20(
         address _erc20Contract,
         address _cErc20Contract,
@@ -182,11 +181,14 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
         uint256 _amountToWithdraw
     ) 
         public 
-        returns (bool) {
+        returns (uint) {
+
+        console.log("_erc20Contract", _erc20Contract);
+        console.log("_cErc20Contract", _cErc20Contract);
+        console.log("redeemType", redeemType);
+        console.log("_amountToWithdraw", _amountToWithdraw);
 
         // add nonReentrant modifier
-
-        // require msg.sender has sufficient balance of cErc20
 
         // Create a reference to the underlying asset contract, like DAI.
         Erc20 underlying = Erc20(_erc20Contract);
@@ -194,28 +196,22 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
         // Create a reference to the corresponding cToken contract, like cDAI
         CErc20 cToken = CErc20(_cErc20Contract);
 
-        // `amount` is scaled up, see decimal table here:
-        // https://compound.finance/docs#protocol-math
-
-        uint256 redeemResult;
-
         // redeemType == true >> subtract from balance and transfer cErc20 to msg.sender
         if (redeemType == true) {
 
-            console.log("cErc20Balances[_cErc20Contract][msg.sender] 1", cErc20Balances[_cErc20Contract][msg.sender]);
-
+            // require msg.sender has sufficient balance of cErc20
+            require(
+                cErc20Balances[_cErc20Contract][msg.sender] >= _amountToWithdraw,
+                "Must have a balance greater than or equal to amountToWithdraw"
+            );
             // updating the depositors cErc20 balance
             cErc20Balances[_cErc20Contract][msg.sender] = cErc20Balances[_cErc20Contract][msg.sender] -= _amountToWithdraw;
 
-            console.log("cErc20Balances[_cErc20Contract][msg.sender] 2", cErc20Balances[_cErc20Contract][msg.sender]);
-
-
-            // Retrieve your asset based on a cToken amount
-            redeemResult = cToken.redeem(_amountToWithdraw);
-
+            // should have require statement to ensure tranfer is successful before proceeding
+            // transfer cErc20 tokens to depositor
             cToken.transfer(msg.sender, _amountToWithdraw);
         
-        // redeemType == false >> subtract from balance and redeem erc20 and transfer to msg.sender
+        // redeemType == false >> subtract from balance and redeem erc20 underlying and transfer to msg.sender
         } else {
             // need to convert underlying amount to ctoken in order to update cErc20Balance
             // need to calculate number of cErc20 tokens in _amountToWithdraw
@@ -223,41 +219,38 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
             //  provided a erc20 amount, need to calculate how many cErc20 
            
             RedeemLocalVars memory vars;
-            
-            // MathError.NO_ERROR is an enum value in CarefulMath
-            // exchangeRateStoredInternal is a function in cToken
-            // failOpaque is a function in ErrorReporter
-            // FailureInfo is an enum in ErrorReporter
-             /* exchangeRate = invoke Exchange Rate Stored() */
-            // (vars.mathErr, vars.exchangeRateMantissa) = exchangeRateStoredInternal();
-            // if (vars.mathErr != MathError.NO_ERROR) {
-            //     return failOpaque(Error.MATH_ERROR, FailureInfo.REDEEM_EXCHANGE_RATE_READ_FAILED, uint(vars.mathErr));
-            // }
 
             vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
 
-            vars.redeemTokens = _amountToWithdraw;
+            (vars.mathErr, vars.redeemTokens) = divScalarByExpTruncate(_amountToWithdraw, Exp({mantissa: vars.exchangeRateMantissa}));
+            if (vars.mathErr != MathError.NO_ERROR) {
+                return failOpaque(Error.MATH_ERROR, FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED, uint(vars.mathErr));
+            }
 
-            // mulScalarTruncate is a function in exponential.sol
-            // Exp is a struct in ExponentialNoError
-            (vars.mathErr, vars.redeemAmount) = mulScalarTruncate(Exp({mantissa: vars.exchangeRateMantissa}), _amountToWithdraw);
-            // if (vars.mathErr != MathError.NO_ERROR) {
-            //     return failOpaque(Error.MATH_ERROR, FailureInfo.REDEEM_EXCHANGE_TOKENS_CALCULATION_FAILED, uint(vars.mathErr));
-            // }
+            vars.redeemAmount = _amountToWithdraw;
+
+            console.log("cErc20Balances[_cErc20Contract][msg.sender]", cErc20Balances[_cErc20Contract][msg.sender]);
+            console.log("vars.redeemAmount", vars.redeemAmount);
+            console.log("vars.redeemTokens", vars.redeemTokens);
+
+
+             // require msg.sender has sufficient balance of cErc20
+            require(
+                cErc20Balances[_cErc20Contract][msg.sender] >= vars.redeemTokens,
+                "Must have a balance greater than or equal to redeemAmount"
+            );
             
-            cErc20Balances[_cErc20Contract][msg.sender] = cErc20Balances[_cErc20Contract][msg.sender] -= vars.redeemAmount;
+            cErc20Balances[_cErc20Contract][msg.sender] = cErc20Balances[_cErc20Contract][msg.sender] -= vars.redeemTokens;
 
+            // should have require statement to ensure redeem is successful before proceeding
             // Retrieve your asset based on an _amountToWithdraw of the asset
-            redeemResult = cToken.redeemUnderlying(vars.redeemAmount);
+            cToken.redeemUnderlying(vars.redeemAmount);
 
+            // should have require statement to ensure tranfer is successful before proceeding
             underlying.transfer(msg.sender, vars.redeemAmount);
         }
 
-        // Error codes are listed here:
-        // https://compound.finance/docs/ctokens#error-codes
-        emit MyLog("If this is not 0, there was an error", redeemResult);
-
-        return true;
+        return 0;
     }
 
     // ETH is difficult to store a ctoken balance for due to exponential math and native function not returning cToken quantity minted. ERC20 Tokens may be much easier.
@@ -339,7 +332,7 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
         address _cEtherContract
     ) public returns (bool) {
 
-        
+        // need to withdrawl amount - fee
 
         // Create a reference to the corresponding cToken contract
         CEth cToken = CEth(_cEtherContract);
@@ -402,11 +395,15 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
 
         console.log("Contract CEthBalance 2", CEthBalance);
 
-
         return true;
     }
 
+// need to work out how to calculate the amount of comp accrued to each deposit. Might need a struct for each balance which tracks the amount of time elapsed for each segment of value. 
     function withdrawCOMP() public {}
+
+    // function adminWithdrawal() public onlyOwner {}
+
+    // if possible should implement function to reject any ETH or ERC20 that is directly sent to the contract
 
     // This is needed to receive ETH when calling `redeemCEth`
     receive() external payable {}
