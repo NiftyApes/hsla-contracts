@@ -5,7 +5,6 @@ import "hardhat/console.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./ErrorReporter.sol";
 import "./Exponential.sol";
-// import "./InterestRateModel.sol";
 
 interface Erc20 {
     function approve(address, uint256) external returns (bool);
@@ -125,21 +124,6 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
         // Create a reference to the corresponding cToken contract, like cDAI
         CErc20 cToken = CErc20(_cErc20Contract);
 
-        uint256 supplyResult;
-
-        // depositType == true >> add cErc20 to balance
-        if (depositType == true) {
-            // should have require statement to ensure tranfer is successful before updating the balance
-             // transferFrom ERC20 from depositors address
-            cToken.transferFrom(msg.sender, address(this), _numTokensToSupply);
-
-            // updating the depositors cErc20 balance
-            cErc20Balances[_cErc20Contract][msg.sender] = cErc20Balances[_cErc20Contract][msg.sender] += _numTokensToSupply;
-
-            supplyResult = _numTokensToSupply;
-
-        // depositType == false >> mint cErc20 and add to balance
-        } else {
             // should have require statement to ensure tranfer is successful before proceeding
             // transferFrom ERC20 from depositors address
             underlying.transferFrom(msg.sender, address(this), _numTokensToSupply);
@@ -163,14 +147,76 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
             // updating the depositors cErc20 balance
             cErc20Balances[_cErc20Contract][msg.sender] = cErc20Balances[_cErc20Contract][msg.sender] += vars.mintTokens;
 
-            supplyResult = mintResult;
-        }
-
-        return supplyResult;
+        return vars.mintTokens;
     }
 
+    function supplyCErc20(
+        address _erc20Contract,
+        address _cErc20Contract,
+        bool depositType,
+        uint256 _numTokensToSupply
+    ) public returns (uint) {
+
+        console.log("_erc20Contract", _erc20Contract);
+        console.log("_cErc20Contract", _cErc20Contract);
+        console.log("depositType", depositType);
+        console.log("_numTokensToSupply", _numTokensToSupply);
+
+        // Create a reference to the underlying asset contract, like DAI.
+        Erc20 underlying = Erc20(_erc20Contract);
+
+        // Create a reference to the corresponding cToken contract, like cDAI
+        CErc20 cToken = CErc20(_cErc20Contract);
+
+            // should have require statement to ensure tranfer is successful before updating the balance
+             // transferFrom ERC20 from depositors address
+            cToken.transferFrom(msg.sender, address(this), _numTokensToSupply);
+
+            // updating the depositors cErc20 balance
+            cErc20Balances[_cErc20Contract][msg.sender] = cErc20Balances[_cErc20Contract][msg.sender] += _numTokensToSupply;
+
+        return _numTokensToSupply;
+    }
+
+
     // currently implemented as "true" optino in withdrawErc20. 
-    function withdrawCErc20() public {}
+    function withdrawCErc20(
+        address _erc20Contract,
+        address _cErc20Contract,
+        bool redeemType,
+        uint256 _amountToWithdraw
+    ) 
+        public 
+        returns (uint) {
+
+        console.log("_erc20Contract", _erc20Contract);
+        console.log("_cErc20Contract", _cErc20Contract);
+        console.log("redeemType", redeemType);
+        console.log("_amountToWithdraw", _amountToWithdraw);
+
+        // add nonReentrant modifier
+
+        // Create a reference to the underlying asset contract, like DAI.
+        Erc20 underlying = Erc20(_erc20Contract);
+
+        // Create a reference to the corresponding cToken contract, like cDAI
+        CErc20 cToken = CErc20(_cErc20Contract);
+
+            // require msg.sender has sufficient balance of cErc20
+            require(
+                cErc20Balances[_cErc20Contract][msg.sender] >= _amountToWithdraw,
+                "Must have a balance greater than or equal to amountToWithdraw"
+            );
+            // updating the depositors cErc20 balance
+            cErc20Balances[_cErc20Contract][msg.sender] = cErc20Balances[_cErc20Contract][msg.sender] -= _amountToWithdraw;
+
+            // should have require statement to ensure tranfer is successful before proceeding
+            // transfer cErc20 tokens to depositor
+            cToken.transfer(msg.sender, _amountToWithdraw);
+
+        return _amountToWithdraw;
+
+    }
 
     // need to implement withdraw erc20 by cerc20 amount or underlying amount. 
     // currently not possible for user to withdraw all cErc20 as underlying. can only withdraw all cErc20 as cErc20. 
