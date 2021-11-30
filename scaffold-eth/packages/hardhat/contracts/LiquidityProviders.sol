@@ -339,13 +339,14 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
         emit EthSupplied(msg.sender, msg.value);
 
         console.log("Contract CEthBalance 3", CEthBalance);
+        console.log("Contract vars.mintTokens 3", vars.mintTokens);
 
         return vars.mintTokens;
     }
 
     function supplyCEth(
-        uint256 _numTokensToSupply,
-        address payable _cEtherContract
+        address payable _cEtherContract,
+        uint256 _numTokensToSupply
         ) 
         public
         payable
@@ -517,8 +518,11 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
 
     function calculateInterestEarned() public {}
 
-    function calculateWithdrawalFee() public {}
+    function calculateLiquidityWithdrawalFee() public {}
 
+    function calculateLoanDrawDownFee() public {}
+
+    // This function will remain empty until NiftyApes reaches sufficient decentralization
     // function adminWithdrawal() public onlyOwner {}
 
     // if possible should implement function to reject any ETH or ERC20 that is directly sent to the contract
