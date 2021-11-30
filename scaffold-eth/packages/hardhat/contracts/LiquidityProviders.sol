@@ -514,11 +514,28 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
 // need to work out how to calculate the amount of comp accrued to each deposit. Might need a struct for each balance which tracks the amount of time elapsed for each segment of value. 
     function withdrawCompEarned() public {}
 
-    function calculateCompEarned() public {}
+    function calculateCompEarned(
+        // need to querty the COMP distribution rate at the time of deposit
+        // the COMP distribution rate can only change per asset via a COMP DAO VOTE
 
-    function calculateInterestEarned() public {}
+        // the answer to this is in 'distributeSupplierComp' in comptrollerG7.sol
+        // this may also provide a method to calculate interest accrued by lenders
+        // checkout updateContributorRewards
 
-    function calculateLiquidityWithdrawalFee() public {}
+    ) public {}
+
+    function calculateLiquidityInterestEarned() public {
+        
+    }
+
+    function calculateErc20WithdrawalFee(
+        address _erc20Contract,
+        address _cErc20Contract,
+        bool redeemType,
+        uint256 _amountToWithdraw
+    ) public {
+
+    }
 
     function calculateLoanDrawDownFee() public {}
 
@@ -527,7 +544,7 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
 
     // if possible should implement function to reject any ETH or ERC20 that is directly sent to the contract
 
-    // This is needed to receive ETH when calling `redeemCEth`
+    // This is needed to receive ETH when calling `withdrawEth`
     receive() external payable {}
 
 }
