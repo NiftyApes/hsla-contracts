@@ -25,7 +25,7 @@ contract LendingAuction is LiquidityProviders {
         // // ask interest rate
         // uint256 askInterestRate;
         // // ask duration of loan in number of seconds
-        // uint256 askLoanDuration;\
+        // uint256 askLoanDuration;
         address bestBidAsset; // 0x0 in active loan denotes ETH
         // best bid loan amount. includes accumulated interest in an active loan.
         uint256 bestBidLoanAmount;
@@ -43,6 +43,8 @@ contract LendingAuction is LiquidityProviders {
         uint256 historicInterest;
         // amount withdrawn by the nftOwner. This is the amount they will pay interest on, with askLoanAmount as minimum.
         uint256 loanAmountDrawn;
+        // boolean of whether fixedRate has been accepted by a borrower
+        bool fixedRate;
     }
 
     // need to see how OpenSea tracks cancelled bid and ask signatures
@@ -51,6 +53,14 @@ contract LendingAuction is LiquidityProviders {
 
     // Mapping of nftId to nftContractAddress to LoanAuction struct
     mapping(address => mapping(uint256 => LoanAuction)) public loanAuctions;
+
+    /* Cancelled / finalized orders, by hash. */
+    mapping(bytes32 => bool) public cancelledOrFinalized;
+
+    uint256 loanDrawFee = SafeMath.div(1, 100);
+    uint256 buyOutPremium = SafeMath.div(1, 100);
+
+    // All fees are transfered to this smart contract
 
     // ---------- EVENTS --------------- //
 
@@ -117,6 +127,122 @@ contract LendingAuction is LiquidityProviders {
 
     // ---------- FUNCTIONS -------------- //
 
+    // ideally this hash can be generated on the frontend, stored in the backend, and provided to functions to reduce computation
+    // given the offer details, generate a hash and try to kind of follow the eip-191 standard
+    function getOfferHash(
+        address nftContractAddress,
+        uint256 nftId,
+        address asset,
+        uint256 loanAmount,
+        uint256 interestRate,
+        uint256 duration,
+        bool fixedRate,
+        bool floorTerm
+    )
+        public
+        view
+        returns (bytes32 _offerhash)
+    {
+
+        // originally 'byte' values, but solidity compiler was throwing error. If cant match signature investigate this. 
+        // abi.encodePacked(
+                // byte(0x19),
+                // byte(0),
+ 
+        return keccak256(
+            abi.encodePacked(
+                bytes1(0x19),
+                bytes1(0),
+                address(this),
+                nftContractAddress,
+                nftId,
+                asset,
+                loanAmount,
+                interestRate,
+                duration,
+                fixedRate,
+                floorTerm
+        ));
+    }
+
+        //ecrecover the signer from hash and the signature
+    function getOfferSigner(
+        bytes32 offerHash, //hash of offer
+        bytes memory signature //proof the actor signed the offer
+    )
+        public
+        pure
+        returns (address)
+    {
+        return offerHash.toEthSignedMessageHash().recover(signature);
+    }
+
+    // might need acceptBid function that allows a borrower to accept an offer with worse terms during an active loan acceptBidDuring an active loan
+    // would need to make sure principle plus interest and premium is settled
+
+    // might need an executeLoanByBid and executeLoanByAsk
+    function executeLoan(
+        address nftContractAddress,
+        uint256 nftId,
+        address asset,
+        uint256 amount,
+        uint256 interestRate,
+        uint256 duration,
+        bool fixedRate,
+        bool floorTerm,
+        // bytes offerHash,
+        bytes memory signature
+    ) public {
+        // require loan is not active
+        // require signature has not been cancelled/bid withdrawn
+
+        // ideally calculated, stored, and provided as parameter to save computation
+        bytes32 offerHash = getOfferHash(
+            nftContractAddress,
+            nftId,
+            asset,
+            amount,
+            interestRate,
+            duration,
+            fixedRate,
+            floorTerm
+        );
+
+        address signer = getOfferSigner(offerHash, signature);
+
+        // if floorTerm is false 
+        // require msg.sender or signer is the nftOwner of nftId
+        // if floorTerm is true
+        // requrie msg.sender or signer is the nftOwner of any nft at nftContractAddress
+
+        // require whichever, sender or signer, is lender, has sufficient balance of asset
+
+        _executeLoanInternal(nftContractAddress, nftId);
+    }
+
+    function _executeLoanInternal(
+        address _nftContractAddress,
+        uint256 _nftId
+        // uint256 _drawAmount
+    ) internal {
+
+        // update loanAuction
+
+        // loanAuction.nftOwner;
+        // loanAuction.askLoanAmount;
+        // loanAuction.bestBidder;
+        // loanAuction.bestBidAsset;
+        // loanAuction.bestBidLoanAmount;
+        // loanAuction.bestBidInterestRate;
+        // loanAuction.bestBidLoanDuration;
+        // loanAuction.bestBidTime;
+        // loanAuction.loanExecutedTime;
+        // loanAuction.loanEndTime;
+        // loanAuction.loanAmountDrawn;
+        // laonAuction.fixedTerm;
+
+    }
+
     // when bidding on an executed loan need to work out if new bid extends loanDuration or restarts.
     function buyOutBestBid(
         address _nftContractAddress,
@@ -133,9 +259,10 @@ contract LendingAuction is LiquidityProviders {
         // require loan is active
         // require that terms are parity + 1 
         // calculate the interest earned by current bestBidder
-        // save temporary current loan term
+        // save temporary current loan terms
         // update terms of loanAuction
         // update histricInterest
+        // finalize bid signature
         // pay out principle, interest, and premium
 
     }
@@ -183,64 +310,10 @@ contract LendingAuction is LiquidityProviders {
             "Cannot withdraw bid from an active loan"
         );
 
+        // cancel bid signature
 
         // emit AskWithdrawn event
         emit AskWithdrawn(_nftContractAddress, _nftId);
-    }
-
-    // called by a borrower when accepting a bid
-    function executeLoan(
-        address _nftContractAddress,
-        uint256 _nftId,
-        uint256 _loanAmount,
-        uint256 _interestRate,
-        uint256 _loanDuration,
-        bytes32 _signature,
-        bool _floorTerm
-    ) public {
-        // require loan is not active
-        // require signature has not been cancelled/bid withdrawn
-        // require msg.sender is signer
-
-        _executeLoanInternal(_nftContractAddress, _nftId);
-    }
-
-    // // called by a lender when accepting an ask, creating a bestBid
-    // function executeLoanFromAsk(
-    //     address _nftContractAddress,
-    //     uint256 _nftId,
-    //     uint256 _loanAmount,
-    //     uint256 _interestRate,
-    //     uint256 _loanDuration,
-    //     bytes32 _signature
-    // ) public {
-    //     // require loan is not active
-    //     // require signature has not been cancelled/ask withdrawn
-
-    //     _executeLoanInternal(_nftContractAddress, _nftId);
-    // }
-
-    function _executeLoanInternal(
-        address _nftContractAddress,
-        uint256 _nftId
-        // uint256 _drawAmount
-    ) internal {
-
-        // update 
-        // loanAuction.nftOwner;
-        // loanAuction.askLoanAmount;
-        // // loanAuction.askInterestRate = 0;
-        // // loanAuction.askLoanDuration = 0;
-        // loanAuction.bestBidder = 0x0000000000000000000000000000000000000000;
-        // loanAuction.bestBidAsset = 0x0000000000000000000000000000000000000000;
-        // loanAuction.bestBidLoanAmount = 0;
-        // loanAuction.bestBidInterestRate = 0;
-        // loanAuction.bestBidLoanDuration = 0;
-        // loanAuction.bestBidTime = 0;
-        // loanAuction.loanExecutedTime = 0;
-        // loanAuction.loanEndTime = 0;
-        // loanAuction.loanAmountDrawn = 0;
-
     }
 
     function drawLoan(
