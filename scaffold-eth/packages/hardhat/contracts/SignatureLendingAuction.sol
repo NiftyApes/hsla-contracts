@@ -449,7 +449,9 @@ contract LendingAuction is LiquidityProviders {
         // repay eth plus interest to lender
         (bool success, ) = currentBestBidder.call{value: msg.value}("");
         require(success, "Repay bestBidder failed");
-        // else transfer erc20 to lender
+        // else transfer erc20 to this contract
+        // mint cErc20
+        // update lenders utilized balance
 
         emit LoanRepaidInFull(_nftContractAddress, _nftId);
     }
@@ -489,6 +491,8 @@ contract LendingAuction is LiquidityProviders {
         loanAuction.loanExecutedTime = 0;
         loanAuction.loanEndTime = 0;
         loanAuction.loanAmountDrawn = 0;
+
+        // update lenders utilized and total balance
 
         // transferFrom NFT from contract to bestBidder
         IERC721(_nftContractAddress).transferFrom(
@@ -599,22 +603,22 @@ contract LendingAuction is LiquidityProviders {
 
     // Internal function that pays off the previous bestBidder.
     // Includes interest if loan is active.
-    function _buyOutBestBid(address _prevBestBidder, uint256 _buyOutAmount)
-        internal
-    {
-        // send buyOutAmount to previous bestBidder
-        (bool success, ) = _prevBestBidder.call{value: _buyOutAmount}("");
-        require(success, "Buy out failed.");
-    }
+    // function _buyOutBestBid(address _prevBestBidder, uint256 _buyOutAmount)
+    //     internal
+    // {
+    //     // send buyOutAmount to previous bestBidder
+    //     (bool success, ) = _prevBestBidder.call{value: _buyOutAmount}("");
+    //     require(success, "Buy out failed.");
+    // }
 
-    function _getNFTOwner(address _nftContractAddress, uint256 _nftId)
-        public
-        view
-        returns (address _nftOwner)
-    {
-        console.log(IERC721(_nftContractAddress).ownerOf(_nftId));
-        return IERC721(_nftContractAddress).ownerOf(_nftId);
-    }
+    // function _getNFTOwner(address _nftContractAddress, uint256 _nftId)
+    //     public
+    //     view
+    //     returns (address _nftOwner)
+    // {
+    //     console.log(IERC721(_nftContractAddress).ownerOf(_nftId));
+    //     return IERC721(_nftContractAddress).ownerOf(_nftId);
+    // }
 
     // @notice By calling 'revert' in the fallback function, we prevent anyone
     //         from accidentally sending funds directly to this contract.
