@@ -177,7 +177,7 @@ contract LendingAuction is LiquidityProviders {
         return offerHash.toEthSignedMessageHash().recover(signature);
     }
 
-    // might need acceptBid function that allows a borrower to accept an offer with worse terms during an active loan acceptBidDuring an active loan
+    // might need acceptBid function that allows a borrower to accept an offer with worse terms during an active loan acceptBidActiveLoan an active loan
     // would need to make sure principle plus interest and premium is settled
 
     // might need an executeLoanByBid and executeLoanByAsk
@@ -240,6 +240,11 @@ contract LendingAuction is LiquidityProviders {
         // loanAuction.loanEndTime;
         // loanAuction.loanAmountDrawn;
         // laonAuction.fixedTerm;
+
+        // lock NFT
+        // update lender utilized balance
+        // redeem cTokens from lender balance
+        // transfer underlying to borrower minus platformFee
 
     }
 
