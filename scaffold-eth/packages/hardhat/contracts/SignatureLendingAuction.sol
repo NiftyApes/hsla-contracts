@@ -54,7 +54,7 @@ contract LendingAuction is LiquidityProviders {
     // Mapping of nftId to nftContractAddress to LoanAuction struct
     mapping(address => mapping(uint256 => LoanAuction)) public loanAuctions;
 
-    /* Cancelled / finalized orders, by hash. */
+    /* Cancelled / finalized orders, by signature. */
     mapping(bytes32 => bool) public cancelledOrFinalized;
 
     uint256 loanDrawFee = SafeMath.div(1, 100);
@@ -193,8 +193,17 @@ contract LendingAuction is LiquidityProviders {
         // bytes offerHash,
         bytes memory signature
     ) public {
-        // require loan is not active
+
+        // Instantiate LoanAuction Struct
+        LoanAuction storage loanAuction = loanAuctions[_nftContractAddress][
+            _nftId
+        ];
+
         // require signature has not been cancelled/bid withdrawn
+        require(
+            cancelledOrFinalized[signature] == false,
+            "Cannot execute bid or ask. Signature has been cancelled or previously finalized."
+        );
 
         // ideally calculated, stored, and provided as parameter to save computation
         bytes32 offerHash = getOfferHash(
@@ -210,12 +219,34 @@ contract LendingAuction is LiquidityProviders {
 
         address signer = getOfferSigner(offerHash, signature);
 
-        // if floorTerm is false 
-        // require msg.sender or signer is the nftOwner of nftId
-        // if floorTerm is true
-        // requrie msg.sender or signer is the nftOwner of any nft at nftContractAddress
+        // if loan is not active execute intial loan
+        if (loanAuction.loanExecutedTime == 0) {
+            // if floorTerm is false 
+            if (floorTerm == false) {
+            // get nft owner
+            address _nftOwner = IERC721(_nftContractAddress).ownerOf(_nftId);
+            // require msg.sender or signer is the nftOwner of nftId
+            require(
+                _nftOwner == msg.sender || msg.sender == signer,
+                "Cannot execute bid or ask. Signature has been cancelled or previously finalized."
+            );
 
-        // require whichever, sender or signer, is lender, has sufficient balance of asset
+            }
+            // require msg.sender or signer is the nftOwner of nftId
+            // if floorTerm is true
+            // requrie msg.sender or signer is the nftOwner of any nft at nftContractAddress
+
+            // require whichever, sender or signer, is lender, has sufficient balance of asset
+            }
+
+        else if (loanAuction.loanExecutedTime != 0) {
+
+        }
+        // else if loan is active, create path for borrower to pay off loan and accept new bid
+
+
+
+        
 
         _executeLoanInternal(nftContractAddress, nftId);
     }
