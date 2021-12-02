@@ -131,7 +131,7 @@ contract LendingAuction is LiquidityProviders {
     // given the offer details, generate a hash and try to kind of follow the eip-191 standard
     function getOfferHash(
         address nftContractAddress,
-        uint256 nftId,
+        uint256 sigNftId, // 0 if floorTerm is true
         address asset,
         uint256 loanAmount,
         uint256 interestRate,
@@ -183,7 +183,7 @@ contract LendingAuction is LiquidityProviders {
     // might need an executeLoanByBid and executeLoanByAsk
     function executeLoan(
         address nftContractAddress,
-        uint256 nftId,
+        uint256 sigNftId,
         address asset,
         uint256 amount,
         uint256 interestRate,
@@ -191,13 +191,9 @@ contract LendingAuction is LiquidityProviders {
         bool fixedRate,
         bool floorTerm,
         // bytes offerHash,
-        bytes memory signature
+        bytes memory signature,
+        uint256 nftId // nftId should match sigNftId if floorTerm false, nftId should not match if floorTerm true
     ) public {
-
-        // Instantiate LoanAuction Struct
-        LoanAuction storage loanAuction = loanAuctions[_nftContractAddress][
-            _nftId
-        ];
 
         // require signature has not been cancelled/bid withdrawn
         require(
@@ -208,7 +204,7 @@ contract LendingAuction is LiquidityProviders {
         // ideally calculated, stored, and provided as parameter to save computation
         bytes32 offerHash = getOfferHash(
             nftContractAddress,
-            nftId,
+            sigNftId,
             asset,
             amount,
             interestRate,
@@ -217,22 +213,39 @@ contract LendingAuction is LiquidityProviders {
             floorTerm
         );
 
+        // confirm signature terms with function submitted terms and confirm signer
         address signer = getOfferSigner(offerHash, signature);
 
         // if loan is not active execute intial loan
         if (loanAuction.loanExecutedTime == 0) {
             // if floorTerm is false 
             if (floorTerm == false) {
-            // get nft owner
-            address _nftOwner = IERC721(_nftContractAddress).ownerOf(_nftId);
-            // require msg.sender or signer is the nftOwner of nftId
-            require(
-                _nftOwner == msg.sender || msg.sender == signer,
-                "Cannot execute bid or ask. Signature has been cancelled or previously finalized."
-            );
+                // require nftId == sigNftId
+                require(
+                    nftId == sigNftId,
+                    "Function submitted nftId must match the signed offer nftId"
+                );
+
+                // Instantiate LoanAuction Struct
+                LoanAuction storage loanAuction = loanAuctions[_nftContractAddress][
+                    _nftId
+                ];
+                // get nft owner
+                address _nftOwner = IERC721(_nftContractAddress).ownerOf(_nftId);
+                // require msg.sender or signer is the nftOwner of nftId
+                require(
+                    _nftOwner == msg.sender || msg.sender == signer,
+                    "Cannot execute bid or ask. Signature has been cancelled or previously finalized."
+                );
+
+                // require that the lenders balance is sufficent to serve the loan
+                // update the lenders utilized balance
+                // update LoanAuction struct
+                // transfer the NFT to this contract
+                // calculate and redeem ctokens
+                // transfer underlying to borrower
 
             }
-            // require msg.sender or signer is the nftOwner of nftId
             // if floorTerm is true
             // requrie msg.sender or signer is the nftOwner of any nft at nftContractAddress
 
