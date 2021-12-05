@@ -106,6 +106,13 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
 
     // ---------- FUNCTIONS -------------- //
 
+    // Research compound to see how they are storing this data
+    // function getAssetsIn(address account) external view returns (CToken[] memory) {
+    //     CToken[] memory assetsIn = accountAssets[account];
+
+    //     return assetsIn;
+    // }
+
 
     // returns number of cErc20 tokens added to balance
     function supplyErc20(

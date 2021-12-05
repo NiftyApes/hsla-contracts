@@ -39,8 +39,9 @@ contract LendingAuction is LiquidityProviders {
         uint256 historicInterest;
         // amount withdrawn by the nftOwner. This is the amount they will pay interest on, with askLoanAmount as minimum.
         uint256 loanAmountDrawn;
-        // boolean of whether fixedRate has been accepted by a borrower
-        bool fixedRate;
+        // boolean of whether fixedTerms has been accepted by a borrower
+        // if fixedTerms == true could mint an NFT that represents that loan to enable packing and reselling. 
+        bool fixedTerms;
     }
 
     struct Offer {
@@ -50,7 +51,7 @@ contract LendingAuction is LiquidityProviders {
         uint256 loanAmount;
         uint256 interestRate;
         uint256 duration;
-        bool fixedRate;
+        bool fixedTerms;
         bool floorTerm;
     }
 
@@ -64,6 +65,7 @@ contract LendingAuction is LiquidityProviders {
     /* Cancelled / finalized orders, by signature. */
     mapping(bytes => bool) public cancelledOrFinalized;
 
+    // need admin function to update fees
     uint256 loanDrawFee = SafeMath.div(1, 100);
     uint256 buyOutPremium = SafeMath.div(1, 100);
 
@@ -160,7 +162,7 @@ contract LendingAuction is LiquidityProviders {
                 signedOffer.loanAmount,
                 signedOffer.interestRate,
                 signedOffer.duration,
-                signedOffer.fixedRate,
+                signedOffer.fixedTerms,
                 signedOffer.floorTerm
         ));
     }
@@ -186,7 +188,8 @@ contract LendingAuction is LiquidityProviders {
         // bytes offerHash,
         bytes memory signature,
         uint256 nftId, // nftId should match signedOffer.nftId if floorTerm false, nftId should not match if floorTerm true
-        // There likely needs ot be a check on the cAsset addresses to make sure they match to asset class
+        // There likely needs ot be a check on the cAsset addresses to make sure they match to the signed erc20 asset class
+        // could add cAsset to signature
         address cAsset // 11 variables
     ) 
         public 
@@ -201,7 +204,7 @@ contract LendingAuction is LiquidityProviders {
 
         // 12
         // get nft owner
-        address nftOwner = IERC721(nftContractAddress).ownerOf(nftId);
+        address nftOwner = IERC721(signedOffer.nftContractAddress).ownerOf(nftId);
 
         // require msg.sender is the nftOwner. This ensures function submitted nftId is valid.
         require(
@@ -209,23 +212,21 @@ contract LendingAuction is LiquidityProviders {
             "Msg.sender must be the owner of nftId to executeLoanByBid"
         );
 
-        // 13
         // ideally calculated, stored, and provided as parameter to save computation
         bytes32 offerHash = getOfferHash(
             signedOffer
         );
 
-        // 14
         // recover singer and confirm signature terms with function submitted terms
         // We know the signer must be the lender because msg.sender must be the nftOwner/borrower
         address lender = getOfferSigner(offerHash, signature);
 
 
             // if floorTerm is false 
-            if (floorTerm == false) {
+            if (signedOffer.floorTerm == false) {
                 // require nftId == sigNftId
                 require(
-                    nftId == sigNftId,
+                    nftId == signedOffer.nftId,
                     "Function submitted nftId must match the signed offer nftId"
                 );
 
@@ -266,30 +267,27 @@ contract LendingAuction is LiquidityProviders {
 
         // 11
         // Instantiate LoanAuction Struct
-        LoanAuction storage loanAuction = loanAuctions[nftContractAddress][
-            sigNftId
+        LoanAuction storage loanAuction = loanAuctions[signedOffer.nftContractAddress][
+            signedOffer.nftId
         ];
 
         // if loan is not active execute intial loan
         if (loanAuction.loanExecutedTime == 0) {
 
-                    // 12
                     // Create a reference to the corresponding cToken contract, like cDAI
                     CErc20 cToken = CErc20(cAsset);
 
-                    // 13
                     //Instantiate RedeemLocalVars
                     RedeemLocalVars memory vars;
 
                     vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
 
                     // convert amount to cErc20
-                    (vars.mathErr, vars.redeemTokens) = divScalarByExpTruncate(amount, Exp({mantissa: vars.exchangeRateMantissa}));
+                    (vars.mathErr, vars.redeemTokens) = divScalarByExpTruncate(signedOffer.loanAmount, Exp({mantissa: vars.exchangeRateMantissa}));
                     if (vars.mathErr != MathError.NO_ERROR) {
                         return failOpaque(Error.MATH_ERROR, FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED, uint(vars.mathErr));
                     }
 
-                    // 14
                     // require that the lenders balance is sufficent to serve the loan
                     require(
                         // calculate lenders available cErc20 balance and require it to be greater than or equal to vars.redeemTokens
@@ -302,45 +300,45 @@ contract LendingAuction is LiquidityProviders {
 
                     // update LoanAuction struct
                     loanAuction.nftOwner = nftOwner;
-                    loanAuction.askLoanAmount = amount;
+                    loanAuction.askLoanAmount = signedOffer.loanAmount;
                     loanAuction.bestBidder = lender;
-                    loanAuction.bestBidAsset = asset;
-                    loanAuction.bestBidLoanAmount = amount;
-                    loanAuction.bestBidInterestRate = interestRate;
-                    loanAuction.bestBidLoanDuration = duration;
+                    loanAuction.bestBidAsset = signedOffer.asset;
+                    loanAuction.bestBidLoanAmount = signedOffer.loanAmount;
+                    loanAuction.bestBidInterestRate = signedOffer.interestRate;
+                    loanAuction.bestBidLoanDuration = signedOffer.duration;
                     loanAuction.bestBidTime = block.timestamp;
                     loanAuction.loanExecutedTime = block.timestamp;
-                    loanAuction.loanEndTime = block.timestamp + duration;
-                    loanAuction.loanAmountDrawn = amount;
-                    loanAuction.fixedRate = false;
+                    loanAuction.loanEndTime = block.timestamp + signedOffer.duration;
+                    loanAuction.loanAmountDrawn = signedOffer.loanAmount;
+                    loanAuction.fixedTerms = signedOffer.fixedTerms;
 
                     // 15
                     // transferFrom NFT from nftOwner to contract
-                    IERC721(nftContractAddress).transferFrom(
+                    IERC721(signedOffer.nftContractAddress).transferFrom(
                         nftOwner,
                         address(this),
-                        sigNftId
+                        signedOffer.nftId
                     );   
 
                 // if asset is not 0x0 process as Erc20
-                if (asset != 0x0000000000000000000000000000000000000000) {
+                if (signedOffer.asset != 0x0000000000000000000000000000000000000000) {
 
                     // redeem cTokens and transfer underlying to borrower
                     _redeemAndTransferErc20Internal(
-                        asset,
+                        signedOffer.asset,
                         cAsset,
-                        amount,
+                        signedOffer.loanAmount,
                         nftOwner
                     );                 
 
                 }
                 // else process as ETH
-                else if (asset == 0x0000000000000000000000000000000000000000) {
+                else if (signedOffer.asset == 0x0000000000000000000000000000000000000000) {
                     
                     // redeem cTokens and transfer underlying to borrower
                     _redeemAndTransferEthInternal(
                         cAsset,
-                        amount,
+                        signedOffer.loanAmount,
                         nftOwner
                     );                 
                 }
