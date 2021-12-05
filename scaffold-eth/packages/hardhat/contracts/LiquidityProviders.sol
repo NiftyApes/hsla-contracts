@@ -88,6 +88,10 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
     // Mapping of cErc20Balance to cErc20Address to depositor address
     mapping(address => mapping(address => uint256)) public utilizedCErc20Balances;
 
+    // track an array of all assets a lender has deposited
+    // provide a getter function that returns all assets deposited
+    // needed to calulate the lenders total value deposited on the platform
+
     // ---------- EVENTS --------------- //
 
     event MyLog(string, uint256);
@@ -429,10 +433,6 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
         public 
         returns (uint) {
 
-        console.log("_cEtherContract", _cEtherContract);
-        console.log("redeemType", redeemType);
-        console.log("_amountToWithdraw", _amountToWithdraw);
-
         // add nonReentrant modifier
 
         // Create a reference to the corresponding cToken contract, like cDAI
@@ -451,11 +451,6 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
             if (vars.mathErr != MathError.NO_ERROR) {
                 return failOpaque(Error.MATH_ERROR, FailureInfo.REDEEM_EXCHANGE_TOKENS_CALCULATION_FAILED, uint(vars.mathErr));
             }
-
-            console.log("cErc20Balances[_cEtherContract][msg.sender]", cErc20Balances[_cEtherContract][msg.sender]);
-            console.log("vars.redeemAmount", vars.redeemAmount);
-            console.log("vars.redeemTokens", vars.redeemTokens);
-
 
              // require msg.sender has sufficient balance of cErc20
             require(
