@@ -238,18 +238,13 @@ contract LendingAuction is LiquidityProviders {
                 );
             }
 
+            // if floorTerm is true
+            // requrie msg.sender or signer is the nftOwner of any nft at nftContractAddress
 
-
-        //     }
-        //     // if floorTerm is true
-        //     // requrie msg.sender or signer is the nftOwner of any nft at nftContractAddress
-
-        //     }
-
+        // else if loan is active, create path for borrower to pay off loan and accept new bid
         // else if (loanAuction.loanExecutedTime != 0) {
 
         // }
-        // else if loan is active, create path for borrower to pay off loan and accept new bid
 
         return 0;
     }
@@ -274,29 +269,15 @@ contract LendingAuction is LiquidityProviders {
         // if loan is not active execute intial loan
         if (loanAuction.loanExecutedTime == 0) {
 
-                    // Create a reference to the corresponding cToken contract, like cDAI
-                    CErc20 cToken = CErc20(cAsset);
+            // finalize signature
+            cancelledOrFinalized[signature] == true;
 
-                    //Instantiate RedeemLocalVars
-                    RedeemLocalVars memory vars;
-
-                    vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
-
-                    // convert amount to cErc20
-                    (vars.mathErr, vars.redeemTokens) = divScalarByExpTruncate(signedOffer.loanAmount, Exp({mantissa: vars.exchangeRateMantissa}));
-                    if (vars.mathErr != MathError.NO_ERROR) {
-                        return failOpaque(Error.MATH_ERROR, FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED, uint(vars.mathErr));
-                    }
-
-                    // require that the lenders balance is sufficent to serve the loan
-                    require(
-                        // calculate lenders available cErc20 balance and require it to be greater than or equal to vars.redeemTokens
-                        (cErc20Balances[cAsset][lender] - utilizedCErc20Balances[cAsset][lender]) >= vars.redeemTokens,
-                        "Lender does not have a sufficient balance to serve this loan"
-                    );
-
-                    // update the lenders utilized balance
-                    utilizedCErc20Balances[cAsset][lender] += vars.redeemTokens;
+            // check if lender has sufficient balance and update utilizedBalance
+            _checkAndUpdateLenderBalanceInternal(
+                cAsset,
+                signedOffer.loanAmount,
+                lender
+            );
 
                     // update LoanAuction struct
                     loanAuction.nftOwner = nftOwner;
@@ -312,7 +293,7 @@ contract LendingAuction is LiquidityProviders {
                     loanAuction.loanAmountDrawn = signedOffer.loanAmount;
                     loanAuction.fixedTerms = signedOffer.fixedTerms;
 
-                    // 15
+
                     // transferFrom NFT from nftOwner to contract
                     IERC721(signedOffer.nftContractAddress).transferFrom(
                         nftOwner,
@@ -343,10 +324,16 @@ contract LendingAuction is LiquidityProviders {
                     );                 
                 }
 
-            }
+        }
+        // else if loan is active, create path for borrower to pay off loan and accept new bid
+        else if (loanAuction.loanExecutedTime != 0) {
 
-        
+            // calculate bestBidBuyOutbyborrower OR fullRepayment and intiating new executeLoanByBid
+            repayRemainingLoan(_nftContractAddress, _nftId);
+            executeLoanByBid(signedOffer, signature, nftId, cAsset);
+        }
 
+        return 0;
     }
 
     function _redeemAndTransferErc20Internal(
@@ -391,6 +378,41 @@ contract LendingAuction is LiquidityProviders {
         // Send Eth to borrower
         (bool success, ) = (nftOwner).call{value: amount}("");
         require(success, "Send eth to depositor failed");
+
+        return 0;
+    }
+
+    function _checkAndUpdateLenderBalanceInternal(
+        address cAsset,
+        uint256 amount,
+        address lender
+    ) 
+        internal 
+        returns (uint)
+    {
+        // Create a reference to the corresponding cToken contract, like cDAI
+                    CErc20 cToken = CErc20(cAsset);
+
+                    //Instantiate RedeemLocalVars
+                    RedeemLocalVars memory vars;
+
+                    vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
+
+                    // convert amount to cErc20
+                    (vars.mathErr, vars.redeemTokens) = divScalarByExpTruncate(amount, Exp({mantissa: vars.exchangeRateMantissa}));
+                    if (vars.mathErr != MathError.NO_ERROR) {
+                        return failOpaque(Error.MATH_ERROR, FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED, uint(vars.mathErr));
+                    }
+
+                    // require that the lenders balance is sufficent to serve the loan
+                    require(
+                        // calculate lenders available cErc20 balance and require it to be greater than or equal to vars.redeemTokens
+                        (cErc20Balances[cAsset][lender] - utilizedCErc20Balances[cAsset][lender]) >= vars.redeemTokens,
+                        "Lender does not have a sufficient balance to serve this loan"
+                    );
+
+                    // update the lenders utilized balance
+                    utilizedCErc20Balances[cAsset][lender] += vars.redeemTokens;
 
         return 0;
     }
@@ -539,7 +561,7 @@ contract LendingAuction is LiquidityProviders {
         );
     }
 
-    function repayFullLoan(address _nftContractAddress, uint256 _nftId)
+    function repayRemainingLoan(address _nftContractAddress, uint256 _nftId)
         public
         payable
     {
@@ -557,7 +579,8 @@ contract LendingAuction is LiquidityProviders {
         // get required repayment
         uint256 fullRepayment = calculateFullRepayment(
             _nftContractAddress,
-            _nftId
+            _nftId,
+            loanAuction.asset
         );
 
         // Require that loan has been executed
@@ -567,9 +590,27 @@ contract LendingAuction is LiquidityProviders {
         );
         // check that transaction covers the full value of the loan
         require(
-            msg.value >= fullRepayment,
-            "Must repay full amount of loan drawn plus interest. Account for additional time for interest."
+            asset == loanAuction.asset,
+            "Repayment asset must be same as loan asset"
         );
+
+         // if asset is not 0x0 process as Erc20
+                if (loanAuction.asset != 0x0000000000000000000000000000000000000000) {
+
+                    // convet fullRepayment to cTokens and transfer to lender             
+
+                }
+                // else process as ETH
+                else if (loanAuction.asset == 0x0000000000000000000000000000000000000000) {
+                    // check that transaction covers the full value of the loan
+                    require(
+                        msg.value >= fullRepayment,
+                        "Must repay full amount of loan drawn plus interest. Account for additional time for interest."
+                    );
+                    
+                    //    convet msg.value to cTokens and transfer to lender                 
+                }
+
 
         // reset loanAuction
         loanAuction.nftOwner = 0x0000000000000000000000000000000000000000;
@@ -727,7 +768,7 @@ contract LendingAuction is LiquidityProviders {
     }
 
     // need to ensure that repayment calculates each of the interest amounts for each of the bestBidders and pays out cumulative value
-    function calculateFullRepayment(address _nftContractAddress, uint256 _nftId)
+    function calculateFullRepayment(address _nftContractAddress, uint256 _nftId, address asset)
         public
         view
         returns (uint256)
