@@ -202,11 +202,11 @@ contract LendingAuction is LiquidityProviders {
             "Cannot execute bid or ask. Signature has been cancelled or previously finalized."
         );
 
-        // 12
+
         // get nft owner
         address nftOwner = IERC721(signedOffer.nftContractAddress).ownerOf(nftId);
 
-        // require msg.sender is the nftOwner. This ensures function submitted nftId is valid.
+        // require msg.sender is the nftOwner. This ensures function submitted nftId is valid to execute against
         require(
             nftOwner == msg.sender,
             "Msg.sender must be the owner of nftId to executeLoanByBid"
@@ -234,17 +234,24 @@ contract LendingAuction is LiquidityProviders {
                     signedOffer,
                     cAsset,
                     lender,
-                    nftOwner
+                    nftOwner,
+                    signature
                 );
             }
 
             // if floorTerm is true
+            if (signedOffer.floorTerm == true) {
             // requrie msg.sender or signer is the nftOwner of any nft at nftContractAddress
+                _executeLoanByBidFloorTermInternal(
+                    signedOffer,
+                    cAsset,
+                    nftId,
+                    lender,
+                    nftOwner,
+                    signature
+                );
+            }
 
-        // else if loan is active, create path for borrower to pay off loan and accept new bid
-        // else if (loanAuction.loanExecutedTime != 0) {
-
-        // }
 
         return 0;
     }
@@ -253,14 +260,14 @@ contract LendingAuction is LiquidityProviders {
         Offer memory signedOffer,
         address cAsset,
         address lender,
-        address nftOwner // 10 variables
+        address nftOwner, // 10 variables
+        bytes memory signature
     ) 
         internal 
         returns (uint)
     {
         // checks done in executeLoanByBid
 
-        // 11
         // Instantiate LoanAuction Struct
         LoanAuction storage loanAuction = loanAuctions[signedOffer.nftContractAddress][
             signedOffer.nftId
@@ -328,9 +335,99 @@ contract LendingAuction is LiquidityProviders {
         // else if loan is active, create path for borrower to pay off loan and accept new bid
         else if (loanAuction.loanExecutedTime != 0) {
 
-            // calculate bestBidBuyOutbyborrower OR fullRepayment and intiating new executeLoanByBid
-            repayRemainingLoan(_nftContractAddress, _nftId);
-            executeLoanByBid(signedOffer, signature, nftId, cAsset);
+            // may be better to refactor and create specific bestBidBuyOutbyborrower function
+            // calculate fullRepayment and intiate new executeLoanByBid
+            repayRemainingLoan(signedOffer.nftContractAddress, signedOffer.nftId);
+            executeLoanByBid(signedOffer, signature, signedOffer.nftId, cAsset);
+        }
+
+        return 0;
+    }
+
+    function _executeLoanByBidFloorTermInternal(
+        Offer memory signedOffer,
+        address cAsset,
+        uint256 nftId,
+        address lender,
+        address nftOwner, // 10 variables
+        bytes memory signature
+    ) 
+        internal 
+        returns (uint)
+    {
+        // checks done in executeLoanByBid
+
+        // Instantiate LoanAuction Struct
+        LoanAuction storage loanAuction = loanAuctions[signedOffer.nftContractAddress][
+            signedOffer.nftId
+        ];
+
+        // if loan is not active execute intial loan
+        if (loanAuction.loanExecutedTime == 0) {
+
+            // finalize signature
+            cancelledOrFinalized[signature] == true;
+
+            // check if lender has sufficient balance and update utilizedBalance
+            _checkAndUpdateLenderBalanceInternal(
+                cAsset,
+                signedOffer.loanAmount,
+                lender
+            );
+
+                    // update LoanAuction struct
+                    loanAuction.nftOwner = nftOwner;
+                    loanAuction.askLoanAmount = signedOffer.loanAmount;
+                    loanAuction.bestBidder = lender;
+                    loanAuction.bestBidAsset = signedOffer.asset;
+                    loanAuction.bestBidLoanAmount = signedOffer.loanAmount;
+                    loanAuction.bestBidInterestRate = signedOffer.interestRate;
+                    loanAuction.bestBidLoanDuration = signedOffer.duration;
+                    loanAuction.bestBidTime = block.timestamp;
+                    loanAuction.loanExecutedTime = block.timestamp;
+                    loanAuction.loanEndTime = block.timestamp + signedOffer.duration;
+                    loanAuction.loanAmountDrawn = signedOffer.loanAmount;
+                    loanAuction.fixedTerms = signedOffer.fixedTerms;
+
+
+                    // transferFrom NFT from nftOwner to contract
+                    IERC721(signedOffer.nftContractAddress).transferFrom(
+                        nftOwner,
+                        address(this),
+                        signedOffer.nftId
+                    );   
+
+                // if asset is not 0x0 process as Erc20
+                if (signedOffer.asset != 0x0000000000000000000000000000000000000000) {
+
+                    // redeem cTokens and transfer underlying to borrower
+                    _redeemAndTransferErc20Internal(
+                        signedOffer.asset,
+                        cAsset,
+                        signedOffer.loanAmount,
+                        nftOwner
+                    );                 
+
+                }
+                // else process as ETH
+                else if (signedOffer.asset == 0x0000000000000000000000000000000000000000) {
+                    
+                    // redeem cTokens and transfer underlying to borrower
+                    _redeemAndTransferEthInternal(
+                        cAsset,
+                        signedOffer.loanAmount,
+                        nftOwner
+                    );                 
+                }
+
+        }
+        // else if loan is active, create path for borrower to pay off loan and accept new bid
+        else if (loanAuction.loanExecutedTime != 0) {
+
+            // may be better to refactor and create specific bestBidBuyOutbyborrower function
+            // calculate fullRepayment and intiate new executeLoanByBid
+            repayRemainingLoan(signedOffer.nftContractAddress, signedOffer.nftId);
+            executeLoanByBid(signedOffer, signature, signedOffer.nftId, cAsset);
         }
 
         return 0;
@@ -580,7 +677,7 @@ contract LendingAuction is LiquidityProviders {
         uint256 fullRepayment = calculateFullRepayment(
             _nftContractAddress,
             _nftId,
-            loanAuction.asset
+            loanAuction.bestBidAsset
         );
 
         // Require that loan has been executed
@@ -588,20 +685,15 @@ contract LendingAuction is LiquidityProviders {
             loanAuction.loanExecutedTime != 0,
             "Cannot repay loan that has not been executed"
         );
-        // check that transaction covers the full value of the loan
-        require(
-            asset == loanAuction.asset,
-            "Repayment asset must be same as loan asset"
-        );
 
          // if asset is not 0x0 process as Erc20
-                if (loanAuction.asset != 0x0000000000000000000000000000000000000000) {
+                if (loanAuction.bestBidAsset != 0x0000000000000000000000000000000000000000) {
 
                     // convet fullRepayment to cTokens and transfer to lender             
 
                 }
                 // else process as ETH
-                else if (loanAuction.asset == 0x0000000000000000000000000000000000000000) {
+                else if (loanAuction.bestBidAsset == 0x0000000000000000000000000000000000000000) {
                     // check that transaction covers the full value of the loan
                     require(
                         msg.value >= fullRepayment,
