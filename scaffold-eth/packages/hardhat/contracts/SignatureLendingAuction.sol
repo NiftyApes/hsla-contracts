@@ -874,25 +874,6 @@ contract SignatureLendingAuction is LiquidityProviders {
             bestBidderInterest;
     }
 
-    // Internal function that pays off the previous bestBidder.
-    // Includes interest if loan is active.
-    // function _buyOutBestBid(address _prevBestBidder, uint256 _buyOutAmount)
-    //     internal
-    // {
-    //     // send buyOutAmount to previous bestBidder
-    //     (bool success, ) = _prevBestBidder.call{value: _buyOutAmount}("");
-    //     require(success, "Buy out failed.");
-    // }
-
-    // function _getNFTOwner(address _nftContractAddress, uint256 _nftId)
-    //     public
-    //     view
-    //     returns (address _nftOwner)
-    // {
-    //     console.log(IERC721(_nftContractAddress).ownerOf(_nftId));
-    //     return IERC721(_nftContractAddress).ownerOf(_nftId);
-    // }
-
     // @notice By calling 'revert' in the fallback function, we prevent anyone
     //         from accidentally sending funds directly to this contract.
     // function() external payable {
