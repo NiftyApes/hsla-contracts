@@ -15,14 +15,16 @@ contract SignatureLendingAuction is LiquidityProviders {
     // ---------- STRUCTS --------------- //
 
     struct LoanAuction {
-        // NFT owner
+        // NFT owner 
         address nftOwner;
         // Current bestBidder
         address bestBidder;
         // ask loan amount
-        uint256 askLoanAmount;
-        // // ask interest rate
+        // uint256 askLoanAmount; // I believe we can remove this since we are forcing transferring of funds at the time of loan execution in this implementation. 
+        // best bid asset
         address bestBidAsset; // 0x0 in active loan denotes ETH
+        // best bid cAsset
+        address bestBidCAsset; // 0x0 in active loan denotes ETH
         // best bid loan amount. includes accumulated interest in an active loan.
         uint256 bestBidLoanAmount;
         // best bid interest rate
@@ -116,6 +118,7 @@ contract SignatureLendingAuction is LiquidityProviders {
         address indexed _nftContractAddress,
         uint256 indexed _nftId,
         uint256 _drawAmount,
+        uint256 _drawAmountMinusFee,
         uint256 _totalDrawn
     );
 
@@ -270,7 +273,7 @@ contract SignatureLendingAuction is LiquidityProviders {
 
             // update LoanAuction struct
             loanAuction.nftOwner = nftOwner;
-            loanAuction.askLoanAmount = signedOffer.loanAmount;
+            // loanAuction.askLoanAmount = signedOffer.loanAmount;
             loanAuction.bestBidder = lender;
             loanAuction.bestBidAsset = signedOffer.asset;
             loanAuction.bestBidLoanAmount = signedOffer.loanAmount;
@@ -394,7 +397,7 @@ contract SignatureLendingAuction is LiquidityProviders {
 
         // update LoanAuction struct
         loanAuction.nftOwner = nftOwner;
-        loanAuction.askLoanAmount = signedOffer.loanAmount;
+        // loanAuction.askLoanAmount = signedOffer.loanAmount;
         loanAuction.bestBidder = lender;
         loanAuction.bestBidAsset = signedOffer.asset;
         loanAuction.bestBidLoanAmount = signedOffer.loanAmount;
@@ -565,75 +568,85 @@ contract SignatureLendingAuction is LiquidityProviders {
     }
 
     function drawLoan(
-        address _nftContractAddress,
-        uint256 _nftId,
-        uint256 _drawAmount
+        address nftContractAddress,
+        uint256 nftId,
+        uint256 drawAmount
     ) public {
         // Instantiate LoanAuction Struct
-        LoanAuction storage loanAuction = loanAuctions[_nftContractAddress][
-            _nftId
+        LoanAuction storage loanAuction = loanAuctions[nftContractAddress][
+            nftId
         ];
 
-        // get nft owner
-        address _nftOwner = IERC721(_nftContractAddress).ownerOf(_nftId);
-
-        // Ensure that loan is active
+        // Require that loan is active
         require(
             loanAuction.loanExecutedTime != 0,
             "Loan is not active. No funds to withdraw."
         );
 
-        // if loanAuction.nftOwner is not set
-        if (
-            loanAuction.nftOwner == 0x0000000000000000000000000000000000000000
-        ) {
-            // Ensure msg.sender is the nftOwner on the nft contract
-            require(msg.sender == _nftOwner, "Msg.sender is not the NFT owner");
-        }
-        // else verify msg.sender is loanAuction.nftOwner
-        else {
-            // Ensure msg.sender is the current nftOwner
-            require(
-                msg.sender == loanAuction.nftOwner,
-                "Msg.sender is not the NFT owner"
-            );
-            // Set _nftOwner to loanAuction.nftOwner contract value
-            _nftOwner = loanAuction.nftOwner;
-        }
-        // Ensure that _drawAmount does not exceed bestBidLoanAmount
+        // Require msg.sender is the nftOwner on the nft contract
         require(
-            (_drawAmount + loanAuction.loanAmountDrawn) <=
+            msg.sender == loanAuction.nftOwner,
+            "Msg.sender is not the NFT owner"
+        );
+
+        // Require loanAmountDrawn is less than the bestBidAmount
+        require(
+            loanAuction.loanAmountDrawn < loanAuction.bestBidLoanAmount,
+            "Draw down amount not available"
+        );
+
+        // Require that drawAmount does not exceed bestBidLoanAmount
+        require(
+            (drawAmount + loanAuction.loanAmountDrawn) <=
                 loanAuction.bestBidLoanAmount,
             "Total amount withdrawn must not exceed best bid loan amount"
         );
-        // Ensure that totalDrawn is greater than or equal to askLoanAmount
-        require(
-            (_drawAmount + loanAuction.loanAmountDrawn) >=
-                loanAuction.askLoanAmount,
-            "Total amount withdrawn must meet or exceed ask loan amount"
+
+        _checkAndUpdateLenderBalanceInternal(
+            loanAuction.bestBidCAsset,
+            drawAmount,
+            loanAuction.bestBidder
         );
 
         // set loanAmountDrawn
-        loanAuction.loanAmountDrawn = _drawAmount + loanAuction.loanAmountDrawn;
+        loanAuction.loanAmountDrawn += drawAmount;
 
-        // calculate fee and subtract from _drawAmount
-        uint256 feeAmount = 0;
-        uint256 drawAmountMinusFee = 0;
+        // calculate fee and subtract from drawAmount
+        uint256 drawAmountMinusFee = drawAmount - loanDrawFee;
 
         // transfer funds to treasury or smart contract address
 
-        // if bestBidAsset = 0x0
-        (bool success, ) = _nftOwner.call{value: drawAmountMinusFee}("");
-        require(success, "Loan withdrawal failed");
-        // else redeem ctokens and transfer erc20 to borrower
+        // if asset is not 0x0 process as Erc20
+        if (loanAuction.bestBidAsset != 0x0000000000000000000000000000000000000000) {
+            // redeem cTokens and transfer underlying to borrower
+            _redeemAndTransferErc20Internal(
+                loanAuction.bestBidAsset,
+                loanAuction.bestBidCAsset,
+                drawAmountMinusFee,
+                loanAuction.nftOwner
+            );
+        }
+        // else process as ETH
+        else if (
+            loanAuction.bestBidAsset == 0x0000000000000000000000000000000000000000
+        ) {
+            // redeem cTokens and transfer underlying to borrower
+            _redeemAndTransferEthInternal(
+                loanAuction.bestBidCAsset,
+                drawAmountMinusFee,
+                loanAuction.nftOwner
+            );
+        }
 
         emit LoanDrawn(
-            _nftContractAddress,
-            _nftId,
-            _drawAmount,
+            nftContractAddress,
+            nftId,
+            drawAmount,
+            drawAmountMinusFee,
             loanAuction.loanAmountDrawn
         );
     }
+    
 
     function repayRemainingLoan(address _nftContractAddress, uint256 _nftId)
         public
@@ -686,7 +699,7 @@ contract SignatureLendingAuction is LiquidityProviders {
 
         // reset loanAuction
         loanAuction.nftOwner = 0x0000000000000000000000000000000000000000;
-        loanAuction.askLoanAmount = 0;
+        // loanAuction.askLoanAmount = 0;
         // loanAuction.askInterestRate = 0;
         // loanAuction.askLoanDuration = 0;
         loanAuction.bestBidder = 0x0000000000000000000000000000000000000000;
@@ -739,7 +752,7 @@ contract SignatureLendingAuction is LiquidityProviders {
 
         // reset loanAuction
         loanAuction.nftOwner = 0x0000000000000000000000000000000000000000;
-        loanAuction.askLoanAmount = 0;
+        // loanAuction.askLoanAmount = 0;
         // loanAuction.askInterestRate = 0;
         // loanAuction.askLoanDuration = 0;
         loanAuction.bestBidder = 0x0000000000000000000000000000000000000000;
@@ -816,10 +829,10 @@ contract SignatureLendingAuction is LiquidityProviders {
 
         if (loanAuction.loanAmountDrawn == 0) {
             // percent of value of askLoanAmount earned
-            _percentOfValue = SafeMath.mul(
-                loanAuction.askLoanAmount,
-                _percentOfLoanTimeAsBestBid
-            );
+            // _percentOfValue = SafeMath.mul(
+            //     loanAuction.askLoanAmount,
+            //     _percentOfLoanTimeAsBestBid
+            // );
         } else if (loanAuction.loanAmountDrawn != 0) {
             // percent of value of loanAmountDrawn earned
             _percentOfValue = SafeMath.mul(
