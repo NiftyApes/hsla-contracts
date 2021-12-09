@@ -710,7 +710,41 @@ contract SignatureLendingAuction is LiquidityProviders {
         address nftContractAddress,
         uint256 nftId,
         uint256 drawTime
-    ) public {}
+    ) public {
+         // Instantiate LoanAuction Struct
+        LoanAuction storage loanAuction = loanAuctions[nftContractAddress][
+            nftId
+        ];
+
+        // Require that loan is active
+        require(
+            loanAuction.loanExecutedTime != 0,
+            "Loan is not active. No funds to withdraw."
+        );
+
+        // Require msg.sender is the nftOwner on the nft contract
+        require(
+            msg.sender == loanAuction.nftOwner,
+            "Msg.sender is not the NFT owner"
+        );
+
+        // Require loanAmountDrawn is less than the bestBidAmount
+        require(
+            loanAuction.loanTimeDrawn < loanAuction.bestBidLoanDuration,
+            "Draw Time amount not available"
+        );
+
+        // Require that drawAmount does not exceed bestBidLoanAmount
+        require(
+            (drawTime + loanAuction.loanTimeDrawn) <=
+                loanAuction.bestBidLoanDuration,
+            "Total Time drawn must not exceed best bid duration"
+        );
+
+        // set loanAmountDrawn
+        loanAuction.loanTimeDrawn += drawTime;
+
+    }
 
     function drawLoanAmount(
         address nftContractAddress,
