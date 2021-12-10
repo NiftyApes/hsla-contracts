@@ -556,14 +556,15 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
     // need to work out how to calculate the amount of comp accrued to each deposit. Might need a struct for each balance which tracks the amount of time elapsed for each segment of value.
     function withdrawCompEarned() public {}
 
-    function calculateCompEarned()
-        public
-    // need to querty the COMP distribution rate at the time of deposit
+    // need to query the COMP distribution rate at the time of deposit
     // the COMP distribution rate can only change per asset via a COMP DAO VOTE
 
     // the answer to this is in 'distributeSupplierComp' in comptrollerG7.sol
     // this may also provide a method to calculate interest accrued by lenders
     // checkout updateContributorRewards
+    function calculateCompEarned()
+        public
+
 
     {
 
