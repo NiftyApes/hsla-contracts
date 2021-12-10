@@ -718,6 +718,12 @@ contract SignatureLendingAuction is LiquidityProviders {
             "Msg.sender is not the NFT owner"
         );
 
+        // Require that loan has not expired
+        require(
+            block.timestamp < loanAuction.loanExecutedTime + loanAuction.loanTimeDrawn,
+            "Cannot seize asset before the end of the loan"
+        );
+
         // Require loanAmountDrawn is less than the bestBidAmount
         require(
             loanAuction.loanTimeDrawn < loanAuction.bestBidLoanDuration,
@@ -960,6 +966,14 @@ contract SignatureLendingAuction is LiquidityProviders {
         return 0;
     }
 
+    function partialPayment(address _nftContractAddress, uint256 _nftId)
+        public
+        payable
+        returns (uint256)
+    {
+
+    }
+
     // allows anyone to seize an asset of a past due loan on behalf on the bestBidder
     function seizeAsset(address _nftContractAddress, uint256 _nftId) public {
         // Instantiate LoanAuction Struct
@@ -967,37 +981,43 @@ contract SignatureLendingAuction is LiquidityProviders {
             _nftId
         ];
 
-        // temporarily save current bestBidder
-        address currentBestBidder = loanAuction.bestBidder;
-
         // Require that loan has been executed
         require(
             loanAuction.loanExecutedTime != 0,
             "Cannot seize asset for loan that has not been executed"
         );
+
         // Require that loan has expired
-        // loenExecutedTime + loantimeDrawn = loanEndTime
-        // require(
-        //     block.timestamp >= loanAuction.loanEndTime,
-        //     "Cannot seize asset before the end of the loan"
-        // );
+        require(
+            block.timestamp >= loanAuction.loanExecutedTime + loanAuction.loanTimeDrawn,
+            "Cannot seize asset before the end of the loan"
+        );
+
+        // temporarily save current bestBidder
+        address currentBestBidder = loanAuction.bestBidder;
+
+        // update lenders utilized and total balance
+        utilizedCErc20Balances[loanAuction.bestBidCAsset][loanAuction.bestBidder] -= loanAuction.loanAmountDrawn;
+        cErc20Balances[loanAuction.bestBidCAsset][loanAuction.bestBidder] -= loanAuction.loanAmountDrawn;
 
         // reset loanAuction
         loanAuction.nftOwner = 0x0000000000000000000000000000000000000000;
-        // loanAuction.askLoanAmount = 0;
-        // loanAuction.askInterestRate = 0;
-        // loanAuction.askLoanDuration = 0;
         loanAuction.bestBidder = 0x0000000000000000000000000000000000000000;
         loanAuction.bestBidAsset = 0x0000000000000000000000000000000000000000;
+        loanAuction.bestBidCAsset = 0x0000000000000000000000000000000000000000;
         loanAuction.bestBidLoanAmount = 0;
         loanAuction.bestBidInterestRate = 0;
         loanAuction.bestBidLoanDuration = 0;
         loanAuction.bestBidTime = 0;
         loanAuction.loanExecutedTime = 0;
-        // loanAuction.loanEndTime = 0;
+        loanAuction.historicInterest = 0;
         loanAuction.loanAmountDrawn = 0;
+        loanAuction.loanTimeDrawn = 0;
+        loanAuction.fixedTerms = false;
 
         // update lenders utilized and total balance
+        utilizedCErc20Balances[loanAuction.bestBidCAsset][loanAuction.bestBidder] -= loanAuction.loanAmountDrawn;
+        cErc20Balances[loanAuction.bestBidCAsset][loanAuction.bestBidder] -= loanAuction.loanAmountDrawn;
 
         // transferFrom NFT from contract to bestBidder
         IERC721(_nftContractAddress).transferFrom(
