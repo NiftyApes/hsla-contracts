@@ -97,8 +97,10 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
     mapping(address => mapping(address => uint256))
         public utilizedCErc20Balances;
 
-    // track an array of all assets a lender has deposited
-    // provide a getter function that returns all assets deposited
+    /**
+     * @notice Mapping of allCAssetsEntered to depositorddress
+     */
+   mapping(address => CAsset[]) public accountAssets;
     // needed to calulate the lenders total value deposited on the platform
 
     // ---------- EVENTS --------------- //
@@ -115,12 +117,11 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
 
     // ---------- FUNCTIONS -------------- //
 
-    // Research compound to see how they are storing this data
-    // function getAssetsIn(address account) external view returns (CToken[] memory) {
-    //     CToken[] memory assetsIn = accountAssets[account];
+    function getAssetsIn(address account) external view returns (CAsset[] memory) {
+        CAsset[] memory assetsIn = accountAssets[account];
 
-    //     return assetsIn;
-    // }
+        return assetsIn;
+    }
 
     // returns number of cErc20 tokens added to balance
     function supplyErc20(
