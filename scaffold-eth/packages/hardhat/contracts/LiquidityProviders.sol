@@ -98,9 +98,9 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
         public utilizedCErc20Balances;
 
     /**
-     * @notice Mapping of allCAssetsEntered to depositorddress
+     * @notice Mapping of allCAssetsEntered to depositorAddress
      */
-   mapping(address => CAsset[]) public accountAssets;
+    mapping(address => address[]) public accountAssets;
     // needed to calulate the lenders total value deposited on the platform
 
     // ---------- EVENTS --------------- //
@@ -117,8 +117,8 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
 
     // ---------- FUNCTIONS -------------- //
 
-    function getAssetsIn(address account) external view returns (CAsset[] memory) {
-        CAsset[] memory assetsIn = accountAssets[account];
+    function getAssetsIn(address account) external view returns (address[] memory) {
+        address[] memory assetsIn = accountAssets[account];
 
         return assetsIn;
     }
@@ -139,10 +139,13 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
         // Create a reference to the corresponding cToken contract, like cDAI
         CErc20 cToken = CErc20(_cErc20Contract);
 
+        // need to require that the erc20ContratAddress and cErc20ContractAddress refer to the same asset. 
+
         // should have require statement to ensure tranfer is successful before proceeding
         // transferFrom ERC20 from depositors address
         underlying.transferFrom(msg.sender, address(this), _numTokensToSupply);
 
+        // need to provide 
         // Approve transfer on the ERC20 contract from LiquidityProviders contract
         underlying.approve(_cErc20Contract, _numTokensToSupply);
 
@@ -163,9 +166,7 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
         uint256 mintResult = cToken.mint(_numTokensToSupply);
 
         // updating the depositors cErc20 balance
-        cErc20Balances[_cErc20Contract][msg.sender] = cErc20Balances[
-            _cErc20Contract
-        ][msg.sender] += vars.mintTokens;
+        cErc20Balances[_cErc20Contract][msg.sender] += vars.mintTokens;
 
         return vars.mintTokens;
     }
@@ -185,9 +186,7 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
         cToken.transferFrom(msg.sender, address(this), _numTokensToSupply);
 
         // updating the depositors cErc20 balance
-        cErc20Balances[_cErc20Contract][msg.sender] = cErc20Balances[
-            _cErc20Contract
-        ][msg.sender] += _numTokensToSupply;
+        cErc20Balances[_cErc20Contract][msg.sender] += _numTokensToSupply;
 
         return _numTokensToSupply;
     }
@@ -206,6 +205,9 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
 
         // Create a reference to the corresponding cToken contract, like cDAI
         CErc20 cToken = CErc20(_cErc20Contract);
+
+        // require availble balance is sufficent
+        // check total balance - utilized balance
 
         // require msg.sender has sufficient balance of cErc20
         require(
@@ -267,6 +269,8 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
             );
             console.log("vars.redeemAmount", vars.redeemAmount);
             console.log("vars.redeemTokens", vars.redeemTokens);
+
+            // requre avail balance
 
             // require msg.sender has sufficient balance of cErc20
             require(

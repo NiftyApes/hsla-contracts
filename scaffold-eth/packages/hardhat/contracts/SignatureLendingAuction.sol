@@ -334,6 +334,7 @@ contract SignatureLendingAuction is LiquidityProviders {
         else if (loanAuction.loanExecutedTime != 0) {
             // may be better to refactor and create specific bestBidBuyOutbyborrower function
             // calculate fullRepayment and intiate new executeLoanByBid
+            // might need to buyOutBestBid
             repayRemainingLoan(signedOffer.nftContractAddress, nftId);
             _executeLoanByBidInternal(
                 signedOffer,
