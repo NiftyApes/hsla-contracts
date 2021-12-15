@@ -17,8 +17,8 @@ contract SignatureLendingAuction is LiquidityProviders {
     struct LoanAuction {
         // NFT owner 1
         address nftOwner;
-        // Current bestBidder 2
-        address bestBidder;
+        // Current lender 2
+        address lender;
         // loan asset 3
         address asset; // 0x0 in active loan denotes ETH
         // loan cAsset 4
@@ -33,7 +33,7 @@ contract SignatureLendingAuction is LiquidityProviders {
         uint256 bestBidTime;
         // timestamp of loan execution 9
         uint256 loanExecutedTime;
-        // Cumulative interest of varying rates paid by new bestBidders to buy out the loan auction 10
+        // Cumulative interest of varying rates paid by new lenders to buy out the loan auction 10
         uint256 historicInterest;
         // amount withdrawn by the nftOwner. This is the amount they will pay interest on, with this value as minimum. 11
         uint256 amountDrawn;
@@ -69,7 +69,7 @@ contract SignatureLendingAuction is LiquidityProviders {
 
     // need admin function to update fees
     uint256 loanDrawFeeProtocolPercentage = SafeMath.div(1, 100);
-    uint256 buyOutPremiumBestBidderPrecentage = SafeMath.div(9, 1000);
+    uint256 buyOutPremiumlenderPrecentage = SafeMath.div(9, 1000);
     uint256 buyOutPremiumProtocolPrecentage = SafeMath.div(1, 1000);
 
     // All fees are transfered to this smart contract
@@ -78,7 +78,7 @@ contract SignatureLendingAuction is LiquidityProviders {
 
     // New Best Bid event
     event NewBestBid(
-        address _bestBidder,
+        address _lender,
         address indexed _nftContractAddress,
         uint256 indexed _nftId,
         uint256 _loanAmount,
@@ -105,7 +105,7 @@ contract SignatureLendingAuction is LiquidityProviders {
     );
 
     event LoanExecuted(
-        address _bestBidder,
+        address _lender,
         address _nftOwner,
         address indexed _nftContractAddress,
         uint256 indexed _nftId,
@@ -288,7 +288,7 @@ contract SignatureLendingAuction is LiquidityProviders {
 
             // update LoanAuction struct
             loanAuction.nftOwner = nftOwner;
-            loanAuction.bestBidder = lender;
+            loanAuction.lender = lender;
             loanAuction.asset = signedOffer.asset;
             loanAuction.loanAmount = signedOffer.loanAmount;
             loanAuction.interestRate = signedOffer.interestRate;
@@ -423,7 +423,7 @@ contract SignatureLendingAuction is LiquidityProviders {
 
         // update LoanAuction struct
         loanAuction.nftOwner = nftOwner;
-        loanAuction.bestBidder = lender;
+        loanAuction.lender = lender;
         loanAuction.asset = signedOffer.asset;
         loanAuction.loanAmount = signedOffer.loanAmount;
         loanAuction.interestRate = signedOffer.interestRate;
@@ -604,13 +604,13 @@ contract SignatureLendingAuction is LiquidityProviders {
             "Bid must have better terms than current best bid"
         );
 
-        // calculate the interest earned by current bestBidder
+        // calculate the interest earned by current lender
         uint256 fullBidBuyOutAmount = calculateFullBidBuyOut(
             offer.nftContractAddress,
             offer.nftId
         );
 
-        uint256 bestBidderInterest = calculateInterestAccruedByBestBidder(
+        uint256 lenderInterest = calculateInterestAccruedBylender(
             offer.nftContractAddress,
             offer.nftId,
             block.timestamp
@@ -621,9 +621,9 @@ contract SignatureLendingAuction is LiquidityProviders {
             buyOutPremiumProtocolPrecentage;
 
         // calculate interest earned
-        uint256 interestAndPremiumOwedToLender = bestBidderInterest +
+        uint256 interestAndPremiumOwedToLender = lenderInterest +
             loanAuction.historicInterest +
-            (loanAuction.amountDrawn * buyOutPremiumBestBidderPrecentage);
+            (loanAuction.amountDrawn * buyOutPremiumlenderPrecentage);
 
         uint256 msgValueMinusProtocolPremiumFee = msg.value -
             (loanAuction.amountDrawn * buyOutPremiumProtocolPrecentage);
@@ -686,25 +686,25 @@ contract SignatureLendingAuction is LiquidityProviders {
 
             // update the lenders utilized balance
             utilizedCErc20Balances[loanAuction.cAsset][
-                loanAuction.bestBidder
+                loanAuction.lender
             ] -= amountDrawnTokens;
 
             // update the lenders total balance
             cErc20Balances[loanAuction.cAsset][
-                loanAuction.bestBidder
+                loanAuction.lender
             ] += interestAndPremiumTokens;
         }
         // else process as ETH
         else if (
             loanAuction.asset == 0x0000000000000000000000000000000000000000
         ) {
-            // require transaction has enough value to pay out current bestBidder
+            // require transaction has enough value to pay out current lender
             require(
                 msg.value >= fullBidBuyOutAmount,
-                "Transaction must contain enough value to pay out currentBestBidder plus premium"
+                "Transaction must contain enough value to pay out currentlender plus premium"
             );
 
-            // pay out principle, interest, historicInterest, and premium to currentBestBidder
+            // pay out principle, interest, historicInterest, and premium to currentlender
             CEth cToken = CEth(loanAuction.cAsset);
 
             // calculate expectedAmountToBeMinted
@@ -765,12 +765,12 @@ contract SignatureLendingAuction is LiquidityProviders {
 
             // update the lenders utilized balance
             utilizedCErc20Balances[loanAuction.cAsset][
-                loanAuction.bestBidder
+                loanAuction.lender
             ] -= amountDrawnTokens;
 
             // update the lenders total balance
             cErc20Balances[loanAuction.cAsset][
-                loanAuction.bestBidder
+                loanAuction.lender
             ] += (interestAndPremiumTokens + mintDelta);
         }
 
@@ -778,14 +778,14 @@ contract SignatureLendingAuction is LiquidityProviders {
         uint256 currentHistoricInterest = loanAuction.historicInterest;
 
         // update LoanAuction struct
-        loanAuction.bestBidder = msg.sender;
+        loanAuction.lender = msg.sender;
         loanAuction.loanAmount = offer.loanAmount;
         loanAuction.interestRate = offer.interestRate;
         loanAuction.loanDuration = offer.duration;
         loanAuction.bestBidTime = block.timestamp;
         loanAuction.historicInterest =
             currentHistoricInterest +
-            bestBidderInterest;
+            lenderInterest;
 
         return 0;
     }
@@ -897,7 +897,7 @@ contract SignatureLendingAuction is LiquidityProviders {
         _checkAndUpdateLenderBalanceInternal(
             loanAuction.cAsset,
             drawAmount,
-            loanAuction.bestBidder
+            loanAuction.lender
         );
 
         // set amountDrawn
@@ -968,17 +968,17 @@ contract SignatureLendingAuction is LiquidityProviders {
             "Msg.sender is not the NFT owner"
         );
 
-        // temporarily save current bestBidder
-        address currentBestBidder = loanAuction.bestBidder;
+        // temporarily save current lender
+        address currentlender = loanAuction.lender;
 
-        uint256 bestBidderInterest = calculateInterestAccruedByBestBidder(
+        uint256 lenderInterest = calculateInterestAccruedBylender(
             _nftContractAddress,
             _nftId,
             block.timestamp
         );
 
         // calculate interest earned
-        uint256 interestOwedToLender = bestBidderInterest +
+        uint256 interestOwedToLender = lenderInterest +
             loanAuction.historicInterest;
 
         // get required repayment
@@ -1041,12 +1041,12 @@ contract SignatureLendingAuction is LiquidityProviders {
 
             // update the lenders utilized balance
             utilizedCErc20Balances[loanAuction.cAsset][
-                loanAuction.bestBidder
+                loanAuction.lender
             ] -= amountDrawnTokens;
 
             // update the lenders total balance
             cErc20Balances[loanAuction.cAsset][
-                loanAuction.bestBidder
+                loanAuction.lender
             ] += interestTokens;
         }
         // else process as ETH
@@ -1121,18 +1121,18 @@ contract SignatureLendingAuction is LiquidityProviders {
 
             // update the lenders utilized balance
             utilizedCErc20Balances[loanAuction.cAsset][
-                loanAuction.bestBidder
+                loanAuction.lender
             ] -= amountDrawnTokens;
 
             // update the lenders total balance
             cErc20Balances[loanAuction.cAsset][
-                loanAuction.bestBidder
+                loanAuction.lender
             ] += (interestTokens + mintDelta);
         }
 
         // reset loanAuction
         loanAuction.nftOwner = 0x0000000000000000000000000000000000000000;
-        loanAuction.bestBidder = 0x0000000000000000000000000000000000000000;
+        loanAuction.lender = 0x0000000000000000000000000000000000000000;
         loanAuction.asset = 0x0000000000000000000000000000000000000000;
         loanAuction.cAsset = 0x0000000000000000000000000000000000000000;
         loanAuction.loanAmount = 0;
@@ -1253,12 +1253,12 @@ contract SignatureLendingAuction is LiquidityProviders {
 
             // update the lenders utilized balance
             utilizedCErc20Balances[loanAuction.cAsset][
-                loanAuction.bestBidder
+                loanAuction.lender
             ] -= paymentTokens;
 
             // update the lenders total balance
             cErc20Balances[loanAuction.cAsset][
-                loanAuction.bestBidder
+                loanAuction.lender
             ] += interestTokens;
         }
         // else process as ETH
@@ -1339,12 +1339,12 @@ contract SignatureLendingAuction is LiquidityProviders {
 
             // update the lenders utilized balance
             utilizedCErc20Balances[loanAuction.cAsset][
-                loanAuction.bestBidder
+                loanAuction.lender
             ] -= paymentTokens;
 
             // update the lenders total balance
             cErc20Balances[loanAuction.cAsset][
-                loanAuction.bestBidder
+                loanAuction.lender
             ] += (interestTokens + mintDelta);
         }
 
@@ -1354,7 +1354,7 @@ contract SignatureLendingAuction is LiquidityProviders {
         return 0;
     }
 
-    // allows anyone to seize an asset of a past due loan on behalf on the bestBidder
+    // allows anyone to seize an asset of a past due loan on behalf on the lender
     function seizeAsset(address _nftContractAddress, uint256 _nftId) public {
         // Instantiate LoanAuction Struct
         LoanAuction storage loanAuction = loanAuctions[_nftContractAddress][
@@ -1374,20 +1374,20 @@ contract SignatureLendingAuction is LiquidityProviders {
             "Cannot seize asset before the end of the loan"
         );
 
-        // temporarily save current bestBidder
-        address currentBestBidder = loanAuction.bestBidder;
+        // temporarily save current lender
+        address currentlender = loanAuction.lender;
 
         // update lenders utilized and total balance
         utilizedCErc20Balances[loanAuction.cAsset][
-            loanAuction.bestBidder
+            loanAuction.lender
         ] -= loanAuction.amountDrawn;
         cErc20Balances[loanAuction.cAsset][
-            loanAuction.bestBidder
+            loanAuction.lender
         ] -= loanAuction.amountDrawn;
 
         // reset loanAuction
         loanAuction.nftOwner = 0x0000000000000000000000000000000000000000;
-        loanAuction.bestBidder = 0x0000000000000000000000000000000000000000;
+        loanAuction.lender = 0x0000000000000000000000000000000000000000;
         loanAuction.asset = 0x0000000000000000000000000000000000000000;
         loanAuction.cAsset = 0x0000000000000000000000000000000000000000;
         loanAuction.loanAmount = 0;
@@ -1402,16 +1402,16 @@ contract SignatureLendingAuction is LiquidityProviders {
 
         // update lenders utilized and total balance
         utilizedCErc20Balances[loanAuction.cAsset][
-            loanAuction.bestBidder
+            loanAuction.lender
         ] -= loanAuction.amountDrawn;
         cErc20Balances[loanAuction.cAsset][
-            loanAuction.bestBidder
+            loanAuction.lender
         ] -= loanAuction.amountDrawn;
 
-        // transferFrom NFT from contract to bestBidder
+        // transferFrom NFT from contract to lender
         IERC721(_nftContractAddress).transferFrom(
             address(this),
-            currentBestBidder,
+            currentlender,
             _nftId
         );
 
@@ -1431,8 +1431,8 @@ contract SignatureLendingAuction is LiquidityProviders {
         return loanAuction.nftOwner;
     }
 
-    // returns the interest value earned by bestBidder on active amountDrawn
-    function calculateInterestAccruedByBestBidder(
+    // returns the interest value earned by lender on active amountDrawn
+    function calculateInterestAccruedBylender(
         address _nftContractAddress,
         uint256 _nftId,
         uint256 _timeOfInterest
@@ -1447,8 +1447,8 @@ contract SignatureLendingAuction is LiquidityProviders {
             "Loan must be active to calculate interest accrued"
         );
 
-        // calculate seconds as bestBidder
-        uint256 _secondsAsBestBidder = _timeOfInterest -
+        // calculate seconds as lender
+        uint256 _secondsAslender = _timeOfInterest -
             loanAuction.loanExecutedTime;
 
         // Seconds that loan has been active
@@ -1458,7 +1458,7 @@ contract SignatureLendingAuction is LiquidityProviders {
         // percent of total loan time as bestBid
         uint256 _percentOfLoanTimeAsBestBid = SafeMath.div(
             _secondsSinceLoanExecution,
-            _secondsAsBestBidder
+            _secondsAslender
         );
 
         // percent of value of amountDrawn earned
@@ -1485,7 +1485,7 @@ contract SignatureLendingAuction is LiquidityProviders {
             _nftId
         ];
 
-        uint256 bestBidderInterest = calculateInterestAccruedByBestBidder(
+        uint256 lenderInterest = calculateInterestAccruedBylender(
             _nftContractAddress,
             _nftId,
             block.timestamp
@@ -1494,7 +1494,7 @@ contract SignatureLendingAuction is LiquidityProviders {
         return
             loanAuction.amountDrawn +
             loanAuction.historicInterest +
-            bestBidderInterest;
+            lenderInterest;
     }
 
     // Need to think about asset decimals?
@@ -1509,7 +1509,7 @@ contract SignatureLendingAuction is LiquidityProviders {
             _nftId
         ];
 
-        uint256 bestBidderInterest = calculateInterestAccruedByBestBidder(
+        uint256 lenderInterest = calculateInterestAccruedBylender(
             _nftContractAddress,
             _nftId,
             block.timestamp
@@ -1518,9 +1518,9 @@ contract SignatureLendingAuction is LiquidityProviders {
         // calculate and return buyOutAmount
         return
             loanAuction.amountDrawn +
-            bestBidderInterest +
+            lenderInterest +
             loanAuction.historicInterest +
-            (loanAuction.amountDrawn * buyOutPremiumBestBidderPrecentage) +
+            (loanAuction.amountDrawn * buyOutPremiumlenderPrecentage) +
             (loanAuction.amountDrawn * buyOutPremiumProtocolPrecentage);
     }
 
