@@ -315,6 +315,13 @@ contract SignatureLendingAuction is LiquidityProviders {
             loanAuction.amountDrawn = offer.loanAmount;
             loanAuction.fixedTerms = offer.fixedTerms;
 
+            // calculate protocol draw fee and subtract from loanAmount
+            // this leaves the protocol fee invested in Compound in this contract address' balance
+            uint256 drawAmountMinusFee = offer.loanAmount -
+                (offer.loanAmount * loanDrawFeeProtocolPercentage);
+
+            // *------- value and asset transfers -------* //
+
             // transferFrom NFT from nftOwner to contract
             IERC721(offer.nftContractAddress).transferFrom(
                 nftOwner,
@@ -323,14 +330,12 @@ contract SignatureLendingAuction is LiquidityProviders {
             );
 
             // if asset is not 0x0 process as Erc20
-            if (
-                offer.asset != 0x0000000000000000000000000000000000000000
-            ) {
+            if (offer.asset != 0x0000000000000000000000000000000000000000) {
                 // redeem cTokens and transfer underlying to borrower
                 _redeemAndTransferErc20Internal(
                     offer.asset,
                     offer.cAsset,
-                    offer.loanAmount,
+                    drawAmountMinusFee,
                     nftOwner
                 );
             }
@@ -341,7 +346,7 @@ contract SignatureLendingAuction is LiquidityProviders {
                 // redeem cTokens and transfer underlying to borrower
                 _redeemAndTransferEthInternal(
                     offer.cAsset,
-                    offer.loanAmount,
+                    drawAmountMinusFee,
                     nftOwner
                 );
             }
@@ -397,33 +402,32 @@ contract SignatureLendingAuction is LiquidityProviders {
         bytes32 offerHash = getOfferHash(offer);
 
         // recover singer and confirm signed offer terms with function submitted offer terms
-        // We assume the signer must be the borrower and check in the following require statment
+        // We assume the signer is the borrower and check in the following require statment
         address borrower = getOfferSigner(offerHash, signature);
 
-        // require msg.sender is the nftOwner. This ensures function submitted nftId is valid to execute against
+        // require signer/borrower is the nftOwner. This ensures the signer/borrower is the owner of the NFT
         require(
             nftOwner == borrower,
-            "Borrower must be the owner of nftId to executeLoanByBid"
+            "Borrower must be the owner of nftId to executeLoanByAsk"
         );
 
         // execute state changes for executeLoanByAsk
         _executeLoanByAskInternal(offer, msg.sender, nftOwner, signature);
     }
 
+    // this internal function handles all state changes for executeLoanByAsk
     function _executeLoanByAskInternal(
         Offer memory offer,
         address lender,
         address nftOwner,
         bytes memory signature
     ) internal {
-        // checks done in executeLoanByAsk
-
-        // Instantiate LoanAuction Struct
+        // instantiate LoanAuction Struct
         LoanAuction storage loanAuction = loanAuctions[
             offer.nftContractAddress
         ][offer.nftId];
 
-        // require msg.sender is the nftOwner. This ensures function submitted nftId is valid to execute against
+        // require loan is not active
         require(
             loanAuction.loanExecutedTime == 0,
             "Loan is already active. Cannot execute new ask."
@@ -432,7 +436,7 @@ contract SignatureLendingAuction is LiquidityProviders {
         // finalize signature
         cancelledOrFinalized[signature] == true;
 
-        // check if lender has sufficient balance and update utilizedBalance
+        // check if lender has sufficient available balance and update utilizedBalance
         _checkAndUpdateLenderUtilizedBalanceInternal(
             offer.cAsset,
             offer.loanAmount,
@@ -452,6 +456,13 @@ contract SignatureLendingAuction is LiquidityProviders {
         loanAuction.amountDrawn = offer.loanAmount;
         loanAuction.fixedTerms = offer.fixedTerms;
 
+        // calculate protocol draw fee and subtract from loanAmount
+        // this leaves the protocol fee invested in Compound in this contract address' balance
+        uint256 drawAmountMinusFee = offer.loanAmount -
+            (offer.loanAmount * loanDrawFeeProtocolPercentage);
+
+        // *------- value and asset transfers -------* //
+
         // transferFrom NFT from nftOwner to contract
         IERC721(offer.nftContractAddress).transferFrom(
             nftOwner,
@@ -465,20 +476,16 @@ contract SignatureLendingAuction is LiquidityProviders {
             _redeemAndTransferErc20Internal(
                 offer.asset,
                 offer.cAsset,
-                offer.loanAmount,
+                drawAmountMinusFee,
                 nftOwner
             );
         }
         // else process as ETH
-        else if (
-            offer.asset == 0x0000000000000000000000000000000000000000
-        ) {
-            // calclate fee for protocol
-
+        else if (offer.asset == 0x0000000000000000000000000000000000000000) {
             // redeem cTokens and transfer underlying to borrower
             _redeemAndTransferEthInternal(
                 offer.cAsset,
-                offer.loanAmount,
+                drawAmountMinusFee,
                 nftOwner
             );
         }
@@ -604,196 +611,85 @@ contract SignatureLendingAuction is LiquidityProviders {
             "Cannot execute bid or ask. Signature has been cancelled or previously finalized."
         );
 
-        // Temporarily save current loan value and best bidder
-        uint256 currentLoanValue = loanAuction.loanAmount;
-
         // require that terms are parity + 1
         require(
             // Require bidAmount is greater than previous bid
-            (offer.loanAmount > currentLoanValue &&
+            (offer.loanAmount > loanAuction.loanAmount &&
                 offer.interestRate <= loanAuction.interestRate &&
                 offer.duration >= loanAuction.loanDuration) ||
                 // OR
                 // Require interestRate is lower than previous bid
-                (offer.loanAmount >= currentLoanValue &&
+                (offer.loanAmount >= loanAuction.loanAmount &&
                     offer.interestRate < loanAuction.interestRate &&
                     offer.duration >= loanAuction.loanDuration) ||
                 // OR
                 // Require loanDuration to be greater than previous bid
-                (offer.loanAmount >= currentLoanValue &&
+                (offer.loanAmount >= loanAuction.loanAmount &&
                     offer.interestRate <= loanAuction.interestRate &&
                     offer.duration > loanAuction.loanDuration),
-            "Bid must have better terms than current best bid"
+            "Bid must have better terms than current loan"
         );
 
         // calculate the interest earned by current lender
-        uint256 fullBidBuyOutAmount = calculateFullBidBuyOut(
-            offer.nftContractAddress,
-            offer.nftId
-        );
-
         uint256 lenderInterest = calculateInterestAccruedBylender(
             offer.nftContractAddress,
             offer.nftId,
             block.timestamp
         );
 
-        // calculate protocolPremiumAmount
-        uint256 protocolPremiumAmount = loanAuction.amountDrawn *
-            buyOutPremiumProtocolPrecentage;
-
         // calculate interest earned
         uint256 interestAndPremiumOwedToLender = lenderInterest +
             loanAuction.historicInterest +
             (loanAuction.amountDrawn * buyOutPremiumLenderPrecentage);
 
+        // calculate fullBidBuyOutAmount
+        uint256 fullBidBuyOutAmount = calculateFullBidBuyOut(
+            offer.nftContractAddress,
+            offer.nftId
+        );
+
+        // calculate msgValueMinusProtocolPremiumFee
         uint256 msgValueMinusProtocolPremiumFee = msg.value -
             (loanAuction.amountDrawn * buyOutPremiumProtocolPrecentage);
 
+        // instantiate interestAndPremiumTokens
         uint256 interestAndPremiumTokens;
+        // instantiate amountDrawnTokens
         uint256 amountDrawnTokens;
+        // instantiate msgValueTokens
         uint256 msgValueTokens;
 
         // if asset is not 0x0 process as Erc20
         if (loanAuction.asset != 0x0000000000000000000000000000000000000000) {
-            // Create a reference to the underlying asset contract, like DAI.
-            Erc20 underlying = Erc20(loanAuction.asset);
-
-            // Create a reference to the corresponding cToken contract, like cDAI
-            CErc20 cToken = CErc20(loanAuction.cAsset);
-
-            // transfer underlying from bidder to this contract
-            underlying.transferFrom(
-                msg.sender,
-                address(this),
-                fullBidBuyOutAmount
-            );
-
-            //Instantiate MintLocalVars
-            MintLocalVars memory vars;
-
-            vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
-
-            // convert interestOwedToLender to cErc20
-            (vars.mathErr, interestAndPremiumTokens) = divScalarByExpTruncate(
+            // protocolPremiumFee is taken here. Full amount is minted to this contract address' balance in Compound and amount owed to lender is updated in their balance. The delta is the protocol premium fee.
+            _payErc20AndUpdateBalancesInternal(
+                loanAuction.asset,
+                loanAuction.cAsset,
+                loanAuction.lender,
+                fullBidBuyOutAmount,
                 interestAndPremiumOwedToLender,
-                Exp({mantissa: vars.exchangeRateMantissa})
+                loanAuction.amountDrawn
             );
-            if (vars.mathErr != MathError.NO_ERROR) {
-                return
-                    failOpaque(
-                        Error.MATH_ERROR,
-                        FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED,
-                        uint256(vars.mathErr)
-                    );
-            }
-
-            // convert amountDrawn to cErc20
-            (vars.mathErr, amountDrawnTokens) = divScalarByExpTruncate(
-                loanAuction.amountDrawn,
-                Exp({mantissa: vars.exchangeRateMantissa})
-            );
-            if (vars.mathErr != MathError.NO_ERROR) {
-                return
-                    failOpaque(
-                        Error.MATH_ERROR,
-                        FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED,
-                        uint256(vars.mathErr)
-                    );
-            }
-
-            // should have require statement to ensure mint is successful before proceeding
-            // Mint cTokens
-            cToken.mint(fullBidBuyOutAmount);
-
-            // update the lenders utilized balance
-            utilizedCErc20Balances[loanAuction.cAsset][
-                loanAuction.lender
-            ] -= amountDrawnTokens;
-
-            // update the lenders total balance
-            cErc20Balances[loanAuction.cAsset][
-                loanAuction.lender
-            ] += interestAndPremiumTokens;
         }
         // else process as ETH
         else if (
             loanAuction.asset == 0x0000000000000000000000000000000000000000
         ) {
-            // require transaction has enough value to pay out current lender
+            // require transaction has enough value to pay out current lender and protocol premium fee
             require(
                 msg.value >= fullBidBuyOutAmount,
                 "Transaction must contain enough value to pay out currentlender plus premium"
             );
 
-            // pay out principle, interest, historicInterest, and premium to currentlender
-            CEth cToken = CEth(loanAuction.cAsset);
-
-            // calculate expectedAmountToBeMinted
-            MintLocalVars memory vars;
-
-            vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
-
-            // convert msg.value to cErc20
-            // This accounts for any extra Eth sent to function, since cant use transferFrom for exact amount
-            // Any extra value is given to lender
-            (vars.mathErr, msgValueTokens) = divScalarByExpTruncate(
+            // protocolPremiumFee is taken here. Full amount is minted to this contract address' balance in Compound and amount owed to lender is updated in their balance. The delta is the protocol premium fee.
+            _payEthAndUpdateBalancesInternal(
+                loanAuction.cAsset,
+                loanAuction.lender,
+                msg.value,
                 msgValueMinusProtocolPremiumFee,
-                Exp({mantissa: vars.exchangeRateMantissa})
-            );
-            if (vars.mathErr != MathError.NO_ERROR) {
-                return
-                    failOpaque(
-                        Error.MATH_ERROR,
-                        FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED,
-                        uint256(vars.mathErr)
-                    );
-            }
-
-            // convert interestOwedToLender to cErc20
-            (vars.mathErr, interestAndPremiumTokens) = divScalarByExpTruncate(
                 interestAndPremiumOwedToLender,
-                Exp({mantissa: vars.exchangeRateMantissa})
+                loanAuction.amountDrawn
             );
-            if (vars.mathErr != MathError.NO_ERROR) {
-                return
-                    failOpaque(
-                        Error.MATH_ERROR,
-                        FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED,
-                        uint256(vars.mathErr)
-                    );
-            }
-
-            // convert amountDrawn to cErc20
-            (vars.mathErr, amountDrawnTokens) = divScalarByExpTruncate(
-                loanAuction.amountDrawn,
-                Exp({mantissa: vars.exchangeRateMantissa})
-            );
-            if (vars.mathErr != MathError.NO_ERROR) {
-                return
-                    failOpaque(
-                        Error.MATH_ERROR,
-                        FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED,
-                        uint256(vars.mathErr)
-                    );
-            }
-
-            uint256 mintDelta = msgValueTokens -
-                (interestAndPremiumTokens + amountDrawnTokens);
-
-            // should have require statement to ensure mint is successful before proceeding
-            // // mint CEth tokens to this contract address
-            cToken.mint{value: msg.value, gas: 250000}();
-
-            // update the lenders utilized balance
-            utilizedCErc20Balances[loanAuction.cAsset][
-                loanAuction.lender
-            ] -= amountDrawnTokens;
-
-            // update the lenders total balance
-            cErc20Balances[loanAuction.cAsset][
-                loanAuction.lender
-            ] += (interestAndPremiumTokens + mintDelta);
         }
 
         // save temporary current historicInterest
@@ -806,6 +702,165 @@ contract SignatureLendingAuction is LiquidityProviders {
         loanAuction.loanDuration = offer.duration;
         loanAuction.bestBidTime = block.timestamp;
         loanAuction.historicInterest = currentHistoricInterest + lenderInterest;
+
+        return 0;
+    }
+
+    // this internal functions handles transfer of erc20 tokens and updating lender balances for buyOutLoan, repayRemainingLoan, and partialRepayment functions
+    function _payErc20AndUpdateBalancesInternal(
+        address asset,
+        address cAsset,
+        address lender,
+        uint256 fullAmount,
+        uint256 interestAndPremiumAmount,
+        uint256 paymentAmount
+    ) internal returns (uint256) {
+        // Create a reference to the underlying asset contract, like DAI.
+        Erc20 underlying = Erc20(asset);
+
+        // Create a reference to the corresponding cToken contract, like cDAI
+        CErc20 cToken = CErc20(cAsset);
+
+        // instantiate interestAndPremiumTokens
+        uint256 interestAndPremiumTokens;
+        // instantiate paymentTokens
+        uint256 paymentTokens;
+
+        // should have require statement to ensure tranfer is successful before proceeding
+        // transferFrom ERC20 from depositors address
+        underlying.transferFrom(msg.sender, address(this), fullAmount);
+
+        //Instantiate MintLocalVars
+        MintLocalVars memory vars;
+
+        vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
+
+        // convert amount to cErc20
+        // convert interestOwedToLender to cErc20
+        (vars.mathErr, interestAndPremiumTokens) = divScalarByExpTruncate(
+            interestAndPremiumAmount,
+            Exp({mantissa: vars.exchangeRateMantissa})
+        );
+        if (vars.mathErr != MathError.NO_ERROR) {
+            return
+                failOpaque(
+                    Error.MATH_ERROR,
+                    FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED,
+                    uint256(vars.mathErr)
+                );
+        }
+
+        // convert amountDrawn to cErc20
+        (vars.mathErr, paymentTokens) = divScalarByExpTruncate(
+            paymentAmount,
+            Exp({mantissa: vars.exchangeRateMantissa})
+        );
+        if (vars.mathErr != MathError.NO_ERROR) {
+            return
+                failOpaque(
+                    Error.MATH_ERROR,
+                    FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED,
+                    uint256(vars.mathErr)
+                );
+        }
+
+        // should have require statement to ensure mint is successful before proceeding
+        // Mint cTokens
+        cToken.mint(fullAmount);
+
+        // update the lenders utilized balance
+        utilizedCErc20Balances[cAsset][lender] -= paymentTokens;
+
+        // update the lenders total balance
+        cErc20Balances[cAsset][lender] += interestAndPremiumTokens;
+
+        return 0;
+    }
+
+    // this internal functions handles transfer of Eth and updating lender balances for buyOutLoan, repayRemainingLoan, and partialRepayment functions
+    function _payEthAndUpdateBalancesInternal(
+        address cAsset,
+        address lender,
+        uint256 msgValue,
+        uint256 msgValueMinusFee,
+        uint256 interestAndPremiumAmount,
+        uint256 paymentAmount
+    ) internal returns (uint256) {
+        // Create a reference to the corresponding cToken contract, like cDAI
+        CEth cToken = CEth(cAsset);
+
+        // instantiate interestAndPremiumTokens
+        uint256 interestAndPremiumTokens;
+        // instantiate paymentTokens
+        uint256 paymentTokens;
+        // instantiate msgValueTokens
+        uint256 msgValueTokens;
+
+        //Instantiate MintLocalVars
+        MintLocalVars memory vars;
+
+        vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
+
+        // convert msg.value to cErc20
+        // This accounts for any extra Eth sent to function, since cant use transferFrom for exact amount
+        // Any extra value is given to lender
+        (vars.mathErr, msgValueTokens) = divScalarByExpTruncate(
+            msgValueMinusFee,
+            Exp({mantissa: vars.exchangeRateMantissa})
+        );
+        if (vars.mathErr != MathError.NO_ERROR) {
+            return
+                failOpaque(
+                    Error.MATH_ERROR,
+                    FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED,
+                    uint256(vars.mathErr)
+                );
+        }
+
+        // convert interestOwedToLender to cErc20
+        (vars.mathErr, interestAndPremiumTokens) = divScalarByExpTruncate(
+            interestAndPremiumAmount,
+            Exp({mantissa: vars.exchangeRateMantissa})
+        );
+        if (vars.mathErr != MathError.NO_ERROR) {
+            return
+                failOpaque(
+                    Error.MATH_ERROR,
+                    FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED,
+                    uint256(vars.mathErr)
+                );
+        }
+
+        // convert amountDrawn to cErc20
+        (vars.mathErr, paymentTokens) = divScalarByExpTruncate(
+            paymentAmount,
+            Exp({mantissa: vars.exchangeRateMantissa})
+        );
+        if (vars.mathErr != MathError.NO_ERROR) {
+            return
+                failOpaque(
+                    Error.MATH_ERROR,
+                    FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED,
+                    uint256(vars.mathErr)
+                );
+        }
+
+        uint256 mintDelta = msgValueTokens -
+            (interestAndPremiumTokens + paymentTokens);
+
+        // should have require statement to ensure mint is successful before proceeding
+        // // mint CEth tokens to this contract address
+        cToken.mint{value: msgValue, gas: 250000}();
+
+        // update the lenders utilized balance
+        utilizedCErc20Balances[cAsset][
+            lender
+        ] -= paymentAmount;
+
+        // update the lenders total balance
+        cErc20Balances[cAsset][
+            lender
+        ] += (interestAndPremiumTokens + mintDelta);
 
         return 0;
     }
@@ -988,9 +1043,6 @@ contract SignatureLendingAuction is LiquidityProviders {
             "Msg.sender is not the NFT owner"
         );
 
-        // temporarily save current lender
-        address currentlender = loanAuction.lender;
-
         uint256 lenderInterest = calculateInterestAccruedBylender(
             _nftContractAddress,
             _nftId,
@@ -1004,70 +1056,17 @@ contract SignatureLendingAuction is LiquidityProviders {
         // get required repayment
         uint256 fullRepayment = interestOwedToLender + loanAuction.amountDrawn;
 
-        uint256 interestTokens;
-        uint256 amountDrawnTokens;
-        uint256 msgValueTokens;
-
         // if asset is not 0x0 process as Erc20
         if (loanAuction.asset != 0x0000000000000000000000000000000000000000) {
-            // mint fullRepayment as cTokens and update lenders ultilizedBalance
-
-            // Create a reference to the underlying asset contract, like DAI.
-            Erc20 underlying = Erc20(loanAuction.asset);
-
-            // Create a reference to the corresponding cToken contract, like cDAI
-            CErc20 cToken = CErc20(loanAuction.cAsset);
-
-            // should have require statement to ensure tranfer is successful before proceeding
-            // transferFrom ERC20 from depositors address
-            underlying.transferFrom(msg.sender, address(this), fullRepayment);
-
-            //Instantiate MintLocalVars
-            MintLocalVars memory vars;
-
-            vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
-
-            // convert interestOwedToLender to cErc20
-            (vars.mathErr, interestTokens) = divScalarByExpTruncate(
+            // protocolPremiumFee is taken here. Full amount is minted to this contract address' balance in Compound and amount owed to lender is updated in their balance. The delta is the protocol premium fee.
+            _payErc20AndUpdateBalancesInternal(
+                loanAuction.asset,
+                loanAuction.cAsset,
+                loanAuction.lender,
+                fullRepayment,
                 interestOwedToLender,
-                Exp({mantissa: vars.exchangeRateMantissa})
+                loanAuction.amountDrawn
             );
-            if (vars.mathErr != MathError.NO_ERROR) {
-                return
-                    failOpaque(
-                        Error.MATH_ERROR,
-                        FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED,
-                        uint256(vars.mathErr)
-                    );
-            }
-
-            // convert amountDrawn to cErc20
-            (vars.mathErr, amountDrawnTokens) = divScalarByExpTruncate(
-                loanAuction.amountDrawn,
-                Exp({mantissa: vars.exchangeRateMantissa})
-            );
-            if (vars.mathErr != MathError.NO_ERROR) {
-                return
-                    failOpaque(
-                        Error.MATH_ERROR,
-                        FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED,
-                        uint256(vars.mathErr)
-                    );
-            }
-
-            // should have require statement to ensure mint is successful before proceeding
-            // Mint cTokens
-            cToken.mint(fullRepayment);
-
-            // update the lenders utilized balance
-            utilizedCErc20Balances[loanAuction.cAsset][
-                loanAuction.lender
-            ] -= amountDrawnTokens;
-
-            // update the lenders total balance
-            cErc20Balances[loanAuction.cAsset][
-                loanAuction.lender
-            ] += interestTokens;
         }
         // else process as ETH
         else if (
@@ -1078,76 +1077,15 @@ contract SignatureLendingAuction is LiquidityProviders {
                 msg.value >= fullRepayment,
                 "Must repay full amount of loan drawn plus interest. Account for additional time for interest."
             );
-
-            // mint fullRepayment as cTokens and update lenders ultilizedBalance
-
-            CEth cToken = CEth(loanAuction.cAsset);
-
-            // calculate expectedAmountToBeMinted
-            MintLocalVars memory vars;
-
-            vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
-
-            // convert msg.value to cErc20
-            // This accounts for any extra Eth sent to function, since cant use transferFrom fro exact amount
-            // Any extra value is given to lender
-            (vars.mathErr, msgValueTokens) = divScalarByExpTruncate(
+            // protocolPremiumFee is taken here. Full amount is minted to this contract address' balance in Compound and amount owed to lender is updated in their balance. The delta is the protocol premium fee.
+            _payEthAndUpdateBalancesInternal(
+                loanAuction.cAsset,
+                loanAuction.lender,
                 msg.value,
-                Exp({mantissa: vars.exchangeRateMantissa})
-            );
-            if (vars.mathErr != MathError.NO_ERROR) {
-                return
-                    failOpaque(
-                        Error.MATH_ERROR,
-                        FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED,
-                        uint256(vars.mathErr)
-                    );
-            }
-
-            // convert interestOwedToLender to cErc20
-            (vars.mathErr, interestTokens) = divScalarByExpTruncate(
+                msg.value,
                 interestOwedToLender,
-                Exp({mantissa: vars.exchangeRateMantissa})
+                loanAuction.amountDrawn
             );
-            if (vars.mathErr != MathError.NO_ERROR) {
-                return
-                    failOpaque(
-                        Error.MATH_ERROR,
-                        FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED,
-                        uint256(vars.mathErr)
-                    );
-            }
-
-            // convert amountDrawn to cErc20
-            (vars.mathErr, amountDrawnTokens) = divScalarByExpTruncate(
-                loanAuction.amountDrawn,
-                Exp({mantissa: vars.exchangeRateMantissa})
-            );
-            if (vars.mathErr != MathError.NO_ERROR) {
-                return
-                    failOpaque(
-                        Error.MATH_ERROR,
-                        FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED,
-                        uint256(vars.mathErr)
-                    );
-            }
-
-            uint256 mintDelta = msgValueTokens -
-                (interestTokens + amountDrawnTokens);
-
-            // should have require statement to ensure mint is successful before proceeding
-            // // mint CEth tokens to this contract address
-            cToken.mint{value: msg.value, gas: 250000}();
-
-            // update the lenders utilized balance
-            utilizedCErc20Balances[loanAuction.cAsset][
-                loanAuction.lender
-            ] -= amountDrawnTokens;
-
-            // update the lenders total balance
-            cErc20Balances[loanAuction.cAsset][
-                loanAuction.lender
-            ] += (interestTokens + mintDelta);
         }
 
         // reset loanAuction
@@ -1183,8 +1121,8 @@ contract SignatureLendingAuction is LiquidityProviders {
     function partialPayment(
         address _nftContractAddress,
         uint256 _nftId,
-        uint256 amount
-    ) public payable returns (uint256) {
+        uint256 partialAmount
+    ) public payable {
         // Instantiate LoanAuction Struct
         LoanAuction storage loanAuction = loanAuctions[_nftContractAddress][
             _nftId
@@ -1205,81 +1143,23 @@ contract SignatureLendingAuction is LiquidityProviders {
             "Msg.sender is not the NFT owner"
         );
 
-        uint256 interestTokens;
-        uint256 paymentTokens;
-        uint256 msgValueTokens;
+        // calculate paymentAmount and interestAmount from amount
+        uint256 interestAmount = partialAmount *
+            (loanAuction.interestRate * 100);
+
+        uint256 paymentAmount = partialAmount - interestAmount;
 
         // if asset is not 0x0 process as Erc20
         if (loanAuction.asset != 0x0000000000000000000000000000000000000000) {
-            // Require payment amount is less than amountDrawn
-            require(
-                amount < loanAuction.amountDrawn,
-                "Msg.sender is not the NFT owner"
-            );
-            // mint fullRepayment as cTokens and update lenders ultilizedBalance
-
-            // Create a reference to the underlying asset contract, like DAI.
-            Erc20 underlying = Erc20(loanAuction.asset);
-
-            // Create a reference to the corresponding cToken contract, like cDAI
-            CErc20 cToken = CErc20(loanAuction.cAsset);
-
-            // should have require statement to ensure tranfer is successful before proceeding
-            // transferFrom ERC20 from depositors address
-            underlying.transferFrom(msg.sender, address(this), amount);
-
-            // calculate paymentAmount and interestAmount from amount
-            uint256 interestAmount = amount * (loanAuction.interestRate * 100);
-
-            uint256 paymentAmount = amount - interestAmount;
-
-            //Instantiate MintLocalVars
-            MintLocalVars memory vars;
-
-            vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
-
-            // convert amount to cErc20
-            // convert interestOwedToLender to cErc20
-            (vars.mathErr, interestTokens) = divScalarByExpTruncate(
+            // protocolPremiumFee is taken here. Full amount is minted to this contract address' balance in Compound and amount owed to lender is updated in their balance. The delta is the protocol premium fee.
+            _payErc20AndUpdateBalancesInternal(
+                loanAuction.asset,
+                loanAuction.cAsset,
+                loanAuction.lender,
+                partialAmount,
                 interestAmount,
-                Exp({mantissa: vars.exchangeRateMantissa})
+                paymentAmount
             );
-            if (vars.mathErr != MathError.NO_ERROR) {
-                return
-                    failOpaque(
-                        Error.MATH_ERROR,
-                        FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED,
-                        uint256(vars.mathErr)
-                    );
-            }
-
-            // convert amountDrawn to cErc20
-            (vars.mathErr, paymentTokens) = divScalarByExpTruncate(
-                paymentAmount,
-                Exp({mantissa: vars.exchangeRateMantissa})
-            );
-            if (vars.mathErr != MathError.NO_ERROR) {
-                return
-                    failOpaque(
-                        Error.MATH_ERROR,
-                        FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED,
-                        uint256(vars.mathErr)
-                    );
-            }
-
-            // should have require statement to ensure mint is successful before proceeding
-            // Mint cTokens
-            cToken.mint(amount);
-
-            // update the lenders utilized balance
-            utilizedCErc20Balances[loanAuction.cAsset][
-                loanAuction.lender
-            ] -= paymentTokens;
-
-            // update the lenders total balance
-            cErc20Balances[loanAuction.cAsset][
-                loanAuction.lender
-            ] += interestTokens;
         }
         // else process as ETH
         else if (
@@ -1290,88 +1170,19 @@ contract SignatureLendingAuction is LiquidityProviders {
                 msg.value < loanAuction.amountDrawn,
                 "Msg.value must be less than amountDrawn"
             );
-
-            // mint fullRepayment as cTokens and update lenders ultilizedBalance
-
-            CEth cToken = CEth(loanAuction.cAsset);
-
-            // calculate paymentAmount and interestAmount from amount
-            uint256 interestAmount = msg.value *
-                (loanAuction.interestRate * 100);
-
-            uint256 paymentAmount = msg.value - interestAmount;
-
-            // calculate expectedAmountToBeMinted
-            MintLocalVars memory vars;
-
-            vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
-
-            // convert msg.value to cErc20
-            // This accounts for any extra Eth sent to function, since cant use transferFrom fro exact amount
-            // Any extra value is given to lender
-            (vars.mathErr, msgValueTokens) = divScalarByExpTruncate(
+            // protocolPremiumFee is taken here. Full amount is minted to this contract address' balance in Compound and amount owed to lender is updated in their balance. The delta is the protocol premium fee.
+            _payEthAndUpdateBalancesInternal(
+                loanAuction.cAsset,
+                loanAuction.lender,
                 msg.value,
-                Exp({mantissa: vars.exchangeRateMantissa})
-            );
-            if (vars.mathErr != MathError.NO_ERROR) {
-                return
-                    failOpaque(
-                        Error.MATH_ERROR,
-                        FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED,
-                        uint256(vars.mathErr)
-                    );
-            }
-
-            // convert interestOwedToLender to cErc20
-            (vars.mathErr, interestTokens) = divScalarByExpTruncate(
+                msg.value,
                 interestAmount,
-                Exp({mantissa: vars.exchangeRateMantissa})
+                paymentAmount
             );
-            if (vars.mathErr != MathError.NO_ERROR) {
-                return
-                    failOpaque(
-                        Error.MATH_ERROR,
-                        FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED,
-                        uint256(vars.mathErr)
-                    );
-            }
-
-            // convert amountDrawn to cErc20
-            (vars.mathErr, paymentTokens) = divScalarByExpTruncate(
-                paymentAmount,
-                Exp({mantissa: vars.exchangeRateMantissa})
-            );
-            if (vars.mathErr != MathError.NO_ERROR) {
-                return
-                    failOpaque(
-                        Error.MATH_ERROR,
-                        FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED,
-                        uint256(vars.mathErr)
-                    );
-            }
-
-            uint256 mintDelta = msgValueTokens -
-                (interestTokens + paymentTokens);
-
-            // should have require statement to ensure mint is successful before proceeding
-            // // mint CEth tokens to this contract address
-            cToken.mint{value: msg.value, gas: 250000}();
-
-            // update the lenders utilized balance
-            utilizedCErc20Balances[loanAuction.cAsset][
-                loanAuction.lender
-            ] -= paymentTokens;
-
-            // update the lenders total balance
-            cErc20Balances[loanAuction.cAsset][
-                loanAuction.lender
-            ] += (interestTokens + mintDelta);
         }
 
         // update amountDrawn
-        loanAuction.amountDrawn -= paymentTokens;
-
-        return 0;
+        loanAuction.amountDrawn -= paymentAmount;
     }
 
     // allows anyone to seize an asset of a past due loan on behalf on the lender
