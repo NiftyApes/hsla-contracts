@@ -3,6 +3,9 @@ pragma solidity ^0.8.2;
 
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./ErrorReporter.sol";
 import "./Exponential.sol";
 
@@ -62,7 +65,15 @@ interface CEth {
     ) external returns (bool);
 }
 
-contract LiquidityProviders is Exponential, TokenErrorReporter {
+// need to implement Proxy and Intitializable contracts
+
+contract LiquidityProviders is
+    Exponential,
+    TokenErrorReporter,
+    Ownable,
+    Pausable,
+    ReentrancyGuard
+{
     // Solidity 0.8.x provides safe math, but uses an invalid opcode error which comsumes all gas. SafeMath uses revert which returns all gas.
     using SafeMath for uint256;
 
@@ -117,7 +128,11 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
 
     // ---------- FUNCTIONS -------------- //
 
-    function getAssetsIn(address account) external view returns (address[] memory) {
+    function getAssetsIn(address account)
+        external
+        view
+        returns (address[] memory)
+    {
         address[] memory assetsIn = accountAssets[account];
 
         return assetsIn;
@@ -139,13 +154,13 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
         // Create a reference to the corresponding cToken contract, like cDAI
         CErc20 cToken = CErc20(_cErc20Contract);
 
-        // need to require that the erc20ContratAddress and cErc20ContractAddress refer to the same asset. 
+        // need to require that the erc20ContratAddress and cErc20ContractAddress refer to the same asset.
 
         // should have require statement to ensure tranfer is successful before proceeding
         // transferFrom ERC20 from depositors address
         underlying.transferFrom(msg.sender, address(this), _numTokensToSupply);
 
-        // need to provide 
+        // need to provide
         // Approve transfer on the ERC20 contract from LiquidityProviders contract
         underlying.approve(_cErc20Contract, _numTokensToSupply);
 
@@ -196,8 +211,7 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
         address _erc20Contract,
         address _cErc20Contract,
         uint256 _amountToWithdraw
-    ) public returns (uint256) {
-
+    ) public whenNotPaused nonReentrant returns (uint256) {
         // add nonReentrant modifier
 
         // Create a reference to the underlying asset contract, like DAI.
@@ -232,8 +246,7 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
         address _cErc20Contract,
         bool redeemType,
         uint256 _amountToWithdraw
-    ) public returns (uint256) {
-
+    ) public whenNotPaused nonReentrant returns (uint256) {
         // add nonReentrant modifier
 
         // Create a reference to the underlying asset contract, like DAI.
@@ -423,6 +436,8 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
     // currently implemented as "true" optino in withdrawErc20.
     function withdrawCEth(address _cEtherContract, uint256 _amountToWithdraw)
         public
+        whenNotPaused
+        nonReentrant
         returns (uint256)
     {
         console.log("_cEtherContract", _cEtherContract);
@@ -461,7 +476,7 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
         address _cEtherContract,
         bool redeemType,
         uint256 _amountToWithdraw
-    ) public returns (uint256) {
+    ) public whenNotPaused nonReentrant returns (uint256) {
         // add nonReentrant modifier
 
         // Create a reference to the corresponding cToken contract, like cDAI
@@ -567,13 +582,7 @@ contract LiquidityProviders is Exponential, TokenErrorReporter {
     // the answer to this is in 'distributeSupplierComp' in comptrollerG7.sol
     // this may also provide a method to calculate interest accrued by lenders
     // checkout updateContributorRewards
-    function calculateCompEarned()
-        public
-
-
-    {
-
-    }
+    function calculateCompEarned() public {}
 
     function calculateLiquidityInterestEarned() public {}
 

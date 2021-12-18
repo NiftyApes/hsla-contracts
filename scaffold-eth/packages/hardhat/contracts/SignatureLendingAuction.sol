@@ -209,7 +209,7 @@ contract SignatureLendingAuction is LiquidityProviders {
         // bytes offerHash,
         bytes memory signature,
         uint256 nftId // nftId should match offer.nftId if floorTerm false, nftId should not match if floorTerm true. Need to provide as function parameter to pass nftId with floor terms.
-    ) external payable {
+    ) external payable whenNotPaused() {
         // require signature has not been cancelled/bid withdrawn
         require(
             cancelledOrFinalized[signature] == false,
@@ -570,7 +570,7 @@ contract SignatureLendingAuction is LiquidityProviders {
         return 0;
     }
 
-    function buyOutBestBidByBorrower(Offer memory offer, bytes memory signature) public payable {
+    function buyOutBestBidByBorrower(Offer memory offer, bytes memory signature) public payable whenNotPaused {
         // Instantiate LoanAuction Struct
         LoanAuction storage loanAuction = loanAuctions[
             offer.nftContractAddress
@@ -654,19 +654,16 @@ contract SignatureLendingAuction is LiquidityProviders {
             );
         }
 
-        // save temporary current historicInterest
-        uint256 currentHistoricInterest = loanAuction.historicInterest;
-
         // update LoanAuction struct
         loanAuction.lender = lender;
         loanAuction.loanAmount = offer.loanAmount;
         loanAuction.interestRate = offer.interestRate;
         loanAuction.loanDuration = offer.duration;
         loanAuction.bestBidTime = block.timestamp;
-        loanAuction.historicInterest = currentHistoricInterest + lenderInterest;
+        loanAuction.historicInterest = 0;
     }
 
-    function buyOutBestBidByLender(Offer memory offer) public payable {
+    function buyOutBestBidByLender(Offer memory offer) public payable whenNotPaused nonReentrant {
         // Instantiate LoanAuction Struct
         LoanAuction storage loanAuction = loanAuctions[
             offer.nftContractAddress
@@ -974,7 +971,7 @@ contract SignatureLendingAuction is LiquidityProviders {
         address nftContractAddress,
         uint256 nftId,
         uint256 drawTime
-    ) public {
+    ) public whenNotPaused nonReentrant {
         // Instantiate LoanAuction Struct
         LoanAuction storage loanAuction = loanAuctions[nftContractAddress][
             nftId
@@ -1019,7 +1016,7 @@ contract SignatureLendingAuction is LiquidityProviders {
         address nftContractAddress,
         uint256 nftId,
         uint256 drawAmount
-    ) public {
+    ) public whenNotPaused nonReentrant {
         // Instantiate LoanAuction Struct
         LoanAuction storage loanAuction = loanAuctions[nftContractAddress][
             nftId
@@ -1097,6 +1094,7 @@ contract SignatureLendingAuction is LiquidityProviders {
     function repayRemainingLoan(address nftContractAddress, uint256 nftId)
         public
         payable
+        whenNotPaused nonReentrant
         returns (uint256)
     {
         // Instantiate LoanAuction Struct
@@ -1196,7 +1194,7 @@ contract SignatureLendingAuction is LiquidityProviders {
         address nftContractAddress,
         uint256 nftId,
         uint256 partialAmount
-    ) public payable {
+    ) public payable whenNotPaused nonReentrant {
         // Instantiate LoanAuction Struct
         LoanAuction storage loanAuction = loanAuctions[nftContractAddress][
             nftId
@@ -1257,7 +1255,7 @@ contract SignatureLendingAuction is LiquidityProviders {
     }
 
     // allows anyone to seize an asset of a past due loan on behalf on the lender
-    function seizeAsset(address nftContractAddress, uint256 nftId) public {
+    function seizeAsset(address nftContractAddress, uint256 nftId) public whenNotPaused nonReentrant {
         // instantiate LoanAuction Struct
         LoanAuction storage loanAuction = loanAuctions[nftContractAddress][
             nftId
@@ -1411,17 +1409,29 @@ contract SignatureLendingAuction is LiquidityProviders {
             (loanAuction.amountDrawn * buyOutPremiumProtocolPrecentage);
     }
 
-    // need admin function to update fees
+    function updateLoanDrawFee(uint256 newFeeAmount) external onlyOwner {
+        loanDrawFeeProtocolPercentage = SafeMath.div(newFeeAmount, 100);
 
-    // function updateLoanDrawFee() public onlyOwner {}
-    // function updateBuyOutPremiumLenderPrecentage() public onlyOwner {}
-    // function updateBuyOutPremiumProtocolPrecentage() public onlyOwner {}
+        // emit newLoanDrawFeeAmount();
+    }
+
+    function updateBuyOutPremiumLenderPrecentage(uint256 newPremiumLenderPrecentage) external onlyOwner {
+        buyOutPremiumLenderPrecentage = SafeMath.div(newPremiumLenderPrecentage, 1000);
+
+        // emit newPremiumLenderPercentage();
+    }
+
+    function updateBuyOutPremiumProtocolPrecentage(uint256 newPremiumProtocolPrecentage) external onlyOwner {
+        buyOutPremiumProtocolPrecentage = SafeMath.div(newPremiumProtocolPrecentage, 1000);
+
+        // emit newPremiumProtocolPercentage();
+    }
 
     // @notice By calling 'revert' in the fallback function, we prevent anyone
     //         from accidentally sending ether directly to this contract.
-    // function() external payable {
-    //     revert();
-    // }
+    fallback() external payable {
+        revert();
+    }
 }
 
 // still needed:
@@ -1430,4 +1440,3 @@ contract SignatureLendingAuction is LiquidityProviders {
 // 3. Ownable, Upgradeable, etc.
 // 4. Diamond Pattern
 // 5. Admin functions
-// 6. buyOutBestBidByBorrower
