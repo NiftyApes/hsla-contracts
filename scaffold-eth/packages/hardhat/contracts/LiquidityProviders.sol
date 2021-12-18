@@ -101,6 +101,10 @@ contract LiquidityProviders is
 
     // ---------- STATE VARIABLES --------------- //
 
+    // Mapping of assetAddress to cAssetAddress
+    // controls assets available for deposit on NiftyApes
+    mapping(address => address) public assetToCAsset;
+
     // Mapping of cErc20Balance to cErc20Address to depositor address
     mapping(address => mapping(address => uint256)) public cErc20Balances;
 
@@ -138,23 +142,30 @@ contract LiquidityProviders is
         return assetsIn;
     }
 
+    function setCAssetAddress(address asset, address cAsset)
+        external
+        onlyOwner
+    {
+       assetToCAsset[asset] = cAsset;
+    }
+
     // returns number of cErc20 tokens added to balance
     function supplyErc20(
         address _erc20Contract,
-        address _cErc20Contract,
         uint256 _numTokensToSupply
     ) public returns (uint256) {
-        console.log("_erc20Contract", _erc20Contract);
-        console.log("_cErc20Contract", _cErc20Contract);
-        console.log("_numTokensToSupply", _numTokensToSupply);
+
+        require(
+            assetToCAsset[_erc20Contract] !=
+                0x0000000000000000000000000000000000000000,
+            "Asset not whitelisted on NiftyApes"
+        );
 
         // Create a reference to the underlying asset contract, like DAI.
         Erc20 underlying = Erc20(_erc20Contract);
 
         // Create a reference to the corresponding cToken contract, like cDAI
-        CErc20 cToken = CErc20(_cErc20Contract);
-
-        // need to require that the erc20ContratAddress and cErc20ContractAddress refer to the same asset.
+        CErc20 cToken = CErc20(assetToCAsset[_erc20Contract]);
 
         // should have require statement to ensure tranfer is successful before proceeding
         // transferFrom ERC20 from depositors address
@@ -162,7 +173,7 @@ contract LiquidityProviders is
 
         // need to provide
         // Approve transfer on the ERC20 contract from LiquidityProviders contract
-        underlying.approve(_cErc20Contract, _numTokensToSupply);
+        underlying.approve(assetToCAsset[_erc20Contract], _numTokensToSupply);
 
         // calculate expectedAmountToBeMinted
         MintLocalVars memory vars;
@@ -181,7 +192,7 @@ contract LiquidityProviders is
         uint256 mintResult = cToken.mint(_numTokensToSupply);
 
         // updating the depositors cErc20 balance
-        cErc20Balances[_cErc20Contract][msg.sender] += vars.mintTokens;
+        cErc20Balances[assetToCAsset[_erc20Contract]][msg.sender] += vars.mintTokens;
 
         return vars.mintTokens;
     }
@@ -275,13 +286,6 @@ contract LiquidityProviders is
                         uint256(vars.mathErr)
                     );
             }
-
-            console.log(
-                "cErc20Balances[_cErc20Contract][msg.sender]",
-                cErc20Balances[_cErc20Contract][msg.sender]
-            );
-            console.log("vars.redeemAmount", vars.redeemAmount);
-            console.log("vars.redeemTokens", vars.redeemTokens);
 
             // requre avail balance
 
