@@ -151,21 +151,21 @@ contract LiquidityProviders is
 
     // returns number of cErc20 tokens added to balance
     function supplyErc20(
-        address _erc20Contract,
+        address erc20Contract,
         uint256 _numTokensToSupply
     ) public returns (uint256) {
 
         require(
-            assetToCAsset[_erc20Contract] !=
+            assetToCAsset[erc20Contract] !=
                 0x0000000000000000000000000000000000000000,
             "Asset not whitelisted on NiftyApes"
         );
 
         // Create a reference to the underlying asset contract, like DAI.
-        Erc20 underlying = Erc20(_erc20Contract);
+        Erc20 underlying = Erc20(erc20Contract);
 
         // Create a reference to the corresponding cToken contract, like cDAI
-        CErc20 cToken = CErc20(assetToCAsset[_erc20Contract]);
+        CErc20 cToken = CErc20(assetToCAsset[erc20Contract]);
 
         // should have require statement to ensure tranfer is successful before proceeding
         // transferFrom ERC20 from depositors address
@@ -173,7 +173,7 @@ contract LiquidityProviders is
 
         // need to provide
         // Approve transfer on the ERC20 contract from LiquidityProviders contract
-        underlying.approve(assetToCAsset[_erc20Contract], _numTokensToSupply);
+        underlying.approve(assetToCAsset[erc20Contract], _numTokensToSupply);
 
         // calculate expectedAmountToBeMinted
         MintLocalVars memory vars;
@@ -192,79 +192,71 @@ contract LiquidityProviders is
         uint256 mintResult = cToken.mint(_numTokensToSupply);
 
         // updating the depositors cErc20 balance
-        cErc20Balances[assetToCAsset[_erc20Contract]][msg.sender] += vars.mintTokens;
+        cErc20Balances[assetToCAsset[erc20Contract]][msg.sender] += vars.mintTokens;
 
         return vars.mintTokens;
     }
 
-    function supplyCErc20(address _cErc20Contract, uint256 _numTokensToSupply)
+    function supplyCErc20(address cErc20Contract, uint256 _numTokensToSupply)
         public
         returns (uint256)
     {
-        console.log("_cErc20Contract", _cErc20Contract);
-        console.log("_numTokensToSupply", _numTokensToSupply);
 
         // Create a reference to the corresponding cToken contract, like cDAI
-        CErc20 cToken = CErc20(_cErc20Contract);
+        CErc20 cToken = CErc20(cErc20Contract);
 
         // should have require statement to ensure tranfer is successful before updating the balance
         // transferFrom ERC20 from depositors address
         cToken.transferFrom(msg.sender, address(this), _numTokensToSupply);
 
         // updating the depositors cErc20 balance
-        cErc20Balances[_cErc20Contract][msg.sender] += _numTokensToSupply;
+        cErc20Balances[cErc20Contract][msg.sender] += _numTokensToSupply;
 
         return _numTokensToSupply;
     }
 
     // currently implemented as "true" optino in withdrawErc20.
     function withdrawCErc20(
-        address _erc20Contract,
-        address _cErc20Contract,
-        uint256 _amountToWithdraw
+        address erc20Contract,
+        uint256 amountToWithdraw
     ) public whenNotPaused nonReentrant returns (uint256) {
-        // add nonReentrant modifier
-
-        // Create a reference to the underlying asset contract, like DAI.
-        Erc20 underlying = Erc20(_erc20Contract);
 
         // Create a reference to the corresponding cToken contract, like cDAI
-        CErc20 cToken = CErc20(_cErc20Contract);
+        CErc20 cToken = CErc20(assetToCAsset[erc20Contract]);
 
         // require availble balance is sufficent
         // check total balance - utilized balance
 
         // require msg.sender has sufficient balance of cErc20
         require(
-            cErc20Balances[_cErc20Contract][msg.sender] >= _amountToWithdraw,
+            cErc20Balances[assetToCAsset[erc20Contract]][msg.sender] >= amountToWithdraw,
             "Must have a balance greater than or equal to amountToWithdraw"
         );
         // updating the depositors cErc20 balance
-        cErc20Balances[_cErc20Contract][msg.sender] = cErc20Balances[
-            _cErc20Contract
-        ][msg.sender] -= _amountToWithdraw;
+        cErc20Balances[assetToCAsset[erc20Contract]][msg.sender] = cErc20Balances[
+            assetToCAsset[erc20Contract]
+        ][msg.sender] -= amountToWithdraw;
 
         // should have require statement to ensure tranfer is successful before proceeding
         // transfer cErc20 tokens to depositor
-        cToken.transfer(msg.sender, _amountToWithdraw);
+        cToken.transfer(msg.sender, amountToWithdraw);
 
-        return _amountToWithdraw;
+        return amountToWithdraw;
     }
 
     // True to withdraw based on cErc20 amount. False to withdraw based on amount of underlying erc20
     function withdrawErc20(
-        address _erc20Contract,
-        address _cErc20Contract,
+        address erc20Contract,
         bool redeemType,
-        uint256 _amountToWithdraw
+        uint256 amountToWithdraw
     ) public whenNotPaused nonReentrant returns (uint256) {
         // add nonReentrant modifier
 
         // Create a reference to the underlying asset contract, like DAI.
-        Erc20 underlying = Erc20(_erc20Contract);
+        Erc20 underlying = Erc20(erc20Contract);
 
         // Create a reference to the corresponding cToken contract, like cDAI
-        CErc20 cToken = CErc20(_cErc20Contract);
+        CErc20 cToken = CErc20(assetToCAsset[erc20Contract]);
 
         // redeemType == true >> withdraw based on amount of cErc20
         if (redeemType == true) {
@@ -272,11 +264,11 @@ contract LiquidityProviders is
 
             vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
 
-            vars.redeemTokens = _amountToWithdraw;
+            vars.redeemTokens = amountToWithdraw;
 
             (vars.mathErr, vars.redeemAmount) = mulScalarTruncate(
                 Exp({mantissa: vars.exchangeRateMantissa}),
-                _amountToWithdraw
+                amountToWithdraw
             );
             if (vars.mathErr != MathError.NO_ERROR) {
                 return
@@ -291,17 +283,17 @@ contract LiquidityProviders is
 
             // require msg.sender has sufficient balance of cErc20
             require(
-                cErc20Balances[_cErc20Contract][msg.sender] >=
+                cErc20Balances[assetToCAsset[erc20Contract]][msg.sender] >=
                     vars.redeemTokens,
                 "Must have a balance greater than or equal to redeemAmount"
             );
 
-            cErc20Balances[_cErc20Contract][msg.sender] = cErc20Balances[
-                _cErc20Contract
+            cErc20Balances[assetToCAsset[erc20Contract]][msg.sender] = cErc20Balances[
+                assetToCAsset[erc20Contract]
             ][msg.sender] -= vars.redeemTokens;
 
             // should have require statement to ensure redeem is successful before proceeding
-            // Retrieve your asset based on an _amountToWithdraw of the asset
+            // Retrieve your asset based on an amountToWithdraw of the asset
             cToken.redeemUnderlying(vars.redeemAmount);
 
             // should have require statement to ensure tranfer is successful before proceeding
@@ -314,7 +306,7 @@ contract LiquidityProviders is
             vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
 
             (vars.mathErr, vars.redeemTokens) = divScalarByExpTruncate(
-                _amountToWithdraw,
+                amountToWithdraw,
                 Exp({mantissa: vars.exchangeRateMantissa})
             );
             if (vars.mathErr != MathError.NO_ERROR) {
@@ -326,28 +318,28 @@ contract LiquidityProviders is
                     );
             }
 
-            vars.redeemAmount = _amountToWithdraw;
+            vars.redeemAmount = amountToWithdraw;
 
             console.log(
-                "cErc20Balances[_cErc20Contract][msg.sender]",
-                cErc20Balances[_cErc20Contract][msg.sender]
+                "cErc20Balances[assetToCAsset[erc20Contract]][msg.sender]",
+                cErc20Balances[assetToCAsset[erc20Contract]][msg.sender]
             );
             console.log("vars.redeemAmount", vars.redeemAmount);
             console.log("vars.redeemTokens", vars.redeemTokens);
 
             // require msg.sender has sufficient balance of cErc20
             require(
-                cErc20Balances[_cErc20Contract][msg.sender] >=
+                cErc20Balances[assetToCAsset[erc20Contract]][msg.sender] >=
                     vars.redeemTokens,
                 "Must have a balance greater than or equal to redeemAmount"
             );
 
-            cErc20Balances[_cErc20Contract][msg.sender] = cErc20Balances[
-                _cErc20Contract
+            cErc20Balances[assetToCAsset[erc20Contract]][msg.sender] = cErc20Balances[
+                assetToCAsset[erc20Contract]
             ][msg.sender] -= vars.redeemTokens;
 
             // should have require statement to ensure redeem is successful before proceeding
-            // Retrieve your asset based on an _amountToWithdraw of the asset
+            // Retrieve your asset based on an amountToWithdraw of the asset
             cToken.redeemUnderlying(vars.redeemAmount);
 
             // should have require statement to ensure tranfer is successful before proceeding
@@ -357,19 +349,18 @@ contract LiquidityProviders is
         return 0;
     }
 
-    function supplyEth(address payable _cEtherContract)
+    function supplyEth()
         public
         payable
         returns (uint256)
     {
-        // Require CEth contract address is 0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5
-        require(
-            _cEtherContract == 0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5,
-            "cEtherContract must be Compound cEtherContract address 0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5"
-        );
+        // set cEth address
+        // utilize reference to allow update of cEth address by compound in future versions
+        address cEtherContract = assetToCAsset[0x0000000000000000000000000000000000000000];
+ 
 
         // Create a reference to the corresponding cToken contract
-        CEth cToken = CEth(_cEtherContract);
+        CEth cToken = CEth(cEtherContract);
         // Could simply enforce a single contract to interact with, then dont need require statement to check address
         // CEth cToken = CEth(0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5);
 
@@ -388,8 +379,8 @@ contract LiquidityProviders is
         cToken.mint{value: msg.value, gas: 250000}();
 
         // updating the depositors cErc20 balance
-        cErc20Balances[_cEtherContract][msg.sender] = cErc20Balances[
-            _cEtherContract
+        cErc20Balances[cEtherContract][msg.sender] = cErc20Balances[
+            cEtherContract
         ][msg.sender] += vars.mintTokens;
 
         uint256 CEthBalance = cToken.balanceOf(address(this));
@@ -403,29 +394,26 @@ contract LiquidityProviders is
     }
 
     function supplyCEth(
-        address payable _cEtherContract,
         uint256 _numTokensToSupply
     ) public payable returns (uint256) {
         // Compound mainnet CEth contract address is 0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5
-        require(
-            _cEtherContract == 0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5,
-            "cEtherContract must be Compound cEtherContract address 0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5"
-        );
+
+        // set cEth address
+        // utilize reference to allow update of cEth address by compound in future versions
+        address cEtherContract = assetToCAsset[0x0000000000000000000000000000000000000000];
 
         // Create a reference to the corresponding cToken contract
-        CEth cToken = CEth(_cEtherContract);
-        // Could simply enforce a single contract to interact with, then dont need require statement to check address
-        // CEth cToken = CEth(0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5);
+        CEth cToken = CEth(cEtherContract);
 
         // should have require statement to ensure tranfer is successful before updating the balance
         // transferFrom ERC20 from supplyers address
         cToken.transferFrom(msg.sender, address(this), _numTokensToSupply);
 
-        cErc20Balances[_cEtherContract][msg.sender] += _numTokensToSupply;
+        cErc20Balances[cEtherContract][msg.sender] += _numTokensToSupply;
 
         console.log(
             "msg.sender CEthBalance 1",
-            cErc20Balances[_cEtherContract][msg.sender]
+            cErc20Balances[cEtherContract][msg.sender]
         );
 
         uint256 CEthBalance = cToken.balanceOf(address(this));
@@ -437,54 +425,51 @@ contract LiquidityProviders is
         return _numTokensToSupply;
     }
 
-    // currently implemented as "true" optino in withdrawErc20.
-    function withdrawCEth(address _cEtherContract, uint256 _amountToWithdraw)
+    function withdrawCEth(uint256 amountToWithdraw)
         public
         whenNotPaused
         nonReentrant
         returns (uint256)
     {
-        console.log("_cEtherContract", _cEtherContract);
-        console.log("_amountToWithdraw", _amountToWithdraw);
-
-        // add nonReentrant modifier
 
         // Compound mainnet CEth contract address is 0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5
-        require(
-            _cEtherContract == 0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5,
-            "cEtherContract must be Compound cEtherContract address 0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5"
-        );
+
+        // set cEth address
+        // utilize reference to allow update of cEth address by compound in future versions
+        address cEtherContract = assetToCAsset[0x0000000000000000000000000000000000000000];
 
         // Create a reference to the corresponding cToken contract, like cDAI
-        CEth cToken = CEth(_cEtherContract);
+        CEth cToken = CEth(cEtherContract);
 
         // require msg.sender has sufficient balance of cErc20
         require(
-            cErc20Balances[_cEtherContract][msg.sender] >= _amountToWithdraw,
+            cErc20Balances[cEtherContract][msg.sender] >= amountToWithdraw,
             "Must have a balance greater than or equal to amountToWithdraw"
         );
         // updating the depositors cErc20 balance
-        cErc20Balances[_cEtherContract][msg.sender] = cErc20Balances[
-            _cEtherContract
-        ][msg.sender] -= _amountToWithdraw;
+        cErc20Balances[cEtherContract][msg.sender] = cErc20Balances[
+            cEtherContract
+        ][msg.sender] -= amountToWithdraw;
 
         // should have require statement to ensure tranfer is successful before proceeding
         // transfer cErc20 tokens to depositor
-        cToken.transfer(msg.sender, _amountToWithdraw);
+        cToken.transfer(msg.sender, amountToWithdraw);
 
-        return _amountToWithdraw;
+        return amountToWithdraw;
     }
 
     // True to withdraw based on cEth amount. False to withdraw based on amount of Eth
     function withdrawEth(
-        address _cEtherContract,
         bool redeemType,
-        uint256 _amountToWithdraw
+        uint256 amountToWithdraw
     ) public whenNotPaused nonReentrant returns (uint256) {
-        // add nonReentrant modifier
+
+        // set cEth address
+        // utilize reference to allow update of cEth address by compound in future versions
+        address cEtherContract = assetToCAsset[0x0000000000000000000000000000000000000000];
 
         // Create a reference to the corresponding cToken contract, like cDAI
-        CEth cToken = CEth(_cEtherContract);
+        CEth cToken = CEth(cEtherContract);
 
         // redeemType == true >> withdraw based on amount of cErc20
         if (redeemType == true) {
@@ -492,11 +477,11 @@ contract LiquidityProviders is
 
             vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
 
-            vars.redeemTokens = _amountToWithdraw;
+            vars.redeemTokens = amountToWithdraw;
 
             (vars.mathErr, vars.redeemAmount) = mulScalarTruncate(
                 Exp({mantissa: vars.exchangeRateMantissa}),
-                _amountToWithdraw
+                amountToWithdraw
             );
             if (vars.mathErr != MathError.NO_ERROR) {
                 return
@@ -509,17 +494,17 @@ contract LiquidityProviders is
 
             // require msg.sender has sufficient balance of cErc20
             require(
-                cErc20Balances[_cEtherContract][msg.sender] >=
+                cErc20Balances[cEtherContract][msg.sender] >=
                     vars.redeemTokens,
                 "Must have a balance greater than or equal to redeemAmount"
             );
 
-            cErc20Balances[_cEtherContract][msg.sender] = cErc20Balances[
-                _cEtherContract
+            cErc20Balances[cEtherContract][msg.sender] = cErc20Balances[
+                cEtherContract
             ][msg.sender] -= vars.redeemTokens;
 
             // should have require statement to ensure redeem is successful before proceeding
-            // Retrieve your asset based on an _amountToWithdraw of the asset
+            // Retrieve your asset based on an amountToWithdraw of the asset
             cToken.redeemUnderlying(vars.redeemAmount);
 
             // Repay eth to depositor
@@ -533,7 +518,7 @@ contract LiquidityProviders is
             vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
 
             (vars.mathErr, vars.redeemTokens) = divScalarByExpTruncate(
-                _amountToWithdraw,
+                amountToWithdraw,
                 Exp({mantissa: vars.exchangeRateMantissa})
             );
             if (vars.mathErr != MathError.NO_ERROR) {
@@ -545,28 +530,21 @@ contract LiquidityProviders is
                     );
             }
 
-            vars.redeemAmount = _amountToWithdraw;
-
-            console.log(
-                "cErc20Balances[_cEtherContract][msg.sender]",
-                cErc20Balances[_cEtherContract][msg.sender]
-            );
-            console.log("vars.redeemAmount", vars.redeemAmount);
-            console.log("vars.redeemTokens", vars.redeemTokens);
+            vars.redeemAmount = amountToWithdraw;
 
             // require msg.sender has sufficient balance of cErc20
             require(
-                cErc20Balances[_cEtherContract][msg.sender] >=
+                cErc20Balances[cEtherContract][msg.sender] >=
                     vars.redeemTokens,
                 "Must have a balance greater than or equal to redeemAmount"
             );
 
-            cErc20Balances[_cEtherContract][msg.sender] = cErc20Balances[
-                _cEtherContract
+            cErc20Balances[cEtherContract][msg.sender] = cErc20Balances[
+                cEtherContract
             ][msg.sender] -= vars.redeemTokens;
 
             // should have require statement to ensure redeem is successful before proceeding
-            // Retrieve your asset based on an _amountToWithdraw of the asset
+            // Retrieve your asset based on an amountToWithdraw of the asset
             cToken.redeemUnderlying(vars.redeemAmount);
 
             // Repay eth to depositor
@@ -576,6 +554,12 @@ contract LiquidityProviders is
 
         return 0;
     }
+
+    // admin functions
+
+    function adminTransferCErc20() public {}
+
+    function adminRedeemAndTransferErc20() public {}
 
     // need to work out how to calculate the amount of comp accrued to each deposit. Might need a struct for each balance which tracks the amount of time elapsed for each segment of value.
     function withdrawCompEarned() public {}
@@ -590,17 +574,7 @@ contract LiquidityProviders is
 
     function calculateLiquidityInterestEarned() public {}
 
-    function calculateErc20WithdrawalFee(
-        address _erc20Contract,
-        address _cErc20Contract,
-        bool redeemType,
-        uint256 _amountToWithdraw
-    ) public {}
-
     function calculateLoanDrawDownFee() public {}
-
-    // This function will remain empty until NiftyApes reaches sufficient decentralization
-    // function adminWithdrawal() public onlyOwner {}
 
     // if possible should implement function to reject any ETH or ERC20 that is directly sent to the contract
 
