@@ -21,8 +21,6 @@ contract SignatureLendingAuction is LiquidityProviders {
         address lender;
         // loan asset
         address asset; // 0x0 in active loan denotes ETH
-        // loan cAsset
-        address cAsset;
         // loan amount
         uint256 loanAmount;
         // loan interest rate
@@ -51,8 +49,6 @@ contract SignatureLendingAuction is LiquidityProviders {
         uint256 nftId; // 0 if floorTerm is true
         // offer asset type
         address asset;
-        // offer cAsset type
-        address cAsset;
         // offer loan amount
         uint256 loanAmount;
         // offer interest rate
@@ -183,7 +179,6 @@ contract SignatureLendingAuction is LiquidityProviders {
                     signedOffer.nftContractAddress,
                     signedOffer.nftId,
                     signedOffer.asset,
-                    signedOffer.cAsset,
                     signedOffer.loanAmount,
                     signedOffer.interestRate,
                     signedOffer.duration,
@@ -290,6 +285,8 @@ contract SignatureLendingAuction is LiquidityProviders {
             offer.nftContractAddress
         ][nftId];
 
+        address cAsset = assetToCAsset[offer.asset];
+
         // if loan is not active execute intial loan
         if (loanAuction.loanExecutedTime == 0) {
             // finalize signature
@@ -297,7 +294,7 @@ contract SignatureLendingAuction is LiquidityProviders {
 
             // check if lender has sufficient available balance and update utilizedBalance
             _checkAndUpdateLenderUtilizedBalanceInternal(
-                offer.cAsset,
+                cAsset,
                 offer.loanAmount,
                 lender
             );
@@ -334,7 +331,7 @@ contract SignatureLendingAuction is LiquidityProviders {
                 // redeem cTokens and transfer underlying to borrower
                 _redeemAndTransferErc20Internal(
                     offer.asset,
-                    offer.cAsset,
+                    cAsset,
                     drawAmountMinusFee,
                     nftOwner
                 );
@@ -345,7 +342,7 @@ contract SignatureLendingAuction is LiquidityProviders {
             ) {
                 // redeem cTokens and transfer underlying to borrower
                 _redeemAndTransferEthInternal(
-                    offer.cAsset,
+                    cAsset,
                     drawAmountMinusFee,
                     nftOwner
                 );
@@ -427,6 +424,8 @@ contract SignatureLendingAuction is LiquidityProviders {
             offer.nftContractAddress
         ][offer.nftId];
 
+        address cAsset = assetToCAsset[offer.asset];
+
         // require loan is not active
         require(
             loanAuction.loanExecutedTime == 0,
@@ -438,7 +437,7 @@ contract SignatureLendingAuction is LiquidityProviders {
 
         // check if lender has sufficient available balance and update utilizedBalance
         _checkAndUpdateLenderUtilizedBalanceInternal(
-            offer.cAsset,
+            cAsset,
             offer.loanAmount,
             lender
         );
@@ -475,7 +474,7 @@ contract SignatureLendingAuction is LiquidityProviders {
             // redeem cTokens and transfer underlying to borrower
             _redeemAndTransferErc20Internal(
                 offer.asset,
-                offer.cAsset,
+                cAsset,
                 drawAmountMinusFee,
                 nftOwner
             );
@@ -484,7 +483,7 @@ contract SignatureLendingAuction is LiquidityProviders {
         else if (offer.asset == 0x0000000000000000000000000000000000000000) {
             // redeem cTokens and transfer underlying to borrower
             _redeemAndTransferEthInternal(
-                offer.cAsset,
+                cAsset,
                 drawAmountMinusFee,
                 nftOwner
             );
@@ -576,6 +575,8 @@ contract SignatureLendingAuction is LiquidityProviders {
             offer.nftContractAddress
         ][offer.nftId];
 
+        address cAsset = assetToCAsset[offer.asset];
+
         // Require that loan does not have fixedTerms
         require(
             loanAuction.fixedTerms != true,
@@ -590,8 +591,7 @@ contract SignatureLendingAuction is LiquidityProviders {
 
         // require offer is same asset and cAsset
         require(
-            offer.asset == loanAuction.asset &&
-                offer.cAsset == loanAuction.cAsset,
+            offer.asset == loanAuction.asset,
             "Offer asset and cAsset must be the same as the current loan"
         );
 
@@ -627,7 +627,7 @@ contract SignatureLendingAuction is LiquidityProviders {
         if (loanAuction.asset != 0x0000000000000000000000000000000000000000) {
             _payErc20AndUpdateBalancesInternal(
                 loanAuction.asset,
-                loanAuction.cAsset,
+                cAsset,
                 loanAuction.lender,
                 fullRepayment,
                 interestOwedToLender,
@@ -645,7 +645,7 @@ contract SignatureLendingAuction is LiquidityProviders {
             );
 
             _payEthAndUpdateBalancesInternal(
-                loanAuction.cAsset,
+                cAsset,
                 loanAuction.lender,
                 msg.value,
                 msg.value,
@@ -669,6 +669,8 @@ contract SignatureLendingAuction is LiquidityProviders {
             offer.nftContractAddress
         ][offer.nftId];
 
+        address cAsset = assetToCAsset[offer.asset];
+
         // Require that loan does not have fixedTerms
         require(
             loanAuction.fixedTerms != true,
@@ -681,11 +683,10 @@ contract SignatureLendingAuction is LiquidityProviders {
             "Loan is not active. No funds to withdraw."
         );
 
-        // require offer is same asset and cAsset
+        // require offer is same asset
         require(
-            offer.asset == loanAuction.asset &&
-                offer.cAsset == loanAuction.cAsset,
-            "Offer asset and cAsset must be the same as the current loan"
+            offer.asset == loanAuction.asset,
+            "Offer asset must be the same as the current loan"
         );
 
         // require that terms are parity + 1
@@ -745,7 +746,7 @@ contract SignatureLendingAuction is LiquidityProviders {
         if (loanAuction.asset != 0x0000000000000000000000000000000000000000) {
             _payErc20AndUpdateBalancesInternal(
                 loanAuction.asset,
-                loanAuction.cAsset,
+                cAsset,
                 loanAuction.lender,
                 fullBidBuyOutAmount,
                 interestAndPremiumOwedToLender,
@@ -763,7 +764,7 @@ contract SignatureLendingAuction is LiquidityProviders {
             );
 
             _payEthAndUpdateBalancesInternal(
-                loanAuction.cAsset,
+                cAsset,
                 loanAuction.lender,
                 msg.value,
                 msgValueMinusProtocolPremiumFee,
@@ -1022,6 +1023,8 @@ contract SignatureLendingAuction is LiquidityProviders {
             nftId
         ];
 
+        address cAsset = assetToCAsset[loanAuction.asset];
+
         // Require that loan is active
         require(
             loanAuction.loanExecutedTime != 0,
@@ -1047,7 +1050,7 @@ contract SignatureLendingAuction is LiquidityProviders {
         );
 
         _checkAndUpdateLenderUtilizedBalanceInternal(
-            loanAuction.cAsset,
+            cAsset,
             drawAmount,
             loanAuction.lender
         );
@@ -1064,7 +1067,7 @@ contract SignatureLendingAuction is LiquidityProviders {
             // redeem cTokens and transfer underlying to borrower
             _redeemAndTransferErc20Internal(
                 loanAuction.asset,
-                loanAuction.cAsset,
+                cAsset,
                 drawAmountMinusFee,
                 loanAuction.nftOwner
             );
@@ -1075,7 +1078,7 @@ contract SignatureLendingAuction is LiquidityProviders {
         ) {
             // redeem cTokens and transfer underlying to borrower
             _redeemAndTransferEthInternal(
-                loanAuction.cAsset,
+                cAsset,
                 drawAmountMinusFee,
                 loanAuction.nftOwner
             );
@@ -1101,6 +1104,8 @@ contract SignatureLendingAuction is LiquidityProviders {
         LoanAuction storage loanAuction = loanAuctions[nftContractAddress][
             nftId
         ];
+
+        address cAsset = assetToCAsset[loanAuction.asset];
 
         // Require that loan has been executed
         require(
@@ -1135,7 +1140,7 @@ contract SignatureLendingAuction is LiquidityProviders {
             // protocolPremiumFee is taken here. Full amount is minted to this contract address' balance in Compound and amount owed to lender is updated in their balance. The delta is the protocol premium fee.
             _payErc20AndUpdateBalancesInternal(
                 loanAuction.asset,
-                loanAuction.cAsset,
+                cAsset,
                 loanAuction.lender,
                 fullRepayment,
                 interestOwedToLender,
@@ -1153,7 +1158,7 @@ contract SignatureLendingAuction is LiquidityProviders {
             );
             // protocolPremiumFee is taken here. Full amount is minted to this contract address' balance in Compound and amount owed to lender is updated in their balance. The delta is the protocol premium fee.
             _payEthAndUpdateBalancesInternal(
-                loanAuction.cAsset,
+                cAsset,
                 loanAuction.lender,
                 msg.value,
                 msg.value,
@@ -1166,7 +1171,6 @@ contract SignatureLendingAuction is LiquidityProviders {
         loanAuction.nftOwner = 0x0000000000000000000000000000000000000000;
         loanAuction.lender = 0x0000000000000000000000000000000000000000;
         loanAuction.asset = 0x0000000000000000000000000000000000000000;
-        loanAuction.cAsset = 0x0000000000000000000000000000000000000000;
         loanAuction.loanAmount = 0;
         loanAuction.interestRate = 0;
         loanAuction.loanDuration = 0;
@@ -1200,6 +1204,8 @@ contract SignatureLendingAuction is LiquidityProviders {
             nftId
         ];
 
+        address cAsset = assetToCAsset[loanAuction.asset];
+
         // Require that loan has been executed
         require(
             loanAuction.loanExecutedTime != 0,
@@ -1223,7 +1229,7 @@ contract SignatureLendingAuction is LiquidityProviders {
         if (loanAuction.asset != 0x0000000000000000000000000000000000000000) {
             _payErc20AndUpdateBalancesInternal(
                 loanAuction.asset,
-                loanAuction.cAsset,
+                cAsset,
                 loanAuction.lender,
                 partialAmount,
                 interestAmount,
@@ -1241,7 +1247,7 @@ contract SignatureLendingAuction is LiquidityProviders {
             );
 
             _payEthAndUpdateBalancesInternal(
-                loanAuction.cAsset,
+                cAsset,
                 loanAuction.lender,
                 msg.value,
                 msg.value,
@@ -1260,6 +1266,8 @@ contract SignatureLendingAuction is LiquidityProviders {
         LoanAuction storage loanAuction = loanAuctions[nftContractAddress][
             nftId
         ];
+
+        address cAsset = assetToCAsset[loanAuction.asset];
 
         // require that loan has been executed
         require(
@@ -1281,7 +1289,6 @@ contract SignatureLendingAuction is LiquidityProviders {
         loanAuction.nftOwner = 0x0000000000000000000000000000000000000000;
         loanAuction.lender = 0x0000000000000000000000000000000000000000;
         loanAuction.asset = 0x0000000000000000000000000000000000000000;
-        loanAuction.cAsset = 0x0000000000000000000000000000000000000000;
         loanAuction.loanAmount = 0;
         loanAuction.interestRate = 0;
         loanAuction.loanDuration = 0;
@@ -1293,12 +1300,12 @@ contract SignatureLendingAuction is LiquidityProviders {
         loanAuction.fixedTerms = false;
 
         // update lenders utilized balance
-        utilizedCErc20Balances[loanAuction.cAsset][
+        utilizedCErc20Balances[cAsset][
             loanAuction.lender
         ] -= loanAuction.amountDrawn;
 
         // update lenders total balance
-        cErc20Balances[loanAuction.cAsset][loanAuction.lender] -= loanAuction
+        cErc20Balances[cAsset][loanAuction.lender] -= loanAuction
             .amountDrawn;
 
         // transferFrom NFT from contract to lender
