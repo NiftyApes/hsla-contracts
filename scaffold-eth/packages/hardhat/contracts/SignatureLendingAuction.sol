@@ -168,29 +168,6 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         view
         returns (bytes32 offerhash)
     {
-        // originally 'byte' values, but solidity compiler was throwing error. If cant match signature investigate this.
-        // abi.encodePacked(
-        // byte(0x19),
-        // byte(0),
-
-        // return
-        //     keccak256(
-        //         abi.encodePacked(
-        //             bytes1(0x19),
-        //             bytes1(0),
-        //             address(this),
-        //             offer.nftContractAddress,
-        //             offer.nftId,
-        //             offer.asset,
-        //             offer.loanAmount,
-        //             offer.interestRate,
-        //             offer.duration,
-        //             offer.expiration,
-        //             offer.fixedTerms,
-        //             offer.floorTerm
-        //         )
-        //     );
-
         return
             _hashTypedDataV4(
                 keccak256(
@@ -305,7 +282,6 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         address nftOwner,
         bytes memory signature
     ) internal {
-        console.log("hello from the top");
         // instantiate LoanAuction Struct
         LoanAuction storage loanAuction = loanAuctions[
             offer.nftContractAddress
@@ -376,21 +352,10 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         }
         // else if loan is active, borrower pays off loan and executes new loan
         else if (loanAuction.loanExecutedTime != 0) {
-            // may be better to refactor and create specific bestBidBuyOutbyborrower function
-            // buyOutBestBidByBorrower(offer);
-            // pay off current loan
-            repayRemainingLoan(offer.nftContractAddress, nftId);
-            // execute new loan
-            _executeLoanByBidInternal(
-                offer,
-                nftId,
-                lender,
-                nftOwner,
-                signature
-            );
+        //  this is probably not gas efficient, may just need to force user to use the buyOutBestBidByBorrower function directly
+            buyOutBestBidByBorrower(offer, signature);
         }
 
-        console.log("hello from the bottom");
     }
 
     // executeLoanByAsk allows a lender to submit a signed offer from a borrower and execute a loan against the borrower's NFT
@@ -534,7 +499,7 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         CErc20 cToken = CErc20(cAsset);
 
         // redeem underlying from cToken to this contract
-        cToken.rede++emUnderlying(amount);
+        cToken.redeemUnderlying(amount);
 
         // transfer underlying from this contract to borrower
         underlying.transfer(nftOwner, amount);
@@ -1395,11 +1360,15 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         // calculate seconds as lender
         uint256 secondsAslender = block.timestamp - loanAuction.bestBidTime;
 
+        console.log("secondsAslender", secondsAslender);
+
         // percent of total loan time as Lender
         uint256 percentOfLoanTimeAsLender = SafeMath.div(
-            loanAuction.timeDrawn,
-            secondsAslender
+            secondsAslender,
+            loanAuction.timeDrawn
         );
+
+        console.log("percentOfLoanTimeAsLender", percentOfLoanTimeAsLender);
 
         // percent of value of amountDrawn earned
         uint256 percentOfValue = SafeMath.mul(
@@ -1407,10 +1376,18 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
             percentOfLoanTimeAsLender
         );
 
+        console.log("percentOfValue", percentOfValue);
+        
         // Interest rate
         uint256 interestRate = SafeMath.div(loanAuction.interestRate, 100);
+        
+        console.log("interestRate", interestRate);
+
         // Calculate interest amount
         uint256 interestAmount = SafeMath.mul(interestRate, percentOfValue);
+
+        console.log("interestAmount", interestAmount);
+
         // return interest amount
         return interestAmount;
     }
