@@ -6,8 +6,9 @@ import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
-contract SignatureLendingAuction is LiquidityProviders {
+contract SignatureLendingAuction is LiquidityProviders, EIP712 {
     // Solidity 0.8.x provides safe math, but uses an invalid opcode error which comsumes all gas. SafeMath uses revert which returns all gas.
     using SafeMath for uint256;
     using ECDSA for bytes32;
@@ -158,33 +159,52 @@ contract SignatureLendingAuction is LiquidityProviders {
 
     // ---------- FUNCTIONS -------------- //
 
+    constructor() EIP712("NiftyApes", "0.0.1") {}
+
     // ideally this hash can be generated on the frontend, stored in the backend, and provided to functions to reduce computation
     // given the offer details, generate a hash and try to kind of follow the eip-191 standard
-    function getOfferHash(Offer memory signedOffer)
+    function getOfferHash(Offer memory offer)
         public
         view
-        returns (bytes32 _offerhash)
+        returns (bytes32 offerhash)
     {
         // originally 'byte' values, but solidity compiler was throwing error. If cant match signature investigate this.
         // abi.encodePacked(
         // byte(0x19),
         // byte(0),
 
+        // return
+        //     keccak256(
+        //         abi.encodePacked(
+        //             bytes1(0x19),
+        //             bytes1(0),
+        //             address(this),
+        //             offer.nftContractAddress,
+        //             offer.nftId,
+        //             offer.asset,
+        //             offer.loanAmount,
+        //             offer.interestRate,
+        //             offer.duration,
+        //             offer.expiration,
+        //             offer.fixedTerms,
+        //             offer.floorTerm
+        //         )
+        //     );
+
         return
-            keccak256(
-                abi.encodePacked(
-                    bytes1(0x19),
-                    bytes1(0),
-                    address(this),
-                    signedOffer.nftContractAddress,
-                    signedOffer.nftId,
-                    signedOffer.asset,
-                    signedOffer.loanAmount,
-                    signedOffer.interestRate,
-                    signedOffer.duration,
-                    signedOffer.expiration,
-                    signedOffer.fixedTerms,
-                    signedOffer.floorTerm
+            _hashTypedDataV4(
+                keccak256(
+                    abi.encode(
+                        offer.nftContractAddress,
+                        offer.nftId,
+                        offer.asset,
+                        offer.loanAmount,
+                        offer.interestRate,
+                        offer.duration,
+                        offer.expiration,
+                        offer.fixedTerms,
+                        offer.floorTerm
+                    )
                 )
             );
     }
@@ -204,7 +224,8 @@ contract SignatureLendingAuction is LiquidityProviders {
         // bytes offerHash,
         bytes memory signature,
         uint256 nftId // nftId should match offer.nftId if floorTerm false, nftId should not match if floorTerm true. Need to provide as function parameter to pass nftId with floor terms.
-    ) external payable whenNotPaused() {
+    ) external payable whenNotPaused {
+        console.log("inside");
         // require signature has not been cancelled/bid withdrawn
         require(
             cancelledOrFinalized[signature] == false,
@@ -222,6 +243,8 @@ contract SignatureLendingAuction is LiquidityProviders {
             offer.duration >= 86400,
             "Offers must have 24 hours minimum duration"
         );
+
+        console.log("here 1");
 
         // get nft owner
         address nftOwner = IERC721(offer.nftContractAddress).ownerOf(nftId);
@@ -241,7 +264,7 @@ contract SignatureLendingAuction is LiquidityProviders {
         // we know the signer must be the lender because msg.sender must be the nftOwner/borrower
         address lender = getOfferSigner(offerHash, signature);
 
-        // if floorTerm is false
+        // // if floorTerm is false
         if (offer.floorTerm == false) {
             // require nftId == sigNftId
             require(
@@ -270,6 +293,8 @@ contract SignatureLendingAuction is LiquidityProviders {
                 signature
             );
         }
+
+        
     }
 
     // this internal function _executeLoanByBidInternal handles the state changes for executeLoanByBid
@@ -280,6 +305,7 @@ contract SignatureLendingAuction is LiquidityProviders {
         address nftOwner,
         bytes memory signature
     ) internal {
+        console.log("hello from the top");
         // instantiate LoanAuction Struct
         LoanAuction storage loanAuction = loanAuctions[
             offer.nftContractAddress
@@ -363,6 +389,8 @@ contract SignatureLendingAuction is LiquidityProviders {
                 signature
             );
         }
+
+        console.log("hello from the bottom");
     }
 
     // executeLoanByAsk allows a lender to submit a signed offer from a borrower and execute a loan against the borrower's NFT
@@ -482,11 +510,7 @@ contract SignatureLendingAuction is LiquidityProviders {
         // else process as ETH
         else if (offer.asset == 0x0000000000000000000000000000000000000000) {
             // redeem cTokens and transfer underlying to borrower
-            _redeemAndTransferEthInternal(
-                cAsset,
-                drawAmountMinusFee,
-                nftOwner
-            );
+            _redeemAndTransferEthInternal(cAsset, drawAmountMinusFee, nftOwner);
         }
     }
 
@@ -497,6 +521,12 @@ contract SignatureLendingAuction is LiquidityProviders {
         uint256 amount,
         address nftOwner
     ) internal {
+
+        console.log("asset", asset);
+        console.log("asset", cAsset);
+        console.log("amount", amount);
+        console.log("nftOwner", nftOwner);
+
         // Create a reference to the underlying asset contract, like DAI.
         Erc20 underlying = Erc20(asset);
 
@@ -569,7 +599,11 @@ contract SignatureLendingAuction is LiquidityProviders {
         return 0;
     }
 
-    function buyOutBestBidByBorrower(Offer memory offer, bytes memory signature) public payable whenNotPaused {
+    function buyOutBestBidByBorrower(Offer memory offer, bytes memory signature)
+        public
+        payable
+        whenNotPaused
+    {
         // Instantiate LoanAuction Struct
         LoanAuction storage loanAuction = loanAuctions[
             offer.nftContractAddress
@@ -596,7 +630,9 @@ contract SignatureLendingAuction is LiquidityProviders {
         );
 
         // get nft owner
-        address nftOwner = IERC721(offer.nftContractAddress).ownerOf(offer.nftId);
+        address nftOwner = IERC721(offer.nftContractAddress).ownerOf(
+            offer.nftId
+        );
 
         // require msg.sender is the nftOwner/borrower
         require(
@@ -663,7 +699,12 @@ contract SignatureLendingAuction is LiquidityProviders {
         loanAuction.historicInterest = 0;
     }
 
-    function buyOutBestBidByLender(Offer memory offer) public payable whenNotPaused nonReentrant {
+    function buyOutBestBidByLender(Offer memory offer)
+        public
+        payable
+        whenNotPaused
+        nonReentrant
+    {
         // Instantiate LoanAuction Struct
         LoanAuction storage loanAuction = loanAuctions[
             offer.nftContractAddress
@@ -1097,7 +1138,8 @@ contract SignatureLendingAuction is LiquidityProviders {
     function repayRemainingLoan(address nftContractAddress, uint256 nftId)
         public
         payable
-        whenNotPaused nonReentrant
+        whenNotPaused
+        nonReentrant
         returns (uint256)
     {
         // Instantiate LoanAuction Struct
@@ -1261,7 +1303,11 @@ contract SignatureLendingAuction is LiquidityProviders {
     }
 
     // allows anyone to seize an asset of a past due loan on behalf on the lender
-    function seizeAsset(address nftContractAddress, uint256 nftId) public whenNotPaused nonReentrant {
+    function seizeAsset(address nftContractAddress, uint256 nftId)
+        public
+        whenNotPaused
+        nonReentrant
+    {
         // instantiate LoanAuction Struct
         LoanAuction storage loanAuction = loanAuctions[nftContractAddress][
             nftId
@@ -1300,13 +1346,11 @@ contract SignatureLendingAuction is LiquidityProviders {
         loanAuction.fixedTerms = false;
 
         // update lenders utilized balance
-        utilizedCErc20Balances[cAsset][
-            loanAuction.lender
-        ] -= loanAuction.amountDrawn;
+        utilizedCErc20Balances[cAsset][loanAuction.lender] -= loanAuction
+            .amountDrawn;
 
         // update lenders total balance
-        cErc20Balances[cAsset][loanAuction.lender] -= loanAuction
-            .amountDrawn;
+        cErc20Balances[cAsset][loanAuction.lender] -= loanAuction.amountDrawn;
 
         // transferFrom NFT from contract to lender
         IERC721(nftContractAddress).transferFrom(
@@ -1422,14 +1466,24 @@ contract SignatureLendingAuction is LiquidityProviders {
         // emit newLoanDrawFeeAmount();
     }
 
-    function updateBuyOutPremiumLenderPrecentage(uint256 newPremiumLenderPrecentage) external onlyOwner {
-        buyOutPremiumLenderPrecentage = SafeMath.div(newPremiumLenderPrecentage, 1000);
+    function updateBuyOutPremiumLenderPrecentage(
+        uint256 newPremiumLenderPrecentage
+    ) external onlyOwner {
+        buyOutPremiumLenderPrecentage = SafeMath.div(
+            newPremiumLenderPrecentage,
+            1000
+        );
 
         // emit newPremiumLenderPercentage();
     }
 
-    function updateBuyOutPremiumProtocolPrecentage(uint256 newPremiumProtocolPrecentage) external onlyOwner {
-        buyOutPremiumProtocolPrecentage = SafeMath.div(newPremiumProtocolPrecentage, 1000);
+    function updateBuyOutPremiumProtocolPrecentage(
+        uint256 newPremiumProtocolPrecentage
+    ) external onlyOwner {
+        buyOutPremiumProtocolPrecentage = SafeMath.div(
+            newPremiumProtocolPrecentage,
+            1000
+        );
 
         // emit newPremiumProtocolPercentage();
     }
