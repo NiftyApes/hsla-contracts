@@ -534,7 +534,7 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         CErc20 cToken = CErc20(cAsset);
 
         // redeem underlying from cToken to this contract
-        cToken.redeemUnderlying(amount);
+        cToken.rede++emUnderlying(amount);
 
         // transfer underlying from this contract to borrower
         underlying.transfer(nftOwner, amount);
@@ -984,7 +984,7 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
     }
 
     // Cancel a signature based bid or ask on chain
-    function withdrawBidOrAsk(Offer memory signedOffer, bytes memory signature)
+    function withdrawBidOrAsk(Offer memory offer, bytes memory signature)
         public
     {
         // require signature is still valid. This also ensures the signature is not utilized in an active loan
@@ -994,7 +994,7 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         );
 
         // ideally calculated, stored, and provided as parameter to save computation
-        bytes32 offerHash = getOfferHash(signedOffer);
+        bytes32 offerHash = getOfferHash(offer);
 
         // recover signer
         address signer = getOfferSigner(offerHash, signature);
