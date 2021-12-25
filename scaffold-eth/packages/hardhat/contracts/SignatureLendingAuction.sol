@@ -73,13 +73,13 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
     mapping(bytes => bool) public cancelledOrFinalized;
 
     // fee paid to protocol by borrower for drawing down loan
-    uint256 loanDrawFeeProtocolPercentage = SafeMath.div(1, 100);
+    uint256 loanDrawFeeProtocolPercentage = SafeMath.div(1, 10000);
 
     // premium paid to current lender by new lender for buying out the loan
-    uint256 buyOutPremiumLenderPrecentage = SafeMath.div(9, 1000);
+    uint256 buyOutPremiumLenderPrecentage = SafeMath.div(9, 100000);
 
     // premium paid to protocol by new lender for buying out the loan
-    uint256 buyOutPremiumProtocolPrecentage = SafeMath.div(1, 1000);
+    uint256 buyOutPremiumProtocolPrecentage = SafeMath.div(1, 100000);
 
     // ---------- EVENTS --------------- //
 
@@ -1379,7 +1379,7 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
 
         console.log("percentOfAmountDrawn", percentOfAmountDrawn);
 
-        // Calculate interest amount
+        // Multiply principle by basis points first
         uint256 interestMulPercentOfAmountDrawn = SafeMath.mul(
             loanAuction.interestRate,
             percentOfAmountDrawn
@@ -1387,8 +1387,13 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
 
         console.log("interestMulPercentOfAmountDrawn", interestMulPercentOfAmountDrawn);
 
-        // Interest rate
-        uint256 finalAmount = SafeMath.div(interestMulPercentOfAmountDrawn, 100000000);
+        // divide by basis decimals
+        uint256 interestDecimals = SafeMath.div(interestMulPercentOfAmountDrawn, 10000);
+
+         console.log("interestDecimals", interestDecimals);
+
+        // divide by decimalCompensation
+        uint256 finalAmount = SafeMath.div(interestDecimals, 100000000);
 
         console.log("finalAmount", finalAmount);
 
@@ -1443,7 +1448,7 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
     }
 
     function updateLoanDrawFee(uint256 newFeeAmount) external onlyOwner {
-        loanDrawFeeProtocolPercentage = SafeMath.div(newFeeAmount, 100);
+        loanDrawFeeProtocolPercentage = SafeMath.div(newFeeAmount, 10000);
 
         // emit newLoanDrawFeeAmount();
     }
@@ -1453,7 +1458,7 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
     ) external onlyOwner {
         buyOutPremiumLenderPrecentage = SafeMath.div(
             newPremiumLenderPrecentage,
-            1000
+            100000
         );
 
         // emit newPremiumLenderPercentage();
