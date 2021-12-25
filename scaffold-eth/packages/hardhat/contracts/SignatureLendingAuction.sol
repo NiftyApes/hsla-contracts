@@ -221,8 +221,6 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
             "Offers must have 24 hours minimum duration"
         );
 
-        console.log("here 1");
-
         // get nft owner
         address nftOwner = IERC721(offer.nftContractAddress).ownerOf(nftId);
 
@@ -240,6 +238,18 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         // recover singer and confirm signed offer terms with function submitted offer terms
         // we know the signer must be the lender because msg.sender must be the nftOwner/borrower
         address lender = getOfferSigner(offerHash, signature);
+
+        console.log("lender", lender);
+        console.log("msg.sender", msg.sender);
+        console.log("nftContractAddress", offer.nftContractAddress);
+        console.log("nftId", offer.nftId);
+        console.log("asset", offer.asset);
+        console.log("loanAmount", offer.loanAmount);
+        console.log("interestRate", offer.interestRate);
+        console.log("duration", offer.duration);
+        console.log("expiration", offer.expiration);
+        console.log("fixedTerms", offer.fixedTerms);
+        console.log("floorTerm", offer.floorTerm);
 
         // // if floorTerm is false
         if (offer.floorTerm == false) {
@@ -1385,18 +1395,23 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
             percentOfAmountDrawn
         );
 
-        console.log("interestMulPercentOfAmountDrawn", interestMulPercentOfAmountDrawn);
+        console.log(
+            "interestMulPercentOfAmountDrawn",
+            interestMulPercentOfAmountDrawn
+        );
 
         // divide by basis decimals
-        uint256 interestDecimals = SafeMath.div(interestMulPercentOfAmountDrawn, 10000);
+        uint256 interestDecimals = SafeMath.div(
+            interestMulPercentOfAmountDrawn,
+            10000
+        );
 
-         console.log("interestDecimals", interestDecimals);
+        console.log("interestDecimals", interestDecimals);
 
         // divide by decimalCompensation
         uint256 finalAmount = SafeMath.div(interestDecimals, 100000000);
 
         console.log("finalAmount", finalAmount);
-
 
         // return interest amount
         return finalAmount;
