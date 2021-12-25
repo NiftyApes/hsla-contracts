@@ -270,8 +270,6 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
                 signature
             );
         }
-
-        
     }
 
     // this internal function _executeLoanByBidInternal handles the state changes for executeLoanByBid
@@ -352,10 +350,9 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         }
         // else if loan is active, borrower pays off loan and executes new loan
         else if (loanAuction.loanExecutedTime != 0) {
-        //  this is probably not gas efficient, may just need to force user to use the buyOutBestBidByBorrower function directly
+            //  this is probably not gas efficient, may just need to force user to use the buyOutBestBidByBorrower function directly
             buyOutBestBidByBorrower(offer, signature);
         }
-
     }
 
     // executeLoanByAsk allows a lender to submit a signed offer from a borrower and execute a loan against the borrower's NFT
@@ -486,7 +483,6 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         uint256 amount,
         address nftOwner
     ) internal {
-
         console.log("asset", asset);
         console.log("asset", cAsset);
         console.log("amount", amount);
@@ -1357,39 +1353,48 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
             "Loan must be active to calculate interest accrued"
         );
 
+        uint256 decimalCompensation = 100000000;
+
         // calculate seconds as lender
-        uint256 secondsAslender = block.timestamp - loanAuction.bestBidTime;
+        uint256 secondsAslender = SafeMath.mul(
+            decimalCompensation,
+            (block.timestamp - loanAuction.bestBidTime)
+        );
 
         console.log("secondsAslender", secondsAslender);
 
-        // percent of total loan time as Lender
-        uint256 percentOfLoanTimeAsLender = SafeMath.div(
+        // percent of time drawn as Lender
+        uint256 percentOfTimeDrawnAsLender = SafeMath.div(
             secondsAslender,
             loanAuction.timeDrawn
         );
 
-        console.log("percentOfLoanTimeAsLender", percentOfLoanTimeAsLender);
+        console.log("percentOfTimeDrawnAsLender", percentOfTimeDrawnAsLender);
 
         // percent of value of amountDrawn earned
-        uint256 percentOfValue = SafeMath.mul(
+        uint256 percentOfAmountDrawn = SafeMath.mul(
             loanAuction.amountDrawn,
-            percentOfLoanTimeAsLender
+            percentOfTimeDrawnAsLender
         );
 
-        console.log("percentOfValue", percentOfValue);
-        
-        // Interest rate
-        uint256 interestRate = SafeMath.div(loanAuction.interestRate, 100);
-        
-        console.log("interestRate", interestRate);
+        console.log("percentOfAmountDrawn", percentOfAmountDrawn);
 
         // Calculate interest amount
-        uint256 interestAmount = SafeMath.mul(interestRate, percentOfValue);
+        uint256 interestMulPercentOfAmountDrawn = SafeMath.mul(
+            loanAuction.interestRate,
+            percentOfAmountDrawn
+        );
 
-        console.log("interestAmount", interestAmount);
+        console.log("interestMulPercentOfAmountDrawn", interestMulPercentOfAmountDrawn);
+
+        // Interest rate
+        uint256 finalAmount = SafeMath.div(interestMulPercentOfAmountDrawn, 100000000);
+
+        console.log("finalAmount", finalAmount);
+
 
         // return interest amount
-        return interestAmount;
+        return finalAmount;
     }
 
     // calculate the fullRepayment of a loan
