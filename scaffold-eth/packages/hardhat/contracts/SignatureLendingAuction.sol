@@ -73,6 +73,7 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
     mapping(bytes => bool) public cancelledOrFinalized;
 
     // fee paid to protocol by borrower for drawing down loan
+    // decimal to 10000 because of whole number math
     uint256 loanDrawFeeProtocolPercentage = SafeMath.div(1, 10000);
 
     // premium paid to current lender by new lender for buying out the loan

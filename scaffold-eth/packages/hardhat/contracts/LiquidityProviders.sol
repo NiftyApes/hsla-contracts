@@ -132,9 +132,9 @@ contract LiquidityProviders is
 
     // ---------- FUNCTIONS -------------- //
 
-    constructor() {
-        transferOwnership(0x5E3df1431aBf51a7729348C7B4bAe6AF80a85803);
-    }
+    // constructor() {
+    //     transferOwnership(0x5E3df1431aBf51a7729348C7B4bAe6AF80a85803);
+    // }
 
     function getAssetsIn(address account)
         external
