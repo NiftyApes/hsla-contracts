@@ -178,7 +178,7 @@ contract LiquidityProviders is
         // Approve transfer on the ERC20 contract from LiquidityProviders contract
         underlying.approve(assetToCAsset[erc20Contract], numTokensToSupply);
 
-        // calculate expectedAmountToBeMinted
+        // calculate expectedAmountToBeMinted. This is the same conversion math performed in cToken.mint()
         MintLocalVars memory vars;
 
         vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
@@ -190,9 +190,9 @@ contract LiquidityProviders is
             Exp({mantissa: vars.exchangeRateMantissa})
         );
 
-        // should have require statement to ensure mint is successful before proceeding
         // Mint cTokens
-        uint256 mintResult = cToken.mint(numTokensToSupply);
+        // Require a successful mint to proceed
+        require(cToken.mint(numTokensToSupply) == 0, "cToken.mint() failed");
 
         // updating the depositors cErc20 balance
         cErc20Balances[assetToCAsset[erc20Contract]][msg.sender] += vars
@@ -201,54 +201,32 @@ contract LiquidityProviders is
         return vars.mintTokens;
     }
 
-    function supplyCErc20(address cErc20Contract, uint256 numTokensToSupply)
+    function supplyCErc20(address erc20Contract, uint256 numTokensToSupply)
         public
         returns (uint256)
     {
+        require(
+            assetToCAsset[erc20Contract] !=
+                0x0000000000000000000000000000000000000000,
+            "Asset not whitelisted on NiftyApes"
+        );
+
+        address cErc20Contract = assetToCAsset[erc20Contract];
+
         // Create a reference to the corresponding cToken contract, like cDAI
         CErc20 cToken = CErc20(cErc20Contract);
 
-        // should have require statement to ensure tranfer is successful before updating the balance
         // transferFrom ERC20 from depositors address
-        cToken.transferFrom(msg.sender, address(this), numTokensToSupply);
+        require(
+            cToken.transferFrom(msg.sender, address(this), numTokensToSupply) ==
+                true,
+            "cToken transferFrom failed. Have you approved the correct amount of Tokens?"
+        );
 
         // updating the depositors cErc20 balance
         cErc20Balances[cErc20Contract][msg.sender] += numTokensToSupply;
 
         return numTokensToSupply;
-    }
-
-    // currently implemented as "true" optino in withdrawErc20.
-    function withdrawCErc20(address erc20Contract, uint256 amountToWithdraw)
-        public
-        whenNotPaused
-        nonReentrant
-        returns (uint256)
-    {
-        // Create a reference to the corresponding cToken contract, like cDAI
-        CErc20 cToken = CErc20(assetToCAsset[erc20Contract]);
-
-        // require availble balance is sufficent
-        // check total balance - utilized balance
-
-        // require msg.sender has sufficient available balance of cErc20
-        require(
-            (cErc20Balances[assetToCAsset[erc20Contract]][msg.sender] -
-                utilizedCErc20Balances[assetToCAsset[erc20Contract]][
-                    msg.sender
-                ]) >= amountToWithdraw,
-            "Must have an available balance greater than or equal to amountToWithdraw"
-        );
-        // updating the depositors cErc20 balance
-        cErc20Balances[assetToCAsset[erc20Contract]][
-            msg.sender
-        ] -= amountToWithdraw;
-
-        // should have require statement to ensure tranfer is successful before proceeding
-        // transfer cErc20 tokens to depositor
-        cToken.transfer(msg.sender, amountToWithdraw);
-
-        return amountToWithdraw;
     }
 
     // True to withdraw based on cErc20 amount. False to withdraw based on amount of underlying erc20
@@ -257,13 +235,19 @@ contract LiquidityProviders is
         bool redeemType,
         uint256 amountToWithdraw
     ) public whenNotPaused nonReentrant returns (uint256) {
-        // add nonReentrant modifier
+        require(
+            assetToCAsset[erc20Contract] !=
+                0x0000000000000000000000000000000000000000,
+            "Asset not whitelisted on NiftyApes"
+        );
+
+        address cErc20Contract = assetToCAsset[erc20Contract];
 
         // Create a reference to the underlying asset contract, like DAI.
         Erc20 underlying = Erc20(erc20Contract);
 
         // Create a reference to the corresponding cToken contract, like cDAI
-        CErc20 cToken = CErc20(assetToCAsset[erc20Contract]);
+        CErc20 cToken = CErc20(cErc20Contract);
 
         // redeemType == true >> withdraw based on amount of cErc20
         if (redeemType == true) {
@@ -286,26 +270,26 @@ contract LiquidityProviders is
                     );
             }
 
-            // requre avail balance
-
             // require msg.sender has sufficient available balance of cErc20
             require(
-                (cErc20Balances[assetToCAsset[erc20Contract]][msg.sender] -
-                    utilizedCErc20Balances[assetToCAsset[erc20Contract]][
-                        msg.sender
-                    ]) >= amountToWithdraw,
+                (cErc20Balances[cErc20Contract][msg.sender] -
+                    utilizedCErc20Balances[cErc20Contract][msg.sender]) >=
+                    amountToWithdraw,
                 "Must have an available balance greater than or equal to amountToWithdraw"
             );
 
-            cErc20Balances[assetToCAsset[erc20Contract]][msg.sender] -= vars
-                .redeemTokens;
+            cErc20Balances[cErc20Contract][msg.sender] -= vars.redeemTokens;
 
-            // should have require statement to ensure redeem is successful before proceeding
             // Retrieve your asset based on an amountToWithdraw of the asset
-            cToken.redeemUnderlying(vars.redeemAmount);
+            require(
+                cToken.redeemUnderlying(vars.redeemAmount) == 0,
+                "cToken.redeemUnderlying failed"
+            );
 
-            // should have require statement to ensure tranfer is successful before proceeding
-            underlying.transfer(msg.sender, vars.redeemAmount);
+            require(
+                underlying.transfer(msg.sender, vars.redeemAmount) == true,
+                "underlying.transfer() failed"
+            );
 
             // redeemType == false >> withdraw based on amount of underlying
         } else {
@@ -330,25 +314,63 @@ contract LiquidityProviders is
 
             // require msg.sender has sufficient available balance of cErc20
             require(
-                (cErc20Balances[assetToCAsset[erc20Contract]][msg.sender] -
-                    utilizedCErc20Balances[assetToCAsset[erc20Contract]][
-                        msg.sender
-                    ]) >= amountToWithdraw,
+                (cErc20Balances[cErc20Contract][msg.sender] -
+                    utilizedCErc20Balances[cErc20Contract][msg.sender]) >=
+                    vars.redeemTokens,
                 "Must have an available balance greater than or equal to amountToWithdraw"
             );
 
-            cErc20Balances[assetToCAsset[erc20Contract]][msg.sender] -= vars
-                .redeemTokens;
+            cErc20Balances[cErc20Contract][msg.sender] -= vars.redeemTokens;
 
-            // should have require statement to ensure redeem is successful before proceeding
             // Retrieve your asset based on an amountToWithdraw of the asset
-            cToken.redeemUnderlying(vars.redeemAmount);
+            require(
+                cToken.redeemUnderlying(vars.redeemAmount) == 0,
+                "cToken.redeemUnderlying failed"
+            );
 
-            // should have require statement to ensure tranfer is successful before proceeding
-            underlying.transfer(msg.sender, vars.redeemAmount);
+            require(
+                underlying.transfer(msg.sender, vars.redeemAmount) == true,
+                "underlying.transfer() failed"
+            );
         }
 
         return 0;
+    }
+
+    function withdrawCErc20(address erc20Contract, uint256 amountToWithdraw)
+        public
+        whenNotPaused
+        nonReentrant
+        returns (uint256)
+    {
+        require(
+            assetToCAsset[erc20Contract] !=
+                0x0000000000000000000000000000000000000000,
+            "Asset not whitelisted on NiftyApes"
+        );
+
+        address cErc20Contract = assetToCAsset[erc20Contract];
+
+        // Create a reference to the corresponding cToken contract, like cDAI
+        CErc20 cToken = CErc20(cErc20Contract);
+
+        // require msg.sender has sufficient available balance of cErc20
+        require(
+            (cErc20Balances[cErc20Contract][msg.sender] -
+                utilizedCErc20Balances[cErc20Contract][msg.sender]) >=
+                amountToWithdraw,
+            "Must have an available balance greater than or equal to amountToWithdraw"
+        );
+        // updating the depositors cErc20 balance
+        cErc20Balances[cErc20Contract][msg.sender] -= amountToWithdraw;
+
+        // transfer cErc20 tokens to depositor
+        require(
+            cToken.transfer(msg.sender, amountToWithdraw) == true,
+            "cToken.transfer failed. Have you approved the correct amount of Tokens?"
+        );
+
+        return amountToWithdraw;
     }
 
     function supplyEth() public payable returns (uint256) {
