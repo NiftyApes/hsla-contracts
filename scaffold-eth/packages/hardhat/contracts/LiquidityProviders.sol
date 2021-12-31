@@ -323,15 +323,17 @@ contract LiquidityProviders is
             cErc20Balances[cErc20Contract][msg.sender] -= vars.redeemTokens;
 
             // Retrieve your asset based on an amountToWithdraw of the asset
-            require(
-                cToken.redeemUnderlying(vars.redeemAmount) == 0,
-                "cToken.redeemUnderlying failed"
-            );
+            cToken.redeemUnderlying(vars.redeemAmount);
+            // require(
+            //     cToken.redeemUnderlying(vars.redeemAmount) == 0,
+            //     "cToken.redeemUnderlying failed"
+            // );
 
-            require(
-                underlying.transfer(msg.sender, vars.redeemAmount) == true,
-                "underlying.transfer() failed"
-            );
+            underlying.transfer(msg.sender, vars.redeemAmount);
+            // require(
+            //     underlying.transfer(msg.sender, vars.redeemAmount) == true,
+            //     "underlying.transfer() failed"
+            // );
         }
 
         return 0;
@@ -367,7 +369,7 @@ contract LiquidityProviders is
         // transfer cErc20 tokens to depositor
         require(
             cToken.transfer(msg.sender, amountToWithdraw) == true,
-            "cToken.transfer failed. Have you approved the correct amount of Tokens?"
+            "cToken.transfer failed. Have you approved the correct amount of Tokens"
         );
 
         return amountToWithdraw;
@@ -382,8 +384,6 @@ contract LiquidityProviders is
 
         // Create a reference to the corresponding cToken contract
         CEth cToken = CEth(cEtherContract);
-        // Could simply enforce a single contract to interact with, then dont need require statement to check address
-        // CEth cToken = CEth(0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5);
 
         // calculate expectedAmountToBeMinted
         MintLocalVars memory vars;
@@ -395,14 +395,12 @@ contract LiquidityProviders is
             Exp({mantissa: vars.exchangeRateMantissa})
         );
 
-        // should have require statement to ensure mint is successful before proceeding
-        // // mint CEth tokens to this contract address
+        // mint CEth tokens to this contract address
+        // cEth mint() reverts about failure so do not need a require statement
         cToken.mint{value: msg.value, gas: 250000}();
 
         // updating the depositors cErc20 balance
-        cErc20Balances[cEtherContract][msg.sender] = cErc20Balances[
-            cEtherContract
-        ][msg.sender] += vars.mintTokens;
+        cErc20Balances[cEtherContract][msg.sender] += vars.mintTokens;
 
         emit EthSupplied(msg.sender, msg.value);
 
@@ -423,9 +421,12 @@ contract LiquidityProviders is
         // Create a reference to the corresponding cToken contract
         CEth cToken = CEth(cEtherContract);
 
-        // should have require statement to ensure tranfer is successful before updating the balance
         // transferFrom ERC20 from supplyers address
-        cToken.transferFrom(msg.sender, address(this), numTokensToSupply);
+        require(
+            cToken.transferFrom(msg.sender, address(this), numTokensToSupply) ==
+                true,
+            "cToken.transferFrom failed"
+        );
 
         cErc20Balances[cEtherContract][msg.sender] += numTokensToSupply;
 
@@ -463,7 +464,10 @@ contract LiquidityProviders is
 
         // should have require statement to ensure tranfer is successful before proceeding
         // transfer cErc20 tokens to depositor
-        cToken.transfer(msg.sender, amountToWithdraw);
+        require(
+            cToken.transfer(msg.sender, amountToWithdraw) == true,
+            "cToken.transfer failed. Have you approved the correct amount of Tokens"
+        );
 
         return amountToWithdraw;
     }
