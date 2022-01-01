@@ -170,9 +170,15 @@ contract LiquidityProviders is
         // Create a reference to the corresponding cToken contract, like cDAI
         CErc20 cToken = CErc20(assetToCAsset[erc20Contract]);
 
-        // should have require statement to ensure tranfer is successful before proceeding
         // transferFrom ERC20 from depositors address
-        underlying.transferFrom(msg.sender, address(this), numTokensToSupply);
+        require(
+            underlying.transferFrom(
+                msg.sender,
+                address(this),
+                numTokensToSupply
+            ) == true,
+            "underlying.transferFrom() failed"
+        );
 
         // need to provide
         // Approve transfer on the ERC20 contract from LiquidityProviders contract
@@ -217,6 +223,7 @@ contract LiquidityProviders is
         CErc20 cToken = CErc20(cErc20Contract);
 
         // transferFrom ERC20 from depositors address
+        // cToken.transferFrom(msg.sender, address(this), numTokensToSupply);
         require(
             cToken.transferFrom(msg.sender, address(this), numTokensToSupply) ==
                 true,
@@ -323,17 +330,15 @@ contract LiquidityProviders is
             cErc20Balances[cErc20Contract][msg.sender] -= vars.redeemTokens;
 
             // Retrieve your asset based on an amountToWithdraw of the asset
-            cToken.redeemUnderlying(vars.redeemAmount);
-            // require(
-            //     cToken.redeemUnderlying(vars.redeemAmount) == 0,
-            //     "cToken.redeemUnderlying failed"
-            // );
+            require(
+                cToken.redeemUnderlying(vars.redeemAmount) == 0,
+                "cToken.redeemUnderlying() failed"
+            );
 
-            underlying.transfer(msg.sender, vars.redeemAmount);
-            // require(
-            //     underlying.transfer(msg.sender, vars.redeemAmount) == true,
-            //     "underlying.transfer() failed"
-            // );
+            require(
+                underlying.transfer(msg.sender, vars.redeemAmount) == true,
+                "underlying.transfer() failed"
+            );
         }
 
         return 0;
@@ -396,7 +401,7 @@ contract LiquidityProviders is
         );
 
         // mint CEth tokens to this contract address
-        // cEth mint() reverts about failure so do not need a require statement
+        // cEth mint() reverts on failure so do not need a require statement
         cToken.mint{value: msg.value, gas: 250000}();
 
         // updating the depositors cErc20 balance
@@ -433,43 +438,6 @@ contract LiquidityProviders is
         emit CEthSupplied(msg.sender, numTokensToSupply);
 
         return numTokensToSupply;
-    }
-
-    function withdrawCEth(uint256 amountToWithdraw)
-        public
-        whenNotPaused
-        nonReentrant
-        returns (uint256)
-    {
-        // set cEth address
-        // utilize reference to allow update of cEth address by compound in future versions
-        address cEtherContract = assetToCAsset[
-            0x0000000000000000000000000000000000000000
-        ];
-
-        // Create a reference to the corresponding cToken contract, like cDAI
-        CEth cToken = CEth(cEtherContract);
-
-        // require msg.sender has sufficient available balance of cEth
-        require(
-            (cErc20Balances[assetToCAsset[cEtherContract]][msg.sender] -
-                utilizedCErc20Balances[assetToCAsset[cEtherContract]][
-                    msg.sender
-                ]) >= amountToWithdraw,
-            "Must have an available balance greater than or equal to amountToWithdraw"
-        );
-
-        // updating the depositors cErc20 balance
-        cErc20Balances[cEtherContract][msg.sender] -= amountToWithdraw;
-
-        // should have require statement to ensure tranfer is successful before proceeding
-        // transfer cErc20 tokens to depositor
-        require(
-            cToken.transfer(msg.sender, amountToWithdraw) == true,
-            "cToken.transfer failed. Have you approved the correct amount of Tokens"
-        );
-
-        return amountToWithdraw;
     }
 
     // True to withdraw based on cEth amount. False to withdraw based on amount of Eth
@@ -520,9 +488,11 @@ contract LiquidityProviders is
 
             cErc20Balances[cEtherContract][msg.sender] -= vars.redeemTokens;
 
-            // should have require statement to ensure redeem is successful before proceeding
             // Retrieve your asset based on an amountToWithdraw of the asset
-            cToken.redeemUnderlying(vars.redeemAmount);
+            require(
+                cToken.redeemUnderlying(vars.redeemAmount) == 0,
+                "cToken.redeemUnderlying() failed"
+            );
 
             // Repay eth to depositor
             (bool success, ) = (msg.sender).call{value: vars.redeemAmount}("");
@@ -560,9 +530,11 @@ contract LiquidityProviders is
 
             cErc20Balances[cEtherContract][msg.sender] -= vars.redeemTokens;
 
-            // should have require statement to ensure redeem is successful before proceeding
             // Retrieve your asset based on an amountToWithdraw of the asset
-            cToken.redeemUnderlying(vars.redeemAmount);
+            require(
+                cToken.redeemUnderlying(vars.redeemAmount) == 0,
+                "cToken.redeemUnderlying() failed"
+            );
 
             // Repay eth to depositor
             (bool success, ) = (msg.sender).call{value: vars.redeemAmount}("");
@@ -570,6 +542,42 @@ contract LiquidityProviders is
         }
 
         return 0;
+    }
+
+    function withdrawCEth(uint256 amountToWithdraw)
+        public
+        whenNotPaused
+        nonReentrant
+        returns (uint256)
+    {
+        // set cEth address
+        // utilize reference to allow update of cEth address by compound in future versions
+        address cEtherContract = assetToCAsset[
+            0x0000000000000000000000000000000000000000
+        ];
+
+        // Create a reference to the corresponding cToken contract, like cDAI
+        CEth cToken = CEth(cEtherContract);
+
+        // require msg.sender has sufficient available balance of cEth
+        require(
+            (cErc20Balances[assetToCAsset[cEtherContract]][msg.sender] -
+                utilizedCErc20Balances[assetToCAsset[cEtherContract]][
+                    msg.sender
+                ]) >= amountToWithdraw,
+            "Must have an available balance greater than or equal to amountToWithdraw"
+        );
+
+        // updating the depositors cErc20 balance
+        cErc20Balances[cEtherContract][msg.sender] -= amountToWithdraw;
+
+        // transfer cErc20 tokens to depositor
+        require(
+            cToken.transfer(msg.sender, amountToWithdraw) == true,
+            "cToken.transfer failed. Have you approved the correct amount of Tokens"
+        );
+
+        return amountToWithdraw;
     }
 
     // admin functions
