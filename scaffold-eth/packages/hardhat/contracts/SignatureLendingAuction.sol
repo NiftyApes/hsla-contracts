@@ -84,55 +84,42 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
 
     // ---------- EVENTS --------------- //
 
-    // New Best Bid event
-    event NewBestBid(
-        address _lender,
-        address indexed nftContractAddress,
-        uint256 indexed nftId,
-        uint256 _loanAmount,
-        uint256 _interestRate,
-        uint256 _loanDuration
-    );
-
-    event BestBidWithdrawn(
-        address indexed nftContractAddress,
-        uint256 indexed nftId
-    );
-
-    event NewAsk(
-        address indexed nftContractAddress,
-        uint256 indexed nftId,
-        uint256 _askLoanAmount,
-        uint256 _askInterestRate,
-        uint256 _askLoanDuration
-    );
-
-    event AskWithdrawn(
-        address indexed nftContractAddress,
-        uint256 indexed nftId
-    );
-
     event LoanExecuted(
-        address _lender,
+        address lender,
         address nftOwner,
         address indexed nftContractAddress,
         uint256 indexed nftId,
-        uint256 _loanAmount,
-        uint256 _interestRate,
-        uint256 _loanDuration
+        address asset,
+        uint256 loanAmount,
+        uint256 interestRate,
+        uint256 loanDuration
     );
 
-    event LoanDrawn(
+    event amountDrawn(
         address indexed nftContractAddress,
         uint256 indexed nftId,
-        uint256 _drawAmount,
-        uint256 _drawAmountMinusFee,
-        uint256 _totalDrawn
+        uint256 drawAmount,
+        uint256 drawAmountMinusFee,
+        uint256 totalDrawn
+    );
+
+    event timeDrawn(
+        address indexed nftContractAddress,
+        uint256 indexed nftId,
+        uint256 drawAmount,
+        uint256 totalDrawn
     );
 
     event LoanRepaidInFull(
         address indexed nftContractAddress,
         uint256 indexed nftId
+    );
+
+    event partialRepayment(
+        address indexed nftContractAddress,
+        uint256 indexed nftId,
+        address asset,
+        uint256 amount
     );
 
     event AssetSeized(
@@ -361,9 +348,20 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         }
         // else if loan is active, borrower pays off loan and executes new loan
         else if (loanAuction.loanExecutedTime != 0) {
-            //  this is probably not gas efficient, may just need to force user to use the buyOutBestBidByBorrower function directly
+            // execute buyOutBestBidByBorrower Function
             buyOutBestBidByBorrower(offer, signature);
         }
+
+        emit LoanExecuted(
+            lender,
+            nftOwner,
+            offer.nftContractAddress,
+            offer.nftId,
+            offer.asset,
+            offer.loanAmount,
+            offer.interestRate,
+            offer.loanDuration
+        );
     }
 
     // executeLoanByAsk allows a lender to submit a signed offer from a borrower and execute a loan against the borrower's NFT
@@ -485,6 +483,17 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
             // redeem cTokens and transfer underlying to borrower
             _redeemAndTransferEthInternal(cAsset, drawAmountMinusFee, nftOwner);
         }
+
+        emit LoanExecuted(
+            lender,
+            nftOwner,
+            offer.nftContractAddress,
+            offer.nftId,
+            offer.asset,
+            offer.loanAmount,
+            offer.interestRate,
+            offer.loanDuration
+        );
     }
 
     // this internal functions handles transfer of erc20 tokens for executeLoan functions
@@ -560,13 +569,13 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         // require that the lenders available balance is sufficent to serve the loan
         require(
             // calculate lenders available cErc20 balance and require it to be greater than or equal to vars.redeemTokens
-            (cErc20Balances[cAsset][lender] -
-                utilizedCErc20Balances[cAsset][lender]) >= vars.redeemTokens,
+            (cAssetBalances[cAsset][lender] -
+                utilizedCAssetBalances[cAsset][lender]) >= vars.redeemTokens,
             "Lender does not have a sufficient balance to serve this loan"
         );
 
         // update the lenders utilized balance
-        utilizedCErc20Balances[cAsset][lender] += vars.redeemTokens;
+        utilizedCAssetBalances[cAsset][lender] += vars.redeemTokens;
 
         return 0;
     }
@@ -861,10 +870,10 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         cToken.mint(fullAmount);
 
         // update the lenders utilized balance
-        utilizedCErc20Balances[cAsset][lender] -= paymentTokens;
+        utilizedCAssetBalances[cAsset][lender] -= paymentTokens;
 
         // update the lenders total balance
-        cErc20Balances[cAsset][lender] += interestAndPremiumTokens;
+        cAssetBalances[cAsset][lender] += interestAndPremiumTokens;
 
         return 0;
     }
@@ -946,10 +955,10 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         cToken.mint{value: msgValue, gas: 250000}();
 
         // update the lenders utilized balance
-        utilizedCErc20Balances[cAsset][lender] -= paymentAmount;
+        utilizedCAssetBalances[cAsset][lender] -= paymentAmount;
 
         // update the lenders total balance
-        cErc20Balances[cAsset][lender] += (interestAndPremiumTokens +
+        cAssetBalances[cAsset][lender] += (interestAndPremiumTokens +
             mintDelta);
 
         return 0;
@@ -1318,11 +1327,11 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         loanAuction.fixedTerms = false;
 
         // update lenders utilized balance
-        utilizedCErc20Balances[cAsset][loanAuction.lender] -= loanAuction
+        utilizedCAssetBalances[cAsset][loanAuction.lender] -= loanAuction
             .amountDrawn;
 
         // update lenders total balance
-        cErc20Balances[cAsset][loanAuction.lender] -= loanAuction.amountDrawn;
+        cAssetBalances[cAsset][loanAuction.lender] -= loanAuction.amountDrawn;
 
         // transferFrom NFT from contract to lender
         IERC721(nftContractAddress).transferFrom(
