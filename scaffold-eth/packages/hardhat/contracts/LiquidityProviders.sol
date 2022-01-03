@@ -281,7 +281,7 @@ contract LiquidityProviders is
             require(
                 (cErc20Balances[cErc20Contract][msg.sender] -
                     utilizedCErc20Balances[cErc20Contract][msg.sender]) >=
-                    amountToWithdraw,
+                    vars.redeemTokens,
                 "Must have an available balance greater than or equal to amountToWithdraw"
             );
 
@@ -414,7 +414,6 @@ contract LiquidityProviders is
 
     function supplyCEth(uint256 numTokensToSupply)
         public
-        payable
         returns (uint256)
     {
         // set cEth address
@@ -479,10 +478,10 @@ contract LiquidityProviders is
 
             // require msg.sender has sufficient available balance of cEth
             require(
-                (cErc20Balances[assetToCAsset[cEtherContract]][msg.sender] -
-                    utilizedCErc20Balances[assetToCAsset[cEtherContract]][
+                (cErc20Balances[cEtherContract][msg.sender] -
+                    utilizedCErc20Balances[cEtherContract][
                         msg.sender
-                    ]) >= amountToWithdraw,
+                    ]) >= vars.redeemTokens,
                 "Must have an available balance greater than or equal to amountToWithdraw"
             );
 
@@ -521,10 +520,10 @@ contract LiquidityProviders is
 
             // require msg.sender has sufficient available balance of cEth
             require(
-                (cErc20Balances[assetToCAsset[cEtherContract]][msg.sender] -
-                    utilizedCErc20Balances[assetToCAsset[cEtherContract]][
+                (cErc20Balances[cEtherContract][msg.sender] -
+                    utilizedCErc20Balances[cEtherContract][
                         msg.sender
-                    ]) >= amountToWithdraw,
+                    ]) >= vars.redeemTokens,
                 "Must have an available balance greater than or equal to amountToWithdraw"
             );
 
@@ -561,8 +560,8 @@ contract LiquidityProviders is
 
         // require msg.sender has sufficient available balance of cEth
         require(
-            (cErc20Balances[assetToCAsset[cEtherContract]][msg.sender] -
-                utilizedCErc20Balances[assetToCAsset[cEtherContract]][
+            (cErc20Balances[cEtherContract][msg.sender] -
+                utilizedCErc20Balances[cEtherContract][
                     msg.sender
                 ]) >= amountToWithdraw,
             "Must have an available balance greater than or equal to amountToWithdraw"
