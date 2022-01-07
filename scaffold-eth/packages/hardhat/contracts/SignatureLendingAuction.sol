@@ -222,6 +222,11 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
             "Offers must have 24 hours minimum duration"
         );
 
+        require(
+            assetToCAsset[offer.asset] != 0x0000000000000000000000000000000000000000,
+            "Asset not whitelisted on NiftyApes"
+        );
+
         // get nft owner
         address nftOwner = IERC721(offer.nftContractAddress).ownerOf(nftId);
 
@@ -343,6 +348,7 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
                 // redeem cTokens and transfer underlying to borrower
                 _redeemAndTransferErc20Internal(
                     offer.asset,
+                    cAsset,
                     offer.amount,
                     nftOwner
                 );
@@ -352,11 +358,7 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
                 offer.asset == 0x0000000000000000000000000000000000000000
             ) {
                 // redeem cTokens and transfer underlying to borrower
-                _redeemAndTransferEthInternal(
-                    cAsset,
-                    offer.amount,
-                    nftOwner
-                );
+                _redeemAndTransferEthInternal(cAsset, offer.amount, nftOwner);
             }
         }
         // else if loan is active, borrower pays off loan and executes new loan
@@ -402,6 +404,11 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         require(
             offer.duration >= 86400,
             "Offers must have 24 hours minimum duration"
+        );
+
+        require(
+            assetToCAsset[offer.asset] != 0x0000000000000000000000000000000000000000,
+            "Asset not whitelisted on NiftyApes"
         );
 
         // get nft owner
@@ -520,11 +527,6 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         uint256 amount,
         address nftOwner
     ) internal {
-        console.log("asset", asset);
-        console.log("asset", cAsset);
-        console.log("amount", amount);
-        console.log("nftOwner", nftOwner);
-
         // Create a reference to the underlying asset contract, like DAI.
         Erc20 underlying = Erc20(asset);
 
@@ -665,8 +667,7 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
                 loanAuction.lender,
                 fullRepayment,
                 interestOwedToLender,
-                loanAuction.amountDrawn,
-                0
+                loanAuction.amountDrawn
             );
         }
         // else process as ETH
@@ -803,7 +804,6 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
                 cAsset,
                 loanAuction.lender,
                 fullBidBuyOutAmount,
-                fullBidBuyOutAmount,
                 interestAndPremiumOwedToLender,
                 loanAuction.amountDrawn
             );
@@ -857,7 +857,6 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         address cAsset,
         address lender,
         uint256 fullAmount,
-        uint256 fullAmountMinusProtocolDrawFee,
         uint256 interestAndPremiumAmount,
         uint256 paymentAmount
     ) internal returns (uint256) {
@@ -911,6 +910,7 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         }
 
         // should have require statement to ensure mint is successful before proceeding
+        // protocolDrawFee is taken here as the fullAmount will be greater the paymentTokens + interestAndPremiumTokens and remain at the NA contract address
         // mint cTokens
         cToken.mint(fullAmount);
 
@@ -1209,12 +1209,13 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         uint256 interestOwedToLender = lenderInterest +
             loanAuction.historicInterest;
 
-
-        // this math is wrong, need to date fee structure
-        uint256 fullRepaymentMinusProtocolDrawFee = loanAuction.amountDrawn * loanDrawFeeProtocolPercentage;
+        uint256 protocolDrawFee = loanAuction.amountDrawn *
+            loanDrawFeeProtocolPercentage;
 
         // get required repayment
-        uint256 fullRepayment = interestOwedToLender + protocolDrawFee + loanAuction.amountDrawn;
+        uint256 fullRepayment = interestOwedToLender +
+            protocolDrawFee +
+            loanAuction.amountDrawn;
 
         // if asset is not 0x0 process as Erc20
         if (loanAuction.asset != 0x0000000000000000000000000000000000000000) {
@@ -1224,7 +1225,6 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
                 cAsset,
                 loanAuction.lender,
                 fullRepayment,
-                fullRepaymentMinusProtocolDrawFee,
                 interestOwedToLender,
                 loanAuction.amountDrawn
             );
@@ -1304,11 +1304,12 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         uint256 interestAmount = partialAmount *
             (loanAuction.interestRate * 100);
 
-        // calculate paymentAmount
-        uint256 paymentAmount = partialAmount - interestAmount;
-
         uint256 protocolDrawFee = partialAmount * loanDrawFeeProtocolPercentage;
 
+        // calculate paymentAmount
+        uint256 paymentAmount = partialAmount -
+            interestAmount -
+            protocolDrawFee;
 
         // if asset is not 0x0 process as Erc20
         if (loanAuction.asset != 0x0000000000000000000000000000000000000000) {
@@ -1318,8 +1319,7 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
                 loanAuction.lender,
                 partialAmount,
                 interestAmount,
-                paymentAmount,
-                protocolDrawFee
+                paymentAmount
             );
         }
         // else process as ETH
@@ -1345,7 +1345,12 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         // update amountDrawn
         loanAuction.amountDrawn -= paymentAmount;
 
-        emit PartialRepayment(nftContractAddress, nftId, loanAuction.asset, partialAmount);
+        emit PartialRepayment(
+            nftContractAddress,
+            nftId,
+            loanAuction.asset,
+            partialAmount
+        );
     }
 
     // allows anyone to seize an asset of a past due loan on behalf on the lender
