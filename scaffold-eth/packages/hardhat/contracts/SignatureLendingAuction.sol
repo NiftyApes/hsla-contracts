@@ -323,10 +323,11 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
             loanAuction.amountDrawn = offer.amount;
             loanAuction.fixedTerms = offer.fixedTerms;
 
+            // need to take protocol fee on payback instead of drawdown
             // calculate protocol draw fee and subtract from amount
             // this leaves the protocol fee invested in Compound in this contract address' balance
-            uint256 drawAmountMinusFee = offer.amount -
-                (offer.amount * loanDrawFeeProtocolPercentage);
+            // uint256 drawAmountMinusFee = offer.amount -
+            //     (offer.amount * loanDrawFeeProtocolPercentage);
 
             // *------- value and asset transfers -------* //
 
@@ -342,8 +343,7 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
                 // redeem cTokens and transfer underlying to borrower
                 _redeemAndTransferErc20Internal(
                     offer.asset,
-                    cAsset,
-                    drawAmountMinusFee,
+                    offer.amount,
                     nftOwner
                 );
             }
@@ -354,7 +354,7 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
                 // redeem cTokens and transfer underlying to borrower
                 _redeemAndTransferEthInternal(
                     cAsset,
-                    drawAmountMinusFee,
+                    offer.amount,
                     nftOwner
                 );
             }
@@ -665,7 +665,8 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
                 loanAuction.lender,
                 fullRepayment,
                 interestOwedToLender,
-                loanAuction.amountDrawn
+                loanAuction.amountDrawn,
+                0
             );
         }
         // else process as ETH
@@ -802,6 +803,7 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
                 cAsset,
                 loanAuction.lender,
                 fullBidBuyOutAmount,
+                fullBidBuyOutAmount,
                 interestAndPremiumOwedToLender,
                 loanAuction.amountDrawn
             );
@@ -855,6 +857,7 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         address cAsset,
         address lender,
         uint256 fullAmount,
+        uint256 fullAmountMinusProtocolDrawFee,
         uint256 interestAndPremiumAmount,
         uint256 paymentAmount
     ) internal returns (uint256) {
@@ -1206,8 +1209,12 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         uint256 interestOwedToLender = lenderInterest +
             loanAuction.historicInterest;
 
+
+        // this math is wrong, need to date fee structure
+        uint256 fullRepaymentMinusProtocolDrawFee = loanAuction.amountDrawn * loanDrawFeeProtocolPercentage;
+
         // get required repayment
-        uint256 fullRepayment = interestOwedToLender + loanAuction.amountDrawn;
+        uint256 fullRepayment = interestOwedToLender + protocolDrawFee + loanAuction.amountDrawn;
 
         // if asset is not 0x0 process as Erc20
         if (loanAuction.asset != 0x0000000000000000000000000000000000000000) {
@@ -1217,6 +1224,7 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
                 cAsset,
                 loanAuction.lender,
                 fullRepayment,
+                fullRepaymentMinusProtocolDrawFee,
                 interestOwedToLender,
                 loanAuction.amountDrawn
             );
@@ -1228,7 +1236,7 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
             // check that transaction covers the full value of the loan
             require(
                 msg.value >= fullRepayment,
-                "Must repay full amount of loan drawn plus interest. Account for additional time for interest."
+                "Must repay full amount of loan drawn plus interest and fee. Account for additional time for interest."
             );
             // protocolPremiumFee is taken here. Full amount is minted to this contract address' balance in Compound and amount owed to lender is updated in their balance. The delta is the protocol premium fee.
             _payEthAndUpdateBalancesInternal(
@@ -1299,6 +1307,9 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         // calculate paymentAmount
         uint256 paymentAmount = partialAmount - interestAmount;
 
+        uint256 protocolDrawFee = partialAmount * loanDrawFeeProtocolPercentage;
+
+
         // if asset is not 0x0 process as Erc20
         if (loanAuction.asset != 0x0000000000000000000000000000000000000000) {
             _payErc20AndUpdateBalancesInternal(
@@ -1307,7 +1318,8 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
                 loanAuction.lender,
                 partialAmount,
                 interestAmount,
-                paymentAmount
+                paymentAmount,
+                protocolDrawFee
             );
         }
         // else process as ETH
