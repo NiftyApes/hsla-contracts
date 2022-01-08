@@ -600,7 +600,12 @@ contract LiquidityProviders is
         return amountToWithdraw;
     }
 
-    // Need to verify that Compound supports a cCOMP token. If not then need to implement an adminCOMPWithdrawl function.
+
+    function adminClaimCOMP() public {}
+    function adminTransferErc20() public {}
+    function adminTransferCErc20() public {}
+    function adminTransferEth() public {}
+
 
     // Not sure if necessary or helpful, but could be.
     function calculateLoanDrawDownFee() public {}
