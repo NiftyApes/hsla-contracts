@@ -223,7 +223,8 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         );
 
         require(
-            assetToCAsset[offer.asset] != 0x0000000000000000000000000000000000000000,
+            assetToCAsset[offer.asset] !=
+                0x0000000000000000000000000000000000000000,
             "Asset not whitelisted on NiftyApes"
         );
 
@@ -259,11 +260,15 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
 
         // // if floorTerm is false
         if (offer.floorTerm == false) {
+            console.log("floor1");
+
             // require nftId == sigNftId
             require(
                 nftId == offer.nftId,
                 "Function submitted nftId must match the signed offer nftId"
             );
+
+            console.log("floor2");
 
             // execute state changes for executeLoanByBid
             _executeLoanByBidInternal(
@@ -296,6 +301,8 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         address nftOwner,
         bytes memory signature
     ) internal {
+        console.log("internal1");
+
         // instantiate LoanAuction Struct
         LoanAuction storage loanAuction = loanAuctions[
             offer.nftContractAddress
@@ -305,6 +312,8 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
 
         // if loan is not active execute intial loan
         if (loanAuction.loanExecutedTime == 0) {
+            console.log("internal2");
+
             // finalize signature
             cancelledOrFinalized[signature] == true;
 
@@ -314,6 +323,8 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
                 offer.amount,
                 lender
             );
+
+            console.log("internal3");
 
             // update loanAuction struct
             loanAuction.nftOwner = nftOwner;
@@ -339,6 +350,8 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
 
             // if asset is not 0x0 process as Erc20
             if (offer.asset != 0x0000000000000000000000000000000000000000) {
+                console.log("internal4");
+
                 // redeem cTokens and transfer underlying to borrower
                 _redeemAndTransferErc20Internal(
                     offer.asset,
@@ -351,12 +364,16 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
             else if (
                 offer.asset == 0x0000000000000000000000000000000000000000
             ) {
+                console.log("internal5");
+
                 // redeem cTokens and transfer underlying to borrower
                 _redeemAndTransferEthInternal(cAsset, offer.amount, nftOwner);
             }
         }
         // else if loan is active, borrower pays off loan and executes new loan
         else if (loanAuction.loanExecutedTime != 0) {
+            console.log("internal6");
+
             // execute buyOutBestBidByBorrower Function
             buyOutBestBidByBorrower(offer, signature);
         }
@@ -401,7 +418,8 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         );
 
         require(
-            assetToCAsset[offer.asset] != 0x0000000000000000000000000000000000000000,
+            assetToCAsset[offer.asset] !=
+                0x0000000000000000000000000000000000000000,
             "Asset not whitelisted on NiftyApes"
         );
 
@@ -521,6 +539,8 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         uint256 amount,
         address nftOwner
     ) internal {
+        console.log("redeem1");
+
         // Create a reference to the underlying asset contract, like DAI.
         Erc20 underlying = Erc20(asset);
 
@@ -530,8 +550,12 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         // redeem underlying from cToken to this contract
         cToken.redeemUnderlying(amount);
 
+        console.log("redeem2");
+
         // transfer underlying from this contract to borrower
         underlying.transfer(nftOwner, amount);
+
+        console.log("redeem3");
     }
 
     // this internal functions handles transfer of eth for executeLoan functions
@@ -556,6 +580,8 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         uint256 amount,
         address lender
     ) internal returns (uint256) {
+        console.log("balance1");
+
         // create a reference to the corresponding cToken contract, like cDAI
         CErc20 cToken = CErc20(cAsset);
 
@@ -586,6 +612,8 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
                 utilizedCAssetBalances[cAsset][lender]) >= vars.redeemTokens,
             "Lender does not have a sufficient balance to serve this loan"
         );
+
+        console.log("balance2");
 
         // update the lenders utilized balance
         utilizedCAssetBalances[cAsset][lender] += vars.redeemTokens;
