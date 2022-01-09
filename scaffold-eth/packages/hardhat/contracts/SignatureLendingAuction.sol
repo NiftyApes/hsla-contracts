@@ -328,12 +328,6 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
             loanAuction.amountDrawn = offer.amount;
             loanAuction.fixedTerms = offer.fixedTerms;
 
-            // need to take protocol fee on payback instead of drawdown
-            // calculate protocol draw fee and subtract from amount
-            // this leaves the protocol fee invested in Compound in this contract address' balance
-            // uint256 drawAmountMinusFee = offer.amount -
-            //     (offer.amount * loanDrawFeeProtocolPercentage);
-
             // *------- value and asset transfers -------* //
 
             // transferFrom NFT from nftOwner to contract
