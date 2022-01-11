@@ -203,12 +203,14 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         bytes memory signature,
         uint256 nftId // nftId should match offer.nftId if floorTerm false, nftId should not match if floorTerm true. Need to provide as function parameter to pass nftId with floor terms.
     ) external payable whenNotPaused {
-        console.log("inside");
+        console.log("inside1");
         // require signature has not been cancelled/bid withdrawn
         require(
             cancelledOrFinalized[signature] == false,
             "Cannot execute bid or ask. Signature has been cancelled or previously finalized."
         );
+
+        console.log("inside2");
 
         // require offer has not expired
         require(
@@ -216,17 +218,23 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
             "Cannot execute bid, offer has expired"
         );
 
+        console.log("inside3");
+
         // require offer has 24 hour minimum duration
         require(
             offer.duration >= 86400,
             "Offers must have 24 hours minimum duration"
         );
 
+        console.log("inside4");
+
         require(
             assetToCAsset[offer.asset] !=
                 0x0000000000000000000000000000000000000000,
             "Asset not whitelisted on NiftyApes"
         );
+
+        console.log("inside5");
 
         // get nft owner
         address nftOwner = IERC721(offer.nftContractAddress).ownerOf(nftId);
@@ -237,6 +245,8 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
             nftOwner == msg.sender,
             "Msg.sender must be the owner of nftId to executeLoanByBid"
         );
+
+        console.log("inside6");
 
         // ideally calculated, stored, and provided as parameter to save computation
         // generate hash of offer parameters
@@ -1600,8 +1610,5 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
 }
 
 // still needed:
-// 1. Events
 // 2. SafeMath
-// 3. Ownable, Upgradeable, etc.
 // 4. Diamond Pattern
-// 5. Admin functions
