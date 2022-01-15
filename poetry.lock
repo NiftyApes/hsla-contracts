@@ -54,8 +54,8 @@ python-versions = "*"
 
 [metadata]
 lock-version = "1.1"
-python-versions = "^3.10"
-content-hash = "e763f7d67a9431b8e010a324139beed61f91cb3c51ed2c71c1fcd3ce37476114"
+python-versions = "^3.9"
+content-hash = "d0ec0fcccd9da1a5a8929ed257e88488d546bab27a0f133b5baf7a2cf50195de"
 
 [metadata.files]
 crytic-compile = [
