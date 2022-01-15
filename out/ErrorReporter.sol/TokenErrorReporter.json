@@ -1,0 +1,28 @@
+{
+  "abi": [
+    {
+      "type": "event",
+      "name": "Failure",
+      "inputs": [
+        {
+          "name": "error",
+          "type": "uint256",
+          "indexed": false
+        },
+        {
+          "name": "info",
+          "type": "uint256",
+          "indexed": false
+        },
+        {
+          "name": "detail",
+          "type": "uint256",
+          "indexed": false
+        }
+      ],
+      "anonymous": false
+    }
+  ],
+  "bin": "0x6080604052348015600f57600080fd5b50603f80601d6000396000f3fe6080604052600080fdfea26469706673582212200592ba258a9693699898d383bee702a9eb5304c6c1b0814f0d42214f6d49d44a64736f6c634300080b0033",
+  "bin-runtime": "0x6080604052600080fdfea26469706673582212200592ba258a9693699898d383bee702a9eb5304c6c1b0814f0d42214f6d49d44a64736f6c634300080b0033"
+}
