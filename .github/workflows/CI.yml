@@ -79,4 +79,4 @@ jobs:
         run: poetry run slither --solc-remaps @openzeppelin=lib/openzeppelin-contracts --solc-args optimize src/
 
       - name: Run tests
-        run: forge test
+        run: forge test --optimize
