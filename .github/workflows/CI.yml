@@ -75,8 +75,9 @@ jobs:
       - name: Run lint check
         run: npm run lint:check
 
-      - name: Run audit
-        run: poetry run slither --solc-remaps @openzeppelin=lib/openzeppelin-contracts --solc-args optimize src/
+      # Too slow to run regularly
+      #- name: Run audit
+      #  run: poetry run slither --solc-remaps @openzeppelin=lib/openzeppelin-contracts --solc-args optimize src/
 
       - name: Run tests
         run: forge test --optimize
