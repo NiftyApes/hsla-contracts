@@ -9,8 +9,11 @@ jobs:
   run-ci:
     runs-on: ubuntu-latest
     steps:
+
       - uses: actions/checkout@v2
+
       - uses: actions/setup-node@v2
+
       - name: Install dev dependencies
         run: npm install
 
@@ -62,6 +65,7 @@ jobs:
       - name: Save git SHA for Foundry
         run: |
           echo "forge-sha=$(git ls-remote  https://github.com/gakonst/foundry HEAD | awk '{ print $1}')" >> $GITHUB_ENV
+
       - name: Cache Forge
         uses: actions/cache@v2
         id: cache-forge
