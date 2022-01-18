@@ -1,103 +1,35 @@
-pragma solidity ^0.8.2;
 //SPDX-License-Identifier: MIT
+
+pragma solidity ^0.8.2;
 
 import "./test/console.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "libcompound/interfaces/CERC20.sol";
+import "./interfaces/ICETH.sol";
 import "./ErrorReporter.sol";
 import "./Exponential.sol";
+import "./interfaces/ILiquidityProviders.sol";
 
-interface Erc20 {
-    function approve(address, uint256) external returns (bool);
+// TODO(need to implement Proxy and Intitializable contracts?)
 
-    function transfer(address, uint256) external returns (bool);
-
-    function transferFrom(
-        address,
-        address,
-        uint256
-    ) external returns (bool);
-}
-
-interface CErc20 {
-    function mint(uint256) external returns (uint256);
-
-    function exchangeRateCurrent() external returns (uint256);
-
-    function supplyRatePerBlock() external returns (uint256);
-
-    function redeem(uint256) external returns (uint256);
-
-    function redeemUnderlying(uint256) external returns (uint256);
-
-    function balanceOf(address) external view returns (uint256);
-
-    function transfer(address, uint256) external returns (bool);
-
-    function transferFrom(
-        address,
-        address,
-        uint256
-    ) external returns (bool);
-}
-
-interface CEth {
-    function mint() external payable;
-
-    function exchangeRateCurrent() external returns (uint256);
-
-    function supplyRatePerBlock() external returns (uint256);
-
-    function redeem(uint256) external returns (uint256);
-
-    function redeemUnderlying(uint256) external returns (uint256);
-
-    function balanceOf(address) external view returns (uint256);
-
-    function transfer(address, uint256) external returns (bool);
-
-    function transferFrom(
-        address,
-        address,
-        uint256
-    ) external returns (bool);
-}
-
-// need to implement Proxy and Intitializable contracts
-
+// @title An interface for liquidity providers to supply and withdraw tokens
+// @author Kevin Seagraves
+// @notice This contract wraps and unwraps, tracks balances of deposited Assets and cAssets
+// TODO(Factor out Exponential to library)
 contract LiquidityProviders is
+    ILiquidityProviders,
     Exponential,
-    TokenErrorReporter,
     Ownable,
     Pausable,
-    ReentrancyGuard
+    ReentrancyGuard,
+    TokenErrorReporter
 {
     // Solidity 0.8.x provides safe math, but uses an invalid opcode error which consumes all gas. SafeMath uses revert which returns all gas.
     using SafeMath for uint256;
-
-    // ---------- STRUCTS --------------- //
-
-    struct MintLocalVars {
-        Error err;
-        MathError mathErr;
-        uint256 exchangeRateMantissa;
-        uint256 mintTokens;
-        uint256 totalSupplyNew;
-        uint256 accountTokensNew;
-        uint256 mintAmount;
-    }
-
-    struct RedeemLocalVars {
-        Error err;
-        MathError mathErr;
-        uint256 exchangeRateMantissa;
-        uint256 redeemTokens;
-        uint256 redeemAmount;
-        uint256 totalSupplyNew;
-        uint256 accountTokensNew;
-    }
 
     // ---------- STATE VARIABLES --------------- //
 
@@ -105,6 +37,7 @@ contract LiquidityProviders is
     // controls assets available for deposit on NiftyApes
     mapping(address => address) public assetToCAsset;
 
+    // TODO(These could be combined into a struct for gas savings)
     // Mapping of cAssetBalance to cAssetAddress to depositor address
     mapping(address => mapping(address => uint256)) public cAssetBalances;
 
@@ -115,55 +48,33 @@ contract LiquidityProviders is
     /**
      * @notice Mapping of allCAssetsEntered to depositorAddress
      */
-    mapping(address => address[]) public accountAssets;
-    // needed to calulate the lenders total value deposited on the platform
-
-    // ---------- EVENTS --------------- //
-
-    event newAssetWhitelisted(address asset, address cAsset);
-
-    event Erc20Supplied(address depositor, address asset, uint256 amount);
-
-    event CErc20Supplied(address depositor, address asset, uint256 amount);
-
-    event Erc20Withdrawn(
-        address depositor,
-        address asset,
-        bool redeemType,
-        uint256 amount
-    );
-
-    event CErc20Withdrawn(address depositor, address asset, uint256 amount);
-
-    event EthSupplied(address depositor, uint256 amount);
-
-    event CEthSupplied(address depositor, uint256 amount);
-
-    event EthWithdrawn(address depositor, bool redeemType, uint256 amount);
-
-    event CEthWithdrawn(address depositor, uint256 amount);
-
-    // ---------- MODIFIERS --------------- //
+    // TODO(This could be obviated with iterable mapping and reversing input order tuple for cAssetBalances)
+    mapping(address => address[]) internal accountAssets;
 
     // ---------- FUNCTIONS -------------- //
 
-    // This contrcutor is only for testing on local browser and burner wallet
-    // constructor() {
-    //     transferOwnership(0x5E3df1431aBf51a7729348C7B4bAe6AF80a85803);
-    // }
+    // This is needed to receive ETH when calling `withdrawEth`
+    receive() external payable {}
 
-    // returns the assets a depositor has deposited on NiftyApes.
-    // combined with cAssetBalances and/or utilizedCAssetBalances to calculate depositors total balance and total available balance.
-    function getAssetsIn(address account)
+    // @notice By calling 'revert' in the fallback function, we prevent anyone
+    //         from accidentally sending ether directly to this contract.
+    fallback() external payable {
+        revert();
+    }
+
+    // @notice returns the assets a depositor has deposited on NiftyApes.
+    // @dev combined with cAssetBalances and/or utilizedCAssetBalances to calculate depositors total balance and total available balance.
+    function getAssetsIn(address depositor)
         external
         view
         returns (address[] memory)
     {
-        address[] memory assetsIn = accountAssets[account];
+        address[] memory assetsIn = accountAssets[depositor];
 
         return assetsIn;
     }
 
+    // @notice Sets an asset as allowed on the platform and creates asset => cAsset mapping
     function setCAssetAddress(address asset, address cAsset)
         external
         onlyOwner
@@ -173,23 +84,23 @@ contract LiquidityProviders is
         emit newAssetWhitelisted(asset, cAsset);
     }
 
-    // returns number of cErc20 tokens added to balance
+    // @notice returns number of cErc20 tokens added to balance
     function supplyErc20(address asset, uint256 numTokensToSupply)
-        public
+        external
         returns (uint256)
     {
         require(
-            assetToCAsset[asset] != 0x0000000000000000000000000000000000000000,
+            assetToCAsset[asset] != address(0),
             "Asset not whitelisted on NiftyApes"
         );
 
         address cAsset = assetToCAsset[asset];
 
         // Create a reference to the underlying asset contract, like DAI.
-        Erc20 underlying = Erc20(asset);
+        IERC20 underlying = IERC20(asset);
 
         // Create a reference to the corresponding cToken contract, like cDAI
-        CErc20 cToken = CErc20(cAsset);
+        CERC20 cToken = CERC20(cAsset);
 
         // transferFrom ERC20 from depositors address
         require(
@@ -228,19 +139,20 @@ contract LiquidityProviders is
         return vars.mintTokens;
     }
 
+    // @notice returns the number of CERC20 tokens added to balance
     function supplyCErc20(address asset, uint256 numTokensToSupply)
-        public
+        external
         returns (uint256)
     {
         require(
-            assetToCAsset[asset] != 0x0000000000000000000000000000000000000000,
+            assetToCAsset[asset] != address(0),
             "Asset not whitelisted on NiftyApes"
         );
 
         address cAsset = assetToCAsset[asset];
 
         // Create a reference to the corresponding cToken contract, like cDAI
-        CErc20 cToken = CErc20(cAsset);
+        CERC20 cToken = CERC20(cAsset);
 
         // transferFrom ERC20 from depositors address
         // cToken.transferFrom(msg.sender, address(this), numTokensToSupply);
@@ -265,17 +177,17 @@ contract LiquidityProviders is
         uint256 amountToWithdraw
     ) public whenNotPaused nonReentrant returns (uint256) {
         require(
-            assetToCAsset[asset] != 0x0000000000000000000000000000000000000000,
+            assetToCAsset[asset] != address(0),
             "Asset not whitelisted on NiftyApes"
         );
 
         address cAsset = assetToCAsset[asset];
 
         // Create a reference to the underlying asset contract, like DAI.
-        Erc20 underlying = Erc20(asset);
+        IERC20 underlying = IERC20(asset);
 
         // Create a reference to the corresponding cToken contract, like cDAI
-        CErc20 cToken = CErc20(cAsset);
+        CERC20 cToken = CERC20(cAsset);
 
         // redeemType == true >> withdraw based on amount of cErc20
         if (redeemType == true) {
@@ -368,20 +280,20 @@ contract LiquidityProviders is
     }
 
     function withdrawCErc20(address asset, uint256 amountToWithdraw)
-        public
+        external
         whenNotPaused
         nonReentrant
         returns (uint256)
     {
         require(
-            assetToCAsset[asset] != 0x0000000000000000000000000000000000000000,
+            assetToCAsset[asset] != address(0),
             "Asset not whitelisted on NiftyApes"
         );
 
         address cAsset = assetToCAsset[asset];
 
         // Create a reference to the corresponding cToken contract, like cDAI
-        CErc20 cToken = CErc20(cAsset);
+        CERC20 cToken = CERC20(cAsset);
 
         // require msg.sender has sufficient available balance of cErc20
         require(
@@ -403,15 +315,15 @@ contract LiquidityProviders is
         return amountToWithdraw;
     }
 
-    function supplyEth() public payable returns (uint256) {
+    function supplyEth() external payable returns (uint256) {
         // set cEth address
         // utilize reference to allow update of cEth address by compound in future versions
         address cEtherContract = assetToCAsset[
-            0x0000000000000000000000000000000000000000
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
         ];
 
         // Create a reference to the corresponding cToken contract
-        CEth cToken = CEth(cEtherContract);
+        ICETH cToken = ICETH(cEtherContract);
 
         // calculate expectedAmountToBeMinted
         MintLocalVars memory vars;
@@ -435,15 +347,15 @@ contract LiquidityProviders is
         return vars.mintTokens;
     }
 
-    function supplyCEth(uint256 numTokensToSupply) public returns (uint256) {
+    function supplyCEth(uint256 numTokensToSupply) external returns (uint256) {
         // set cEth address
         // utilize reference to allow update of cEth address by compound in future versions
         address cEtherContract = assetToCAsset[
-            0x0000000000000000000000000000000000000000
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
         ];
 
         // Create a reference to the corresponding cToken contract
-        CEth cToken = CEth(cEtherContract);
+        ICETH cToken = ICETH(cEtherContract);
 
         // transferFrom ERC20 from supplyers address
         require(
@@ -461,7 +373,7 @@ contract LiquidityProviders is
 
     // True to withdraw based on cEth amount. False to withdraw based on amount of Eth
     function withdrawEth(bool redeemType, uint256 amountToWithdraw)
-        public
+        external
         whenNotPaused
         nonReentrant
         returns (uint256)
@@ -469,11 +381,11 @@ contract LiquidityProviders is
         // set cEth address
         // utilize reference to allow update of cEth address by compound in future versions
         address cEtherContract = assetToCAsset[
-            0x0000000000000000000000000000000000000000
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
         ];
 
         // Create a reference to the corresponding cToken contract, like cDAI
-        CEth cToken = CEth(cEtherContract);
+        ICETH cToken = ICETH(cEtherContract);
 
         // redeemType == true >> withdraw based on amount of cErc20
         if (redeemType == true) {
@@ -564,7 +476,7 @@ contract LiquidityProviders is
     }
 
     function withdrawCEth(uint256 amountToWithdraw)
-        public
+        external
         whenNotPaused
         nonReentrant
         returns (uint256)
@@ -572,11 +484,11 @@ contract LiquidityProviders is
         // set cEth address
         // utilize reference to allow update of cEth address by compound in future versions
         address cEtherContract = assetToCAsset[
-            0x0000000000000000000000000000000000000000
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
         ];
 
         // Create a reference to the corresponding cToken contract, like cDAI
-        CEth cToken = CEth(cEtherContract);
+        ICETH cToken = ICETH(cEtherContract);
 
         // require msg.sender has sufficient available balance of cEth
         require(
@@ -599,20 +511,4 @@ contract LiquidityProviders is
 
         return amountToWithdraw;
     }
-
-    function adminClaimCOMP() public {}
-
-    function adminTransferErc20() public {}
-
-    function adminTransferCErc20() public {}
-
-    function adminTransferEth() public {}
-
-    // Not sure if necessary or helpful, but could be.
-    function calculateLoanDrawDownFee() public {}
-
-    // if possible should implement function to reject any ETH or ERC20 that is directly sent to the contract
-
-    // This is needed to receive ETH when calling `withdrawEth`
-    receive() external payable {}
 }

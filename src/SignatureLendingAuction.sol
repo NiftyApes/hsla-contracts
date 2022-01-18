@@ -2,158 +2,47 @@ pragma solidity ^0.8.2;
 //SPDX-License-Identifier: MIT
 
 import "./LiquidityProviders.sol";
+import "./interfaces/ICETH.sol";
+import "./interfaces/ISignatureLendingAuction.sol";
+import "libcompound/interfaces/CERC20.sol";
 import "./test/console.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
-contract SignatureLendingAuction is LiquidityProviders, EIP712 {
-    // Solidity 0.8.x provides safe math, but uses an invalid opcode error which comsumes all gas. SafeMath uses revert which returns all gas.
+contract SignatureLendingAuction is
+    ISignatureLendingAuction,
+    LiquidityProviders,
+    EIP712
+{
+    // Solidity 0.8.x provides safe math, but uses an invalid opcode error which consumes all gas. SafeMath uses revert which returns all gas.
     using SafeMath for uint256;
     using ECDSA for bytes32;
-
-    // ---------- STRUCTS --------------- //
-
-    struct LoanAuction {
-        // NFT owner
-        address nftOwner;
-        // Current lender
-        address lender;
-        // loan asset
-        address asset; // 0x0 in active loan denotes ETH
-        // loan amount
-        uint256 amount;
-        // loan interest rate
-        uint256 interestRate;
-        // loan duration of loan in number of seconds
-        uint256 duration;
-        // timestamp of bestBid
-        uint256 bestBidTime;
-        // timestamp of loan execution
-        uint256 loanExecutedTime;
-        // cumulative interest of varying rates paid by new lenders to buy out the loan auction
-        uint256 historicInterest;
-        // amount withdrawn by the nftOwner. This is the amount they will pay interest on, with this value as minimum
-        uint256 amountDrawn;
-        // time withdrawn by the nftOwner. This is the time they will pay interest on, with this value as minimum
-        uint256 timeDrawn;
-        // boolean of whether fixedTerms has been accepted by a borrower
-        // if fixedTerms == true could mint an NFT that represents that loan to enable packaging and reselling.
-        bool fixedTerms;
-    }
-
-    struct Offer {
-        // offer NFT contract address
-        address nftContractAddress;
-        // offer NFT ID
-        uint256 nftId; // 0 if floorTerm is true
-        // offer asset type
-        address asset;
-        // offer loan amount
-        uint256 amount;
-        // offer interest rate
-        uint256 interestRate;
-        // offer loan duration
-        uint256 duration;
-        // offer expiration
-        uint256 expiration;
-        // is loan offer fixed terms or open for perpetual auction
-        bool fixedTerms;
-        // is offer for single NFT or for every NFT in a collection
-        bool floorTerm;
-    }
 
     // ---------- STATE VARIABLES --------------- //
 
     // Mapping of nftId to nftContractAddress to LoanAuction struct
-    mapping(address => mapping(uint256 => LoanAuction)) public loanAuctions;
+    mapping(address => mapping(uint256 => LoanAuction)) _loanAuctions;
 
     // Cancelled / finalized orders, by signature
-    mapping(bytes => bool) public cancelledOrFinalized;
+    mapping(bytes => bool) _cancelledOrFinalized;
+
+    // TODO(Do these fees really need to be mutable?)
 
     // fee paid to protocol by borrower for drawing down loan
     // decimal to 10000 because of whole number math
-    uint256 loanDrawFeeProtocolPercentage = SafeMath.div(1, 10000);
+    uint256 public loanDrawFeeProtocolPercentage = SafeMath.div(1, 10000);
 
     // premium paid to current lender by new lender for buying out the loan
-    uint256 buyOutPremiumLenderPrecentage = SafeMath.div(9, 100000);
+    uint256 public buyOutPremiumLenderPercentage = SafeMath.div(9, 100000);
 
     // premium paid to protocol by new lender for buying out the loan
-    uint256 buyOutPremiumProtocolPrecentage = SafeMath.div(1, 100000);
-
-    // ---------- EVENTS --------------- //
-
-    event LoanExecuted(
-        address lender,
-        address nftOwner,
-        address indexed nftContractAddress,
-        uint256 indexed nftId,
-        address asset,
-        uint256 amount,
-        uint256 interestRate,
-        uint256 duration
-    );
-
-    event LoanBuyOut(
-        address lender,
-        address nftOwner,
-        address indexed nftContractAddress,
-        uint256 indexed nftId,
-        address asset,
-        uint256 amount,
-        uint256 interestRate,
-        uint256 duration
-    );
-
-    // cancellation sig event
-    event BidAskCancelled(
-        address indexed nftContractAddress,
-        uint256 indexed nftId,
-        bytes signature
-    );
-
-    // finalize sig event
-    event BidAskFinalized(
-        address indexed nftContractAddress,
-        uint256 indexed nftId,
-        bytes signature
-    );
-
-    event TimeDrawn(
-        address indexed nftContractAddress,
-        uint256 indexed nftId,
-        uint256 drawTime,
-        uint256 totalDrawn
-    );
-
-    event AmountDrawn(
-        address indexed nftContractAddress,
-        uint256 indexed nftId,
-        uint256 drawAmount,
-        uint256 drawAmountMinusFee,
-        uint256 totalDrawn
-    );
-
-    event LoanRepaidInFull(
-        address indexed nftContractAddress,
-        uint256 indexed nftId
-    );
-
-    event PartialRepayment(
-        address indexed nftContractAddress,
-        uint256 indexed nftId,
-        address asset,
-        uint256 amount
-    );
-
-    event AssetSeized(
-        address indexed nftContractAddress,
-        uint256 indexed nftId
-    );
+    uint256 public buyOutPremiumProtocolPercentage = SafeMath.div(1, 100000);
 
     // ---------- MODIFIERS --------------- //
 
+    // TODO(Does this really do what it should?)
     modifier isNFTOwner(address nftContractAddress, uint256 nftId) {
         _;
     }
@@ -161,6 +50,22 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
     // ---------- FUNCTIONS -------------- //
 
     constructor() EIP712("NiftyApes", "0.0.1") {}
+
+    function getLoanAuction(address nftContractAddress, uint256 nftId)
+        external
+        view
+        returns (LoanAuction memory auction)
+    {
+        auction = _loanAuctions[nftContractAddress][nftId];
+    }
+
+    function getOrderStatus(bytes memory signature)
+        external
+        view
+        returns (bool status)
+    {
+        status = _cancelledOrFinalized[signature];
+    }
 
     // ideally this hash can be generated on the frontend, stored in the backend, and provided to functions to reduce computation
     // given the offer details, generate a hash and try to kind of follow the eip-191 standard
@@ -191,22 +96,22 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
     function getOfferSigner(
         bytes32 offerHash, //hash of offer
         bytes memory signature //proof the actor signed the offer
-    ) public pure returns (address) {
+    ) public pure returns (address signer) {
         return offerHash.toEthSignedMessageHash().recover(signature);
     }
 
     // executeLoanByBid allows a borrower to submit a signed offer from a lender and execute a loan using their owned NFT
     // this external function handles all checks for executeLoanByBid
     function executeLoanByBid(
-        Offer memory offer,
+        Offer calldata offer,
         // bytes offerHash,
-        bytes memory signature,
+        bytes calldata signature,
         uint256 nftId // nftId should match offer.nftId if floorTerm false, nftId should not match if floorTerm true. Need to provide as function parameter to pass nftId with floor terms.
     ) external payable whenNotPaused {
         console.log("inside1");
         // require signature has not been cancelled/bid withdrawn
         require(
-            cancelledOrFinalized[signature] == false,
+            _cancelledOrFinalized[signature] == false,
             "Cannot execute bid or ask. Signature has been cancelled or previously finalized."
         );
 
@@ -314,7 +219,7 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         console.log("internal1");
 
         // instantiate LoanAuction Struct
-        LoanAuction storage loanAuction = loanAuctions[
+        LoanAuction storage loanAuction = _loanAuctions[
             offer.nftContractAddress
         ][nftId];
 
@@ -329,7 +234,7 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         console.log("internal2");
 
         // finalize signature
-        cancelledOrFinalized[signature] == true;
+        _cancelledOrFinalized[signature] == true;
 
         // check if lender has sufficient available balance and update utilizedBalance
         _checkAndUpdateLenderUtilizedBalanceInternal(
@@ -363,7 +268,9 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         );
 
         // if asset is not 0x0 process as Erc20
-        if (offer.asset != 0x0000000000000000000000000000000000000000) {
+        if (
+            offer.asset != address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
+        ) {
             console.log("internal4");
 
             // redeem cTokens and transfer underlying to borrower
@@ -375,7 +282,9 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
             );
         }
         // else process as ETH
-        else if (offer.asset == 0x0000000000000000000000000000000000000000) {
+        else if (
+            offer.asset == address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
+        ) {
             console.log("internal5");
 
             // redeem cTokens and transfer underlying to borrower
@@ -399,13 +308,13 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
     // executeLoanByAsk allows a lender to submit a signed offer from a borrower and execute a loan against the borrower's NFT
     // this external function handles all checks for executeLoanByAsk
     function executeLoanByAsk(
-        Offer memory offer,
+        Offer calldata offer,
         // bytes offerHash,
-        bytes memory signature
-    ) public payable {
+        bytes calldata signature
+    ) external payable {
         // require signature has not been cancelled/bid withdrawn
         require(
-            cancelledOrFinalized[signature] == false,
+            _cancelledOrFinalized[signature] == false,
             "Cannot execute bid or ask. Signature has been cancelled or previously finalized."
         );
 
@@ -422,8 +331,7 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         );
 
         require(
-            assetToCAsset[offer.asset] !=
-                0x0000000000000000000000000000000000000000,
+            assetToCAsset[offer.asset] != address(0),
             "Asset not whitelisted on NiftyApes"
         );
 
@@ -457,7 +365,7 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         bytes memory signature
     ) internal {
         // instantiate LoanAuction Struct
-        LoanAuction storage loanAuction = loanAuctions[
+        LoanAuction storage loanAuction = _loanAuctions[
             offer.nftContractAddress
         ][offer.nftId];
 
@@ -470,7 +378,7 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         );
 
         // finalize signature
-        cancelledOrFinalized[signature] == true;
+        _cancelledOrFinalized[signature] == true;
 
         // check if lender has sufficient available balance and update utilizedBalance
         _checkAndUpdateLenderUtilizedBalanceInternal(
@@ -506,20 +414,21 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
             offer.nftId
         );
 
-        // if asset is not 0x0 process as Erc20
-        if (offer.asset != 0x0000000000000000000000000000000000000000) {
+        // Process as ETH
+        if (
+            offer.asset == address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
+        ) {
             // redeem cTokens and transfer underlying to borrower
+            _redeemAndTransferEthInternal(cAsset, drawAmountMinusFee, nftOwner);
+        }
+        // Process as ERC20
+        else {
             _redeemAndTransferErc20Internal(
                 offer.asset,
                 cAsset,
                 drawAmountMinusFee,
                 nftOwner
             );
-        }
-        // else process as ETH
-        else if (offer.asset == 0x0000000000000000000000000000000000000000) {
-            // redeem cTokens and transfer underlying to borrower
-            _redeemAndTransferEthInternal(cAsset, drawAmountMinusFee, nftOwner);
         }
 
         emit LoanExecuted(
@@ -546,10 +455,10 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         console.log("redeem1");
 
         // Create a reference to the underlying asset contract, like DAI.
-        Erc20 underlying = Erc20(asset);
+        IERC20 underlying = IERC20(asset);
 
         // Create a reference to the corresponding cToken contract, like cDAI
-        CErc20 cToken = CErc20(cAsset);
+        CERC20 cToken = CERC20(cAsset);
 
         // redeem underlying from cToken to this contract
         cToken.redeemUnderlying(amount);
@@ -569,7 +478,7 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         address nftOwner
     ) internal {
         // Create a reference to the corresponding cToken contract, like cDAI
-        CErc20 cToken = CErc20(cAsset);
+        CERC20 cToken = CERC20(cAsset);
 
         // redeem underlying from cToken to this contract
         cToken.redeemUnderlying(amount);
@@ -587,7 +496,7 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         console.log("balance1");
 
         // create a reference to the corresponding cToken contract, like cDAI
-        CErc20 cToken = CErc20(cAsset);
+        CERC20 cToken = CERC20(cAsset);
 
         // instantiate RedeemLocalVars
         RedeemLocalVars memory vars;
@@ -627,12 +536,12 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
 
     // this
     function refinanceByBorrower(Offer memory offer, bytes memory signature)
-        public
+        external
         payable
         whenNotPaused
     {
         // Instantiate LoanAuction Struct
-        LoanAuction storage loanAuction = loanAuctions[
+        LoanAuction storage loanAuction = _loanAuctions[
             offer.nftContractAddress
         ][offer.nftId];
 
@@ -728,14 +637,14 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         // emit BidAskFinalized(offer.nftContractAddress, offer.nftId, signature);
     }
 
-    function refinanceByLender(Offer memory offer)
-        public
+    function refinanceByLender(Offer calldata offer)
+        external
         payable
         whenNotPaused
         nonReentrant
     {
         // Instantiate LoanAuction Struct
-        LoanAuction storage loanAuction = loanAuctions[
+        LoanAuction storage loanAuction = _loanAuctions[
             offer.nftContractAddress
         ][offer.nftId];
 
@@ -800,11 +709,11 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         // calculate interest earned
         uint256 interestAndPremiumOwedToLender = lenderInterest +
             loanAuction.historicInterest +
-            (loanAuction.amountDrawn * buyOutPremiumLenderPrecentage);
+            (loanAuction.amountDrawn * buyOutPremiumLenderPercentage);
 
         // calculate protocolPremiumFee
         uint256 protocolPremiumFee = loanAuction.amountDrawn *
-            buyOutPremiumProtocolPrecentage;
+            buyOutPremiumProtocolPercentage;
 
         // calculate fullBidBuyOutAmount
         uint256 fullBuyOutAmount = interestAndPremiumOwedToLender +
@@ -874,7 +783,7 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         uint256 paymentAmount
     ) internal returns (uint256) {
         // Create a reference to the corresponding cToken contract, like cDAI
-        CErc20 cToken = CErc20(cAsset);
+        CERC20 cToken = CERC20(cAsset);
 
         // instantiate protocolPremiumFeeTokens
         uint256 protocolPremiumFeeTokens;
@@ -949,12 +858,12 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
     }
 
     // Cancel a signature based bid or ask on chain
-    function withdrawBidOrAsk(Offer memory offer, bytes memory signature)
-        public
+    function withdrawBidOrAsk(Offer calldata offer, bytes calldata signature)
+        external
     {
         // require signature is still valid. This also ensures the signature is not utilized in an active loan
         require(
-            cancelledOrFinalized[signature] == false,
+            _cancelledOrFinalized[signature] == false,
             "Cannot cancel a bid or ask that is already cancelled or finalized."
         );
 
@@ -971,7 +880,7 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         );
 
         // cancel signature
-        cancelledOrFinalized[signature] = true;
+        _cancelledOrFinalized[signature] = true;
 
         emit BidAskCancelled(offer.nftContractAddress, offer.nftId, signature);
     }
@@ -980,9 +889,9 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         address nftContractAddress,
         uint256 nftId,
         uint256 drawTime
-    ) public whenNotPaused nonReentrant {
+    ) external whenNotPaused nonReentrant {
         // Instantiate LoanAuction Struct
-        LoanAuction storage loanAuction = loanAuctions[nftContractAddress][
+        LoanAuction storage loanAuction = _loanAuctions[nftContractAddress][
             nftId
         ];
 
@@ -1028,13 +937,13 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         );
     }
 
-    function drawamount(
+    function drawAmount(
         address nftContractAddress,
         uint256 nftId,
         uint256 drawAmount
-    ) public whenNotPaused nonReentrant {
+    ) external whenNotPaused nonReentrant {
         // Instantiate LoanAuction Struct
-        LoanAuction storage loanAuction = loanAuctions[nftContractAddress][
+        LoanAuction storage loanAuction = _loanAuctions[nftContractAddress][
             nftId
         ];
 
@@ -1078,7 +987,10 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
             (drawAmount * loanDrawFeeProtocolPercentage);
 
         // if asset is not 0x0 process as Erc20
-        if (loanAuction.asset != 0x0000000000000000000000000000000000000000) {
+        if (
+            loanAuction.asset !=
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
+        ) {
             // redeem cTokens and transfer underlying to borrower
             _redeemAndTransferErc20Internal(
                 loanAuction.asset,
@@ -1089,7 +1001,8 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         }
         // else process as ETH
         else if (
-            loanAuction.asset == 0x0000000000000000000000000000000000000000
+            loanAuction.asset ==
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
         ) {
             // redeem cTokens and transfer underlying to borrower
             _redeemAndTransferEthInternal(
@@ -1110,14 +1023,14 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
 
     // enables borrowers to repay their full loan to a lender and regain full ownership of their NFT
     function repayRemainingLoan(address nftContractAddress, uint256 nftId)
-        public
+        external
         payable
         whenNotPaused
         nonReentrant
         returns (uint256)
     {
         // Instantiate LoanAuction Struct
-        LoanAuction storage loanAuction = loanAuctions[nftContractAddress][
+        LoanAuction storage loanAuction = _loanAuctions[nftContractAddress][
             nftId
         ];
 
@@ -1157,7 +1070,10 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
             loanAuction.amountDrawn;
 
         // if asset is not 0x0 process as Erc20
-        if (loanAuction.asset != 0x0000000000000000000000000000000000000000) {
+        if (
+            loanAuction.asset !=
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
+        ) {
             // protocolPremiumFee is taken here. Full amount is minted to this contract address' balance in Compound and amount owed to lender is updated in their balance. The delta is the protocol premium fee.
             _payErc20AndUpdateBalancesInternal(
                 loanAuction.asset,
@@ -1171,7 +1087,8 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         }
         // else process as ETH
         else if (
-            loanAuction.asset == 0x0000000000000000000000000000000000000000
+            loanAuction.asset ==
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
         ) {
             // check that transaction covers the full value of the loan
             require(
@@ -1190,9 +1107,9 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         }
 
         // reset loanAuction
-        loanAuction.nftOwner = 0x0000000000000000000000000000000000000000;
-        loanAuction.lender = 0x0000000000000000000000000000000000000000;
-        loanAuction.asset = 0x0000000000000000000000000000000000000000;
+        loanAuction.nftOwner = address(0);
+        loanAuction.lender = address(0);
+        loanAuction.asset = address(0);
         loanAuction.amount = 0;
         loanAuction.interestRate = 0;
         loanAuction.duration = 0;
@@ -1220,9 +1137,9 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         address nftContractAddress,
         uint256 nftId,
         uint256 partialAmount
-    ) public payable whenNotPaused nonReentrant {
+    ) external payable whenNotPaused nonReentrant {
         // Instantiate LoanAuction Struct
-        LoanAuction storage loanAuction = loanAuctions[nftContractAddress][
+        LoanAuction storage loanAuction = _loanAuctions[nftContractAddress][
             nftId
         ];
 
@@ -1252,7 +1169,10 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
             protocolDrawFee;
 
         // if asset is not 0x0 process as Erc20
-        if (loanAuction.asset != 0x0000000000000000000000000000000000000000) {
+        if (
+            loanAuction.asset !=
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
+        ) {
             _payErc20AndUpdateBalancesInternal(
                 loanAuction.asset,
                 cAsset,
@@ -1265,7 +1185,8 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         }
         // else process as ETH
         else if (
-            loanAuction.asset == 0x0000000000000000000000000000000000000000
+            loanAuction.asset ==
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
         ) {
             // check that transaction covers the full value of the loan
             require(
@@ -1305,10 +1226,10 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         uint256 paymentAmount
     ) internal returns (uint256) {
         // Create a reference to the underlying asset contract, like DAI.
-        Erc20 underlying = Erc20(asset);
+        IERC20 underlying = IERC20(asset);
 
         // Create a reference to the corresponding cToken contract, like cDAI
-        CErc20 cToken = CErc20(cAsset);
+        CERC20 cToken = CERC20(cAsset);
 
         // instantiate interestAndPremiumTokens
         uint256 interestAndPremiumTokens;
@@ -1377,7 +1298,7 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         uint256 paymentAmount
     ) internal returns (uint256) {
         // Create a reference to the corresponding cToken contract, like cDAI
-        CEth cToken = CEth(cAsset);
+        ICETH cToken = ICETH(cAsset);
 
         // instantiate interestAndPremiumTokens
         uint256 interestAndPremiumTokens;
@@ -1454,12 +1375,12 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
 
     // allows anyone to seize an asset of a past due loan on behalf on the lender
     function seizeAsset(address nftContractAddress, uint256 nftId)
-        public
+        external
         whenNotPaused
         nonReentrant
     {
         // instantiate LoanAuction Struct
-        LoanAuction storage loanAuction = loanAuctions[nftContractAddress][
+        LoanAuction storage loanAuction = _loanAuctions[nftContractAddress][
             nftId
         ];
 
@@ -1482,9 +1403,9 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         address currentlender = loanAuction.lender;
 
         // reset loanAuction
-        loanAuction.nftOwner = 0x0000000000000000000000000000000000000000;
-        loanAuction.lender = 0x0000000000000000000000000000000000000000;
-        loanAuction.asset = 0x0000000000000000000000000000000000000000;
+        loanAuction.nftOwner = address(0);
+        loanAuction.lender = address(0);
+        loanAuction.asset = address(0);
         loanAuction.amount = 0;
         loanAuction.interestRate = 0;
         loanAuction.duration = 0;
@@ -1514,12 +1435,12 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
 
     // returns the owner of an NFT the has a loan against it
     function ownerOf(address nftContractAddress, uint256 nftId)
-        public
+        external
         view
         returns (address)
     {
         // instantiate LoanAuction Struct
-        LoanAuction memory loanAuction = loanAuctions[nftContractAddress][
+        LoanAuction memory loanAuction = _loanAuctions[nftContractAddress][
             nftId
         ];
 
@@ -1532,7 +1453,7 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         uint256 nftId
     ) public view returns (uint256) {
         // instantiate LoanAuction Struct
-        LoanAuction memory loanAuction = loanAuctions[nftContractAddress][
+        LoanAuction memory loanAuction = _loanAuctions[nftContractAddress][
             nftId
         ];
 
@@ -1602,7 +1523,7 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         view
         returns (uint256)
     {
-        LoanAuction memory loanAuction = loanAuctions[nftContractAddress][
+        LoanAuction memory loanAuction = _loanAuctions[nftContractAddress][
             nftId
         ];
 
@@ -1623,7 +1544,7 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
         view
         returns (uint256)
     {
-        LoanAuction memory loanAuction = loanAuctions[nftContractAddress][
+        LoanAuction memory loanAuction = _loanAuctions[nftContractAddress][
             nftId
         ];
 
@@ -1637,45 +1558,29 @@ contract SignatureLendingAuction is LiquidityProviders, EIP712 {
             loanAuction.amountDrawn +
             lenderInterest +
             loanAuction.historicInterest +
-            (loanAuction.amountDrawn * buyOutPremiumLenderPrecentage) +
-            (loanAuction.amountDrawn * buyOutPremiumProtocolPrecentage);
+            (loanAuction.amountDrawn * buyOutPremiumLenderPercentage) +
+            (loanAuction.amountDrawn * buyOutPremiumProtocolPercentage);
     }
 
     function updateLoanDrawFee(uint256 newFeeAmount) external onlyOwner {
         loanDrawFeeProtocolPercentage = SafeMath.div(newFeeAmount, 10000);
-
-        // emit newLoanDrawFeeAmount();
     }
 
-    function updateBuyOutPremiumLenderPrecentage(
-        uint256 newPremiumLenderPrecentage
+    function updateBuyOutPremiumLenderPercentage(
+        uint256 newPremiumLenderPercentage
     ) external onlyOwner {
-        buyOutPremiumLenderPrecentage = SafeMath.div(
-            newPremiumLenderPrecentage,
+        buyOutPremiumLenderPercentage = SafeMath.div(
+            newPremiumLenderPercentage,
             100000
         );
-
-        // emit newPremiumLenderPercentage();
     }
 
-    function updateBuyOutPremiumProtocolPrecentage(
-        uint256 newPremiumProtocolPrecentage
+    function updateBuyOutPremiumProtocolPercentage(
+        uint256 newPremiumProtocolPercentage
     ) external onlyOwner {
-        buyOutPremiumProtocolPrecentage = SafeMath.div(
-            newPremiumProtocolPrecentage,
+        buyOutPremiumProtocolPercentage = SafeMath.div(
+            newPremiumProtocolPercentage,
             1000
         );
-
-        // emit newPremiumProtocolPercentage();
-    }
-
-    // @notice By calling 'revert' in the fallback function, we prevent anyone
-    //         from accidentally sending ether directly to this contract.
-    fallback() external payable {
-        revert();
     }
 }
-
-// still needed:
-// 2. SafeMath
-// 4. Diamond Pattern

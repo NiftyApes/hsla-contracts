@@ -4,3 +4,9 @@
 [submodule "lib/ds-test"]
 	path = lib/ds-test
 	url = https://github.com/dapphub/ds-test
+[submodule "lib/libcompound"]
+	path = lib/libcompound
+	url = https://github.com/transmissions11/libcompound
+[submodule "lib/compound-protocol"]
+	path = lib/compound-protocol
+	url = https://github.com/compound-finance/compound-protocol
