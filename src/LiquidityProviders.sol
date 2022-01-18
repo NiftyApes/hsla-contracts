@@ -8,8 +8,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "libcompound/interfaces/CERC20.sol";
-import "./interfaces/ICETH.sol";
+import "./interfaces/compound/ICERC20.sol";
+import "./interfaces/compound/ICEther.sol";
 import "./ErrorReporter.sol";
 import "./Exponential.sol";
 import "./interfaces/ILiquidityProviders.sol";
@@ -100,7 +100,7 @@ contract LiquidityProviders is
         IERC20 underlying = IERC20(asset);
 
         // Create a reference to the corresponding cToken contract, like cDAI
-        CERC20 cToken = CERC20(cAsset);
+        ICERC20 cToken = ICERC20(cAsset);
 
         // transferFrom ERC20 from depositors address
         require(
@@ -152,7 +152,7 @@ contract LiquidityProviders is
         address cAsset = assetToCAsset[asset];
 
         // Create a reference to the corresponding cToken contract, like cDAI
-        CERC20 cToken = CERC20(cAsset);
+        ICERC20 cToken = ICERC20(cAsset);
 
         // transferFrom ERC20 from depositors address
         // cToken.transferFrom(msg.sender, address(this), numTokensToSupply);
@@ -187,7 +187,7 @@ contract LiquidityProviders is
         IERC20 underlying = IERC20(asset);
 
         // Create a reference to the corresponding cToken contract, like cDAI
-        CERC20 cToken = CERC20(cAsset);
+        ICERC20 cToken = ICERC20(cAsset);
 
         // redeemType == true >> withdraw based on amount of cErc20
         if (redeemType == true) {
@@ -293,7 +293,7 @@ contract LiquidityProviders is
         address cAsset = assetToCAsset[asset];
 
         // Create a reference to the corresponding cToken contract, like cDAI
-        CERC20 cToken = CERC20(cAsset);
+        ICERC20 cToken = ICERC20(cAsset);
 
         // require msg.sender has sufficient available balance of cErc20
         require(
@@ -323,7 +323,7 @@ contract LiquidityProviders is
         ];
 
         // Create a reference to the corresponding cToken contract
-        ICETH cToken = ICETH(cEtherContract);
+        ICEther cToken = ICEther(cEtherContract);
 
         // calculate expectedAmountToBeMinted
         MintLocalVars memory vars;
@@ -355,7 +355,7 @@ contract LiquidityProviders is
         ];
 
         // Create a reference to the corresponding cToken contract
-        ICETH cToken = ICETH(cEtherContract);
+        ICEther cToken = ICEther(cEtherContract);
 
         // transferFrom ERC20 from supplyers address
         require(
@@ -385,7 +385,7 @@ contract LiquidityProviders is
         ];
 
         // Create a reference to the corresponding cToken contract, like cDAI
-        ICETH cToken = ICETH(cEtherContract);
+        ICEther cToken = ICEther(cEtherContract);
 
         // redeemType == true >> withdraw based on amount of cErc20
         if (redeemType == true) {
@@ -488,7 +488,7 @@ contract LiquidityProviders is
         ];
 
         // Create a reference to the corresponding cToken contract, like cDAI
-        ICETH cToken = ICETH(cEtherContract);
+        ICEther cToken = ICEther(cEtherContract);
 
         // require msg.sender has sufficient available balance of cEth
         require(

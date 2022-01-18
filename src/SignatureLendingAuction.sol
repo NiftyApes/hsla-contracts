@@ -2,9 +2,9 @@ pragma solidity ^0.8.2;
 //SPDX-License-Identifier: MIT
 
 import "./LiquidityProviders.sol";
-import "./interfaces/ICETH.sol";
+import "./interfaces/compound/ICEther.sol";
 import "./interfaces/ISignatureLendingAuction.sol";
-import "libcompound/interfaces/CERC20.sol";
+import "./interfaces/compound/ICERC20.sol";
 import "./test/console.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
@@ -28,8 +28,6 @@ contract SignatureLendingAuction is
     // Cancelled / finalized orders, by signature
     mapping(bytes => bool) _cancelledOrFinalized;
 
-    // TODO(Do these fees really need to be mutable?)
-
     // fee paid to protocol by borrower for drawing down loan
     // decimal to 10000 because of whole number math
     uint256 public loanDrawFeeProtocolPercentage = SafeMath.div(1, 10000);
@@ -39,13 +37,6 @@ contract SignatureLendingAuction is
 
     // premium paid to protocol by new lender for buying out the loan
     uint256 public buyOutPremiumProtocolPercentage = SafeMath.div(1, 100000);
-
-    // ---------- MODIFIERS --------------- //
-
-    // TODO(Does this really do what it should?)
-    modifier isNFTOwner(address nftContractAddress, uint256 nftId) {
-        _;
-    }
 
     // ---------- FUNCTIONS -------------- //
 
@@ -59,7 +50,7 @@ contract SignatureLendingAuction is
         auction = _loanAuctions[nftContractAddress][nftId];
     }
 
-    function getOrderStatus(bytes memory signature)
+    function getOfferStatus(bytes memory signature)
         external
         view
         returns (bool status)
@@ -458,7 +449,7 @@ contract SignatureLendingAuction is
         IERC20 underlying = IERC20(asset);
 
         // Create a reference to the corresponding cToken contract, like cDAI
-        CERC20 cToken = CERC20(cAsset);
+        ICERC20 cToken = ICERC20(cAsset);
 
         // redeem underlying from cToken to this contract
         cToken.redeemUnderlying(amount);
@@ -478,7 +469,7 @@ contract SignatureLendingAuction is
         address nftOwner
     ) internal {
         // Create a reference to the corresponding cToken contract, like cDAI
-        CERC20 cToken = CERC20(cAsset);
+        ICERC20 cToken = ICERC20(cAsset);
 
         // redeem underlying from cToken to this contract
         cToken.redeemUnderlying(amount);
@@ -496,15 +487,15 @@ contract SignatureLendingAuction is
         console.log("balance1");
 
         // create a reference to the corresponding cToken contract, like cDAI
-        CERC20 cToken = CERC20(cAsset);
+        ICERC20 cToken = ICERC20(cAsset);
 
         // instantiate RedeemLocalVars
         RedeemLocalVars memory vars;
 
-        // set exchangeRate of erc20 to cErc20
+        // set exchangeRate of erc20 to ICERC20
         vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
 
-        // convert amount to cErc20
+        // convert amount to ICERC20
         (vars.mathErr, vars.redeemTokens) = divScalarByExpTruncate(
             amount,
             Exp({mantissa: vars.exchangeRateMantissa})
@@ -520,7 +511,7 @@ contract SignatureLendingAuction is
 
         // require that the lenders available balance is sufficent to serve the loan
         require(
-            // calculate lenders available cErc20 balance and require it to be greater than or equal to vars.redeemTokens
+            // calculate lenders available ICERC20 balance and require it to be greater than or equal to vars.redeemTokens
             (cAssetBalances[cAsset][lender] -
                 utilizedCAssetBalances[cAsset][lender]) >= vars.redeemTokens,
             "Lender does not have a sufficient balance to serve this loan"
@@ -602,8 +593,8 @@ contract SignatureLendingAuction is
             "Prospective lender does not have sufficient balance to buy out loan"
         );
 
-        // processes cEth and cErc20 transactions
-        _transferCErc20BalancesInternal(
+        // processes cEth and ICERC20 transactions
+        _transferICERC20BalancesInternal(
             cAsset,
             loanAuction.lender,
             prospectiveLender,
@@ -729,8 +720,8 @@ contract SignatureLendingAuction is
                 "Prospective lender does not have sufficient balance to refinance loan"
             );
 
-            // processes cEth and cErc20 transactions
-            _transferCErc20BalancesInternal(
+            // processes cEth and ICERC20 transactions
+            _transferICERC20BalancesInternal(
                 cAsset,
                 loanAuction.lender,
                 msg.sender,
@@ -774,7 +765,7 @@ contract SignatureLendingAuction is
         );
     }
 
-    function _transferCErc20BalancesInternal(
+    function _transferICERC20BalancesInternal(
         address cAsset,
         address to,
         address from,
@@ -783,7 +774,7 @@ contract SignatureLendingAuction is
         uint256 paymentAmount
     ) internal returns (uint256) {
         // Create a reference to the corresponding cToken contract, like cDAI
-        CERC20 cToken = CERC20(cAsset);
+        ICERC20 cToken = ICERC20(cAsset);
 
         // instantiate protocolPremiumFeeTokens
         uint256 protocolPremiumFeeTokens;
@@ -795,10 +786,10 @@ contract SignatureLendingAuction is
         // instantiate MintLocalVars
         MintLocalVars memory vars;
 
-        // set exchange rate from erc20 to cErc20
+        // set exchange rate from erc20 to ICERC20
         vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
 
-        // convert protocolPremiumFeeTokens to cErc20
+        // convert protocolPremiumFeeTokens to ICERC20
         (vars.mathErr, protocolPremiumFeeTokens) = divScalarByExpTruncate(
             protocolPremiumFee,
             Exp({mantissa: vars.exchangeRateMantissa})
@@ -812,7 +803,7 @@ contract SignatureLendingAuction is
                 );
         }
 
-        // convert interestAndPremiumAmount to cErc20
+        // convert interestAndPremiumAmount to ICERC20
         (vars.mathErr, interestAndPremiumTokens) = divScalarByExpTruncate(
             interestAndPremiumAmount,
             Exp({mantissa: vars.exchangeRateMantissa})
@@ -826,7 +817,7 @@ contract SignatureLendingAuction is
                 );
         }
 
-        // convert paymentAmount to cErc20
+        // convert paymentAmount to ICERC20
         (vars.mathErr, paymentTokens) = divScalarByExpTruncate(
             paymentAmount,
             Exp({mantissa: vars.exchangeRateMantissa})
@@ -1229,7 +1220,7 @@ contract SignatureLendingAuction is
         IERC20 underlying = IERC20(asset);
 
         // Create a reference to the corresponding cToken contract, like cDAI
-        CERC20 cToken = CERC20(cAsset);
+        ICERC20 cToken = ICERC20(cAsset);
 
         // instantiate interestAndPremiumTokens
         uint256 interestAndPremiumTokens;
@@ -1243,10 +1234,10 @@ contract SignatureLendingAuction is
         // instantiate MintLocalVars
         MintLocalVars memory vars;
 
-        // set exchange rate from erc20 to cErc20
+        // set exchange rate from erc20 to ICERC20
         vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
 
-        // convert interestAndPremiumAmount to cErc20
+        // convert interestAndPremiumAmount to ICERC20
         (vars.mathErr, interestAndPremiumTokens) = divScalarByExpTruncate(
             interestAndPremiumAmount,
             Exp({mantissa: vars.exchangeRateMantissa})
@@ -1260,7 +1251,7 @@ contract SignatureLendingAuction is
                 );
         }
 
-        // convert paymentAmount to cErc20
+        // convert paymentAmount to ICERC20
         (vars.mathErr, paymentTokens) = divScalarByExpTruncate(
             paymentAmount,
             Exp({mantissa: vars.exchangeRateMantissa})
@@ -1298,7 +1289,7 @@ contract SignatureLendingAuction is
         uint256 paymentAmount
     ) internal returns (uint256) {
         // Create a reference to the corresponding cToken contract, like cDAI
-        ICETH cToken = ICETH(cAsset);
+        ICEther cToken = ICEther(cAsset);
 
         // instantiate interestAndPremiumTokens
         uint256 interestAndPremiumTokens;
@@ -1310,10 +1301,10 @@ contract SignatureLendingAuction is
         //Instantiate MintLocalVars
         MintLocalVars memory vars;
 
-        // set exchange rate from eth to cErc20
+        // set exchange rate from eth to ICERC20
         vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
 
-        // convert msgValueMinusFee to cErc20
+        // convert msgValueMinusFee to ICERC20
         // This accounts for any extra Eth sent to function, since cant use transferFrom for exact amount
         // Any extra value is given to to
         (vars.mathErr, msgValueTokens) = divScalarByExpTruncate(
@@ -1329,7 +1320,7 @@ contract SignatureLendingAuction is
                 );
         }
 
-        // convert interestAndPremiumAmount to cErc20
+        // convert interestAndPremiumAmount to ICERC20
         (vars.mathErr, interestAndPremiumTokens) = divScalarByExpTruncate(
             interestAndPremiumAmount,
             Exp({mantissa: vars.exchangeRateMantissa})
@@ -1343,7 +1334,7 @@ contract SignatureLendingAuction is
                 );
         }
 
-        // convert paymentAmount to cErc20
+        // convert paymentAmount to ICERC20
         (vars.mathErr, paymentTokens) = divScalarByExpTruncate(
             paymentAmount,
             Exp({mantissa: vars.exchangeRateMantissa})

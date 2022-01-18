@@ -138,7 +138,7 @@ interface ISignatureLendingAuction is ILiquidityProviders {
         view
         returns (LoanAuction memory auction);
 
-    function getOrderStatus(bytes calldata signature)
+    function getOfferStatus(bytes calldata signature)
         external
         view
         returns (bool status);

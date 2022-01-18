@@ -5,6 +5,10 @@ on:
       - main
   pull_request:
 
+env:
+  # TODO(Change this key and store as a secret in CI workflow)
+  ETH_RPC_URL: https://eth-mainnet.alchemyapi.io/v2/p6SBr3BiRU8XHYK8tdynKuxKOcXb_C9Y
+
 jobs:
   run-ci:
     runs-on: ubuntu-latest
@@ -80,4 +84,4 @@ jobs:
       #  run: poetry run slither --solc-remaps @openzeppelin=lib/openzeppelin-contracts --solc-args optimize src/
 
       - name: Run tests
-        run: forge test --optimize
+        run: forge test --optimize --fork-url $ETH_RPC_URL
