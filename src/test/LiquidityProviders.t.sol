@@ -113,7 +113,10 @@ contract LiquidityProvidersTest is DSTest, Utility {
         liquidityProviders = new LiquidityProviders();
         // Allow assets for testing
         liquidityProviders.setCAssetAddress(address(DAI), address(cDAI));
-        liquidityProviders.setCAssetAddress(address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE), address(cETH));
+        liquidityProviders.setCAssetAddress(
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
+            address(cETH)
+        );
         uint256 max = type(uint256).max;
 
         // Approve spends
@@ -125,7 +128,6 @@ contract LiquidityProvidersTest is DSTest, Utility {
         liquidityProviders.supplyErc20(address(DAI), 100000 ether);
         // Supply 10 ether to contract
         liquidityProviders.supplyEth{value: 10 ether}();
-
     }
 
     function testBalances() public {
@@ -136,19 +138,33 @@ contract LiquidityProvidersTest is DSTest, Utility {
     }
 
     function testAssetToCAsset() public {
-        assert(liquidityProviders.assetToCAsset(address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)) == address(cETH));
+        assert(
+            liquidityProviders.assetToCAsset(
+                address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
+            ) == address(cETH)
+        );
     }
 
     function testCAssetBalances() public {
-        assert(liquidityProviders.cAssetBalances(address(cDAI), address(this)) > 0 ether);
+        assert(
+            liquidityProviders.cAssetBalances(address(cDAI), address(this)) >
+                0 ether
+        );
     }
 
     function testUtilizedCAssetBalances() public {
-        assert(liquidityProviders.utilizedCAssetBalances(address(cDAI), address(this)) == 0);
+        assert(
+            liquidityProviders.utilizedCAssetBalances(
+                address(cDAI),
+                address(this)
+            ) == 0
+        );
     }
 
     function testGetAssetsIn() public {
-        address[] memory assetsIn = liquidityProviders.getAssetsIn(address(this));
+        address[] memory assetsIn = liquidityProviders.getAssetsIn(
+            address(this)
+        );
     }
 
     function testSetCAssetAddress() public {
