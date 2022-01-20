@@ -64,6 +64,7 @@ interface IUniswapV2Router {
 contract MockERC721Token is ERC721, ERC721Enumerable, Ownable {
     constructor(string memory name, string memory symbol)
         ERC721(name, symbol)
+    {}
 
     function safeMint(address to, uint256 tokenId) public onlyOwner {
         _safeMint(to, tokenId);

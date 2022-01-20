@@ -19,6 +19,9 @@ contract LiquidityProvidersTest is DSTest, TestUtility {
     ICEther cETH;
     LiquidityProviders liquidityProviders;
 
+    // This is needed to receive ETH when calling `withdrawEth`
+    receive() external payable {}
+
     function setUp() public {
         // Setup WETH
         WETH = IWETH(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
@@ -132,12 +135,8 @@ contract LiquidityProvidersTest is DSTest, TestUtility {
         liquidityProviders.supplyErc20(address(DAI), 10000 ether);
     }
 
-    // TODO(It seems like these failures are likely around inconsistent input for asset/cAsset and)
-    // related initialization of the asset => cAsset mapping
-    // supplyCErc20 must accept the underlying erc20 because we cannot allow users to input any arbitrary cErc20 address
-
     function testSupplyCErc20() public {
-        liquidityProviders.supplyCErc20(address(DAI), 10000000);
+        liquidityProviders.supplyCErc20(address(cDAI), 10000000);
     }
 
     function testWithdrawErc20True() public {
@@ -149,29 +148,27 @@ contract LiquidityProvidersTest is DSTest, TestUtility {
     }
 
     function testWithdrawCErc20() public {
-        liquidityProviders.withdrawCErc20(address(DAI), 10000000);
+        liquidityProviders.withdrawCErc20(address(cDAI), 10000000);
     }
 
     function testSupplyEth() public {
         liquidityProviders.supplyEth{value: 10 ether}();
     }
 
-    // how does this test for a fail case?
+    // This fail case test fails because the 18 decimal value is greater than the cETH balance
     function testFailSupplyCEth() public {
         liquidityProviders.supplyCEth(1 ether);
     }
 
-    function testWithdrawEthRedeem() public {
+    function testWithdrawEthTrue() public {
         liquidityProviders.withdrawEth(true, 10000000);
     }
 
-    function testWithdrawEthNoRedeem() public {
-        liquidityProviders.withdrawEth(false, 10000000);
+    function testWithdrawEthFalse() public {
+        liquidityProviders.withdrawEth(false, 1 ether);
     }
 
     function testWithdrawCEth() public {
         liquidityProviders.withdrawCEth(10000000);
     }
-
-    //function test
 }

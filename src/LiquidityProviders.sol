@@ -35,6 +35,8 @@ contract LiquidityProviders is
     // Mapping of assetAddress to cAssetAddress
     // controls assets available for deposit on NiftyApes
     mapping(address => address) public assetToCAsset;
+    // Reverse mapping of assetAddress to cAssetAddress
+    mapping(address => address) internal _cAssetToAsset;
 
     // TODO(These could be combined into a struct for gas savings)
     // Mapping of cAssetBalance to cAssetAddress to depositor address
@@ -79,6 +81,7 @@ contract LiquidityProviders is
         onlyOwner
     {
         assetToCAsset[asset] = cAsset;
+        _cAssetToAsset[cAsset] = asset;
 
         emit newAssetWhitelisted(asset, cAsset);
     }
@@ -141,16 +144,14 @@ contract LiquidityProviders is
     // @notice returns the number of CERC20 tokens added to balance
     // @dev takes the underlying asset address, not cAsset address
     //
-    function supplyCErc20(address asset, uint256 numTokensToSupply)
+    function supplyCErc20(address cAsset, uint256 numTokensToSupply)
         external
         returns (uint256)
     {
         require(
-            assetToCAsset[asset] != address(0),
+            _cAssetToAsset[cAsset] != address(0),
             "Asset not whitelisted on NiftyApes"
         );
-
-        address cAsset = assetToCAsset[asset];
 
         // Create a reference to the corresponding cToken contract, like cDAI
         ICERC20 cToken = ICERC20(cAsset);
@@ -165,7 +166,7 @@ contract LiquidityProviders is
         // updating the depositors cErc20 balance
         cAssetBalances[cAsset][msg.sender] += numTokensToSupply;
 
-        emit CErc20Supplied(msg.sender, asset, numTokensToSupply);
+        emit CErc20Supplied(msg.sender, cAsset, numTokensToSupply);
 
         return numTokensToSupply;
     }
@@ -279,18 +280,16 @@ contract LiquidityProviders is
         return 0;
     }
 
-    function withdrawCErc20(address asset, uint256 amountToWithdraw)
+    function withdrawCErc20(address cAsset, uint256 amountToWithdraw)
         external
         whenNotPaused
         nonReentrant
         returns (uint256)
     {
         require(
-            assetToCAsset[asset] != address(0),
+            _cAssetToAsset[cAsset] != address(0),
             "Asset not whitelisted on NiftyApes"
         );
-
-        address cAsset = assetToCAsset[asset];
 
         // Create a reference to the corresponding cToken contract, like cDAI
         ICERC20 cToken = ICERC20(cAsset);
@@ -310,7 +309,7 @@ contract LiquidityProviders is
             "cToken.transfer failed. Have you approved the correct amount of Tokens"
         );
 
-        emit CErc20Withdrawn(msg.sender, asset, amountToWithdraw);
+        emit CErc20Withdrawn(msg.sender, cAsset, amountToWithdraw);
 
         return amountToWithdraw;
     }
