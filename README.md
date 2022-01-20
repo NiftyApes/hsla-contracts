@@ -6,7 +6,7 @@ Testing is done with forge. Prettier, solhint, slither, can be used to perform f
 
 ## Running the tests
 
-`forge update` and then `forge test --optimize`
+`forge update` and then `forge test --optimize --fork-url $ETH_RPC_URL`
 
 ## Linting
 

@@ -140,6 +140,8 @@ contract LiquidityProviders is
     }
 
     // @notice returns the number of CERC20 tokens added to balance
+    // @dev takes the underlying asset address, not cAsset address
+    //
     function supplyCErc20(address asset, uint256 numTokensToSupply)
         external
         returns (uint256)
@@ -155,7 +157,6 @@ contract LiquidityProviders is
         ICERC20 cToken = ICERC20(cAsset);
 
         // transferFrom ERC20 from depositors address
-        // cToken.transferFrom(msg.sender, address(this), numTokensToSupply);
         require(
             cToken.transferFrom(msg.sender, address(this), numTokensToSupply) ==
                 true,
