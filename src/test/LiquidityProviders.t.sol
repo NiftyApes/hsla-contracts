@@ -206,11 +206,11 @@ contract LiquidityProvidersTest is DSTest, Utility {
         liquidityProviders.supplyCEth(1 ether);
     }
 
-    function testWithdrawEth1(uint x) public {
+    function testWithdrawEth1(uint256 x) public {
         liquidityProviders.withdrawEth(true, x);
     }
 
-    function testWithdrawEth2(uint x) public {
+    function testWithdrawEth2(uint256 x) public {
         liquidityProviders.withdrawEth(false, x);
     }
 
