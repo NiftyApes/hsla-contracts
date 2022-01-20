@@ -61,6 +61,9 @@ contract LiquidityProvidersTest is DSTest, Utility {
     ICEther cETH;
     LiquidityProviders liquidityProviders;
 
+    // This is needed to receive ETH when calling `withdrawEth`
+    receive() external payable {}
+
     function setUp() public {
         // Setup cheat codes
         IEVM = Ievm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
@@ -182,7 +185,7 @@ contract LiquidityProvidersTest is DSTest, Utility {
     // supplyCErc20 must accept the underlying erc20 because we cannot allow users to input any arbitrary cErc20 address
 
     function testSupplyCErc20() public {
-        liquidityProviders.supplyCErc20(address(DAI), 10000000);
+        liquidityProviders.supplyCErc20(address(cDAI), 10000000);
     }
 
     function testWithdrawErc20True() public {
@@ -194,24 +197,24 @@ contract LiquidityProvidersTest is DSTest, Utility {
     }
 
     function testWithdrawCErc20() public {
-        liquidityProviders.withdrawCErc20(address(DAI), 10000000);
+        liquidityProviders.withdrawCErc20(address(cDAI), 10000000);
     }
 
     function testSupplyEth() public {
         liquidityProviders.supplyEth{value: 10 ether}();
     }
 
-    // how does this test for a fail case?
+    // This fail case test fails because the 18 decimal value is greater than the cETH balance
     function testFailSupplyCEth() public {
         liquidityProviders.supplyCEth(1 ether);
     }
 
-    function testWithdrawEth1(uint x) public {
-        liquidityProviders.withdrawEth(true, x);
+    function testWithdrawEthTrue() public {
+        liquidityProviders.withdrawEth(true, 10000000);
     }
 
-    function testWithdrawEth2(uint x) public {
-        liquidityProviders.withdrawEth(false, x);
+    function testWithdrawEthFalse() public {
+        liquidityProviders.withdrawEth(false, 1 ether);
     }
 
     function testWithdrawCEth() public {
