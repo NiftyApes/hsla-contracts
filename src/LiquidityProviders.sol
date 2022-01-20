@@ -2,7 +2,6 @@
 
 pragma solidity ^0.8.2;
 
-import "./test/console.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";

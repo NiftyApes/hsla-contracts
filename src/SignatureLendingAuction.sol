@@ -5,7 +5,6 @@ import "./LiquidityProviders.sol";
 import "./interfaces/compound/ICEther.sol";
 import "./interfaces/ISignatureLendingAuction.sol";
 import "./interfaces/compound/ICERC20.sol";
-import "./test/console.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
@@ -99,14 +98,11 @@ contract SignatureLendingAuction is
         bytes calldata signature,
         uint256 nftId // nftId should match offer.nftId if floorTerm false, nftId should not match if floorTerm true. Need to provide as function parameter to pass nftId with floor terms.
     ) external payable whenNotPaused {
-        console.log("inside1");
         // require signature has not been cancelled/bid withdrawn
         require(
             _cancelledOrFinalized[signature] == false,
             "Cannot execute bid or ask. Signature has been cancelled or previously finalized."
         );
-
-        console.log("inside2");
 
         // require offer has not expired
         require(
@@ -114,23 +110,17 @@ contract SignatureLendingAuction is
             "Cannot execute bid, offer has expired"
         );
 
-        console.log("inside3");
-
         // require offer has 24 hour minimum duration
         require(
             offer.duration >= 86400,
             "Offers must have 24 hours minimum duration"
         );
 
-        console.log("inside4");
-
         require(
             assetToCAsset[offer.asset] !=
                 0x0000000000000000000000000000000000000000,
             "Asset not whitelisted on NiftyApes"
         );
-
-        console.log("inside5");
 
         // get nft owner
         address nftOwner = IERC721(offer.nftContractAddress).ownerOf(nftId);
@@ -142,8 +132,6 @@ contract SignatureLendingAuction is
             "Msg.sender must be the owner of nftId to executeLoanByBid"
         );
 
-        console.log("inside6");
-
         // ideally calculated, stored, and provided as parameter to save computation
         // generate hash of offer parameters
         bytes32 offerHash = getOfferHash(offer);
@@ -152,29 +140,13 @@ contract SignatureLendingAuction is
         // we know the signer must be the lender because msg.sender must be the nftOwner/borrower
         address lender = getOfferSigner(offerHash, signature);
 
-        console.log("lender", lender);
-        console.log("msg.sender", msg.sender);
-        console.log("nftContractAddress", offer.nftContractAddress);
-        console.log("nftId", offer.nftId);
-        console.log("asset", offer.asset);
-        console.log("amount", offer.amount);
-        console.log("interestRate", offer.interestRate);
-        console.log("duration", offer.duration);
-        console.log("expiration", offer.expiration);
-        console.log("fixedTerms", offer.fixedTerms);
-        console.log("floorTerm", offer.floorTerm);
-
         // // if floorTerm is false
         if (offer.floorTerm == false) {
-            console.log("floor1");
-
             // require nftId == sigNftId
             require(
                 nftId == offer.nftId,
                 "Function submitted nftId must match the signed offer nftId"
             );
-
-            console.log("floor2");
 
             // execute state changes for executeLoanByBid
             _executeLoanByBidInternal(
@@ -207,8 +179,6 @@ contract SignatureLendingAuction is
         address nftOwner,
         bytes memory signature
     ) internal {
-        console.log("internal1");
-
         // instantiate LoanAuction Struct
         LoanAuction storage loanAuction = _loanAuctions[
             offer.nftContractAddress
@@ -222,8 +192,6 @@ contract SignatureLendingAuction is
             "Loan is already active. Please use refinanceByBorrower()"
         );
 
-        console.log("internal2");
-
         // finalize signature
         _cancelledOrFinalized[signature] == true;
 
@@ -233,8 +201,6 @@ contract SignatureLendingAuction is
             offer.amount,
             lender
         );
-
-        console.log("internal3");
 
         // update loanAuction struct
         loanAuction.nftOwner = nftOwner;
@@ -262,8 +228,6 @@ contract SignatureLendingAuction is
         if (
             offer.asset != address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
         ) {
-            console.log("internal4");
-
             // redeem cTokens and transfer underlying to borrower
             _redeemAndTransferErc20Internal(
                 offer.asset,
@@ -276,8 +240,6 @@ contract SignatureLendingAuction is
         else if (
             offer.asset == address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
         ) {
-            console.log("internal5");
-
             // redeem cTokens and transfer underlying to borrower
             _redeemAndTransferEthInternal(cAsset, offer.amount, nftOwner);
         }
@@ -443,8 +405,6 @@ contract SignatureLendingAuction is
         uint256 amount,
         address nftOwner
     ) internal {
-        console.log("redeem1");
-
         // Create a reference to the underlying asset contract, like DAI.
         IERC20 underlying = IERC20(asset);
 
@@ -454,12 +414,8 @@ contract SignatureLendingAuction is
         // redeem underlying from cToken to this contract
         cToken.redeemUnderlying(amount);
 
-        console.log("redeem2");
-
         // transfer underlying from this contract to borrower
         underlying.transfer(nftOwner, amount);
-
-        console.log("redeem3");
     }
 
     // this internal functions handles transfer of eth for executeLoan functions
@@ -484,8 +440,6 @@ contract SignatureLendingAuction is
         uint256 amount,
         address lender
     ) internal returns (uint256) {
-        console.log("balance1");
-
         // create a reference to the corresponding cToken contract, like cDAI
         ICERC20 cToken = ICERC20(cAsset);
 
@@ -516,8 +470,6 @@ contract SignatureLendingAuction is
                 utilizedCAssetBalances[cAsset][lender]) >= vars.redeemTokens,
             "Lender does not have a sufficient balance to serve this loan"
         );
-
-        console.log("balance2");
 
         // update the lenders utilized balance
         utilizedCAssetBalances[cAsset][lender] += vars.redeemTokens;
@@ -1462,15 +1414,11 @@ contract SignatureLendingAuction is
             (block.timestamp - loanAuction.bestBidTime)
         );
 
-        console.log("secondsAslender", secondsAslender);
-
         // percent of time drawn as Lender
         uint256 percentOfTimeDrawnAsLender = SafeMath.div(
             secondsAslender,
             loanAuction.timeDrawn
         );
-
-        console.log("percentOfTimeDrawnAsLender", percentOfTimeDrawnAsLender);
 
         // percent of value of amountDrawn earned
         uint256 percentOfAmountDrawn = SafeMath.mul(
@@ -1478,17 +1426,10 @@ contract SignatureLendingAuction is
             percentOfTimeDrawnAsLender
         );
 
-        console.log("percentOfAmountDrawn", percentOfAmountDrawn);
-
         // Multiply principle by basis points first
         uint256 interestMulPercentOfAmountDrawn = SafeMath.mul(
             loanAuction.interestRate,
             percentOfAmountDrawn
-        );
-
-        console.log(
-            "interestMulPercentOfAmountDrawn",
-            interestMulPercentOfAmountDrawn
         );
 
         // divide by basis decimals
@@ -1497,12 +1438,8 @@ contract SignatureLendingAuction is
             10000
         );
 
-        console.log("interestDecimals", interestDecimals);
-
         // divide by decimalCompensation
         uint256 finalAmount = SafeMath.div(interestDecimals, 100000000);
-
-        console.log("finalAmount", finalAmount);
 
         // return interest amount
         return finalAmount;

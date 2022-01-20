@@ -6,7 +6,10 @@ import "ds-test/test.sol";
 import "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "../interfaces/compound/ICERC20.sol";
 import "../interfaces/compound/ICEther.sol";
-import "../LiquidityProviders.sol";
+import "../SignatureLendingAuction.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 
 // @dev These tests are intended to be run against a forked mainnet.
 
@@ -52,14 +55,42 @@ interface Ievm {
     function load(address c, bytes32 loc) external returns (bytes32 val);
 }
 
-contract LiquidityProvidersTest is DSTest, Utility {
+contract MockERC721Token is ERC721, ERC721Enumerable, Ownable {
+    constructor(string memory name, string memory symbol) ERC721(name, symbol) {}
+
+    function safeMint(address to, uint256 tokenId) public onlyOwner {
+        _safeMint(to, tokenId);
+    }
+
+    // The following functions are overrides required by Solidity.
+
+    function _beforeTokenTransfer(address from, address to, uint256 tokenId)
+    internal
+    override(ERC721, ERC721Enumerable)
+    {
+        super._beforeTokenTransfer(from, to, tokenId);
+    }
+
+    function supportsInterface(bytes4 interfaceId)
+    public
+    view
+    override(ERC721, ERC721Enumerable)
+    returns (bool)
+    {
+        return super.supportsInterface(interfaceId);
+    }
+}
+
+// TODO(Refactor/deduplicate with LiquidityProviders testing)
+contract TestSignatureLendingAuction is DSTest, Utility, ERC721Holder {
     Ievm IEVM;
     IUniswapV2Router SushiSwapRouter;
+    MockERC721Token mockNFT;
     IWETH WETH;
     IERC20 DAI;
     ICERC20 cDAI;
     ICEther cETH;
-    LiquidityProviders liquidityProviders;
+    SignatureLendingAuction signatureLendingAuction;
 
     function setUp() public {
         // Setup cheat codes
@@ -110,113 +141,63 @@ contract LiquidityProvidersTest is DSTest, Utility {
         cDAI.mint(50000 ether);
 
         // Setup the liquidity providers contract
-        liquidityProviders = new LiquidityProviders();
+        signatureLendingAuction = new SignatureLendingAuction();
         // Allow assets for testing
-        liquidityProviders.setCAssetAddress(address(DAI), address(cDAI));
-        liquidityProviders.setCAssetAddress(
+        signatureLendingAuction.setCAssetAddress(address(DAI), address(cDAI));
+        signatureLendingAuction.setCAssetAddress(
             address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
             address(cETH)
         );
         uint256 max = type(uint256).max;
 
+        // Setup mock NFT
+        mockNFT = new MockERC721Token("BoredApe", "BAYC");
+
+        // Give this contract some
+        mockNFT.safeMint(address(this), 0);
+
         // Approve spends
-        DAI.approve(address(liquidityProviders), max);
-        cDAI.approve(address(liquidityProviders), max);
-        cETH.approve(address(liquidityProviders), max);
+        DAI.approve(address(signatureLendingAuction), max);
+        cDAI.approve(address(signatureLendingAuction), max);
+        cETH.approve(address(signatureLendingAuction), max);
 
         // Supply to 10k DAI contract
-        liquidityProviders.supplyErc20(address(DAI), 100000 ether);
+        signatureLendingAuction.supplyErc20(address(DAI), 100000 ether);
         // Supply 10 ether to contract
-        liquidityProviders.supplyEth{value: 10 ether}();
+        signatureLendingAuction.supplyEth{value: 10 ether}();
+        // Offer NFT for sale
     }
 
-    // Test cases
+    // Test Cases
 
-    function testBalances() public {
-        // Just to make sure all our balances got set during setup
-        assert(DAI.balanceOf(address(this)) > 0);
-        assert(cDAI.balanceOf(address(this)) > 0);
-        assert(address(this).balance > 0);
+    function testLoanDrawFeeProtocolPercentage() public {
+        signatureLendingAuction.loanDrawFeeProtocolPercentage();
     }
 
-    function testAssetToCAsset() public {
-        assert(
-            liquidityProviders.assetToCAsset(
-                address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
-            ) == address(cETH)
-        );
+    function testBuyOutPremiumLenderPercentage() public {
+        signatureLendingAuction.buyOutPremiumLenderPercentage();
     }
 
-    function testCAssetBalances() public {
-        assert(
-            liquidityProviders.cAssetBalances(address(cDAI), address(this)) >
-                0 ether
-        );
+    function testBuyOutPremiumProtocolPercentage() public {
+        signatureLendingAuction.buyOutPremiumProtocolPercentage();
     }
 
-    function testUtilizedCAssetBalances() public {
-        assert(
-            liquidityProviders.utilizedCAssetBalances(
-                address(cDAI),
-                address(this)
-            ) == 0
-        );
+    function testUpdateLoanDrawFee() public {
+        //TODO(parametic sweep)
+        //TODO(Assert value)
+        signatureLendingAuction.updateLoanDrawFee(5);
     }
 
-    function testGetAssetsIn() public {
-        address[] memory assetsIn = liquidityProviders.getAssetsIn(
-            address(this)
-        );
+    function testUpdateBuyOutPremiumLenderPercentage() public {
+        signatureLendingAuction.updateBuyOutPremiumLenderPercentage(5);
     }
 
-    function testSetCAssetAddress() public {
-        liquidityProviders.setCAssetAddress(address(IEVM), address(1));
+    function testUpdateBuyOutPremiumProtocolPercentage() public {
+        signatureLendingAuction.updateBuyOutPremiumProtocolPercentage(5);
     }
 
-    function testSupplyErc20() public {
-        liquidityProviders.supplyErc20(address(DAI), 10000 ether);
-    }
 
-    // TODO(It seems like these failures are likely around inconsistent input for asset/cAsset and)
-    // related initialization of the asset => cAsset mapping
-    // supplyCErc20 must accept the underlying erc20 because we cannot allow users to input any arbitrary cErc20 address
 
-    function testSupplyCErc20() public {
-        liquidityProviders.supplyCErc20(address(DAI), 10000000);
-    }
 
-    function testWithdrawErc20True() public {
-        liquidityProviders.withdrawErc20(address(DAI), true, 10000000);
-    }
 
-    function testWithdrawErc20False() public {
-        liquidityProviders.withdrawErc20(address(DAI), false, 1 ether);
-    }
-
-    function testWithdrawCErc20() public {
-        liquidityProviders.withdrawCErc20(address(DAI), 10000000);
-    }
-
-    function testSupplyEth() public {
-        liquidityProviders.supplyEth{value: 10 ether}();
-    }
-
-    // how does this test for a fail case?
-    function testFailSupplyCEth() public {
-        liquidityProviders.supplyCEth(1 ether);
-    }
-
-    function testWithdrawEth1(uint x) public {
-        liquidityProviders.withdrawEth(true, x);
-    }
-
-    function testWithdrawEth2(uint x) public {
-        liquidityProviders.withdrawEth(false, x);
-    }
-
-    function testWithdrawCEth() public {
-        liquidityProviders.withdrawCEth(10000000);
-    }
-
-    //function test
 }
