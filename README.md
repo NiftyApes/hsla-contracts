@@ -6,7 +6,7 @@ Testing is done with forge. Prettier, solhint, slither, can be used to perform f
 
 ## Running the tests
 
-`forge update` and then `forge test --optimize`
+`forge update` and then `forge test --optimize --fork-url $ETH_RPC_URL`
 
 ## Linting
 
@@ -16,7 +16,10 @@ Testing is done with forge. Prettier, solhint, slither, can be used to perform f
 
 `slither --solc-remaps @openzeppelin=lib/openzeppelin-contracts --solc-args optimize src/ --exclude-informational --exclude-optimization --exclude-dependencies --exclude-low`
 
-## Tests
+## Design
 
-For now the tests cover `LiquidityProviders.sol` and `SignatureLendingAuction.sol`, because the other compound math 
-will be phased out/refactored.
+`LiquidityProviders.sol` exposes interfaces for lenders to manage cToken liquidity by depositing and withdrawing, 
+wrapping and unwrapping either `cTokens`, or `ERC20` tokens which are approved for use on the protocol.
+
+`SignatureLendingAuction.sol` inherits from `LiquidityProviders` and adds interfaces for a signature based lending 
+auction between lenders and NFT holders.
