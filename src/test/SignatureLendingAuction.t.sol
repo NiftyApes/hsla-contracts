@@ -12,7 +12,6 @@ import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 
 // @dev These tests are intended to be run against a forked mainnet.
 
-
 // TODO(Refactor/deduplicate with LiquidityProviders testing)
 contract TestSignatureLendingAuction is DSTest, TestUtility, ERC721Holder {
     IUniswapV2Router SushiSwapRouter;

@@ -23,7 +23,13 @@ interface Hevm {
     function load(address c, bytes32 loc) external returns (bytes32 val);
 
     // Signs the digest using the private key sk. Note that signatures produced via hevm.sign will leak the private key.
-    function sign(uint sk, bytes32 digest) external returns (uint8 v, bytes32 r, bytes32 s);
+    function sign(uint256 sk, bytes32 digest)
+        external
+        returns (
+            uint8 v,
+            bytes32 r,
+            bytes32 s
+        );
 
     // performs the next smart contract call setting both msg.sender and tx.origin
     function prank(address sender, address origin) external;
@@ -55,12 +61,9 @@ interface IUniswapV2Router {
     ) external payable returns (uint256[] memory amounts);
 }
 
-
-
 contract MockERC721Token is ERC721, ERC721Enumerable, Ownable {
     constructor(string memory name, string memory symbol)
-    ERC721(name, symbol)
-    {}
+        ERC721(name, symbol)
 
     function safeMint(address to, uint256 tokenId) public onlyOwner {
         _safeMint(to, tokenId);
@@ -77,10 +80,10 @@ contract MockERC721Token is ERC721, ERC721Enumerable, Ownable {
     }
 
     function supportsInterface(bytes4 interfaceId)
-    public
-    view
-    override(ERC721, ERC721Enumerable)
-    returns (bool)
+        public
+        view
+        override(ERC721, ERC721Enumerable)
+        returns (bool)
     {
         return super.supportsInterface(interfaceId);
     }
