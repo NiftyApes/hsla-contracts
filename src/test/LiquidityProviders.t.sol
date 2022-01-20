@@ -179,34 +179,43 @@ contract LiquidityProvidersTest is DSTest, Utility {
 
     // TODO(It seems like these failures are likely around inconsistent input for asset/cAsset and)
     // related initialization of the asset => cAsset mapping
+    // supplyCErc20 must accept the underlying erc20 because we cannot allow users to input any arbitrary cErc20 address
 
     function testSupplyCErc20() public {
-        liquidityProviders.supplyCErc20(address(cDAI), 1 ether);
+        liquidityProviders.supplyCErc20(address(DAI), 10000000);
     }
 
-    function testWithdrawErc20(bool redeemType) public {
-        // Fails on redeemType true
-        liquidityProviders.withdrawErc20(address(DAI), redeemType, 1 ether);
+    function testWithdrawErc20True() public {
+        liquidityProviders.withdrawErc20(address(DAI), true, 10000000);
+    }
+
+    function testWithdrawErc20False() public {
+        liquidityProviders.withdrawErc20(address(DAI), false, 1 ether);
     }
 
     function testWithdrawCErc20() public {
-        liquidityProviders.withdrawCErc20(address(cDAI), 1 ether);
+        liquidityProviders.withdrawCErc20(address(DAI), 10000000);
     }
 
     function testSupplyEth() public {
         liquidityProviders.supplyEth{value: 10 ether}();
     }
 
+    // how does this test for a fail case?
     function testFailSupplyCEth() public {
         liquidityProviders.supplyCEth(1 ether);
     }
 
-    function testWithdrawEth(bool redeemType) public {
-        liquidityProviders.withdrawEth(redeemType, 1 ether);
+    function testWithdrawEth1(uint x) public {
+        liquidityProviders.withdrawEth(true, x);
+    }
+
+    function testWithdrawEth2(uint x) public {
+        liquidityProviders.withdrawEth(false, x);
     }
 
     function testWithdrawCEth() public {
-        liquidityProviders.withdrawCEth(1 ether);
+        liquidityProviders.withdrawCEth(10000000);
     }
 
     //function test
