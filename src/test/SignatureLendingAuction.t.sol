@@ -1,89 +1,20 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.10;
 
-import "./console.sol";
+import "./Console.sol";
 import "ds-test/test.sol";
 import "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "../interfaces/compound/ICERC20.sol";
 import "../interfaces/compound/ICEther.sol";
 import "../SignatureLendingAuction.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "./Utilities.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 
 // @dev These tests are intended to be run against a forked mainnet.
 
-contract Utility {
-    function sendViaCall(address payable _to, uint256 amount) public payable {
-        // Call returns a boolean value indicating success or failure.
-        // This is the current recommended method to use.
-        (bool sent, bytes memory data) = _to.call{value: amount}("");
-        require(sent, "Failed to send Ether");
-    }
-}
-
-interface IWETH {
-    function balanceOf(address) external returns (uint256);
-
-    function deposit() external payable;
-}
-
-interface IUniswapV2Router {
-    function swapExactETHForTokens(
-        uint256 amountOutMin,
-        address[] calldata path,
-        address to,
-        uint256 deadline
-    ) external payable returns (uint256[] memory amounts);
-}
-
-interface Ievm {
-    // sets the block timestamp to x
-    function warp(uint256 x) external;
-
-    // sets the block number to x
-    function roll(uint256 x) external;
-
-    // sets the slot loc of contract c to val
-    function store(
-        address c,
-        bytes32 loc,
-        bytes32 val
-    ) external;
-
-    // reads the slot loc of contract c
-    function load(address c, bytes32 loc) external returns (bytes32 val);
-}
-
-contract MockERC721Token is ERC721, ERC721Enumerable, Ownable {
-    constructor(string memory name, string memory symbol) ERC721(name, symbol) {}
-
-    function safeMint(address to, uint256 tokenId) public onlyOwner {
-        _safeMint(to, tokenId);
-    }
-
-    // The following functions are overrides required by Solidity.
-
-    function _beforeTokenTransfer(address from, address to, uint256 tokenId)
-    internal
-    override(ERC721, ERC721Enumerable)
-    {
-        super._beforeTokenTransfer(from, to, tokenId);
-    }
-
-    function supportsInterface(bytes4 interfaceId)
-    public
-    view
-    override(ERC721, ERC721Enumerable)
-    returns (bool)
-    {
-        return super.supportsInterface(interfaceId);
-    }
-}
 
 // TODO(Refactor/deduplicate with LiquidityProviders testing)
-contract TestSignatureLendingAuction is DSTest, Utility, ERC721Holder {
-    Ievm IEVM;
+contract TestSignatureLendingAuction is DSTest, TestUtility, ERC721Holder {
     IUniswapV2Router SushiSwapRouter;
     MockERC721Token mockNFT;
     IWETH WETH;
@@ -93,9 +24,6 @@ contract TestSignatureLendingAuction is DSTest, Utility, ERC721Holder {
     SignatureLendingAuction signatureLendingAuction;
 
     function setUp() public {
-        // Setup cheat codes
-        IEVM = Ievm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
-
         // Setup WETH
         WETH = IWETH(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
 
@@ -195,9 +123,4 @@ contract TestSignatureLendingAuction is DSTest, Utility, ERC721Holder {
     function testUpdateBuyOutPremiumProtocolPercentage() public {
         signatureLendingAuction.updateBuyOutPremiumProtocolPercentage(5);
     }
-
-
-
-
-
 }
