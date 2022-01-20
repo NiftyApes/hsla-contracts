@@ -187,7 +187,7 @@ contract LiquidityProvidersTest is DSTest, Utility {
         liquidityProviders.withdrawErc20(address(DAI), true, 10000000);
     }
 
-    function testWithdrawErc20False(bool) public {
+    function testWithdrawErc20False() public {
         liquidityProviders.withdrawErc20(address(DAI), false, 1 ether);
     }
 
@@ -204,12 +204,12 @@ contract LiquidityProvidersTest is DSTest, Utility {
         liquidityProviders.supplyCEth(1 ether);
     }
 
-    function testWithdrawEthTrue() public {
-        liquidityProviders.withdrawEth(true, 10000000);
+    function testWithdrawEth1(uint x) public {
+        liquidityProviders.withdrawEth(true, x);
     }
 
-    function testWithdrawEthFalse() public {
-        liquidityProviders.withdrawEth(false, 1 ether);
+    function testWithdrawEth2(uint x) public {
+        liquidityProviders.withdrawEth(false, x);
     }
 
     function testWithdrawCEth() public {
