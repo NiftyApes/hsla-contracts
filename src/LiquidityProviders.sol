@@ -434,7 +434,7 @@ contract LiquidityProviders is
             RedeemLocalVars memory vars;
 
             vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
-git 
+            
             (vars.mathErr, vars.redeemTokens) = divScalarByExpTruncate(
                 amountToWithdraw,
                 Exp({mantissa: vars.exchangeRateMantissa})
