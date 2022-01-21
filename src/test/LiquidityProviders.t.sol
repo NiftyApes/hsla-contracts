@@ -171,6 +171,4 @@ contract LiquidityProvidersTest is DSTest, TestUtility {
     function testWithdrawCEth() public {
         liquidityProviders.withdrawCEth(10000000);
     }
-
-    //function test
 }

@@ -2,7 +2,6 @@
 
 pragma solidity ^0.8.2;
 
-import "ds-test/test.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
@@ -21,7 +20,6 @@ import "./interfaces/ILiquidityProviders.sol";
 // @notice This contract wraps and unwraps, tracks balances of deposited Assets and cAssets
 // TODO(Factor out Exponential to library)
 contract LiquidityProviders is
-    DSTest,
     ILiquidityProviders,
     Exponential,
     Ownable,
@@ -434,7 +432,7 @@ contract LiquidityProviders is
             RedeemLocalVars memory vars;
 
             vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
-            
+
             (vars.mathErr, vars.redeemTokens) = divScalarByExpTruncate(
                 amountToWithdraw,
                 Exp({mantissa: vars.exchangeRateMantissa})
