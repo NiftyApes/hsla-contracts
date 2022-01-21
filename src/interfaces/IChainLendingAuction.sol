@@ -3,7 +3,7 @@ pragma solidity ^0.8.2;
 
 import "./ILiquidityProviders.sol";
 
-interface ISignatureLendingAuction is ILiquidityProviders {
+interface IChainLendingAuction is ILiquidityProviders {
     // Structs
 
     struct LoanAuction {
@@ -33,14 +33,15 @@ interface ISignatureLendingAuction is ILiquidityProviders {
         // if fixedTerms == true could mint an NFT that represents that loan to enable packaging and reselling.
         bool fixedTerms;
     }
-
     struct Offer {
-        // offer creator
+        // Offer creator
         address creator;
+        // Offer type bid/ask is computed with the creator and nft owner
+        // Would it be useful to have an enum here?
         // offer NFT contract address
         address nftContractAddress;
         // offer NFT ID
-        uint256 nftId; // 0 if floorTerm is true
+        uint256 nftId; // ignored if floorTerm is true
         // offer asset type
         address asset;
         // offer loan amount
@@ -57,48 +58,12 @@ interface ISignatureLendingAuction is ILiquidityProviders {
         bool floorTerm;
     }
 
-    struct Bid {
-        // Lender
-        address lender;
-        // offer NFT contract address
-        address nftContractAddress;
-        // offer NFT ID
-        uint256 nftId; // 0 if floorTerm is true
-        // offer asset type
-        address asset;
-        // offer loan amount
-        uint256 amount;
-        // offer interest rate
-        uint256 interestRate;
-        // offer loan duration
-        uint256 duration;
-        // offer expiration
-        uint256 expiration;
-        // is loan offer fixed terms or open for perpetual auction
-        bool fixedTerms;
-        // is offer for single NFT or for every NFT in a collection
-        bool floorTerm;
-    }
-
-    struct Ask {
-        // nftOwner
-        address nftOwner;
-        // offer NFT contract address
-        address nftContractAddress;
-        // offer NFT ID
-        uint256 nftId; // 0 if floorTerm is true
-        // offer asset type
-        address asset;
-        // offer loan amount
-        uint256 amount;
-        // offer interest rate
-        uint256 interestRate;
-        // offer loan duration
-        uint256 duration;
-        // offer expiration
-        uint256 expiration;
-        // is loan offer fixed terms or open for perpetual auction
-        bool fixedTerms;
+    // Iterable mapping from address to uint;
+    struct OfferBook {
+        bytes32[] keys;
+        mapping(bytes32 => Offer) offers;
+        mapping(bytes32 => uint256) indexOf;
+        mapping(bytes32 => bool) inserted;
     }
 
     // Events
@@ -171,6 +136,19 @@ interface ISignatureLendingAuction is ILiquidityProviders {
         uint256 indexed nftId
     );
 
+    event NewOffer(
+        address creator,
+        address indexed nftContractAddress,
+        uint256 indexed nftId,
+        address asset,
+        uint256 amount,
+        uint256 interestRate,
+        uint256 duration,
+        uint256 expiration,
+        uint256 fixedTerms,
+        uint256 floorTerm
+    );
+
     // Functions
 
     function loanDrawFeeProtocolPercentage() external view returns (uint256);
@@ -184,7 +162,7 @@ interface ISignatureLendingAuction is ILiquidityProviders {
         view
         returns (LoanAuction memory auction);
 
-    function getOfferStatus(bytes calldata signature)
+    function getSignatureStatus(bytes calldata signature)
         external
         view
         returns (bool status);
@@ -198,6 +176,11 @@ interface ISignatureLendingAuction is ILiquidityProviders {
         external
         pure
         returns (address signer);
+
+    function get(OfferBook calldata offerBook, bytes32 offerHash)
+        public
+        view
+        returns (Offer memory offer);
 
     function executeLoanByBid(
         Offer calldata offer,
