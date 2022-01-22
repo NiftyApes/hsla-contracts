@@ -24,8 +24,8 @@ contract ChainLendingAuction is
     // Mapping of nftId to nftContractAddress to LoanAuction struct
     mapping(address => mapping(uint256 => LoanAuction)) _loanAuctions;
 
-    mapping(address => mapping(uint256 => OfferBook)) _assetOfferBooks;
-    mapping(address => OfferBook) _collectionOfferBooks;
+    mapping(address => mapping(uint256 => OfferBook)) _nftOfferBooks;
+    mapping(address => OfferBook) _floorOfferBooks;
 
     // Cancelled / finalized orders, by signature
     mapping(bytes => bool) _cancelledOrFinalized;
@@ -95,32 +95,70 @@ contract ChainLendingAuction is
         return offerHash.toEthSignedMessageHash().recover(signature);
     }
 
-    // on chain Offer functions
+    function getOffer(
+        address nftContractAddress,
+        uint256 nftId,
+        bytes32 offerHash,
+        bool floorTerm
+    ) external view returns (Offer memory offer) {
+        Offer storage offer;
+        OfferBook storage offerBook;
 
-    function get(OfferBook memory offerBook, bytes32 offerHash)
-        public
-        view
-        returns (Offer memory offer)
+        if (floorTerm == true) {
+            offerBook = _floorOfferBooks[nftContractAddress];
+            return offerBook.offers[offerHash];
+        } else if (floorTerm == false) {
+            offerBook = _nftOfferBooks[nftContractAddress][nftId];
+            return offerBook.offers[offerHash];
+        }
+    }
+
+    function getOfferAtIndex(
+        address nftContractAddress,
+        uint256 nftId,
+        bool floorTerm,
+        uint256 index
+    ) external view returns (bytes32) {
+        Offer memory offer;
+        OfferBook storage offerBook;
+
+        if (floorTerm == true) {
+            offerBook = _floorOfferBooks[nftContractAddress];
+            return offerBook.keys[index];
+        } else if (floorTerm == false) {
+            offerBook = _nftOfferBooks[nftContractAddress][nftId];
+            return offerBook.keys[index];
+        }
+    }
+
+    function size(
+        address nftContractAddress,
+        uint256 nftId,
+        bool floorTerm
+    ) external view returns (uint256) {
+        Offer memory offer;
+        OfferBook storage offerBook;
+
+        if (floorTerm == true) {
+            offerBook = _floorOfferBooks[nftContractAddress];
+            return offerBook.keys.length;
+        } else if (floorTerm == false) {
+            offerBook = _nftOfferBooks[nftContractAddress][nftId];
+            return offerBook.keys.length;
+        }
+    }
+
+    function createFloorOffer(address nftContractAddress, Offer memory offer)
+        external
     {
-        offer = offerBook.offers[offerHash];
-    }
+        Offer memory offer;
+        OfferBook storage offerBook = _floorOfferBooks[nftContractAddress];
 
-    function getKeyAtIndex(OfferBook memory offerBook, uint256 index)
-        public
-        view
-        returns (bytes32)
-    {
-        return offerBook.keys[index];
-    }
-
-    function size(OfferBook memory offerBook) public view returns (uint256) {
-        return offerBook.keys.length;
-    }
-
-    function set(OfferBook memory offerBook, Offer memory offer) public {
         offer.creator = msg.sender;
+        offer.floorTerm = true;
 
         bytes32 offerHash = getOfferHash(offer);
+
         if (offerBook.inserted[offerHash]) {
             offerBook.offers[offerHash] = offer;
         } else {
@@ -144,11 +182,82 @@ contract ChainLendingAuction is
         );
     }
 
-    function remove(OfferBook memory offerBook, bytes32 offerHash) public {
+    function createNftOffer(
+        address nftContractAddress,
+        uint256 nftId,
+        Offer memory offer
+    ) external {
+        Offer memory offer;
+        OfferBook storage offerBook = _nftOfferBooks[nftContractAddress][nftId];
+
+        offer.creator = msg.sender;
+
+        bytes32 offerHash = getOfferHash(offer);
+
+        if (offerBook.inserted[offerHash]) {
+            offerBook.offers[offerHash] = offer;
+        } else {
+            offerBook.inserted[offerHash] = true;
+            offerBook.offers[offerHash] = offer;
+            offerBook.indexOf[offerHash] = offerBook.keys.length;
+            offerBook.keys.push(offerHash);
+        }
+
+        emit NewOffer(
+            offer.creator,
+            offer.nftContractAddress,
+            offer.nftId,
+            offer.asset,
+            offer.amount,
+            offer.interestRate,
+            offer.duration,
+            offer.expiration,
+            offer.fixedTerms,
+            offer.floorTerm
+        );
+    }
+
+    function removeFloorOffer(
+        address nftContractAddress,
+        uint256 nftId,
+        bytes32 offerHash
+    ) external {
+        OfferBook storage offerBook = _floorOfferBooks[nftContractAddress];
         Offer storage offer = offerBook.offers[offerHash];
 
         require(
-            msg.sender == offer.creator || msg.sender == address(this),
+            msg.sender == offer.creator,
+            "msg.sender is not the offer creator"
+        );
+
+        if (!offerBook.inserted[offerHash]) {
+            return;
+        }
+
+        delete offerBook.inserted[offerHash];
+        delete offerBook.offers[offerHash];
+
+        uint256 index = offerBook.indexOf[offerHash];
+        uint256 lastIndex = offerBook.keys.length - 1;
+        bytes32 lastOfferHash = offerBook.keys[lastIndex];
+
+        offerBook.indexOf[lastOfferHash] = index;
+        delete offerBook.indexOf[offerHash];
+
+        offerBook.keys[index] = lastOfferHash;
+        offerBook.keys.pop();
+    }
+
+    function removeNftOffer(
+        address nftContractAddress,
+        uint256 nftId,
+        bytes32 offerHash
+    ) external {
+        OfferBook storage offerBook = _nftOfferBooks[nftContractAddress][nftId];
+        Offer storage offer = offerBook.offers[offerHash];
+
+        require(
+            msg.sender == offer.creator,
             "msg.sender is not the offer creator"
         );
 
@@ -243,23 +352,26 @@ contract ChainLendingAuction is
         emit BidAskFinalized(offer.nftContractAddress, offer.nftId, signature);
     }
 
-    // executeLoanByBid allows a borrower to submit a signed offer from a lender and execute a loan using their owned NFT
-    // this external function handles all checks for executeLoanByBid
-    function chainExecuteLoanByBid(
+    function chainExecuteLoanByFloorBid(
         address nftContractAddress,
         uint256 nftId,
-        bytes32 offerHash,
-        bool floorTerm
+        bytes32 offerHash
     ) external payable whenNotPaused {
         // instantiate Offer Struct
-        Offer storage offer;
-        if (floorTerm == true) {
-            offer = _collectionOfferBooks[nftContractAddress].offers[offerHash];
-            require(offer.floorTerm == true, "Offer must be a floor term");
-        } else if (floorTerm == false) {
-            offer = _assetOfferBooks[nftContractAddress][nftId].offers[
-                offerHash
-            ];
+        Offer storage offer = _floorOfferBooks[nftContractAddress].offers[
+            offerHash
+        ];
+        require(offer.floorTerm == true, "Offer must be a floor term");
+        _chainExecuteLoanByBidInternal(offer, nftId);
+    }
+
+    function chainExecuteLoanByNftBid(
+        address nftContractAddress,
+        uint256 nftId,
+        bytes32 offerHash
+    ) external payable whenNotPaused {
+        // instantiate Offer Struct
+        Offer storage offer = _nftOfferBooks[nftContractAddress][nftId].offers[offerHash];
             require(
                 offer.floorTerm == false,
                 "Offer must be an individual offer"
@@ -268,8 +380,15 @@ contract ChainLendingAuction is
                 nftId == offer.nftId,
                 "Function submitted nftId must match the signed offer nftId"
             );
-        }
+        _chainExecuteLoanByBidInternal(offer, nftId);
+    }
 
+    // executeLoanByBid allows a borrower to submit a signed offer from a lender and execute a loan using their owned NFT
+    // this external function handles all checks for executeLoanByBid
+    function _chainExecuteLoanByBidInternal(
+        Offer storage offer,
+        uint256 nftId
+    ) internal {
         // require offer has not expired
         require(
             offer.expiration > block.timestamp,
@@ -429,8 +548,9 @@ contract ChainLendingAuction is
         bytes32 offerHash
     ) public payable {
         // instantiate LoanAuction Struct
-        Offer storage offer = _assetOfferBooks[nftContractAddress][nftId]
-            .offers[offerHash];
+        Offer storage offer = _nftOfferBooks[nftContractAddress][nftId].offers[
+            offerHash
+        ];
 
         // require offer has not expired
         require(
@@ -459,8 +579,6 @@ contract ChainLendingAuction is
             nftOwner == offer.creator,
             "Borrower must be the owner of nftId to executeLoanByAsk"
         );
-
-        remove(_assetOfferBooks[offer.nftContractAddress][nftId], offerHash);
 
         // execute state changes for executeLoanByAsk
         _executeLoanByAskInternal(offer, msg.sender, nftOwner);
@@ -735,8 +853,9 @@ contract ChainLendingAuction is
         uint256 nftId,
         bytes32 offerHash
     ) external payable whenNotPaused {
-        Offer storage offer = _assetOfferBooks[nftContractAddress][nftId]
-            .offers[offerHash];
+        Offer storage offer = _nftOfferBooks[nftContractAddress][nftId].offers[
+            offerHash
+        ];
 
         // Instantiate LoanAuction Struct
         LoanAuction storage loanAuction = _loanAuctions[

@@ -33,11 +33,10 @@ interface IChainLendingAuction is ILiquidityProviders {
         // if fixedTerms == true could mint an NFT that represents that loan to enable packaging and reselling.
         bool fixedTerms;
     }
+
     struct Offer {
         // Offer creator
         address creator;
-        // Offer type bid/ask is computed with the creator and nft owner
-        // Would it be useful to have an enum here?
         // offer NFT contract address
         address nftContractAddress;
         // offer NFT ID
@@ -145,8 +144,8 @@ interface IChainLendingAuction is ILiquidityProviders {
         uint256 interestRate,
         uint256 duration,
         uint256 expiration,
-        uint256 fixedTerms,
-        uint256 floorTerm
+        bool fixedTerms,
+        bool floorTerm
     );
 
     // Functions
@@ -162,39 +161,100 @@ interface IChainLendingAuction is ILiquidityProviders {
         view
         returns (LoanAuction memory auction);
 
-    function getSignatureStatus(bytes calldata signature)
-        external
-        view
-        returns (bool status);
-
     function getOfferHash(Offer calldata offer)
         external
         view
         returns (bytes32 offerhash);
+
+    function getSignatureStatus(bytes calldata signature)
+        external
+        view
+        returns (bool status);
 
     function getOfferSigner(bytes32 offerHash, bytes memory signature)
         external
         pure
         returns (address signer);
 
-    function get(OfferBook calldata offerBook, bytes32 offerHash)
-        public
-        view
-        returns (Offer memory offer);
+    function getOffer(
+        address nftContractAddress,
+        uint256 nftId,
+        bytes32 offerHash,
+        bool floorTerm
+    ) external view returns (Offer memory offer);
 
-    function executeLoanByBid(
+    function getOfferAtIndex(
+        address nftContractAddress,
+        uint256 nftId,
+        bool floorTerm,
+        uint256 index
+    ) external view returns (bytes32);
+
+    function size(
+        address nftContractAddress,
+        uint256 nftId,
+        bool floorTerm
+    ) external view returns (uint256);
+
+    function createFloorOffer(address nftContractAddress, Offer memory offer)
+        external;
+
+    function createNftOffer(
+        address nftContractAddress,
+        uint256 nftId,
+        Offer memory offer
+    ) external;
+
+    function removeFloorOffer(
+        address nftContractAddress,
+        uint256 nftId,
+        bytes32 offerHash
+    ) external;
+
+    function removeNftOffer(
+        address nftContractAddress,
+        uint256 nftId,
+        bytes32 offerHash
+    ) external;
+
+    function sigExecuteLoanByBid(
         Offer calldata offer,
         bytes calldata signature,
         uint256 nftId
     ) external payable;
 
-    function executeLoanByAsk(Offer calldata offer, bytes calldata signature)
+    function chainExecuteLoanByFloorBid(
+        address nftContractAddress,
+        uint256 nftId,
+        bytes32 offerHash
+    ) external payable;
+
+    function chainExecuteLoanByNftBid(
+        address nftContractAddress,
+        uint256 nftId,
+        bytes32 offerHash
+    ) external payable;
+
+    function sigExecuteLoanByAsk(Offer calldata offer, bytes calldata signature)
         external
         payable;
 
-    function refinanceByBorrower(Offer calldata offer, bytes calldata signature)
-        external
-        payable;
+    function chainExecuteLoanByAsk(
+        address nftContractAddress,
+        uint256 nftId,
+        bytes32 offerHash
+    ) external payable;
+
+    function sigRefinanceByBorrower(
+        Offer calldata offer,
+        bytes calldata signature
+    ) external payable;
+
+    function chainRefinanceByBorrower(
+        address nftContractAddress,
+        uint256 nftId,
+        bytes32 offerHash
+    ) external payable;
 
     function refinanceByLender(Offer calldata offer) external payable;
 
