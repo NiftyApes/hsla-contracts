@@ -6,21 +6,21 @@ import "ds-test/test.sol";
 import "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "../interfaces/compound/ICERC20.sol";
 import "../interfaces/compound/ICEther.sol";
-import "../SignatureLendingAuction.sol";
+import "../ChainLendingAuction.sol";
 import "./Utilities.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 
 // @dev These tests are intended to be run against a forked mainnet.
 
 // TODO(Refactor/deduplicate with LiquidityProviders testing)
-contract TestSignatureLendingAuction is DSTest, TestUtility, ERC721Holder {
+contract TestChainLendingAuction is DSTest, TestUtility, ERC721Holder {
     IUniswapV2Router SushiSwapRouter;
     MockERC721Token mockNFT;
     IWETH WETH;
     IERC20 DAI;
     ICERC20 cDAI;
     ICEther cETH;
-    SignatureLendingAuction signatureLendingAuction;
+    ChainLendingAuction chainLendingAuction;
 
     function setUp() public {
         // Setup WETH
@@ -68,10 +68,10 @@ contract TestSignatureLendingAuction is DSTest, TestUtility, ERC721Holder {
         cDAI.mint(50000 ether);
 
         // Setup the liquidity providers contract
-        signatureLendingAuction = new SignatureLendingAuction();
+        chainLendingAuction = new ChainLendingAuction();
         // Allow assets for testing
-        signatureLendingAuction.setCAssetAddress(address(DAI), address(cDAI));
-        signatureLendingAuction.setCAssetAddress(
+        chainLendingAuction.setCAssetAddress(address(DAI), address(cDAI));
+        chainLendingAuction.setCAssetAddress(
             address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
             address(cETH)
         );
@@ -84,42 +84,42 @@ contract TestSignatureLendingAuction is DSTest, TestUtility, ERC721Holder {
         mockNFT.safeMint(address(this), 0);
 
         // Approve spends
-        DAI.approve(address(signatureLendingAuction), max);
-        cDAI.approve(address(signatureLendingAuction), max);
-        cETH.approve(address(signatureLendingAuction), max);
+        DAI.approve(address(chainLendingAuction), max);
+        cDAI.approve(address(chainLendingAuction), max);
+        cETH.approve(address(chainLendingAuction), max);
 
         // Supply to 10k DAI contract
-        signatureLendingAuction.supplyErc20(address(DAI), 100000 ether);
+        chainLendingAuction.supplyErc20(address(DAI), 100000 ether);
         // Supply 10 ether to contract
-        signatureLendingAuction.supplyEth{value: 10 ether}();
+        chainLendingAuction.supplyEth{value: 10 ether}();
         // Offer NFT for sale
     }
 
     // Test Cases
 
     function testLoanDrawFeeProtocolPercentage() public {
-        signatureLendingAuction.loanDrawFeeProtocolPercentage();
+        chainLendingAuction.loanDrawFeeProtocolPercentage();
     }
 
     function testBuyOutPremiumLenderPercentage() public {
-        signatureLendingAuction.buyOutPremiumLenderPercentage();
+        chainLendingAuction.buyOutPremiumLenderPercentage();
     }
 
     function testBuyOutPremiumProtocolPercentage() public {
-        signatureLendingAuction.buyOutPremiumProtocolPercentage();
+        chainLendingAuction.buyOutPremiumProtocolPercentage();
     }
 
     function testUpdateLoanDrawFee() public {
         //TODO(parametic sweep)
         //TODO(Assert value)
-        signatureLendingAuction.updateLoanDrawFee(5);
+        chainLendingAuction.updateLoanDrawFee(5);
     }
 
     function testUpdateBuyOutPremiumLenderPercentage() public {
-        signatureLendingAuction.updateBuyOutPremiumLenderPercentage(5);
+        chainLendingAuction.updateBuyOutPremiumLenderPercentage(5);
     }
 
     function testUpdateBuyOutPremiumProtocolPercentage() public {
-        signatureLendingAuction.updateBuyOutPremiumProtocolPercentage(5);
+        chainLendingAuction.updateBuyOutPremiumProtocolPercentage(5);
     }
 }
