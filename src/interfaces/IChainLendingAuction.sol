@@ -250,7 +250,13 @@ interface IChainLendingAuction is ILiquidityProviders {
         bytes calldata signature
     ) external payable;
 
-    function chainRefinanceByBorrower(
+    function chainRefinanceByBorrowerFloor(
+        address nftContractAddress,
+        uint256 nftId,
+        bytes32 offerHash
+    ) external payable;
+
+    function chainRefinanceByBorrowerNft(
         address nftContractAddress,
         uint256 nftId,
         bytes32 offerHash

@@ -371,24 +371,22 @@ contract ChainLendingAuction is
         bytes32 offerHash
     ) external payable whenNotPaused {
         // instantiate Offer Struct
-        Offer storage offer = _nftOfferBooks[nftContractAddress][nftId].offers[offerHash];
-            require(
-                offer.floorTerm == false,
-                "Offer must be an individual offer"
-            );
-            require(
-                nftId == offer.nftId,
-                "Function submitted nftId must match the signed offer nftId"
-            );
+        Offer storage offer = _nftOfferBooks[nftContractAddress][nftId].offers[
+            offerHash
+        ];
+        require(offer.floorTerm == false, "Offer must be an individual offer");
+        require(
+            nftId == offer.nftId,
+            "Function submitted nftId must match the signed offer nftId"
+        );
         _chainExecuteLoanByBidInternal(offer, nftId);
     }
 
     // executeLoanByBid allows a borrower to submit a signed offer from a lender and execute a loan using their owned NFT
     // this external function handles all checks for executeLoanByBid
-    function _chainExecuteLoanByBidInternal(
-        Offer storage offer,
-        uint256 nftId
-    ) internal {
+    function _chainExecuteLoanByBidInternal(Offer storage offer, uint256 nftId)
+        internal
+    {
         // require offer has not expired
         require(
             offer.expiration > block.timestamp,
@@ -848,19 +846,42 @@ contract ChainLendingAuction is
         // emit BidAskFinalized(offer.nftContractAddress, offer.nftId, signature);
     }
 
-    function chainRefinanceByBorrower(
+    function chainRefinanceByBorrowerFloor(
         address nftContractAddress,
         uint256 nftId,
         bytes32 offerHash
     ) external payable whenNotPaused {
-        Offer storage offer = _nftOfferBooks[nftContractAddress][nftId].offers[
+        Offer storage offer = _floorOfferBooks[nftContractAddress].offers[
             offerHash
         ];
+        require(offer.floorTerm == true, "Offer must be a floor term");
+        _chainRefinanceByBorrowerInternal(offer, nftId);
+    }
 
+    function chainRefinanceByBorrowerNft(
+        address nftContractAddress,
+        uint256 nftId,
+        bytes32 offerHash
+    ) external payable whenNotPaused {
+        Offer storage offer = _floorOfferBooks[nftContractAddress].offers[
+            offerHash
+        ];
+        require(offer.floorTerm == false, "Offer must be an individual offer");
+        require(
+            nftId == offer.nftId,
+            "Function submitted nftId must match the signed offer nftId"
+        );
+        _chainRefinanceByBorrowerInternal(offer, nftId);
+    }
+
+    function _chainRefinanceByBorrowerInternal(
+        Offer storage offer,
+        uint256 nftId
+    ) internal {
         // Instantiate LoanAuction Struct
         LoanAuction storage loanAuction = _loanAuctions[
             offer.nftContractAddress
-        ][offer.nftId];
+        ][nftId];
 
         address cAsset = assetToCAsset[loanAuction.asset];
 
