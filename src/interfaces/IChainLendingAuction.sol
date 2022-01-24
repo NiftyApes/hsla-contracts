@@ -148,6 +148,19 @@ interface IChainLendingAuction is ILiquidityProviders {
         bool floorTerm
     );
 
+    event OfferRemoved(
+        address creator,
+        address indexed nftContractAddress,
+        uint256 indexed nftId,
+        address asset,
+        uint256 amount,
+        uint256 interestRate,
+        uint256 duration,
+        uint256 expiration,
+        bool fixedTerms,
+        bool floorTerm
+    );
+
     // Functions
 
     function loanDrawFeeProtocolPercentage() external view returns (uint256);

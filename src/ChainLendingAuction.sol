@@ -246,6 +246,19 @@ contract ChainLendingAuction is
 
         offerBook.keys[index] = lastOfferHash;
         offerBook.keys.pop();
+
+        emit OfferRemoved(
+            offer.creator,
+            offer.nftContractAddress,
+            offer.nftId,
+            offer.asset,
+            offer.amount,
+            offer.interestRate,
+            offer.duration,
+            offer.expiration,
+            offer.fixedTerms,
+            offer.floorTerm
+        );
     }
 
     function removeNftOffer(
@@ -277,6 +290,19 @@ contract ChainLendingAuction is
 
         offerBook.keys[index] = lastOfferHash;
         offerBook.keys.pop();
+
+        emit OfferRemoved(
+            offer.creator,
+            offer.nftContractAddress,
+            offer.nftId,
+            offer.asset,
+            offer.amount,
+            offer.interestRate,
+            offer.duration,
+            offer.expiration,
+            offer.fixedTerms,
+            offer.floorTerm
+        );
     }
 
     // executeLoanByBid allows a borrower to submit a signed offer from a lender and execute a loan using their owned NFT
