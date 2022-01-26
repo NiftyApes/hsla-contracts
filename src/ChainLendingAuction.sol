@@ -12,7 +12,7 @@ import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
 /**
  * @title NiftyApes LendingAuction Contract
- * @notice Harberger Style Lending Auctions for any collection or asset in existence at any time. 
+ * @notice Harberger Style Lending Auctions for any collection or asset in existence at any time.
  * @author NiftyApes
  */
 
@@ -70,7 +70,7 @@ contract ChainLendingAuction is
     /**
      * @notice Generate a hash of an offer and follow the EIP712
      * @param offer The details of a loan auction offer
-     */ 
+     */
     function getOfferHash(Offer memory offer)
         public
         view
@@ -95,12 +95,12 @@ contract ChainLendingAuction is
             );
     }
 
-// ---------- Signature Offer Functions ---------- //
+    // ---------- Signature Offer Functions ---------- //
 
     /**
      * @notice Check whether a signature-based offer has been cancelledOrFinalized
-     * @param signature The signed version of an offer
-     */ 
+     * @param signature A signed offerHash
+     */
     function getSignatureOfferStatus(bytes memory signature)
         external
         view
@@ -109,6 +109,11 @@ contract ChainLendingAuction is
         status = _cancelledOrFinalized[signature];
     }
 
+    /**
+     * @notice Check whether a signature-based offer has been cancelledOrFinalized
+     * @param offerHash The hash of all parameters in an offer
+     * @param signature A signed offerHash
+     */
     //ecrecover the signer from hash and the signature
     function getOfferSigner(
         bytes32 offerHash, //hash of offer
@@ -117,9 +122,15 @@ contract ChainLendingAuction is
         return offerHash.toEthSignedMessageHash().recover(signature);
     }
 
-// ---------- On-chain Offer Functions ---------- //
+    // ---------- On-chain Offer Functions ---------- //
 
-
+    /**
+     * @notice Retreive an offer from the on-chain floor or individual NFT offer books by offerHash identifier
+     * @param nftContractAddress The address of the NFT collection
+     * @param nftId The id of the specified NFT
+     * @param offerHash The hash of all parameters in an offer
+     * @param floorTerm Indicates whether this is a floor or individual NFT offer. true = floor offer. false = individual NFT offer
+     */
     function getOffer(
         address nftContractAddress,
         uint256 nftId,
@@ -138,11 +149,18 @@ contract ChainLendingAuction is
         }
     }
 
+    /**
+     * @notice Retreive an offer from the on-chain floor or individual NFT offer books at a given index
+     * @param nftContractAddress The address of the NFT collection
+     * @param nftId The id of the specified NFT
+     * @param index The index at which to retrieve an offer from the OfferBook iterable mapping
+     * @param floorTerm Indicates whether this is a floor or individual NFT offer. true = floor offer. false = individual NFT offer
+     */
     function getOfferAtIndex(
         address nftContractAddress,
         uint256 nftId,
-        bool floorTerm,
-        uint256 index
+        uint256 index,
+        bool floorTerm
     ) external view returns (bytes32) {
         Offer memory offer;
         OfferBook storage offerBook;
@@ -156,6 +174,12 @@ contract ChainLendingAuction is
         }
     }
 
+    /**
+     * @notice Retreive the size of the on-chain floor or individual NFT offer book
+     * @param nftContractAddress The address of the NFT collection
+     * @param nftId The id of the specified NFT
+     * @param floorTerm Indicates whether to return the floor or individual NFT offer book size. true = floor offer book. false = individual NFT offer book
+     */
     function size(
         address nftContractAddress,
         uint256 nftId,
@@ -173,6 +197,11 @@ contract ChainLendingAuction is
         }
     }
 
+    /**
+     * @notice Create an offer in the on-chain floor offer book
+     * @param nftContractAddress The address of the NFT collection
+     * @param offer The details of the loan auction floor offer
+     */
     function createFloorOffer(address nftContractAddress, Offer memory offer)
         external
     {
@@ -207,6 +236,11 @@ contract ChainLendingAuction is
         );
     }
 
+    /**
+     * @notice Create an offer in the on-chain individual NFT offer book
+     * @param nftContractAddress The address of the NFT collection
+     * @param offer The details of the loan auction individual NFT offer
+     */
     function createNftOffer(
         address nftContractAddress,
         uint256 nftId,
@@ -216,6 +250,8 @@ contract ChainLendingAuction is
         OfferBook storage offerBook = _nftOfferBooks[nftContractAddress][nftId];
 
         offer.creator = msg.sender;
+        offer.floorTerm = false;
+
 
         bytes32 offerHash = getOfferHash(offer);
 
@@ -316,7 +352,7 @@ contract ChainLendingAuction is
         offerBook.keys[index] = lastOfferHash;
         offerBook.keys.pop();
 
-                emit OfferRemoved(
+        emit OfferRemoved(
             offer.creator,
             offer.nftContractAddress,
             offer.nftId,

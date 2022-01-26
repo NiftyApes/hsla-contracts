@@ -199,8 +199,8 @@ interface IChainLendingAuction is ILiquidityProviders {
     function getOfferAtIndex(
         address nftContractAddress,
         uint256 nftId,
-        bool floorTerm,
-        uint256 index
+        uint256 index,
+        bool floorTerm
     ) external view returns (bytes32);
 
     function size(
