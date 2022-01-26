@@ -10,6 +10,12 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
+/**
+ * @title NiftyApes LendingAuction Contract
+ * @notice Harberger Style Lending Auctions for any collection or asset in existence at any time. 
+ * @author NiftyApes
+ */
+
 contract ChainLendingAuction is
     IChainLendingAuction,
     LiquidityProviders,
@@ -42,7 +48,16 @@ contract ChainLendingAuction is
 
     // ---------- FUNCTIONS -------------- //
 
+    /**
+     * @notice Construct contract with pre-appended information for EIP712 signatures
+     */
     constructor() EIP712("NiftyApes", "0.0.1") {}
+
+    /**
+     * @notice Retrieve data about a given loan auction
+     * @param nftContractAddress The address of the NFT collection
+     * @param nftId The id of the specified NFT
+     */
 
     function getLoanAuction(address nftContractAddress, uint256 nftId)
         external
@@ -52,8 +67,10 @@ contract ChainLendingAuction is
         auction = _loanAuctions[nftContractAddress][nftId];
     }
 
-    // ideally this hash can be generated on the frontend, stored in the backend, and provided to functions to reduce computation
-    // given the offer details, generate a hash and try to kind of follow the eip-191 standard
+    /**
+     * @notice Generate a hash of an offer and follow the EIP712
+     * @param offer The details of a loan auction offer
+     */ 
     function getOfferHash(Offer memory offer)
         public
         view
@@ -63,6 +80,7 @@ contract ChainLendingAuction is
             _hashTypedDataV4(
                 keccak256(
                     abi.encode(
+                        offer.creator,
                         offer.nftContractAddress,
                         offer.nftId,
                         offer.asset,
@@ -77,9 +95,13 @@ contract ChainLendingAuction is
             );
     }
 
-    // signature Offer functions
+// ---------- Signature Offer Functions ---------- //
 
-    function getSignatureStatus(bytes memory signature)
+    /**
+     * @notice Check whether a signature-based offer has been cancelledOrFinalized
+     * @param signature The signed version of an offer
+     */ 
+    function getSignatureOfferStatus(bytes memory signature)
         external
         view
         returns (bool status)
@@ -94,6 +116,9 @@ contract ChainLendingAuction is
     ) public pure returns (address signer) {
         return offerHash.toEthSignedMessageHash().recover(signature);
     }
+
+// ---------- On-chain Offer Functions ---------- //
+
 
     function getOffer(
         address nftContractAddress,

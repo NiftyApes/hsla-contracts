@@ -179,7 +179,7 @@ interface IChainLendingAuction is ILiquidityProviders {
         view
         returns (bytes32 offerhash);
 
-    function getSignatureStatus(bytes calldata signature)
+    function getSignatureOfferStatus(bytes calldata signature)
         external
         view
         returns (bool status);
