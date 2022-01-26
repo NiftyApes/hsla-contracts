@@ -19,8 +19,8 @@ interface IChainLendingAuction is ILiquidityProviders {
         uint256 interestRate;
         // loan duration of loan in number of seconds
         uint256 duration;
-        // timestamp of bestBid
-        uint256 bestBidTime;
+        // timestamp of bestOffer
+        uint256 bestOfferTime;
         // timestamp of loan execution
         uint256 loanExecutedTime;
         // cumulative interest of varying rates paid by new lenders to buy out the loan auction

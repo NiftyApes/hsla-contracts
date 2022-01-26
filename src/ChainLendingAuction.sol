@@ -291,7 +291,7 @@ contract ChainLendingAuction is
         offerBook.keys[index] = lastOfferHash;
         offerBook.keys.pop();
 
-        emit OfferRemoved(
+                emit OfferRemoved(
             offer.creator,
             offer.nftContractAddress,
             offer.nftId,
@@ -479,7 +479,7 @@ contract ChainLendingAuction is
         loanAuction.amount = offer.amount;
         loanAuction.interestRate = offer.interestRate;
         loanAuction.duration = offer.duration;
-        loanAuction.bestBidTime = block.timestamp;
+        loanAuction.bestOfferTime = block.timestamp;
         loanAuction.loanExecutedTime = block.timestamp;
         loanAuction.timeDrawn = offer.duration;
         loanAuction.amountDrawn = offer.amount;
@@ -641,7 +641,7 @@ contract ChainLendingAuction is
         loanAuction.amount = offer.amount;
         loanAuction.interestRate = offer.interestRate;
         loanAuction.duration = offer.duration;
-        loanAuction.bestBidTime = block.timestamp;
+        loanAuction.bestOfferTime = block.timestamp;
         loanAuction.loanExecutedTime = block.timestamp;
         loanAuction.timeDrawn = offer.duration;
         loanAuction.amountDrawn = offer.amount;
@@ -785,7 +785,7 @@ contract ChainLendingAuction is
         // Require that loan does not have fixedTerms
         require(
             loanAuction.fixedTerms != true,
-            "Loan has fixedTerms cannot buyOutBestBid."
+            "Loan has fixedTerms cannot buyOutBestOffer."
         );
 
         // Require that loan is active
@@ -852,7 +852,7 @@ contract ChainLendingAuction is
         loanAuction.amount = offer.amount;
         loanAuction.interestRate = offer.interestRate;
         loanAuction.duration = offer.duration;
-        loanAuction.bestBidTime = block.timestamp;
+        loanAuction.bestOfferTime = block.timestamp;
         loanAuction.historicInterest = 0;
 
         // pull down funds from new lender
@@ -914,7 +914,7 @@ contract ChainLendingAuction is
         // Require that loan does not have fixedTerms
         require(
             loanAuction.fixedTerms != true,
-            "Loan has fixedTerms cannot buyOutBestBid."
+            "Loan has fixedTerms cannot buyOutBestOffer."
         );
 
         // Require that loan is active
@@ -976,7 +976,7 @@ contract ChainLendingAuction is
         loanAuction.amount = offer.amount;
         loanAuction.interestRate = offer.interestRate;
         loanAuction.duration = offer.duration;
-        loanAuction.bestBidTime = block.timestamp;
+        loanAuction.bestOfferTime = block.timestamp;
         loanAuction.historicInterest = 0;
 
         // pull down funds from new lender
@@ -1012,7 +1012,7 @@ contract ChainLendingAuction is
         // Require that loan does not have fixedTerms
         require(
             loanAuction.fixedTerms != true,
-            "Loan has fixedTerms cannot buyOutBestBid."
+            "Loan has fixedTerms cannot buyOutBestOffer."
         );
 
         // Require that loan is active
@@ -1055,7 +1055,7 @@ contract ChainLendingAuction is
             // require offer has at least 24 hour additional duration
             require(
                 offer.duration >= (loanAuction.duration + 86400),
-                "Cannot buyOutBestBid. Offer duration must be at least 24 hours greater than current loan. "
+                "Cannot buyOutBestOffer. Offer duration must be at least 24 hours greater than current loan. "
             );
         }
 
@@ -1118,7 +1118,7 @@ contract ChainLendingAuction is
         loanAuction.amount = offer.amount;
         loanAuction.interestRate = offer.interestRate;
         loanAuction.duration = offer.duration;
-        loanAuction.bestBidTime = block.timestamp;
+        loanAuction.bestOfferTime = block.timestamp;
         loanAuction.historicInterest = currentHistoricInterest + lenderInterest;
 
         emit LoanBuyOut(
@@ -1320,7 +1320,7 @@ contract ChainLendingAuction is
             "Msg.sender is not the NFT owner"
         );
 
-        // Require amountDrawn is less than the bestBidAmount
+        // Require amountDrawn is less than the bestOfferAmount
         require(
             loanAuction.amountDrawn < loanAuction.amount,
             "Draw down amount not available"
@@ -1472,7 +1472,7 @@ contract ChainLendingAuction is
         loanAuction.amount = 0;
         loanAuction.interestRate = 0;
         loanAuction.duration = 0;
-        loanAuction.bestBidTime = 0;
+        loanAuction.bestOfferTime = 0;
         loanAuction.loanExecutedTime = 0;
         loanAuction.historicInterest = 0;
         loanAuction.amountDrawn = 0;
@@ -1768,7 +1768,7 @@ contract ChainLendingAuction is
         loanAuction.amount = 0;
         loanAuction.interestRate = 0;
         loanAuction.duration = 0;
-        loanAuction.bestBidTime = 0;
+        loanAuction.bestOfferTime = 0;
         loanAuction.loanExecutedTime = 0;
         loanAuction.historicInterest = 0;
         loanAuction.amountDrawn = 0;
@@ -1827,7 +1827,7 @@ contract ChainLendingAuction is
         // calculate seconds as lender
         uint256 secondsAslender = SafeMath.mul(
             decimalCompensation,
-            (block.timestamp - loanAuction.bestBidTime)
+            (block.timestamp - loanAuction.bestOfferTime)
         );
 
         // percent of time drawn as Lender
