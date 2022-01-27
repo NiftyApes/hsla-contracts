@@ -252,7 +252,6 @@ contract ChainLendingAuction is
         offer.creator = msg.sender;
         offer.floorTerm = false;
 
-
         bytes32 offerHash = getOfferHash(offer);
 
         if (offerBook.inserted[offerHash]) {
@@ -540,7 +539,7 @@ contract ChainLendingAuction is
         loanAuction.amount = offer.amount;
         loanAuction.interestRate = offer.interestRate;
         loanAuction.duration = offer.duration;
-        loanAuction.bestOfferTime = block.timestamp;
+        loanAuction.timeOfInterestStartBegin = block.timestamp;
         loanAuction.loanExecutedTime = block.timestamp;
         loanAuction.timeDrawn = offer.duration;
         loanAuction.amountDrawn = offer.amount;
@@ -702,7 +701,7 @@ contract ChainLendingAuction is
         loanAuction.amount = offer.amount;
         loanAuction.interestRate = offer.interestRate;
         loanAuction.duration = offer.duration;
-        loanAuction.bestOfferTime = block.timestamp;
+        loanAuction.timeOfInterestStartBegin = block.timestamp;
         loanAuction.loanExecutedTime = block.timestamp;
         loanAuction.timeDrawn = offer.duration;
         loanAuction.amountDrawn = offer.amount;
@@ -913,7 +912,7 @@ contract ChainLendingAuction is
         loanAuction.amount = offer.amount;
         loanAuction.interestRate = offer.interestRate;
         loanAuction.duration = offer.duration;
-        loanAuction.bestOfferTime = block.timestamp;
+        loanAuction.timeOfInterestStartBegin = block.timestamp;
         loanAuction.historicInterest = 0;
 
         // pull down funds from new lender
@@ -1037,7 +1036,7 @@ contract ChainLendingAuction is
         loanAuction.amount = offer.amount;
         loanAuction.interestRate = offer.interestRate;
         loanAuction.duration = offer.duration;
-        loanAuction.bestOfferTime = block.timestamp;
+        loanAuction.timeOfInterestStartBegin = block.timestamp;
         loanAuction.historicInterest = 0;
 
         // pull down funds from new lender
@@ -1179,7 +1178,7 @@ contract ChainLendingAuction is
         loanAuction.amount = offer.amount;
         loanAuction.interestRate = offer.interestRate;
         loanAuction.duration = offer.duration;
-        loanAuction.bestOfferTime = block.timestamp;
+        loanAuction.timeOfInterestStartBegin = block.timestamp;
         loanAuction.historicInterest = currentHistoricInterest + lenderInterest;
 
         emit LoanBuyOut(
@@ -1533,8 +1532,8 @@ contract ChainLendingAuction is
         loanAuction.amount = 0;
         loanAuction.interestRate = 0;
         loanAuction.duration = 0;
-        loanAuction.bestOfferTime = 0;
         loanAuction.loanExecutedTime = 0;
+        loanAuction.timeOfInterestStart = 0;
         loanAuction.historicInterest = 0;
         loanAuction.amountDrawn = 0;
         loanAuction.timeDrawn = 0;
@@ -1577,29 +1576,37 @@ contract ChainLendingAuction is
             "Msg.sender is not the NFT owner"
         );
 
-        // calculate interestAmount
-        uint256 interestAmount = partialAmount *
-            (loanAuction.interestRate * 100);
+        // calculate the amount of interest accrued by the lender
+        uint256 lenderInterest = calculateInterestAccruedBylender(
+            nftContractAddress,
+            nftId
+        );
+
+        loanAuction.historicInterest += lenderInterest;
+        loanAuction.timeOfInterestStart = block.timestamp;
 
         uint256 protocolDrawFee = partialAmount * loanDrawFeeProtocolPercentage;
 
         // calculate paymentAmount
-        uint256 paymentAmount = partialAmount -
-            interestAmount -
-            protocolDrawFee;
+        uint256 paymentAmount = partialAmount - protocolDrawFee;
 
         // if asset is not 0x0 process as Erc20
         if (
             loanAuction.asset !=
             address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
         ) {
+            require(
+                partialAmount < loanAuction.amountDrawn,
+                "Msg.value must be less than amountDrawn"
+            );
+
             _payErc20AndUpdateBalancesInternal(
                 loanAuction.asset,
                 cAsset,
                 loanAuction.lender,
                 msg.sender,
                 partialAmount,
-                interestAmount,
+                0,
                 paymentAmount
             );
         }
@@ -1619,7 +1626,7 @@ contract ChainLendingAuction is
                 loanAuction.lender,
                 msg.value,
                 msg.value,
-                interestAmount,
+                0,
                 paymentAmount
             );
         }
@@ -1829,7 +1836,7 @@ contract ChainLendingAuction is
         loanAuction.amount = 0;
         loanAuction.interestRate = 0;
         loanAuction.duration = 0;
-        loanAuction.bestOfferTime = 0;
+        loanAuction.timeOfInterestStart = 0;
         loanAuction.loanExecutedTime = 0;
         loanAuction.historicInterest = 0;
         loanAuction.amountDrawn = 0;
@@ -1888,7 +1895,7 @@ contract ChainLendingAuction is
         // calculate seconds as lender
         uint256 secondsAslender = SafeMath.mul(
             decimalCompensation,
-            (block.timestamp - loanAuction.bestOfferTime)
+            (block.timestamp - loanAuction.timeOfInterestStart)
         );
 
         // percent of time drawn as Lender

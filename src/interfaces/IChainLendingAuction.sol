@@ -19,10 +19,10 @@ interface IChainLendingAuction is ILiquidityProviders {
         uint256 interestRate;
         // loan duration of loan in number of seconds
         uint256 duration;
-        // timestamp of bestOffer
-        uint256 bestOfferTime;
         // timestamp of loan execution
         uint256 loanExecutedTime;
+        // timestamp of start of interest acummulation. Is reset when a new lender takes over the loan or the borrower makes a partial repayment. 
+        uint256 timeOfInterestStart;
         // cumulative interest of varying rates paid by new lenders to buy out the loan auction
         uint256 historicInterest;
         // amount withdrawn by the nftOwner. This is the amount they will pay interest on, with this value as minimum
