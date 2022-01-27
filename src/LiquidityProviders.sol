@@ -134,7 +134,10 @@ contract LiquidityProviders is
         require(cToken.mint(numTokensToSupply) == 0, "cToken.mint() failed");
 
         // updating the depositors cErc20 balance
-        cAssetBalances[cAsset][msg.sender] += vars.mintTokens;
+        cAssetBalances[cAsset][msg.sender] = SafeMath.add(
+            cAssetBalances[cAsset][msg.sender],
+            vars.mintTokens
+        );
 
         emit Erc20Supplied(msg.sender, asset, numTokensToSupply);
 
@@ -164,7 +167,10 @@ contract LiquidityProviders is
         );
 
         // updating the depositors cErc20 balance
-        cAssetBalances[cAsset][msg.sender] += numTokensToSupply;
+        cAssetBalances[cAsset][msg.sender] = SafeMath.add(
+            cAssetBalances[cAsset][msg.sender],
+            numTokensToSupply
+        );
 
         emit CErc20Supplied(msg.sender, cAsset, numTokensToSupply);
 
@@ -352,7 +358,10 @@ contract LiquidityProviders is
         cToken.mint{value: msg.value, gas: 250000}();
 
         // updating the depositors cErc20 balance
-        cAssetBalances[cEtherContract][msg.sender] += vars.mintTokens;
+        cAssetBalances[cEtherContract][msg.sender] = SafeMath.add(
+            cAssetBalances[cEtherContract][msg.sender],
+            vars.mintTokens
+        );
 
         emit EthSupplied(msg.sender, msg.value);
 
@@ -376,8 +385,10 @@ contract LiquidityProviders is
             "cToken.transferFrom failed"
         );
 
-        cAssetBalances[cEtherContract][msg.sender] += numTokensToSupply;
-
+        cAssetBalances[cEtherContract][msg.sender] = SafeMath.add(
+            cAssetBalances[cEtherContract][msg.sender],
+            numTokensToSupply
+        );
         emit CEthSupplied(msg.sender, numTokensToSupply);
 
         return numTokensToSupply;
