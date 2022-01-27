@@ -1789,7 +1789,7 @@ contract ChainLendingAuction is
         cToken.mint{value: msgValue, gas: 250000}();
 
         // update the to's utilized balance
-        utilizedCAssetBalances[cAsset][to] -= paymentAmount;
+        utilizedCAssetBalances[cAsset][to] -= paymentTokens;
 
         // update the to's total balance
         cAssetBalances[cAsset][to] += (interestAndPremiumTokens + mintDelta);
