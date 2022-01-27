@@ -709,8 +709,10 @@ contract ChainLendingAuction is
 
         // calculate protocol draw fee and subtract from amount
         // this leaves the protocol fee invested in Compound in this contract address' balance
-        uint256 drawAmountMinusFee = offer.amount -
-            (offer.amount * loanDrawFeeProtocolPercentage);
+        uint256 drawAmountMinusFee = SafeMath.sub(
+            offer.amount,
+            SafeMath.mul(offer.amount, loanDrawFeeProtocolPercentage)
+        );
 
         // *------- value and asset transfers -------* //
 
@@ -818,8 +820,10 @@ contract ChainLendingAuction is
         // require that the lenders available balance is sufficent to serve the loan
         require(
             // calculate lenders available ICERC20 balance and require it to be greater than or equal to vars.redeemTokens
-            (cAssetBalances[cAsset][lender] -
-                utilizedCAssetBalances[cAsset][lender]) >= vars.redeemTokens,
+            SafeMath.sub(
+                cAssetBalances[cAsset][lender],
+                utilizedCAssetBalances[cAsset][lender]
+            ) >= vars.redeemTokens,
             "Lender does not have a sufficient balance to serve this loan"
         );
 
@@ -891,9 +895,10 @@ contract ChainLendingAuction is
         uint256 fullRepayment = loanAuction.amountDrawn + interestOwedToLender;
 
         require(
-            (cAssetBalances[cAsset][prospectiveLender] -
-                utilizedCAssetBalances[cAsset][prospectiveLender]) >=
-                fullRepayment,
+            SafeMath.sub(
+                cAssetBalances[cAsset][prospectiveLender],
+                utilizedCAssetBalances[cAsset][prospectiveLender]
+            ) >= fullRepayment,
             "Prospective lender does not have sufficient balance to buy out loan"
         );
 
@@ -1015,9 +1020,10 @@ contract ChainLendingAuction is
         address prospectiveLender = offer.creator;
 
         require(
-            (cAssetBalances[cAsset][prospectiveLender] -
-                utilizedCAssetBalances[cAsset][prospectiveLender]) >=
-                fullRepayment,
+            SafeMath.sub(
+                cAssetBalances[cAsset][prospectiveLender],
+                utilizedCAssetBalances[cAsset][prospectiveLender]
+            ) >= fullRepayment,
             "Prospective lender does not have sufficient balance to buy out loan"
         );
 
@@ -1142,9 +1148,10 @@ contract ChainLendingAuction is
         if (loanAuction.lender != msg.sender) {
             // require prospective lender has sufficient available balance to refinance loan
             require(
-                (cAssetBalances[cAsset][msg.sender] -
-                    utilizedCAssetBalances[cAsset][msg.sender]) >=
-                    fullBuyOutAmount,
+                SafeMath.sub(
+                    cAssetBalances[cAsset][msg.sender],
+                    utilizedCAssetBalances[cAsset][msg.sender]
+                ) >= fullBuyOutAmount,
                 "Prospective lender does not have sufficient balance to refinance loan"
             );
 
@@ -1164,9 +1171,10 @@ contract ChainLendingAuction is
             // If current lender is refinancing the loan they do not need to pay any fees or buy themselves out.
         } else if (loanAuction.lender == msg.sender) {
             require(
-                (cAssetBalances[cAsset][msg.sender] -
-                    utilizedCAssetBalances[cAsset][msg.sender]) >=
-                    offer.amount - loanAuction.amountDrawn,
+                SafeMath.sub(
+                    cAssetBalances[cAsset][msg.sender],
+                    utilizedCAssetBalances[cAsset][msg.sender]
+                ) >= SafeMath.sub(offer.amount, loanAuction.amountDrawn),
                 "Lender does not have sufficient balance to refinance loan"
             );
         }
@@ -1265,10 +1273,17 @@ contract ChainLendingAuction is
         utilizedCAssetBalances[cAsset][from] += paymentTokens;
 
         // update from's total balance
-        cAssetBalances[cAsset][from] -= protocolPremiumFeeTokens;
+        // This removes the protocol fee from their total deposited balance
+        cAssetBalances[cAsset][from] = SafeMath.sub(
+            cAssetBalances[cAsset][from],
+            protocolPremiumFeeTokens
+        );
 
         // update the to's utilized balance
-        utilizedCAssetBalances[cAsset][to] -= paymentTokens;
+        utilizedCAssetBalances[cAsset][to] = SafeMath.sub(
+            utilizedCAssetBalances[cAsset][to],
+            paymentTokens
+        );
 
         // update the to's total balance
         cAssetBalances[cAsset][to] += interestAndPremiumTokens;
@@ -1402,8 +1417,10 @@ contract ChainLendingAuction is
         loanAuction.amountDrawn += drawAmount;
 
         // calculate fee and subtract from drawAmount
-        uint256 drawAmountMinusFee = drawAmount -
-            (drawAmount * loanDrawFeeProtocolPercentage);
+        uint256 drawAmountMinusFee = SafeMath.sub(
+            drawAmount,
+            SafeMath.mul(drawAmount, loanDrawFeeProtocolPercentage)
+        );
 
         // if asset is not 0x0 process as Erc20
         if (
@@ -1588,7 +1605,7 @@ contract ChainLendingAuction is
         uint256 protocolDrawFee = partialAmount * loanDrawFeeProtocolPercentage;
 
         // calculate paymentAmount
-        uint256 paymentAmount = partialAmount - protocolDrawFee;
+        uint256 paymentAmount = SafeMath.sub(partialAmount, protocolDrawFee);
 
         // if asset is not 0x0 process as Erc20
         if (
@@ -1632,7 +1649,10 @@ contract ChainLendingAuction is
         }
 
         // update amountDrawn
-        loanAuction.amountDrawn -= paymentAmount;
+        loanAuction.amountDrawn = SafeMath.sub(
+            loanAuction.amountDrawn,
+            paymentAmount
+        );
 
         emit PartialRepayment(
             nftContractAddress,
@@ -1707,7 +1727,10 @@ contract ChainLendingAuction is
         cToken.mint(fullAmount);
 
         // update the tos utilized balance
-        utilizedCAssetBalances[cAsset][to] -= paymentTokens;
+        utilizedCAssetBalances[cAsset][to] = SafeMath.sub(
+            utilizedCAssetBalances[cAsset][to],
+            paymentTokens
+        );
 
         // update the tos total balance
         cAssetBalances[cAsset][to] += interestAndPremiumTokens;
@@ -1784,15 +1807,20 @@ contract ChainLendingAuction is
                 );
         }
 
-        uint256 mintDelta = msgValueTokens -
-            (interestAndPremiumTokens + paymentTokens);
+        uint256 mintDelta = SafeMath.sub(
+            msgValueTokens,
+            SafeMath.add(interestAndPremiumTokens, paymentTokens)
+        );
 
         // should have require statement to ensure mint is successful before proceeding
         // // mint CEth tokens to this contract address
         cToken.mint{value: msgValue, gas: 250000}();
 
         // update the to's utilized balance
-        utilizedCAssetBalances[cAsset][to] -= paymentAmount;
+        utilizedCAssetBalances[cAsset][to] = SafeMath.sub(
+            utilizedCAssetBalances[cAsset][to],
+            paymentTokens
+        );
 
         // update the to's total balance
         cAssetBalances[cAsset][to] += (interestAndPremiumTokens + mintDelta);
@@ -1844,11 +1872,16 @@ contract ChainLendingAuction is
         loanAuction.fixedTerms = false;
 
         // update lenders utilized balance
-        utilizedCAssetBalances[cAsset][loanAuction.lender] -= loanAuction
-            .amountDrawn;
+        utilizedCAssetBalances[cAsset][loanAuction.lender] = SafeMath.sub(
+            cAssetBalances[cAsset][loanAuction.lender],
+            loanAuction.amountDrawn
+        );
 
         // update lenders total balance
-        cAssetBalances[cAsset][loanAuction.lender] -= loanAuction.amountDrawn;
+        cAssetBalances[cAsset][loanAuction.lender] = SafeMath.sub(
+            cAssetBalances[cAsset][loanAuction.lender],
+            loanAuction.amountDrawn
+        );
 
         // transferFrom NFT from contract to lender
         IERC721(nftContractAddress).transferFrom(
@@ -1895,7 +1928,7 @@ contract ChainLendingAuction is
         // calculate seconds as lender
         uint256 secondsAslender = SafeMath.mul(
             decimalCompensation,
-            (block.timestamp - loanAuction.timeOfInterestStart)
+            SafeMath.sub(block.timestamp, loanAuction.timeOfInterestStart)
         );
 
         // percent of time drawn as Lender
