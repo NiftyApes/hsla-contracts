@@ -539,7 +539,7 @@ contract ChainLendingAuction is
         loanAuction.amount = offer.amount;
         loanAuction.interestRate = offer.interestRate;
         loanAuction.duration = offer.duration;
-        loanAuction.timeOfInterestStartBegin = block.timestamp;
+        loanAuction.timeOfInterestStart = block.timestamp;
         loanAuction.loanExecutedTime = block.timestamp;
         loanAuction.timeDrawn = offer.duration;
         loanAuction.amountDrawn = offer.amount;
@@ -701,7 +701,7 @@ contract ChainLendingAuction is
         loanAuction.amount = offer.amount;
         loanAuction.interestRate = offer.interestRate;
         loanAuction.duration = offer.duration;
-        loanAuction.timeOfInterestStartBegin = block.timestamp;
+        loanAuction.timeOfInterestStart = block.timestamp;
         loanAuction.loanExecutedTime = block.timestamp;
         loanAuction.timeDrawn = offer.duration;
         loanAuction.amountDrawn = offer.amount;
@@ -912,7 +912,7 @@ contract ChainLendingAuction is
         loanAuction.amount = offer.amount;
         loanAuction.interestRate = offer.interestRate;
         loanAuction.duration = offer.duration;
-        loanAuction.timeOfInterestStartBegin = block.timestamp;
+        loanAuction.timeOfInterestStart = block.timestamp;
         loanAuction.historicInterest = 0;
 
         // pull down funds from new lender
@@ -1036,7 +1036,7 @@ contract ChainLendingAuction is
         loanAuction.amount = offer.amount;
         loanAuction.interestRate = offer.interestRate;
         loanAuction.duration = offer.duration;
-        loanAuction.timeOfInterestStartBegin = block.timestamp;
+        loanAuction.timeOfInterestStart = block.timestamp;
         loanAuction.historicInterest = 0;
 
         // pull down funds from new lender
@@ -1178,7 +1178,7 @@ contract ChainLendingAuction is
         loanAuction.amount = offer.amount;
         loanAuction.interestRate = offer.interestRate;
         loanAuction.duration = offer.duration;
-        loanAuction.timeOfInterestStartBegin = block.timestamp;
+        loanAuction.timeOfInterestStart = block.timestamp;
         loanAuction.historicInterest = currentHistoricInterest + lenderInterest;
 
         emit LoanBuyOut(
