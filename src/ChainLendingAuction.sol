@@ -6,7 +6,6 @@ import "./interfaces/compound/ICEther.sol";
 import "./interfaces/IChainLendingAuction.sol";
 import "./interfaces/compound/ICERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
@@ -21,8 +20,6 @@ contract ChainLendingAuction is
     LiquidityProviders,
     EIP712
 {
-    // Solidity 0.8.x provides safe math, but uses an invalid opcode error which consumes all gas. SafeMath uses revert which returns all gas.
-    using SafeMath for uint256;
     using ECDSA for bytes32;
 
     // ---------- STATE VARIABLES --------------- //
@@ -38,13 +35,13 @@ contract ChainLendingAuction is
 
     // fee paid to protocol by borrower for drawing down loan
     // decimal to 10000 because of whole number math
-    uint256 public loanDrawFeeProtocolPercentage = SafeMath.div(1, 10000);
+    uint256 public loanDrawFeeProtocolPercentage = uint256(1) / 10000;
 
     // premium paid to current lender by new lender for buying out the loan
-    uint256 public buyOutPremiumLenderPercentage = SafeMath.div(9, 100000);
+    uint256 public buyOutPremiumLenderPercentage = uint256(9) / 100000;
 
     // premium paid to protocol by new lender for buying out the loan
-    uint256 public buyOutPremiumProtocolPercentage = SafeMath.div(1, 100000);
+    uint256 public buyOutPremiumProtocolPercentage = uint256(1) / 100000;
 
     // ---------- FUNCTIONS -------------- //
 
@@ -1893,37 +1890,26 @@ contract ChainLendingAuction is
         uint256 decimalCompensation = 100000000;
 
         // calculate seconds as lender
-        uint256 secondsAslender = SafeMath.mul(
-            decimalCompensation,
-            (block.timestamp - loanAuction.timeOfInterestStart)
-        );
+        uint256 secondsAslender = decimalCompensation *
+            (block.timestamp - loanAuction.timeOfInterestStart);
 
         // percent of time drawn as Lender
-        uint256 percentOfTimeDrawnAsLender = SafeMath.div(
-            secondsAslender,
-            loanAuction.timeDrawn
-        );
+        uint256 percentOfTimeDrawnAsLender = secondsAslender /
+            loanAuction.timeDrawn;
 
         // percent of value of amountDrawn earned
-        uint256 percentOfAmountDrawn = SafeMath.mul(
-            loanAuction.amountDrawn,
-            percentOfTimeDrawnAsLender
-        );
+        uint256 percentOfAmountDrawn = loanAuction.amountDrawn *
+            percentOfTimeDrawnAsLender;
 
         // Multiply principle by basis points first
-        uint256 interestMulPercentOfAmountDrawn = SafeMath.mul(
-            loanAuction.interestRate,
-            percentOfAmountDrawn
-        );
+        uint256 interestMulPercentOfAmountDrawn = loanAuction.interestRate *
+            percentOfAmountDrawn;
 
         // divide by basis decimals
-        uint256 interestDecimals = SafeMath.div(
-            interestMulPercentOfAmountDrawn,
-            10000
-        );
+        uint256 interestDecimals = interestMulPercentOfAmountDrawn / 10000;
 
         // divide by decimalCompensation
-        uint256 finalAmount = SafeMath.div(interestDecimals, 100000000);
+        uint256 finalAmount = interestDecimals / 100000000;
 
         // return interest amount
         return finalAmount;
@@ -1975,24 +1961,18 @@ contract ChainLendingAuction is
     }
 
     function updateLoanDrawFee(uint256 newFeeAmount) external onlyOwner {
-        loanDrawFeeProtocolPercentage = SafeMath.div(newFeeAmount, 10000);
+        loanDrawFeeProtocolPercentage = newFeeAmount / 10000;
     }
 
     function updateBuyOutPremiumLenderPercentage(
         uint256 newPremiumLenderPercentage
     ) external onlyOwner {
-        buyOutPremiumLenderPercentage = SafeMath.div(
-            newPremiumLenderPercentage,
-            100000
-        );
+        buyOutPremiumLenderPercentage = newPremiumLenderPercentage / 100000;
     }
 
     function updateBuyOutPremiumProtocolPercentage(
         uint256 newPremiumProtocolPercentage
     ) external onlyOwner {
-        buyOutPremiumProtocolPercentage = SafeMath.div(
-            newPremiumProtocolPercentage,
-            1000
-        );
+        buyOutPremiumProtocolPercentage = newPremiumProtocolPercentage / 1000;
     }
 }

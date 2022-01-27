@@ -2,7 +2,6 @@
 
 pragma solidity ^0.8.2;
 
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
@@ -27,9 +26,6 @@ contract LiquidityProviders is
     ReentrancyGuard,
     TokenErrorReporter
 {
-    // Solidity 0.8.x provides safe math, but uses an invalid opcode error which consumes all gas. SafeMath uses revert which returns all gas.
-    using SafeMath for uint256;
-
     // ---------- STATE VARIABLES --------------- //
 
     // Mapping of assetAddress to cAssetAddress
