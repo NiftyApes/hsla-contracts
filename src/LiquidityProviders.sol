@@ -213,13 +213,17 @@ contract LiquidityProviders is
 
             // require msg.sender has sufficient available balance of cErc20
             require(
-                (cAssetBalances[cAsset][msg.sender] -
-                    utilizedCAssetBalances[cAsset][msg.sender]) >=
-                    vars.redeemTokens,
+                SafeMath.sub(
+                    cAssetBalances[cAsset][msg.sender],
+                    utilizedCAssetBalances[cAsset][msg.sender]
+                ) >= vars.redeemTokens,
                 "Must have an available balance greater than or equal to amountToWithdraw"
             );
 
-            cAssetBalances[cAsset][msg.sender] -= vars.redeemTokens;
+            cAssetBalances[cAsset][msg.sender] = SafeMath.sub(
+                cAssetBalances[cAsset][msg.sender],
+                vars.redeemTokens
+            );
 
             // Retrieve your asset based on an amountToWithdraw of the asset
             require(
@@ -255,13 +259,17 @@ contract LiquidityProviders is
 
             // require msg.sender has sufficient available balance of cErc20
             require(
-                (cAssetBalances[cAsset][msg.sender] -
-                    utilizedCAssetBalances[cAsset][msg.sender]) >=
-                    vars.redeemTokens,
+                SafeMath.sub(
+                    cAssetBalances[cAsset][msg.sender],
+                    utilizedCAssetBalances[cAsset][msg.sender]
+                ) >= vars.redeemTokens,
                 "Must have an available balance greater than or equal to amountToWithdraw"
             );
 
-            cAssetBalances[cAsset][msg.sender] -= vars.redeemTokens;
+            cAssetBalances[cAsset][msg.sender] = SafeMath.sub(
+                cAssetBalances[cAsset][msg.sender],
+                vars.redeemTokens
+            );
 
             // Retrieve your asset based on an amountToWithdraw of the asset
             require(
@@ -296,12 +304,17 @@ contract LiquidityProviders is
 
         // require msg.sender has sufficient available balance of cErc20
         require(
-            (cAssetBalances[cAsset][msg.sender] -
-                utilizedCAssetBalances[cAsset][msg.sender]) >= amountToWithdraw,
+            SafeMath.sub(
+                cAssetBalances[cAsset][msg.sender],
+                utilizedCAssetBalances[cAsset][msg.sender]
+            ) >= amountToWithdraw,
             "Must have an available balance greater than or equal to amountToWithdraw"
         );
         // updating the depositors cErc20 balance
-        cAssetBalances[cAsset][msg.sender] -= amountToWithdraw;
+        cAssetBalances[cAsset][msg.sender] = SafeMath.sub(
+            cAssetBalances[cAsset][msg.sender],
+            amountToWithdraw
+        );
 
         // transfer cErc20 tokens to depositor
         require(
@@ -409,13 +422,17 @@ contract LiquidityProviders is
 
             // require msg.sender has sufficient available balance of cEth
             require(
-                (cAssetBalances[cEtherContract][msg.sender] -
-                    utilizedCAssetBalances[cEtherContract][msg.sender]) >=
-                    vars.redeemTokens,
+                SafeMath.sub(
+                    cAssetBalances[cEtherContract][msg.sender],
+                    utilizedCAssetBalances[cEtherContract][msg.sender]
+                ) >= vars.redeemTokens,
                 "Must have an available balance greater than or equal to amountToWithdraw"
             );
 
-            cAssetBalances[cEtherContract][msg.sender] -= vars.redeemTokens;
+            cAssetBalances[cEtherContract][msg.sender] = SafeMath.sub(
+                cAssetBalances[cEtherContract][msg.sender],
+                vars.redeemTokens
+            );
 
             // Retrieve your asset based on an amountToWithdraw of the asset
             require(
@@ -450,13 +467,17 @@ contract LiquidityProviders is
 
             // require msg.sender has sufficient available balance of cEth
             require(
-                (cAssetBalances[cEtherContract][msg.sender] -
-                    utilizedCAssetBalances[cEtherContract][msg.sender]) >=
-                    vars.redeemTokens,
+                SafeMath.sub(
+                    cAssetBalances[cEtherContract][msg.sender],
+                    utilizedCAssetBalances[cEtherContract][msg.sender]
+                ) >= vars.redeemTokens,
                 "Must have an available balance greater than or equal to amountToWithdraw"
             );
 
-            cAssetBalances[cEtherContract][msg.sender] -= vars.redeemTokens;
+            cAssetBalances[cEtherContract][msg.sender] = SafeMath.sub(
+                cAssetBalances[cEtherContract][msg.sender],
+                vars.redeemTokens
+            );
 
             // Retrieve your asset based on an amountToWithdraw of the asset
             require(
@@ -491,14 +512,18 @@ contract LiquidityProviders is
 
         // require msg.sender has sufficient available balance of cEth
         require(
-            (cAssetBalances[cEtherContract][msg.sender] -
-                utilizedCAssetBalances[cEtherContract][msg.sender]) >=
-                amountToWithdraw,
+            SafeMath.sub(
+                cAssetBalances[cEtherContract][msg.sender],
+                utilizedCAssetBalances[cEtherContract][msg.sender]
+            ) >= amountToWithdraw,
             "Must have an available balance greater than or equal to amountToWithdraw"
         );
 
         // updating the depositors cErc20 balance
-        cAssetBalances[cEtherContract][msg.sender] -= amountToWithdraw;
+        cAssetBalances[cEtherContract][msg.sender] = SafeMath.sub(
+            cAssetBalances[cEtherContract][msg.sender],
+            amountToWithdraw
+        );
 
         // transfer cErc20 tokens to depositor
         require(
