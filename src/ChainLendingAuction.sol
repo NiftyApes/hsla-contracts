@@ -368,7 +368,7 @@ contract ChainLendingAuction is
         Offer calldata offer,
         bytes calldata signature,
         uint256 nftId // nftId should match offer.nftId if floorTerm false, nftId should not match if floorTerm true. Need to provide as function parameter to pass nftId with floor terms.
-    ) external payable whenNotPaused {
+    ) external payable whenNotPaused nonReentrant {
         // require signature has not been cancelled/bid withdrawn
         require(
             _cancelledOrFinalized[signature] == false,
@@ -439,7 +439,7 @@ contract ChainLendingAuction is
         address nftContractAddress,
         uint256 nftId,
         bytes32 offerHash
-    ) external payable whenNotPaused {
+    ) external payable whenNotPaused nonReentrant {
         // instantiate Offer Struct
         Offer storage offer = _floorOfferBooks[nftContractAddress].offers[
             offerHash
@@ -452,7 +452,7 @@ contract ChainLendingAuction is
         address nftContractAddress,
         uint256 nftId,
         bytes32 offerHash
-    ) external payable whenNotPaused {
+    ) external payable whenNotPaused nonReentrant {
         // instantiate Offer Struct
         Offer storage offer = _nftOfferBooks[nftContractAddress][nftId].offers[
             offerHash
@@ -586,6 +586,8 @@ contract ChainLendingAuction is
     function sigExecuteLoanByAsk(Offer calldata offer, bytes calldata signature)
         external
         payable
+        whenNotPaused
+        nonReentrant
     {
         // require signature has not been cancelled/bid withdrawn
         require(
@@ -627,7 +629,7 @@ contract ChainLendingAuction is
         address nftContractAddress,
         uint256 nftId,
         bytes32 offerHash
-    ) public payable {
+    ) public payable whenNotPaused nonReentrant {
         // instantiate LoanAuction Struct
         Offer storage offer = _nftOfferBooks[nftContractAddress][nftId].offers[
             offerHash
@@ -777,7 +779,7 @@ contract ChainLendingAuction is
         ICERC20 cToken = ICERC20(cAsset);
 
         // redeem underlying from cToken to this contract
-        cToken.redeemUnderlying(amount);
+        require(cToken.redeemUnderlying(amount) == 0, "cToken.redeemUnderlying() failed");
 
         // Send Eth to borrower
         (bool success, ) = (nftOwner).call{value: amount}("");
@@ -831,6 +833,7 @@ contract ChainLendingAuction is
         external
         payable
         whenNotPaused
+        nonReentrant
     {
         // Instantiate LoanAuction Struct
         LoanAuction storage loanAuction = _loanAuctions[
@@ -933,7 +936,7 @@ contract ChainLendingAuction is
         address nftContractAddress,
         uint256 nftId,
         bytes32 offerHash
-    ) external payable whenNotPaused {
+    ) external payable whenNotPaused nonReentrant {
         Offer storage offer = _floorOfferBooks[nftContractAddress].offers[
             offerHash
         ];
@@ -945,7 +948,7 @@ contract ChainLendingAuction is
         address nftContractAddress,
         uint256 nftId,
         bytes32 offerHash
-    ) external payable whenNotPaused {
+    ) external payable whenNotPaused nonReentrant {
         Offer storage offer = _floorOfferBooks[nftContractAddress].offers[
             offerHash
         ];
@@ -1485,43 +1488,10 @@ contract ChainLendingAuction is
             protocolDrawFee +
             loanAuction.amountDrawn;
 
-        // if asset is not 0x0 process as Erc20
-        if (
-            loanAuction.asset !=
-            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
-        ) {
-            // protocolPremiumFee is taken here. Full amount is minted to this contract address' balance in Compound and amount owed to lender is updated in their balance. The delta is the protocol premium fee.
-            _payErc20AndUpdateBalancesInternal(
-                loanAuction.asset,
-                cAsset,
-                loanAuction.lender,
-                msg.sender,
-                fullRepayment,
-                interestOwedToLender,
-                loanAuction.amountDrawn
-            );
-        }
-        // else process as ETH
-        else if (
-            loanAuction.asset ==
-            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
-        ) {
-            // check that transaction covers the full value of the loan
-            require(
-                msg.value >= fullRepayment,
-                "Must repay full amount of loan drawn plus interest and fee. Account for additional time for interest."
-            );
-            // protocolPremiumFee is taken here. Full amount is minted to this contract address' balance in Compound and amount owed to lender is updated in their balance. The delta is the protocol premium fee.
-            _payEthAndUpdateBalancesInternal(
-                cAsset,
-                loanAuction.lender,
-                msg.value,
-                msg.value,
-                interestOwedToLender,
-                loanAuction.amountDrawn
-            );
-        }
-
+        address currentAsset = loanAuction.asset;
+        address currentLender = loanAuction.lender;
+        uint256 currentAmountDrawn = loanAuction.amountDrawn;
+        
         // reset loanAuction
         loanAuction.nftOwner = address(0);
         loanAuction.lender = address(0);
@@ -1535,6 +1505,43 @@ contract ChainLendingAuction is
         loanAuction.amountDrawn = 0;
         loanAuction.timeDrawn = 0;
         loanAuction.fixedTerms = false;
+
+        // if asset is not 0x0 process as Erc20
+        if (
+            currentAsset !=
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
+        ) {
+            // protocolPremiumFee is taken here. Full amount is minted to this contract address' balance in Compound and amount owed to lender is updated in their balance. The delta is the protocol premium fee.
+            _payErc20AndUpdateBalancesInternal(
+                currentAsset,
+                cAsset,
+                currentLender,
+                msg.sender,
+                fullRepayment,
+                interestOwedToLender,
+                currentAmountDrawn
+            );
+        }
+        // else process as ETH
+        else if (
+            currentAsset ==
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
+        ) {
+            // check that transaction covers the full value of the loan
+            require(
+                msg.value >= fullRepayment,
+                "Must repay full amount of loan drawn plus interest and fee. Account for additional time for interest."
+            );
+            // protocolPremiumFee is taken here. Full amount is minted to this contract address' balance in Compound and amount owed to lender is updated in their balance. The delta is the protocol premium fee.
+            _payEthAndUpdateBalancesInternal(
+                cAsset,
+                currentLender,
+                msg.value,
+                msg.value,
+                interestOwedToLender,
+                currentAmountDrawn
+            );
+        }
 
         // transferFrom NFT from contract to nftOwner
         IERC721(nftContractAddress).transferFrom(
@@ -1587,13 +1594,17 @@ contract ChainLendingAuction is
         // calculate paymentAmount
         uint256 paymentAmount = partialAmount - protocolDrawFee;
 
+        uint256 currentAmountDrawn = loanAuction.amountDrawn;
+                // update amountDrawn
+        loanAuction.amountDrawn -= paymentAmount;
+
         // if asset is not 0x0 process as Erc20
         if (
             loanAuction.asset !=
             address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
         ) {
             require(
-                partialAmount < loanAuction.amountDrawn,
+                partialAmount < currentAmountDrawn,
                 "Msg.value must be less than amountDrawn"
             );
 
@@ -1614,7 +1625,7 @@ contract ChainLendingAuction is
         ) {
             // check that transaction covers the full value of the loan
             require(
-                msg.value < loanAuction.amountDrawn,
+                msg.value < currentAmountDrawn,
                 "Msg.value must be less than amountDrawn"
             );
 
@@ -1627,9 +1638,6 @@ contract ChainLendingAuction is
                 paymentAmount
             );
         }
-
-        // update amountDrawn
-        loanAuction.amountDrawn -= paymentAmount;
 
         emit PartialRepayment(
             nftContractAddress,

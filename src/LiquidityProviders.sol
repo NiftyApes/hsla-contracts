@@ -39,6 +39,7 @@ contract LiquidityProviders is
     mapping(address => mapping(address => uint256)) public cAssetBalances;
 
     // Mapping of cAssetBalance to cAssetAddress to depositor address
+    // only initialized in ChainLendingAuction.sol
     mapping(address => mapping(address => uint256))
         public utilizedCAssetBalances;
 
@@ -46,6 +47,7 @@ contract LiquidityProviders is
      * @notice Mapping of allCAssetsEntered to depositorAddress
      */
     // TODO(This could be obviated with iterable mapping and reversing input order tuple for cAssetBalances)
+    // TODO this is not fully implemented. There is no addition of new assets when a user deposits.
     mapping(address => address[]) internal accountAssets;
 
     // ---------- FUNCTIONS -------------- //
@@ -111,7 +113,7 @@ contract LiquidityProviders is
         );
 
         // Approve transfer on the ERC20 contract from LiquidityProviders contract
-        underlying.approve(cAsset, numTokensToSupply);
+        require(underlying.approve(cAsset, numTokensToSupply) == true, "underlying.approve() failed");
 
         // calculate expectedAmountToBeMinted. This is the same conversion math performed in cToken.mint()
         MintLocalVars memory vars;

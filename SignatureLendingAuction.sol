@@ -97,7 +97,7 @@ contract SignatureLendingAuction is
         // bytes offerHash,
         bytes calldata signature,
         uint256 nftId // nftId should match offer.nftId if floorTerm false, nftId should not match if floorTerm true. Need to provide as function parameter to pass nftId with floor terms.
-    ) external payable whenNotPaused {
+    ) external payable whenNotPaused nonReentrant {
         // require signature has not been cancelled/bid withdrawn
         require(
             _cancelledOrFinalized[signature] == false,
@@ -264,7 +264,7 @@ contract SignatureLendingAuction is
         Offer calldata offer,
         // bytes offerHash,
         bytes calldata signature
-    ) external payable {
+    ) external payable whenNotPaused nonReentrant {
         // require signature has not been cancelled/bid withdrawn
         require(
             _cancelledOrFinalized[signature] == false,
@@ -481,7 +481,7 @@ contract SignatureLendingAuction is
     function refinanceByBorrower(Offer memory offer, bytes memory signature)
         external
         payable
-        whenNotPaused
+        whenNotPaused nonReentrant
     {
         // Instantiate LoanAuction Struct
         LoanAuction storage loanAuction = _loanAuctions[
