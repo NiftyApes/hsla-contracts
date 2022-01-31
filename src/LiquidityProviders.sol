@@ -1,8 +1,7 @@
 //SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.2;
+pragma solidity ^0.8.11;
 
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
@@ -27,9 +26,6 @@ contract LiquidityProviders is
     ReentrancyGuard,
     TokenErrorReporter
 {
-    // Solidity 0.8.x provides safe math, but uses an invalid opcode error which consumes all gas. SafeMath uses revert which returns all gas.
-    using SafeMath for uint256;
-
     // ---------- STATE VARIABLES --------------- //
 
     // Mapping of assetAddress to cAssetAddress
@@ -43,6 +39,7 @@ contract LiquidityProviders is
     mapping(address => mapping(address => uint256)) public cAssetBalances;
 
     // Mapping of cAssetBalance to cAssetAddress to depositor address
+    // only initialized in LendingAuction.sol
     mapping(address => mapping(address => uint256))
         public utilizedCAssetBalances;
 
@@ -50,6 +47,7 @@ contract LiquidityProviders is
      * @notice Mapping of allCAssetsEntered to depositorAddress
      */
     // TODO(This could be obviated with iterable mapping and reversing input order tuple for cAssetBalances)
+    // TODO this is not fully implemented. There is no addition of new assets when a user deposits.
     mapping(address => address[]) internal accountAssets;
 
     // ---------- FUNCTIONS -------------- //
@@ -115,7 +113,10 @@ contract LiquidityProviders is
         );
 
         // Approve transfer on the ERC20 contract from LiquidityProviders contract
-        underlying.approve(cAsset, numTokensToSupply);
+        require(
+            underlying.approve(cAsset, numTokensToSupply) == true,
+            "underlying.approve() failed"
+        );
 
         // calculate expectedAmountToBeMinted. This is the same conversion math performed in cToken.mint()
         MintLocalVars memory vars;
@@ -510,4 +511,6 @@ contract LiquidityProviders is
 
         return amountToWithdraw;
     }
+
+    // create admin withdraw functions to directly manipulate COMP and other balances of contract
 }
