@@ -922,8 +922,7 @@ contract ChainLendingAuction is
 
         // require statement for offer amount to be greater than or equal to full repayment
         require(
-            offer.amount >=
-                fullRepayment,
+            offer.amount >= fullRepayment,
             "Offer amount must be greater than or equal to current amount drawn + interest owed"
         );
 
