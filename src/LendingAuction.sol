@@ -3,7 +3,7 @@ pragma solidity ^0.8.11;
 
 import "./LiquidityProviders.sol";
 import "./interfaces/compound/ICEther.sol";
-import "./interfaces/IChainLendingAuction.sol";
+import "./interfaces/ILendingAuction.sol";
 import "./interfaces/compound/ICERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
@@ -15,11 +15,7 @@ import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
  * @author NiftyApes
  */
 
-contract ChainLendingAuction is
-    IChainLendingAuction,
-    LiquidityProviders,
-    EIP712
-{
+contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     using ECDSA for bytes32;
 
     // ---------- STATE VARIABLES --------------- //
