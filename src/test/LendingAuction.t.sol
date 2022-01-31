@@ -13,14 +13,14 @@ import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 // @dev These tests are intended to be run against a forked mainnet.
 
 // TODO(Refactor/deduplicate with LiquidityProviders testing)
-contract TestChainLendingAuction is DSTest, TestUtility, ERC721Holder {
+contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
     IUniswapV2Router SushiSwapRouter;
     MockERC721Token mockNFT;
     IWETH WETH;
     IERC20 DAI;
     ICERC20 cDAI;
     ICEther cETH;
-    ChainLendingAuction chainLendingAuction;
+    LendingAuction LA;
 
     function setUp() public {
         // Setup WETH
@@ -68,10 +68,10 @@ contract TestChainLendingAuction is DSTest, TestUtility, ERC721Holder {
         cDAI.mint(50000 ether);
 
         // Setup the liquidity providers contract
-        chainLendingAuction = new ChainLendingAuction();
+        LA = new LendingAuction();
         // Allow assets for testing
-        chainLendingAuction.setCAssetAddress(address(DAI), address(cDAI));
-        chainLendingAuction.setCAssetAddress(
+        LA.setCAssetAddress(address(DAI), address(cDAI));
+        LA.setCAssetAddress(
             address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
             address(cETH)
         );
@@ -84,42 +84,42 @@ contract TestChainLendingAuction is DSTest, TestUtility, ERC721Holder {
         mockNFT.safeMint(address(this), 0);
 
         // Approve spends
-        DAI.approve(address(chainLendingAuction), max);
-        cDAI.approve(address(chainLendingAuction), max);
-        cETH.approve(address(chainLendingAuction), max);
+        DAI.approve(address(LA), max);
+        cDAI.approve(address(LA), max);
+        cETH.approve(address(LA), max);
 
         // Supply to 10k DAI contract
-        chainLendingAuction.supplyErc20(address(DAI), 100000 ether);
+        LA.supplyErc20(address(DAI), 100000 ether);
         // Supply 10 ether to contract
-        chainLendingAuction.supplyEth{value: 10 ether}();
+        LA.supplyEth{value: 10 ether}();
         // Offer NFT for sale
     }
 
     // Test Cases
 
     function testLoanDrawFeeProtocolPercentage() public {
-        chainLendingAuction.loanDrawFeeProtocolPercentage();
+        LA.loanDrawFeeProtocolPercentage();
     }
 
     function testBuyOutPremiumLenderPercentage() public {
-        chainLendingAuction.buyOutPremiumLenderPercentage();
+        LA.buyOutPremiumLenderPercentage();
     }
 
     function testBuyOutPremiumProtocolPercentage() public {
-        chainLendingAuction.buyOutPremiumProtocolPercentage();
+        LA.buyOutPremiumProtocolPercentage();
     }
 
     function testUpdateLoanDrawFee() public {
         //TODO(parametic sweep)
         //TODO(Assert value)
-        chainLendingAuction.updateLoanDrawFee(5);
+        LA.updateLoanDrawFee(5);
     }
 
     function testUpdateBuyOutPremiumLenderPercentage() public {
-        chainLendingAuction.updateBuyOutPremiumLenderPercentage(5);
+        LA.updateBuyOutPremiumLenderPercentage(5);
     }
 
     function testUpdateBuyOutPremiumProtocolPercentage() public {
-        chainLendingAuction.updateBuyOutPremiumProtocolPercentage(5);
+        LA.updateBuyOutPremiumProtocolPercentage(5);
     }
 }
