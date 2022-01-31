@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: MIT
-pragma solidity ^0.8.2;
+pragma solidity ^0.8.11;
 
 import "./ILiquidityProviders.sol";
 
@@ -21,7 +21,7 @@ interface IChainLendingAuction is ILiquidityProviders {
         uint256 duration;
         // timestamp of loan execution
         uint256 loanExecutedTime;
-        // timestamp of start of interest acummulation. Is reset when a new lender takes over the loan or the borrower makes a partial repayment. 
+        // timestamp of start of interest acummulation. Is reset when a new lender takes over the loan or the borrower makes a partial repayment.
         uint256 timeOfInterestStart;
         // cumulative interest of varying rates paid by new lenders to buy out the loan auction
         uint256 historicInterest;
@@ -189,6 +189,9 @@ interface IChainLendingAuction is ILiquidityProviders {
         pure
         returns (address signer);
 
+    function withdrawBidOrAsk(Offer calldata offer, bytes calldata signature)
+        external;
+
     function getOffer(
         address nftContractAddress,
         uint256 nftId,
@@ -218,11 +221,8 @@ interface IChainLendingAuction is ILiquidityProviders {
         Offer memory offer
     ) external;
 
-    function removeFloorOffer(
-        address nftContractAddress,
-        uint256 nftId,
-        bytes32 offerHash
-    ) external;
+    function removeFloorOffer(address nftContractAddress, bytes32 offerHash)
+        external;
 
     function removeNftOffer(
         address nftContractAddress,
@@ -276,9 +276,6 @@ interface IChainLendingAuction is ILiquidityProviders {
     ) external payable;
 
     function refinanceByLender(Offer calldata offer) external payable;
-
-    function withdrawBidOrAsk(Offer calldata offer, bytes calldata signature)
-        external;
 
     function drawLoanTime(
         address nftContractAddress,

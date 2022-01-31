@@ -1,4 +1,4 @@
-pragma solidity ^0.8.2;
+pragma solidity ^0.8.11;
 //SPDX-License-Identifier: MIT
 
 import "./LiquidityProviders.sol";
@@ -117,6 +117,34 @@ contract ChainLendingAuction is
         bytes memory signature //proof the actor signed the offer
     ) public pure returns (address signer) {
         return offerHash.toEthSignedMessageHash().recover(signature);
+    }
+
+    // Cancel a signature based bid or ask on chain
+    function withdrawBidOrAsk(Offer calldata offer, bytes calldata signature)
+        external
+    {
+        // require signature is still valid. This also ensures the signature is not utilized in an active loan
+        require(
+            _cancelledOrFinalized[signature] == false,
+            "Cannot cancel a bid or ask that is already cancelled or finalized."
+        );
+
+        // ideally calculated, stored, and provided as parameter to save computation
+        bytes32 offerHash = getOfferHash(offer);
+
+        // recover signer
+        address signer = getOfferSigner(offerHash, signature);
+
+        // Require that from is signer of the signature
+        require(
+            signer == msg.sender,
+            "Msg.sender is not the signer of the submitted signature"
+        );
+
+        // cancel signature
+        _cancelledOrFinalized[signature] = true;
+
+        emit BidAskCancelled(offer.nftContractAddress, offer.nftId, signature);
     }
 
     // ---------- On-chain Offer Functions ---------- //
@@ -274,11 +302,9 @@ contract ChainLendingAuction is
         );
     }
 
-    function removeFloorOffer(
-        address nftContractAddress,
-        uint256 nftId,
-        bytes32 offerHash
-    ) external {
+    function removeFloorOffer(address nftContractAddress, bytes32 offerHash)
+        external
+    {
         OfferBook storage offerBook = _floorOfferBooks[nftContractAddress];
         Offer storage offer = offerBook.offers[offerHash];
 
@@ -410,6 +436,11 @@ contract ChainLendingAuction is
         // recover singer and confirm signed offer terms with function submitted offer terms
         // we know the signer must be the lender because msg.sender must be the nftOwner/borrower
         address lender = getOfferSigner(offerHash, signature);
+
+        require(
+            lender == offer.creator,
+            "Offer.creator must be offer signer to executeLoanByBid"
+        );
 
         // // if floorTerm is false
         if (offer.floorTerm == false) {
@@ -706,11 +737,6 @@ contract ChainLendingAuction is
         loanAuction.amountDrawn = offer.amount;
         loanAuction.fixedTerms = offer.fixedTerms;
 
-        // calculate protocol draw fee and subtract from amount
-        // this leaves the protocol fee invested in Compound in this contract address' balance
-        uint256 drawAmountMinusFee = offer.amount -
-            (offer.amount * loanDrawFeeProtocolPercentage);
-
         // *------- value and asset transfers -------* //
 
         // transferFrom NFT from nftOwner to contract
@@ -725,14 +751,14 @@ contract ChainLendingAuction is
             offer.asset == address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
         ) {
             // redeem cTokens and transfer underlying to borrower
-            _redeemAndTransferEthInternal(cAsset, drawAmountMinusFee, nftOwner);
+            _redeemAndTransferEthInternal(cAsset, offer.amount, nftOwner);
         }
         // Process as ERC20
         else {
             _redeemAndTransferErc20Internal(
                 offer.asset,
                 cAsset,
-                drawAmountMinusFee,
+                offer.amount,
                 nftOwner
             );
         }
@@ -779,7 +805,10 @@ contract ChainLendingAuction is
         ICERC20 cToken = ICERC20(cAsset);
 
         // redeem underlying from cToken to this contract
-        require(cToken.redeemUnderlying(amount) == 0, "cToken.redeemUnderlying() failed");
+        require(
+            cToken.redeemUnderlying(amount) == 0,
+            "cToken.redeemUnderlying() failed"
+        );
 
         // Send Eth to borrower
         (bool success, ) = (nftOwner).call{value: amount}("");
@@ -879,16 +908,24 @@ contract ChainLendingAuction is
         address prospectiveLender = getOfferSigner(offerHash, signature);
 
         // calculate the interest earned by current lender
-        uint256 lenderInterest = calculateInterestAccruedBylender(
+        uint256 currentLenderInterest = calculateInterestAccruedBylender(
             offer.nftContractAddress,
             offer.nftId
         );
 
         // calculate interest earned
-        uint256 interestOwedToLender = lenderInterest +
+        uint256 interestOwedToCurrentLender = currentLenderInterest +
             loanAuction.historicInterest;
 
-        uint256 fullRepayment = loanAuction.amountDrawn + interestOwedToLender;
+        uint256 fullRepayment = loanAuction.amountDrawn +
+            interestOwedToCurrentLender;
+
+        // require statement for offer amount to be greater than or equal to full repayment
+        require(
+            offer.amount >=
+                fullRepayment,
+            "Offer amount must be greater than or equal to current amount drawn + interest owed"
+        );
 
         require(
             (cAssetBalances[cAsset][prospectiveLender] -
@@ -903,19 +940,18 @@ contract ChainLendingAuction is
             loanAuction.lender,
             prospectiveLender,
             0,
-            interestOwedToLender,
+            interestOwedToCurrentLender,
             loanAuction.amountDrawn
         );
 
         // update LoanAuction struct
         loanAuction.lender = prospectiveLender;
-        loanAuction.amount = offer.amount;
+        loanAuction.amount = fullRepayment;
+        loanAuction.amountDrawn = fullRepayment;
         loanAuction.interestRate = offer.interestRate;
         loanAuction.duration = offer.duration;
         loanAuction.timeOfInterestStart = block.timestamp;
         loanAuction.historicInterest = 0;
-
-        // pull down funds from new lender
 
         // stack too deep for these event variables, need to refactor
         // emit LoanBuyOut(
@@ -1000,6 +1036,15 @@ contract ChainLendingAuction is
             "Msg.sender must be the owner of nftId to refinanceByBorrower"
         );
 
+        // ensure below require statement is accurate
+
+        // Require that loan has not expired
+        require(
+            block.timestamp <
+                loanAuction.loanExecutedTime + loanAuction.timeDrawn,
+            "Cannot seize asset before the end of the loan"
+        );
+
         // calculate the interest earned by current lender
         uint256 lenderInterest = calculateInterestAccruedBylender(
             offer.nftContractAddress,
@@ -1031,11 +1076,14 @@ contract ChainLendingAuction is
             loanAuction.amountDrawn
         );
 
+        // add loanAuction.amountDrawn to update
+
         // update LoanAuction struct
         loanAuction.lender = prospectiveLender;
         loanAuction.amount = offer.amount;
         loanAuction.interestRate = offer.interestRate;
         loanAuction.duration = offer.duration;
+        loanAuction.amountDrawn = fullRepayment;
         loanAuction.timeOfInterestStart = block.timestamp;
         loanAuction.historicInterest = 0;
 
@@ -1087,6 +1135,14 @@ contract ChainLendingAuction is
             "Offer asset must be the same as the current loan"
         );
 
+        //  make sure require statement is accurate
+        // Require that loan has not expired
+        // require(
+        //     block.timestamp <
+        //         loanAuction.loanExecutedTime + loanAuction.timeDrawn,
+        //     "Cannot seize asset before the end of the loan"
+        // );
+
         // require that terms are parity + 1
         require(
             // Require bidAmount is greater than previous bid
@@ -1120,13 +1176,13 @@ contract ChainLendingAuction is
         }
 
         // calculate the interest earned by current lender
-        uint256 lenderInterest = calculateInterestAccruedBylender(
+        uint256 currentLenderInterest = calculateInterestAccruedBylender(
             offer.nftContractAddress,
             offer.nftId
         );
 
         // calculate interest earned
-        uint256 interestAndPremiumOwedToLender = lenderInterest +
+        uint256 interestAndPremiumOwedToCurrentLender = currentLenderInterest +
             loanAuction.historicInterest +
             (loanAuction.amountDrawn * buyOutPremiumLenderPercentage);
 
@@ -1135,9 +1191,10 @@ contract ChainLendingAuction is
             buyOutPremiumProtocolPercentage;
 
         // calculate fullBidBuyOutAmount
-        uint256 fullBuyOutAmount = interestAndPremiumOwedToLender +
+        uint256 fullBuyOutAmount = interestAndPremiumOwedToCurrentLender +
             protocolPremiumFee +
             loanAuction.amountDrawn;
+
         // If refinancing is not done by current lender they must buy out the loan and pay fees
         if (loanAuction.lender != msg.sender) {
             // require prospective lender has sufficient available balance to refinance loan
@@ -1154,7 +1211,7 @@ contract ChainLendingAuction is
                 loanAuction.lender,
                 msg.sender,
                 protocolPremiumFee,
-                interestAndPremiumOwedToLender,
+                interestAndPremiumOwedToCurrentLender,
                 loanAuction.amountDrawn
             );
 
@@ -1163,6 +1220,8 @@ contract ChainLendingAuction is
 
             // If current lender is refinancing the loan they do not need to pay any fees or buy themselves out.
         } else if (loanAuction.lender == msg.sender) {
+            // check this require statment, might be duplicteive to ofer checks above.
+
             require(
                 (cAssetBalances[cAsset][msg.sender] -
                     utilizedCAssetBalances[cAsset][msg.sender]) >=
@@ -1179,7 +1238,11 @@ contract ChainLendingAuction is
         loanAuction.interestRate = offer.interestRate;
         loanAuction.duration = offer.duration;
         loanAuction.timeOfInterestStart = block.timestamp;
-        loanAuction.historicInterest = currentHistoricInterest + lenderInterest;
+        loanAuction.historicInterest =
+            currentHistoricInterest +
+            currentLenderInterest;
+
+        // need to ensure event tracks protocolPremiumAmount so that we can accurately account funds to allocate to Regen Collective
 
         emit LoanBuyOut(
             msg.sender,
@@ -1259,7 +1322,7 @@ contract ChainLendingAuction is
                 );
         }
 
-        // require from has a sufficient total balance to buy out loan
+        // check calling functions require from has a sufficient total balance to buy out loan
 
         // update from's utilized balance
         utilizedCAssetBalances[cAsset][from] += paymentTokens;
@@ -1276,33 +1339,7 @@ contract ChainLendingAuction is
         return 0;
     }
 
-    // Cancel a signature based bid or ask on chain
-    function withdrawBidOrAsk(Offer calldata offer, bytes calldata signature)
-        external
-    {
-        // require signature is still valid. This also ensures the signature is not utilized in an active loan
-        require(
-            _cancelledOrFinalized[signature] == false,
-            "Cannot cancel a bid or ask that is already cancelled or finalized."
-        );
-
-        // ideally calculated, stored, and provided as parameter to save computation
-        bytes32 offerHash = getOfferHash(offer);
-
-        // recover signer
-        address signer = getOfferSigner(offerHash, signature);
-
-        // Require that from is signer of the signature
-        require(
-            signer == msg.sender,
-            "Msg.sender is not the signer of the submitted signature"
-        );
-
-        // cancel signature
-        _cancelledOrFinalized[signature] = true;
-
-        emit BidAskCancelled(offer.nftContractAddress, offer.nftId, signature);
-    }
+    // move to signture offer functions area
 
     function drawLoanTime(
         address nftContractAddress,
@@ -1344,6 +1381,8 @@ contract ChainLendingAuction is
             (drawTime + loanAuction.timeDrawn) <= loanAuction.duration,
             "Total Time drawn must not exceed best bid duration"
         );
+
+        // reset timeOfinterestStart and update historic interest due to parameters of loan changing
 
         // set timeDrawn
         loanAuction.timeDrawn += drawTime;
@@ -1398,8 +1437,12 @@ contract ChainLendingAuction is
             loanAuction.lender
         );
 
+        // reset timeOfinterestStart and update historic interest due to parameters of loan changing
+
         // set amountDrawn
         loanAuction.amountDrawn += drawAmount;
+
+        // refactor this to remove fee. fee is paid on loan payback instead of drawdown
 
         // calculate fee and subtract from drawAmount
         uint256 drawAmountMinusFee = drawAmount -
@@ -1461,6 +1504,8 @@ contract ChainLendingAuction is
             "Cannot repay loan that has not been executed"
         );
 
+        // move this variable to better position
+
         // get nft owner
         address nftOwner = loanAuction.nftOwner;
 
@@ -1491,7 +1536,7 @@ contract ChainLendingAuction is
         address currentAsset = loanAuction.asset;
         address currentLender = loanAuction.lender;
         uint256 currentAmountDrawn = loanAuction.amountDrawn;
-        
+
         // reset loanAuction
         loanAuction.nftOwner = address(0);
         loanAuction.lender = address(0);
@@ -1508,8 +1553,7 @@ contract ChainLendingAuction is
 
         // if asset is not 0x0 process as Erc20
         if (
-            currentAsset !=
-            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
+            currentAsset != address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
         ) {
             // protocolPremiumFee is taken here. Full amount is minted to this contract address' balance in Compound and amount owed to lender is updated in their balance. The delta is the protocol premium fee.
             _payErc20AndUpdateBalancesInternal(
@@ -1524,8 +1568,7 @@ contract ChainLendingAuction is
         }
         // else process as ETH
         else if (
-            currentAsset ==
-            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
+            currentAsset == address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
         ) {
             // check that transaction covers the full value of the loan
             require(
@@ -1591,11 +1634,13 @@ contract ChainLendingAuction is
 
         uint256 protocolDrawFee = partialAmount * loanDrawFeeProtocolPercentage;
 
+        // need to refactor protocol fees to be prorata and paid on fullRepayment
+
         // calculate paymentAmount
         uint256 paymentAmount = partialAmount - protocolDrawFee;
 
         uint256 currentAmountDrawn = loanAuction.amountDrawn;
-                // update amountDrawn
+        // update amountDrawn
         loanAuction.amountDrawn -= paymentAmount;
 
         // if asset is not 0x0 process as Erc20

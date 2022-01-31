@@ -1,6 +1,6 @@
 //SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.2;
+pragma solidity ^0.8.11;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
@@ -508,4 +508,6 @@ contract LiquidityProviders is
 
         return amountToWithdraw;
     }
+
+    // create admin withdraw functions to directly manipulate COMP and other balances of contract
 }
