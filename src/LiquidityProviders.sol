@@ -113,7 +113,10 @@ contract LiquidityProviders is
         );
 
         // Approve transfer on the ERC20 contract from LiquidityProviders contract
-        require(underlying.approve(cAsset, numTokensToSupply) == true, "underlying.approve() failed");
+        require(
+            underlying.approve(cAsset, numTokensToSupply) == true,
+            "underlying.approve() failed"
+        );
 
         // calculate expectedAmountToBeMinted. This is the same conversion math performed in cToken.mint()
         MintLocalVars memory vars;

@@ -889,6 +889,12 @@ contract ChainLendingAuction is
             "Offer asset and cAsset must be the same as the current loan"
         );
 
+        require(
+            block.timestamp <
+                loanAuction.loanExecutedTime + loanAuction.timeDrawn,
+            "Cannot refinance loan that has expired"
+        );
+
         // get nft owner
         address nftOwner = IERC721(offer.nftContractAddress).ownerOf(
             offer.nftId
@@ -922,8 +928,7 @@ contract ChainLendingAuction is
 
         // require statement for offer amount to be greater than or equal to full repayment
         require(
-            offer.amount >=
-                fullRepayment,
+            offer.amount >= fullRepayment,
             "Offer amount must be greater than or equal to current amount drawn + interest owed"
         );
 
@@ -1036,13 +1041,11 @@ contract ChainLendingAuction is
             "Msg.sender must be the owner of nftId to refinanceByBorrower"
         );
 
-        // ensure below require statement is accurate
-
         // Require that loan has not expired
         require(
             block.timestamp <
                 loanAuction.loanExecutedTime + loanAuction.timeDrawn,
-            "Cannot seize asset before the end of the loan"
+            "Cannot refinance loan that has expired"
         );
 
         // calculate the interest earned by current lender
@@ -1076,8 +1079,6 @@ contract ChainLendingAuction is
             loanAuction.amountDrawn
         );
 
-        // add loanAuction.amountDrawn to update
-
         // update LoanAuction struct
         loanAuction.lender = prospectiveLender;
         loanAuction.amount = offer.amount;
@@ -1086,8 +1087,6 @@ contract ChainLendingAuction is
         loanAuction.amountDrawn = fullRepayment;
         loanAuction.timeOfInterestStart = block.timestamp;
         loanAuction.historicInterest = 0;
-
-        // pull down funds from new lender
 
         // stack too deep for these event variables, need to refactor
         // emit LoanBuyOut(
@@ -1135,13 +1134,11 @@ contract ChainLendingAuction is
             "Offer asset must be the same as the current loan"
         );
 
-        //  make sure require statement is accurate
-        // Require that loan has not expired
-        // require(
-        //     block.timestamp <
-        //         loanAuction.loanExecutedTime + loanAuction.timeDrawn,
-        //     "Cannot seize asset before the end of the loan"
-        // );
+        require(
+            block.timestamp <
+                loanAuction.loanExecutedTime + loanAuction.timeDrawn,
+            "Cannot refinance loan that has expired"
+        );
 
         // require that terms are parity + 1
         require(
@@ -1363,12 +1360,13 @@ contract ChainLendingAuction is
             "Msg.sender is not the NFT owner"
         );
 
-        // Require that loan has not expired
-        require(
-            block.timestamp <
-                loanAuction.loanExecutedTime + loanAuction.timeDrawn,
-            "Cannot seize asset before the end of the loan"
-        );
+        // document that a user CAN draw more time after a loan has expired, but they are still open to asset siezure until they draw enough time.
+        // // Require that loan has not expired
+        // require(
+        //     block.timestamp <
+        //         loanAuction.loanExecutedTime + loanAuction.timeDrawn,
+        //     "Cannot draw more time after a loan has expired"
+        // );
 
         // Require timeDrawn is less than the duration. Ensures there is time available to draw
         require(
@@ -1382,7 +1380,14 @@ contract ChainLendingAuction is
             "Total Time drawn must not exceed best bid duration"
         );
 
+        uint256 lenderInterest = calculateInterestAccruedBylender(
+            nftContractAddress,
+            nftId
+        );
+
         // reset timeOfinterestStart and update historic interest due to parameters of loan changing
+        loanAuction.historicInterest += lenderInterest;
+        loanAuction.timeOfInterestStart = block.timestamp;
 
         // set timeDrawn
         loanAuction.timeDrawn += drawTime;
@@ -1395,7 +1400,7 @@ contract ChainLendingAuction is
         );
     }
 
-    function drawAmount(
+    function drawLoanAmount(
         address nftContractAddress,
         uint256 nftId,
         uint256 drawAmount
@@ -1431,13 +1436,27 @@ contract ChainLendingAuction is
             "Total amount withdrawn must not exceed best bid loan amount"
         );
 
+        // Require that loan has not expired
+        require(
+            block.timestamp <
+                loanAuction.loanExecutedTime + loanAuction.timeDrawn,
+            "Cannot draw more value after a loan has expired"
+        );
+
         _checkAndUpdateLenderUtilizedBalanceInternal(
             cAsset,
             drawAmount,
             loanAuction.lender
         );
 
+        uint256 lenderInterest = calculateInterestAccruedBylender(
+            nftContractAddress,
+            nftId
+        );
+
         // reset timeOfinterestStart and update historic interest due to parameters of loan changing
+        loanAuction.historicInterest += lenderInterest;
+        loanAuction.timeOfInterestStart = block.timestamp;
 
         // set amountDrawn
         loanAuction.amountDrawn += drawAmount;

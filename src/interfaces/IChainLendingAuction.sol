@@ -283,7 +283,7 @@ interface IChainLendingAuction is ILiquidityProviders {
         uint256 drawTime
     ) external;
 
-    function drawAmount(
+    function drawLoanAmount(
         address nftContractAddress,
         uint256 nftId,
         uint256 drawAmount
