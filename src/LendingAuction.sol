@@ -1115,7 +1115,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         uint256 protocolPremiumFee = loanAuction.amountDrawn *
             refinancePremiumProtocolPercentage;
 
-        // calculate fullBidrefinanceAmount
+        // calculate fullRefinanceAmount
         uint256 fullRefinanceAmount = interestAndPremiumOwedToCurrentLender +
             protocolPremiumFee +
             loanAuction.amountDrawn;
@@ -1492,6 +1492,10 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         uint256 interestOwedToLender = lenderInterest +
             loanAuction.historicLenderInterest;
 
+
+        // need to ensure protocol is being paid out correctly
+
+
         // calculate total interest value owed
         uint256 interestOwedToProtocol = protocolInterest +
             loanAuction.historicProtocolInterest;
@@ -1514,6 +1518,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         loanAuction.duration = 0;
         loanAuction.loanExecutedTime = 0;
         loanAuction.timeOfInterestStart = 0;
+        loanAuction.historicLenderInterest = 0;
         loanAuction.historicLenderInterest = 0;
         loanAuction.amountDrawn = 0;
         loanAuction.timeDrawn = 0;

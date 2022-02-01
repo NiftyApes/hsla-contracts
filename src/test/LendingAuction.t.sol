@@ -20,7 +20,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
     IERC20 DAI;
     ICERC20 cDAI;
     ICEther cETH;
-    LendingAuction lendingAuction;
+    LendingAuction LA;
 
     function setUp() public {
         // Setup WETH
@@ -68,10 +68,10 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         cDAI.mint(50000 ether);
 
         // Setup the liquidity providers contract
-        lendingAuction = new LendingAuction();
+        LA = new LendingAuction();
         // Allow assets for testing
-        lendingAuction.setCAssetAddress(address(DAI), address(cDAI));
-        lendingAuction.setCAssetAddress(
+        LA.setCAssetAddress(address(DAI), address(cDAI));
+        LA.setCAssetAddress(
             address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
             address(cETH)
         );
@@ -84,42 +84,42 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         mockNFT.safeMint(address(this), 0);
 
         // Approve spends
-        DAI.approve(address(lendingAuction), max);
-        cDAI.approve(address(lendingAuction), max);
-        cETH.approve(address(lendingAuction), max);
+        DAI.approve(address(LA), max);
+        cDAI.approve(address(LA), max);
+        cETH.approve(address(LA), max);
 
         // Supply to 10k DAI contract
-        lendingAuction.supplyErc20(address(DAI), 100000 ether);
+        LA.supplyErc20(address(DAI), 100000 ether);
         // Supply 10 ether to contract
-        lendingAuction.supplyEth{value: 10 ether}();
+        LA.supplyEth{value: 10 ether}();
         // Offer NFT for sale
     }
 
     // Test Cases
 
     function testProtocolDrawFeePercentage() public {
-        lendingAuction.protocolDrawFeePercentage();
+        LA.protocolDrawFeePercentage();
     }
 
     function testRefinancePremiumLenderPercentage() public {
-        lendingAuction.refinancePremiumLenderPercentage();
+        LA.refinancePremiumLenderPercentage();
     }
 
     function testRefinancePremiumProtocolPercentage() public {
-        lendingAuction.refinancePremiumProtocolPercentage();
+        LA.refinancePremiumProtocolPercentage();
     }
 
     function testUpdateLoanDrawFee() public {
         //TODO(parametic sweep)
         //TODO(Assert value)
-        lendingAuction.updateLoanDrawFee(5);
+        LA.updateLoanDrawFee(5);
     }
 
     function testUpdateRefinancePremiumLenderPercentage() public {
-        lendingAuction.updateRefinancePremiumLenderPercentage(5);
+        LA.updateRefinancePremiumLenderPercentage(5);
     }
 
     function testUpdateRefinancePremiumProtocolPercentage() public {
-        lendingAuction.updateRefinancePremiumProtocolPercentage(5);
+        LA.updateRefinancePremiumProtocolPercentage(5);
     }
 }
