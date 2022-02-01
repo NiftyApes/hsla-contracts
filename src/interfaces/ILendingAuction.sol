@@ -146,7 +146,8 @@ interface ILendingAuction is ILiquidityProviders {
         uint256 duration,
         uint256 expiration,
         bool fixedTerms,
-        bool floorTerm
+        bool floorTerm,
+        bytes32 offerHash
     );
 
     event OfferRemoved(
@@ -159,7 +160,8 @@ interface ILendingAuction is ILiquidityProviders {
         uint256 duration,
         uint256 expiration,
         bool fixedTerms,
-        bool floorTerm
+        bool floorTerm,
+        bytes32 offerHash
     );
 
     // Functions
@@ -205,7 +207,7 @@ interface ILendingAuction is ILiquidityProviders {
         uint256 nftId,
         uint256 index,
         bool floorTerm
-    ) external view returns (bytes32);
+    ) external view returns (Offer memory offer);
 
     function size(
         address nftContractAddress,

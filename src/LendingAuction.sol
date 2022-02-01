@@ -112,10 +112,15 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         bytes32 offerHash, //hash of offer
         bytes memory signature //proof the actor signed the offer
     ) public pure returns (address signer) {
-        return offerHash.toEthSignedMessageHash().recover(signature);
+        signer = offerHash.toEthSignedMessageHash().recover(signature);
     }
 
-    // Cancel a signature based bid or ask on chain
+    /**
+     * @notice Cancel a signature based offer on chain
+     * @dev This function is the only way to ensure an offer can't be used on chain
+     * @param offer The details of a loan auction offer
+     * @param signature A signed offerHash
+     */
     function withdrawBidOrAsk(Offer calldata offer, bytes calldata signature)
         external
     {
@@ -131,7 +136,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         // recover signer
         address signer = getOfferSigner(offerHash, signature);
 
-        // Require that from is signer of the signature
+        // Require that msg.sender is signer of the signature
         require(
             signer == msg.sender,
             "Msg.sender is not the signer of the submitted signature"
@@ -140,7 +145,11 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         // cancel signature
         _cancelledOrFinalized[signature] = true;
 
-        emit SigOfferCancelled(offer.nftContractAddress, offer.nftId, signature);
+        emit SigOfferCancelled(
+            offer.nftContractAddress,
+            offer.nftId,
+            signature
+        );
     }
 
     // ---------- On-chain Offer Functions ---------- //
@@ -158,15 +167,15 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         bytes32 offerHash,
         bool floorTerm
     ) external view returns (Offer memory offer) {
-        Offer storage offer;
+        // Offer storage offer;
         OfferBook storage offerBook;
 
         if (floorTerm == true) {
             offerBook = _floorOfferBooks[nftContractAddress];
-            return offerBook.offers[offerHash];
+            offer = offerBook.offers[offerHash];
         } else if (floorTerm == false) {
             offerBook = _nftOfferBooks[nftContractAddress][nftId];
-            return offerBook.offers[offerHash];
+            offer = offerBook.offers[offerHash];
         }
     }
 
@@ -182,16 +191,19 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         uint256 nftId,
         uint256 index,
         bool floorTerm
-    ) external view returns (bytes32) {
-        Offer memory offer;
+    ) external view returns (Offer memory offer) {
         OfferBook storage offerBook;
+
+        bytes32 offerHash;
 
         if (floorTerm == true) {
             offerBook = _floorOfferBooks[nftContractAddress];
-            return offerBook.keys[index];
+            offerHash = offerBook.keys[index];
+            offer = offerBook.offers[offerHash];
         } else if (floorTerm == false) {
             offerBook = _nftOfferBooks[nftContractAddress][nftId];
-            return offerBook.keys[index];
+            offerHash = offerBook.keys[index];
+            offer = offerBook.offers[offerHash];
         }
     }
 
@@ -205,16 +217,15 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         address nftContractAddress,
         uint256 nftId,
         bool floorTerm
-    ) external view returns (uint256) {
-        Offer memory offer;
+    ) external view returns (uint256 offerBookSize) {
         OfferBook storage offerBook;
 
         if (floorTerm == true) {
             offerBook = _floorOfferBooks[nftContractAddress];
-            return offerBook.keys.length;
+            offerBookSize = offerBook.keys.length;
         } else if (floorTerm == false) {
             offerBook = _nftOfferBooks[nftContractAddress][nftId];
-            return offerBook.keys.length;
+            offerBookSize = offerBook.keys.length;
         }
     }
 
@@ -226,7 +237,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     function createFloorOffer(address nftContractAddress, Offer memory offer)
         external
     {
-        Offer memory offer;
         OfferBook storage offerBook = _floorOfferBooks[nftContractAddress];
 
         offer.creator = msg.sender;
@@ -253,7 +263,8 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             offer.duration,
             offer.expiration,
             offer.fixedTerms,
-            offer.floorTerm
+            offer.floorTerm,
+            offerHash
         );
     }
 
@@ -267,7 +278,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         uint256 nftId,
         Offer memory offer
     ) external {
-        Offer memory offer;
         OfferBook storage offerBook = _nftOfferBooks[nftContractAddress][nftId];
 
         offer.creator = msg.sender;
@@ -294,7 +304,8 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             offer.duration,
             offer.expiration,
             offer.fixedTerms,
-            offer.floorTerm
+            offer.floorTerm,
+            offerHash
         );
     }
 
@@ -326,18 +337,21 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         offerBook.keys[index] = lastOfferHash;
         offerBook.keys.pop();
 
-        emit OfferRemoved(
-            offer.creator,
-            offer.nftContractAddress,
-            offer.nftId,
-            offer.asset,
-            offer.amount,
-            offer.interestRate,
-            offer.duration,
-            offer.expiration,
-            offer.fixedTerms,
-            offer.floorTerm
-        );
+        // stack too deep, need to refactor
+
+        // emit OfferRemoved(
+        //     offer.creator,
+        //     offer.nftContractAddress,
+        //     offer.nftId,
+        //     offer.asset,
+        //     offer.amount,
+        //     offer.interestRate,
+        //     offer.duration,
+        //     offer.expiration,
+        //     offer.fixedTerms,
+        //     offer.floorTerm,
+        //     offerHash
+        // );
     }
 
     function removeNftOffer(
@@ -370,18 +384,21 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         offerBook.keys[index] = lastOfferHash;
         offerBook.keys.pop();
 
-        emit OfferRemoved(
-            offer.creator,
-            offer.nftContractAddress,
-            offer.nftId,
-            offer.asset,
-            offer.amount,
-            offer.interestRate,
-            offer.duration,
-            offer.expiration,
-            offer.fixedTerms,
-            offer.floorTerm
-        );
+        // stack too deep need to refactor
+
+        // emit OfferRemoved(
+        //     offer.creator,
+        //     offer.nftContractAddress,
+        //     offer.nftId,
+        //     offer.asset,
+        //     offer.amount,
+        //     offer.interestRate,
+        //     offer.duration,
+        //     offer.expiration,
+        //     offer.fixedTerms,
+        //     offer.floorTerm,
+        //     offerHash
+        // );
     }
 
     // executeLoanByBid allows a borrower to submit a signed offer from a lender and execute a loan using their owned NFT
