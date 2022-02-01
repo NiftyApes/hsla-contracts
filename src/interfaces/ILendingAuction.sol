@@ -261,6 +261,7 @@ interface ILendingAuction is ILiquidityProviders {
 
     function sigRefinanceByBorrower(
         Offer calldata offer,
+        uint256 nftId,
         bytes calldata signature
     ) external payable;
 
