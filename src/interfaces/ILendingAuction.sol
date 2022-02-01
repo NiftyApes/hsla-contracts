@@ -92,14 +92,14 @@ interface ILendingAuction is ILiquidityProviders {
     );
 
     // cancellation sig event
-    event BidAskCancelled(
+    event SigOfferCancelled(
         address indexed nftContractAddress,
         uint256 indexed nftId,
         bytes signature
     );
 
     // finalize sig event
-    event BidAskFinalized(
+    event SigOfferFinalized(
         address indexed nftContractAddress,
         uint256 indexed nftId,
         bytes signature
@@ -231,29 +231,29 @@ interface ILendingAuction is ILiquidityProviders {
         bytes32 offerHash
     ) external;
 
-    function sigExecuteLoanByBid(
+    function sigExecuteLoanByBorrower(
         Offer calldata offer,
         bytes calldata signature,
         uint256 nftId
     ) external payable;
 
-    function chainExecuteLoanByFloorBid(
+    function chainExecuteLoanByBorrowerFloor(
         address nftContractAddress,
         uint256 nftId,
         bytes32 offerHash
     ) external payable;
 
-    function chainExecuteLoanByNftBid(
+    function chainExecuteLoanByBorrowerNft(
         address nftContractAddress,
         uint256 nftId,
         bytes32 offerHash
     ) external payable;
 
-    function sigExecuteLoanByAsk(Offer calldata offer, bytes calldata signature)
+    function sigExecuteLoanByLender(Offer calldata offer, bytes calldata signature)
         external
         payable;
 
-    function chainExecuteLoanByAsk(
+    function chainExecuteLoanByLender(
         address nftContractAddress,
         uint256 nftId,
         bytes32 offerHash

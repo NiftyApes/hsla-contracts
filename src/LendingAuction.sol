@@ -140,7 +140,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         // cancel signature
         _cancelledOrFinalized[signature] = true;
 
-        emit BidAskCancelled(offer.nftContractAddress, offer.nftId, signature);
+        emit SigOfferCancelled(offer.nftContractAddress, offer.nftId, signature);
     }
 
     // ---------- On-chain Offer Functions ---------- //
@@ -386,7 +386,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
     // executeLoanByBid allows a borrower to submit a signed offer from a lender and execute a loan using their owned NFT
     // this external function handles all checks for executeLoanByBid
-    function sigExecuteLoanByBid(
+    function sigExecuteLoanByBorrower(
         Offer calldata offer,
         bytes calldata signature,
         uint256 nftId // nftId should match offer.nftId if floorTerm false, nftId should not match if floorTerm true. Need to provide as function parameter to pass nftId with floor terms.
@@ -419,22 +419,26 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             );
 
             // execute state changes for executeLoanByBid
-            _executeLoanByBidInternal(offer, nftId, lender);
+            _executeLoanByBorrowerInternal(offer, nftId, lender);
         }
 
         // if floorTerm is true
         if (offer.floorTerm == true) {
             // execute state changes for executeLoanByBid
-            _executeLoanByBidInternal(offer, nftId, lender);
+            _executeLoanByBorrowerInternal(offer, nftId, lender);
         }
 
         // finalize signature
         _cancelledOrFinalized[signature] == true;
 
-        emit BidAskFinalized(offer.nftContractAddress, offer.nftId, signature);
+        emit SigOfferFinalized(
+            offer.nftContractAddress,
+            offer.nftId,
+            signature
+        );
     }
 
-    function chainExecuteLoanByFloorBid(
+    function chainExecuteLoanByBorrowerFloor(
         address nftContractAddress,
         uint256 nftId,
         bytes32 offerHash
@@ -444,10 +448,10 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             offerHash
         ];
         require(offer.floorTerm == true, "Offer must be a floor term");
-        _executeLoanByBidInternal(offer, nftId, offer.creator);
+        _executeLoanByBorrowerInternal(offer, nftId, offer.creator);
     }
 
-    function chainExecuteLoanByNftBid(
+    function chainExecuteLoanByBorrowerNft(
         address nftContractAddress,
         uint256 nftId,
         bytes32 offerHash
@@ -461,11 +465,11 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             nftId == offer.nftId,
             "Function submitted nftId must match the signed offer nftId"
         );
-        _executeLoanByBidInternal(offer, nftId, offer.creator);
+        _executeLoanByBorrowerInternal(offer, nftId, offer.creator);
     }
 
-    // this internal function _executeLoanByBidInternal handles the state changes for executeLoanByBid
-    function _executeLoanByBidInternal(
+    // this internal function _executeLoanByBorrowerInternal handles the state changes for executeLoanByBid
+    function _executeLoanByBorrowerInternal(
         Offer memory offer,
         uint256 nftId,
         address lender
@@ -572,12 +576,10 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         );
     }
 
-    function sigExecuteLoanByAsk(Offer calldata offer, bytes calldata signature)
-        external
-        payable
-        whenNotPaused
-        nonReentrant
-    {
+    function sigExecuteLoanByLender(
+        Offer calldata offer,
+        bytes calldata signature
+    ) external payable whenNotPaused nonReentrant {
         // require signature has not been cancelled/bid withdrawn
         require(
             _cancelledOrFinalized[signature] == false,
@@ -603,18 +605,22 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         );
 
         // execute state changes for executeLoanByAsk
-        _executeLoanByAskInternal(offer, msg.sender, nftOwner);
+        _executeLoanByLenderInternal(offer, msg.sender, nftOwner);
 
         // this should be done only after all checks if possible
         // finalize signature
         _cancelledOrFinalized[signature] == true;
 
-        emit BidAskFinalized(offer.nftContractAddress, offer.nftId, signature);
+        emit SigOfferFinalized(
+            offer.nftContractAddress,
+            offer.nftId,
+            signature
+        );
     }
 
     // executeLoanByAsk allows a lender to submit a signed offer from a borrower and execute a loan against the borrower's NFT
     // this external function handles all checks for executeLoanByAsk
-    function chainExecuteLoanByAsk(
+    function chainExecuteLoanByLender(
         address nftContractAddress,
         uint256 nftId,
         bytes32 offerHash
@@ -653,11 +659,11 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         );
 
         // execute state changes for executeLoanByAsk
-        _executeLoanByAskInternal(offer, msg.sender, nftOwner);
+        _executeLoanByLenderInternal(offer, msg.sender, nftOwner);
     }
 
     // this internal function handles all state changes for executeLoanByAsk
-    function _executeLoanByAskInternal(
+    function _executeLoanByLenderInternal(
         Offer memory offer,
         address lender,
         address nftOwner
@@ -815,12 +821,11 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         return 0;
     }
 
-    function sigRefinanceByBorrower(Offer calldata offer, uint256 nftId, bytes memory signature)
-        external
-        payable
-        whenNotPaused
-        nonReentrant
-    {
+    function sigRefinanceByBorrower(
+        Offer calldata offer,
+        uint256 nftId,
+        bytes memory signature
+    ) external payable whenNotPaused nonReentrant {
         // ideally calculated, stored, and provided as parameter to save computation
         bytes32 offerHash = getOfferHash(offer);
 
@@ -828,7 +833,10 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         // We assume the signer is the lender because msg.sender must the the nftOwner
         address prospectiveLender = getOfferSigner(offerHash, signature);
 
-        require(offer.creator == prospectiveLender, "Signer must be the offer.creator");
+        require(
+            offer.creator == prospectiveLender,
+            "Signer must be the offer.creator"
+        );
 
         if (offer.floorTerm == false) {
             // require nftId == sigNftId
@@ -840,13 +848,11 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             // execute state changes for executeLoanByBid
             _refinanceByBorrowerInternal(offer, offer.creator, nftId);
         }
-
         // if floorTerm is true
         else if (offer.floorTerm == true) {
             // execute state changes for executeLoanByBid
             _refinanceByBorrowerInternal(offer, offer.creator, nftId);
         }
-
     }
 
     function chainRefinanceByBorrowerFloor(
@@ -997,7 +1003,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         //     offer.duration
         // );
 
-        // emit BidAskFinalized(offer.nftContractAddress, offer.nftId, signature);
+        // emit SigOfferFinalized(offer.nftContractAddress, offer.nftId, signature);
     }
 
     function refinanceByLender(Offer calldata offer)
