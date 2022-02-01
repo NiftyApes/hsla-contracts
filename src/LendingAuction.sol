@@ -397,34 +397,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             "Cannot execute bid or ask. Signature has been cancelled or previously finalized."
         );
 
-        // require offer has not expired
-        require(
-            offer.expiration > block.timestamp,
-            "Cannot execute bid, offer has expired"
-        );
-
-        // require offer has 24 hour minimum duration
-        require(
-            offer.duration >= 86400,
-            "Offers must have 24 hours minimum duration"
-        );
-
-        require(
-            assetToCAsset[offer.asset] !=
-                0x0000000000000000000000000000000000000000,
-            "Asset not whitelisted on NiftyApes"
-        );
-
-        // get nft owner
-        address nftOwner = IERC721(offer.nftContractAddress).ownerOf(nftId);
-
-        // require msg.sender is the nftOwner. This ensures function submitted nftId is valid to execute against
-        // this also provides a check for floor term offers that the msg.sender owns an asset in the collection
-        require(
-            nftOwner == msg.sender,
-            "Msg.sender must be the owner of nftId to executeLoanByBid"
-        );
-
         // ideally calculated, stored, and provided as parameter to save computation
         // generate hash of offer parameters
         bytes32 offerHash = getOfferHash(offer);
@@ -447,13 +419,13 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             );
 
             // execute state changes for executeLoanByBid
-            _executeLoanByBidInternal(offer, nftId, lender, nftOwner);
+            _executeLoanByBidInternal(offer, nftId, lender);
         }
 
         // if floorTerm is true
         if (offer.floorTerm == true) {
             // execute state changes for executeLoanByBid
-            _executeLoanByBidInternal(offer, nftId, lender, nftOwner);
+            _executeLoanByBidInternal(offer, nftId, lender);
         }
 
         // finalize signature
@@ -472,7 +444,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             offerHash
         ];
         require(offer.floorTerm == true, "Offer must be a floor term");
-        _chainExecuteLoanByBidInternal(offer, nftId);
+        _executeLoanByBidInternal(offer, nftId, offer.creator);
     }
 
     function chainExecuteLoanByNftBid(
@@ -489,14 +461,22 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             nftId == offer.nftId,
             "Function submitted nftId must match the signed offer nftId"
         );
-        _chainExecuteLoanByBidInternal(offer, nftId);
+        _executeLoanByBidInternal(offer, nftId, offer.creator);
     }
 
-    // executeLoanByBid allows a borrower to submit a signed offer from a lender and execute a loan using their owned NFT
-    // this external function handles all checks for executeLoanByBid
-    function _chainExecuteLoanByBidInternal(Offer storage offer, uint256 nftId)
-        internal
-    {
+    // this internal function _executeLoanByBidInternal handles the state changes for executeLoanByBid
+    function _executeLoanByBidInternal(
+        Offer memory offer,
+        uint256 nftId,
+        address lender
+    ) internal {
+        // instantiate LoanAuction Struct
+        LoanAuction storage loanAuction = _loanAuctions[
+            offer.nftContractAddress
+        ][nftId];
+
+        address cAsset = assetToCAsset[offer.asset];
+
         // require offer has not expired
         require(
             offer.expiration > block.timestamp,
@@ -524,24 +504,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             nftOwner == msg.sender,
             "Msg.sender must be the owner of nftId to executeLoanByBid"
         );
-
-        // execute state changes for executeLoanByBid
-        _executeLoanByBidInternal(offer, nftId, offer.creator, nftOwner);
-    }
-
-    // this internal function _executeLoanByBidInternal handles the state changes for executeLoanByBid
-    function _executeLoanByBidInternal(
-        Offer memory offer,
-        uint256 nftId,
-        address lender,
-        address nftOwner
-    ) internal {
-        // instantiate LoanAuction Struct
-        LoanAuction storage loanAuction = _loanAuctions[
-            offer.nftContractAddress
-        ][nftId];
-
-        address cAsset = assetToCAsset[offer.asset];
 
         // Require that loan is not active
         require(
