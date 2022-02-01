@@ -39,7 +39,7 @@ contract LiquidityProviders is
     mapping(address => mapping(address => uint256)) public cAssetBalances;
 
     // Mapping of cAssetBalance to cAssetAddress to depositor address
-    // only initialized in ChainLendingAuction.sol
+    // only initialized in LendingAuction.sol
     mapping(address => mapping(address => uint256))
         public utilizedCAssetBalances;
 

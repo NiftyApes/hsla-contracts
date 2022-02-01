@@ -1,9 +1,9 @@
 //SPDX-License-Identifier: MIT
-pragma solidity ^0.8.2;
+pragma solidity ^0.8.11;
 
 import "./ILiquidityProviders.sol";
 
-interface ISignatureLendingAuction is ILiquidityProviders {
+interface ILendingAuction is ILiquidityProviders {
     // Structs
 
     struct LoanAuction {
@@ -19,10 +19,10 @@ interface ISignatureLendingAuction is ILiquidityProviders {
         uint256 interestRate;
         // loan duration of loan in number of seconds
         uint256 duration;
-        // timestamp of bestBid
-        uint256 bestBidTime;
         // timestamp of loan execution
         uint256 loanExecutedTime;
+        // timestamp of start of interest acummulation. Is reset when a new lender takes over the loan or the borrower makes a partial repayment.
+        uint256 timeOfInterestStart;
         // cumulative interest of varying rates paid by new lenders to buy out the loan auction
         uint256 historicInterest;
         // amount withdrawn by the nftOwner. This is the amount they will pay interest on, with this value as minimum
@@ -35,10 +35,12 @@ interface ISignatureLendingAuction is ILiquidityProviders {
     }
 
     struct Offer {
+        // Offer creator
+        address creator;
         // offer NFT contract address
         address nftContractAddress;
         // offer NFT ID
-        uint256 nftId; // 0 if floorTerm is true
+        uint256 nftId; // ignored if floorTerm is true
         // offer asset type
         address asset;
         // offer loan amount
@@ -53,6 +55,14 @@ interface ISignatureLendingAuction is ILiquidityProviders {
         bool fixedTerms;
         // is offer for single NFT or for every NFT in a collection
         bool floorTerm;
+    }
+
+    // Iterable mapping from address to uint;
+    struct OfferBook {
+        bytes32[] keys;
+        mapping(bytes32 => Offer) offers;
+        mapping(bytes32 => uint256) indexOf;
+        mapping(bytes32 => bool) inserted;
     }
 
     // Events
@@ -125,6 +135,32 @@ interface ISignatureLendingAuction is ILiquidityProviders {
         uint256 indexed nftId
     );
 
+    event NewOffer(
+        address creator,
+        address indexed nftContractAddress,
+        uint256 indexed nftId,
+        address asset,
+        uint256 amount,
+        uint256 interestRate,
+        uint256 duration,
+        uint256 expiration,
+        bool fixedTerms,
+        bool floorTerm
+    );
+
+    event OfferRemoved(
+        address creator,
+        address indexed nftContractAddress,
+        uint256 indexed nftId,
+        address asset,
+        uint256 amount,
+        uint256 interestRate,
+        uint256 duration,
+        uint256 expiration,
+        bool fixedTerms,
+        bool floorTerm
+    );
+
     // Functions
 
     function loanDrawFeeProtocolPercentage() external view returns (uint256);
@@ -138,39 +174,108 @@ interface ISignatureLendingAuction is ILiquidityProviders {
         view
         returns (LoanAuction memory auction);
 
-    function getOfferStatus(bytes calldata signature)
-        external
-        view
-        returns (bool status);
-
     function getOfferHash(Offer calldata offer)
         external
         view
         returns (bytes32 offerhash);
+
+    function getSignatureOfferStatus(bytes calldata signature)
+        external
+        view
+        returns (bool status);
 
     function getOfferSigner(bytes32 offerHash, bytes memory signature)
         external
         pure
         returns (address signer);
 
-    function executeLoanByBid(
+    function withdrawBidOrAsk(Offer calldata offer, bytes calldata signature)
+        external;
+
+    function getOffer(
+        address nftContractAddress,
+        uint256 nftId,
+        bytes32 offerHash,
+        bool floorTerm
+    ) external view returns (Offer memory offer);
+
+    function getOfferAtIndex(
+        address nftContractAddress,
+        uint256 nftId,
+        uint256 index,
+        bool floorTerm
+    ) external view returns (bytes32);
+
+    function size(
+        address nftContractAddress,
+        uint256 nftId,
+        bool floorTerm
+    ) external view returns (uint256);
+
+    function createFloorOffer(address nftContractAddress, Offer memory offer)
+        external;
+
+    function createNftOffer(
+        address nftContractAddress,
+        uint256 nftId,
+        Offer memory offer
+    ) external;
+
+    function removeFloorOffer(address nftContractAddress, bytes32 offerHash)
+        external;
+
+    function removeNftOffer(
+        address nftContractAddress,
+        uint256 nftId,
+        bytes32 offerHash
+    ) external;
+
+    function sigExecuteLoanByBid(
         Offer calldata offer,
         bytes calldata signature,
         uint256 nftId
     ) external payable;
 
-    function executeLoanByAsk(Offer calldata offer, bytes calldata signature)
+    function chainExecuteLoanByFloorBid(
+        address nftContractAddress,
+        uint256 nftId,
+        bytes32 offerHash
+    ) external payable;
+
+    function chainExecuteLoanByNftBid(
+        address nftContractAddress,
+        uint256 nftId,
+        bytes32 offerHash
+    ) external payable;
+
+    function sigExecuteLoanByAsk(Offer calldata offer, bytes calldata signature)
         external
         payable;
 
-    function refinanceByBorrower(Offer calldata offer, bytes calldata signature)
-        external
-        payable;
+    function chainExecuteLoanByAsk(
+        address nftContractAddress,
+        uint256 nftId,
+        bytes32 offerHash
+    ) external payable;
+
+    function sigRefinanceByBorrower(
+        Offer calldata offer,
+        bytes calldata signature
+    ) external payable;
+
+    function chainRefinanceByBorrowerFloor(
+        address nftContractAddress,
+        uint256 nftId,
+        bytes32 offerHash
+    ) external payable;
+
+    function chainRefinanceByBorrowerNft(
+        address nftContractAddress,
+        uint256 nftId,
+        bytes32 offerHash
+    ) external payable;
 
     function refinanceByLender(Offer calldata offer) external payable;
-
-    function withdrawBidOrAsk(Offer calldata offer, bytes calldata signature)
-        external;
 
     function drawLoanTime(
         address nftContractAddress,
@@ -178,7 +283,7 @@ interface ISignatureLendingAuction is ILiquidityProviders {
         uint256 drawTime
     ) external;
 
-    function drawAmount(
+    function drawLoanAmount(
         address nftContractAddress,
         uint256 nftId,
         uint256 drawAmount
