@@ -97,16 +97,16 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
 
     // Test Cases
 
-    function testLoanDrawFeeProtocolPercentage() public {
-        LA.loanDrawFeeProtocolPercentage();
+    function testProtocolDrawFeePercentage() public {
+        LA.protocolDrawFeePercentage();
     }
 
-    function testBuyOutPremiumLenderPercentage() public {
-        LA.buyOutPremiumLenderPercentage();
+    function testRefinancePremiumLenderPercentage() public {
+        LA.refinancePremiumLenderPercentage();
     }
 
-    function testBuyOutPremiumProtocolPercentage() public {
-        LA.buyOutPremiumProtocolPercentage();
+    function testRefinancePremiumProtocolPercentage() public {
+        LA.refinancePremiumProtocolPercentage();
     }
 
     function testUpdateLoanDrawFee() public {
@@ -115,11 +115,11 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         LA.updateLoanDrawFee(5);
     }
 
-    function testUpdateBuyOutPremiumLenderPercentage() public {
-        LA.updateBuyOutPremiumLenderPercentage(5);
+    function testUpdateRefinancePremiumLenderPercentage() public {
+        LA.updateRefinancePremiumLenderPercentage(5);
     }
 
-    function testUpdateBuyOutPremiumProtocolPercentage() public {
-        LA.updateBuyOutPremiumProtocolPercentage(5);
+    function testUpdateRefinancePremiumProtocolPercentage() public {
+        LA.updateRefinancePremiumProtocolPercentage(5);
     }
 }
