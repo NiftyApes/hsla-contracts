@@ -25,7 +25,7 @@ interface ILendingAuction is ILiquidityProviders {
         uint256 timeOfInterestStart;
         // cumulative interest of varying rates paid by new lenders to buy out the loan auction
         uint256 historicLenderInterest;
-        // cumulative interest of varying rates accrued by the protocol. To be repaid at the end of the loan. 
+        // cumulative interest of varying rates accrued by the protocol. To be repaid at the end of the loan.
         uint256 historicProtocolInterest;
         // amount withdrawn by the nftOwner. This is the amount they will pay interest on, with this value as minimum
         uint256 amountDrawn;
@@ -170,7 +170,10 @@ interface ILendingAuction is ILiquidityProviders {
 
     function refinancePremiumLenderPercentage() external view returns (uint256);
 
-    function refinancePremiumProtocolPercentage() external view returns (uint256);
+    function refinancePremiumProtocolPercentage()
+        external
+        view
+        returns (uint256);
 
     function getLoanAuction(address nftContractAddress, uint256 nftId)
         external
@@ -251,9 +254,10 @@ interface ILendingAuction is ILiquidityProviders {
         bytes32 offerHash
     ) external payable;
 
-    function sigExecuteLoanByLender(Offer calldata offer, bytes calldata signature)
-        external
-        payable;
+    function sigExecuteLoanByLender(
+        Offer calldata offer,
+        bytes calldata signature
+    ) external payable;
 
     function chainExecuteLoanByLender(
         address nftContractAddress,
@@ -263,8 +267,8 @@ interface ILendingAuction is ILiquidityProviders {
 
     function sigRefinanceByBorrower(
         Offer calldata offer,
-        uint256 nftId,
-        bytes calldata signature
+        bytes calldata signature,
+        uint256 nftId
     ) external payable;
 
     function chainRefinanceByBorrowerFloor(
@@ -322,10 +326,10 @@ interface ILendingAuction is ILiquidityProviders {
         view
         returns (uint256);
 
-    function calculateFullRefinanceByLender(address nftContractAddress, uint256 nftId)
-        external
-        view
-        returns (uint256);
+    function calculateFullRefinanceByLender(
+        address nftContractAddress,
+        uint256 nftId
+    ) external view returns (uint256);
 
     function updateLoanDrawFee(uint256 newFeeAmount) external;
 

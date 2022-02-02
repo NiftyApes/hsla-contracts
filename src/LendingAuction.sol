@@ -411,8 +411,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         // );
     }
 
-        // ---------- Execute Loan Functions ---------- //
-
+    // ---------- Execute Loan Functions ---------- //
 
     /**
      * @notice Allows a borrower to submit a signed offer from a lender and execute a loan using their NFT as collateral
@@ -423,7 +422,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     function sigExecuteLoanByBorrower(
         Offer calldata offer,
         bytes calldata signature,
-        uint256 nftId // nftId should match offer.nftId if floorTerm false, nftId should not match if floorTerm true. Need to provide as function parameter to pass nftId with floor terms.
+        uint256 nftId // nftId should match offer.nftId if offer.floorTerm false, nftId should not match if offer.floorTerm true. Need to provide as function parameter to pass nftId with floor terms.
     ) external payable whenNotPaused nonReentrant {
         // require signature has not been cancelled/bid withdrawn
         require(
@@ -514,7 +513,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     }
 
     /**
-     * @notice handles the state changes for executeLoanByBorrower
+     * @notice handles the checks, state transitions, and value/asset transfers for executeLoanByBorrower
      * @param offer The details of a loan auction offer
      * @param nftId The id of the specified NFT
      * @param lender The prospective lender
@@ -685,7 +684,8 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
      * @param offer The details of a loan auction offer
      * @param lender The prospective lender
      * @param borrower The prospective borrower and owner of the NFT
-     */    function _executeLoanByLenderInternal(
+     */
+    function _executeLoanByLenderInternal(
         Offer memory offer,
         address lender,
         address borrower
@@ -732,7 +732,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             "Borrower must be the owner of nftId to executeLoanByLender"
         );
 
-        // *------------ State updates ------------* //
+        // *------------ State Transitions ------------* //
 
         // check if lender has sufficient available balance and update utilizedBalance
         _checkAndUpdateLenderUtilizedBalanceInternal(
@@ -794,11 +794,17 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
     // ---------- Refinance Loan Functions ---------- //
 
-    
+    /**
+     * @notice Allows a borrower to submit a signed offer from a lender and refinance a loan with near arbitrary terms
+     * @dev The offer amount must be greater than the current loan amount plus interest owed to the lender
+     * @param offer The details of the loan auction offer
+     * @param signature A signed offerHash
+     * @param nftId The id of a specified NFT
+     */
     function sigRefinanceByBorrower(
         Offer calldata offer,
-        uint256 nftId,
-        bytes memory signature
+        bytes calldata signature,
+        uint256 nftId
     ) external payable whenNotPaused nonReentrant {
         // ideally calculated, stored, and provided as parameter to save computation
         bytes32 offerHash = getOfferHash(offer);
@@ -829,6 +835,13 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         }
     }
 
+    /**
+     * @notice Allows a borrower to submit an offer from the on-chain floor offer book and refinance a loan with near arbitrary terms
+     * @dev The offer amount must be greater than the current loan amount plus interest owed to the lender
+     * @param nftContractAddress The address of the NFT collection
+     * @param nftId The id of the specified NFT
+     * @param offerHash The hash of all parameters in an offer. This is used as the uniquge identifer of an offer.
+     */
     function chainRefinanceByBorrowerFloor(
         address nftContractAddress,
         uint256 nftId,
@@ -841,6 +854,13 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         _refinanceByBorrowerInternal(offer, offer.creator, nftId);
     }
 
+    /**
+     * @notice Allows a borrower to submit an offer from the on-chain individual NFT offer book and refinance a loan with near arbitrary terms
+     * @dev The offer amount must be greater than the current loan amount plus interest owed to the lender
+     * @param nftContractAddress The address of the NFT collection
+     * @param nftId The id of the specified NFT
+     * @param offerHash The hash of all parameters in an offer. This is used as the uniquge identifer of an offer.
+     */
     function chainRefinanceByBorrowerNft(
         address nftContractAddress,
         uint256 nftId,
@@ -857,6 +877,12 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         _refinanceByBorrowerInternal(offer, offer.creator, nftId);
     }
 
+    /**
+     * @notice Handles checks, state transitions, and value/asset transfers for executeLoanbyLender
+     * @param offer The details of a loan auction offer
+     * @param prospectiveLender The prospective lender
+     * @param nftId The id of the specified NFT
+     */
     function _refinanceByBorrowerInternal(
         Offer memory offer,
         address prospectiveLender,
@@ -895,9 +921,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         );
 
         // get nft owner
-        address nftOwner = IERC721(offer.nftContractAddress).ownerOf(
-            offer.nftId
-        );
+        address nftOwner = IERC721(offer.nftContractAddress).ownerOf(nftId);
 
         // require msg.sender is the nftOwner/borrower
         require(
@@ -908,7 +932,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         // calculate the interest earned by current lender
         uint256 lenderInterest = calculateInterestAccrued(
             offer.nftContractAddress,
-            offer.nftId,
+            nftId,
             true
         );
 
@@ -980,6 +1004,13 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         // emit SigOfferFinalized(offer.nftContractAddress, offer.nftId, signature);
     }
 
+    /**
+     * @notice Allows a lender offer better terms than the current loan, refinance, and take over a loan
+     * @dev The offer amount, interest rate, and duration must be at parity with the current loan, plus "1". Meaning at least one term must be better than the current loan.
+     * @dev new lender balance must be sufficient to pay fullRefinance amount
+     * @dev current lender balance must be sufficient to fund new offer amount
+     * @param offer The details of the loan auction offer
+     */
     function refinanceByLender(Offer calldata offer)
         external
         payable
@@ -1068,13 +1099,8 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             loanAuction.historicLenderInterest +
             (loanAuction.amountDrawn * refinancePremiumLenderPercentage);
 
-        // calculate protocolPremiumFee
-        uint256 protocolPremiumFee = loanAuction.amountDrawn *
-            refinancePremiumProtocolPercentage;
-
         // calculate fullRefinanceAmount
         uint256 fullRefinanceAmount = interestAndPremiumOwedToCurrentLender +
-            protocolPremiumFee +
             loanAuction.amountDrawn;
 
         // If refinancing is not done by current lender they must buy out the loan and pay fees
@@ -1092,7 +1118,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                 cAsset,
                 loanAuction.lender,
                 msg.sender,
-                protocolPremiumFee,
+                0,
                 interestAndPremiumOwedToCurrentLender,
                 loanAuction.amountDrawn
             );
@@ -1102,7 +1128,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
             // If current lender is refinancing the loan they do not need to pay any fees or buy themselves out.
         } else if (loanAuction.lender == msg.sender) {
-            // check this require statment, might be duplicteive to ofer checks above.
+            // check this require statment, might be duplictive to ofer checks above.
 
             require(
                 (cAssetBalances[cAsset][msg.sender] -
@@ -1146,9 +1172,15 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         // );
     }
 
-    
     // ---------- Borrower Draw Functions ---------- //
 
+    /**
+     * @notice If a loan has been refinanced with a longer duration this function allows a borrower to draw down additional time for their loan.
+     * @dev Drawing down time increases the maximum loan pay back amount and so is not automatically imposed on a refinance by lender, hence this function.
+     * @param nftContractAddress The address of the NFT collection
+     * @param nftId The id of the specified NFT
+     * @param drawTime The amount of time to draw and add to the loan duration
+     */
     function drawLoanTime(
         address nftContractAddress,
         uint256 nftId,
@@ -1219,6 +1251,13 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         );
     }
 
+    /**
+     * @notice If a loan has been refinanced with a higher amount this function allows a borrower to draw down additional value for their loan.
+     * @dev Drawing down value increases the maximum loan pay back amount and so is not automatically imposed on a refinance by lender, hence this function.
+     * @param nftContractAddress The address of the NFT collection
+     * @param nftId The id of the specified NFT
+     * @param drawAmount The amount of value to draw and add to the loan amountDrawn
+     */
     function drawLoanAmount(
         address nftContractAddress,
         uint256 nftId,
@@ -1324,7 +1363,11 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
     // ---------- Repayment and Asset Seizure Functions ---------- //
 
-    // enables borrowers to repay their full loan to a lender and regain full ownership of their NFT
+    /**
+     * @notice Enables a borrower to repay the remaining value of their loan plus interest and protocol fee, and regain full ownership of their NFT
+     * @param nftContractAddress The address of the NFT collection
+     * @param nftId The id of the specified NFT
+     */
     function repayRemainingLoan(address nftContractAddress, uint256 nftId)
         external
         payable
@@ -1446,7 +1489,13 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         return 0;
     }
 
-    // enables borrowers to make a partial payment on their loan
+    /**
+     * @notice Allows borrowers to make a partial payment toward the principle of their loan
+     * @dev This function does not charge any interest or fees. It does change the calculation for future interest and fees accrual, so we track historicLenderInterest and historicProtocolInterest
+     * @param nftContractAddress The address of the NFT collection
+     * @param nftId The id of the specified NFT
+     * @param partialAmount The amount of value to pay down on the principle of the loan
+     */
     function partialPayment(
         address nftContractAddress,
         uint256 nftId,
@@ -1540,8 +1589,12 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             partialAmount
         );
     }
-
-        // allows anyone to seize an asset of a past due loan on behalf on the lender
+    /**
+     * @notice Allows anyone to seize an asset of a past due loan on behalf on the lender
+     * @dev This functions can be called by anyone the second the duration + loanExecutedTime is past and the loan is not paid back in full
+     * @param nftContractAddress The address of the NFT collection
+     * @param nftId The id of the specified NFT
+     */
     function seizeAsset(address nftContractAddress, uint256 nftId)
         external
         whenNotPaused
@@ -1927,7 +1980,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         return 0;
     }
 
-
     // ---------- Helper Functions ---------- //
 
     // returns the owner of an NFT the has a loan against it
@@ -2045,7 +2097,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     }
 
     // ---------- Fee Update Functions ---------- //
-
 
     function updateLoanDrawFee(uint256 newFeeAmount) external onlyOwner {
         protocolDrawFeePercentage = newFeeAmount / 10000;
