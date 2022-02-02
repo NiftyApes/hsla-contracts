@@ -512,5 +512,35 @@ contract LiquidityProviders is
         return amountToWithdraw;
     }
 
-    // create admin withdraw functions to directly manipulate COMP and other balances of contract
+    // ---------- Admin Withdrawal Functions ---------- //
+
+    // function adminWithdrawERC20(address asset, address to, uint256 amountToWithdraw)
+    //     external
+    //     whenNotPaused
+    //     onlyOwner
+    //     returns (uint256)
+    // {
+
+    // }
+
+    // function adminWithdrawCERC20(address asset, address to, uint256 amountToWithdraw)
+    //     external
+    //     whenNotPaused
+    //     onlyOwner
+    //     returns (uint256)
+    // {}
+
+    // function adminWithdrawEth(address to, uint256 amountToWithdraw)
+    //     external
+    //     whenNotPaused
+    //     onlyOwner
+    //     returns (uint256)
+    // {}
+
+    // function adminWithdrawCEth(address to, uint256 amountToWithdraw)
+    //     external
+    //     whenNotPaused
+    //     onlyOwner
+    //     returns (uint256)
+    // {}
 }
