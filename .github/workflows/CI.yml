@@ -49,7 +49,7 @@ jobs:
         run: forge update
 
       - name: Run tests
-        run: forge test -vvv
+        run: forge test --optimize --fork-url https://eth-mainnet.alchemyapi.io/v2/p6SBr3BiRU8XHYK8tdynKuxKOcXb_C9Y
 
       - name: Run lint check
         run: npm run lint:check
@@ -57,7 +57,3 @@ jobs:
       # Too slow to run regularly
       #- name: Run audit
       #  run: poetry run slither --solc-remaps @openzeppelin=lib/openzeppelin-contracts --solc-args optimize src/
-
-      - name: Run tests
-        # TODO(Store as a secret)
-        run: forge test --optimize --fork-url https://eth-mainnet.alchemyapi.io/v2/p6SBr3BiRU8XHYK8tdynKuxKOcXb_C9Y
