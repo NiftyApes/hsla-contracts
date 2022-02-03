@@ -935,7 +935,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             nftId
         );
 
-        // need to ensure protocol fee is calculated correctly here. Interest is paid by new ledner, should protocol fee be as well?
+        // need to ensure protocol fee is calculated correctly here. HistoricInterest is paid by new ledner, should protocol fee be as well?
 
         // calculate interest earned
         uint256 interestOwedToLender = currentLenderInterest +
@@ -1084,7 +1084,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             (loanAuction.amountDrawn * refinancePremiumLenderPercentage);
 
         // calculate fullRefinanceAmount
-        uint256 fullRefinanceAmount = interestAndPremiumOwedToCurrentLender +
+        uint256 fullRefinanceAmount = interestAndPremiumOwedToCurrentLender + currentProtocolInterest +
             loanAuction.amountDrawn;
 
         // If refinancing is not done by current lender they must buy out the loan and pay fees
@@ -1102,7 +1102,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                 cAsset,
                 loanAuction.lender,
                 msg.sender,
-                0,
+                currentProtocolInterest,
                 interestAndPremiumOwedToCurrentLender,
                 loanAuction.amountDrawn
             );
@@ -1906,15 +1906,15 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         address cAsset,
         address to,
         address from,
-        uint256 protocolPremiumFee,
-        uint256 interestAndPremiumAmount,
+        uint256 protocolPremiumAmount,
+        uint256 lenderInterestAndPremiumAmount,
         uint256 paymentAmount
     ) internal returns (uint256) {
         // Create a reference to the corresponding cToken contract, like cDAI
         ICERC20 cToken = ICERC20(cAsset);
 
         // instantiate protocolPremiumFeeTokens
-        uint256 protocolPremiumFeeTokens;
+        uint256 protocolPremiumTokens;
         // instantiate interestAndPremiumTokens
         uint256 interestAndPremiumTokens;
         // instantiate paymentTokens
@@ -1926,9 +1926,9 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         // set exchange rate from erc20 to ICERC20
         vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
 
-        // convert protocolPremiumFeeTokens to ICERC20
-        (vars.mathErr, protocolPremiumFeeTokens) = divScalarByExpTruncate(
-            protocolPremiumFee,
+        // convert protocolPremiumAmount to ICERC20
+        (vars.mathErr, protocolPremiumTokens) = divScalarByExpTruncate(
+            protocolPremiumAmount,
             Exp({mantissa: vars.exchangeRateMantissa})
         );
         if (vars.mathErr != MathError.NO_ERROR) {
@@ -1940,9 +1940,9 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                 );
         }
 
-        // convert interestAndPremiumAmount to ICERC20
+        // convert lenderInterestAndPremiumAmount to ICERC20
         (vars.mathErr, interestAndPremiumTokens) = divScalarByExpTruncate(
-            interestAndPremiumAmount,
+            lenderInterestAndPremiumAmount,
             Exp({mantissa: vars.exchangeRateMantissa})
         );
         if (vars.mathErr != MathError.NO_ERROR) {
@@ -1974,13 +1974,16 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         utilizedCAssetBalances[cAsset][from] += paymentTokens;
 
         // update from's total balance
-        cAssetBalances[cAsset][from] -= protocolPremiumFeeTokens;
+        cAssetBalances[cAsset][from] -= protocolPremiumTokens;
 
         // update the to's utilized balance
         utilizedCAssetBalances[cAsset][to] -= paymentTokens;
 
         // update the to's total balance
         cAssetBalances[cAsset][to] += interestAndPremiumTokens;
+
+        // update the owner's total balance
+        cAssetBalances[cAsset][owner()] += protocolPremiumTokens;
 
         return 0;
     }
