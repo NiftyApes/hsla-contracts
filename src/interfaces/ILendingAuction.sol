@@ -317,9 +317,8 @@ interface ILendingAuction is ILiquidityProviders {
 
     function calculateInterestAccrued(
         address nftContractAddress,
-        uint256 nftId,
-        bool lenderOrProtocol
-    ) external view returns (uint256);
+        uint256 nftId
+    ) external view returns (uint256, uint256);
 
     function calculateFullRepayment(address nftContractAddress, uint256 nftId)
         external

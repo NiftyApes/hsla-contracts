@@ -930,23 +930,15 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         );
 
         // calculate the interest earned by current lender
-        uint256 lenderInterest = calculateInterestAccrued(
+        (uint256 currentLenderInterest, uint256 currentProtocolInterest) = calculateInterestAccrued(
             offer.nftContractAddress,
-            nftId,
-            true
+            nftId
         );
 
         // need to ensure protocol fee is calculated correctly here. Interest is paid by new ledner, should protocol fee be as well?
 
-        // calculate the interest earned by protocol
-        uint256 currentProtocolInterest = calculateInterestAccrued(
-            offer.nftContractAddress,
-            offer.nftId,
-            false
-        );
-
         // calculate interest earned
-        uint256 interestOwedToLender = lenderInterest +
+        uint256 interestOwedToLender = currentLenderInterest +
             loanAuction.historicLenderInterest;
 
         uint256 fullRepayment = loanAuction.amountDrawn + interestOwedToLender;
@@ -1081,17 +1073,9 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         }
 
         // calculate the interest earned by current lender
-        uint256 currentLenderInterest = calculateInterestAccrued(
+        (uint256 currentLenderInterest, uint256 currentProtocolInterest) = calculateInterestAccrued(
             offer.nftContractAddress,
-            offer.nftId,
-            true
-        );
-
-        // calculate the interest earned by protocol
-        uint256 currentProtocolInterest = calculateInterestAccrued(
-            offer.nftContractAddress,
-            offer.nftId,
-            false
+            offer.nftId
         );
 
         // calculate interest earned
@@ -1223,16 +1207,9 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             "Total Time drawn must not exceed best bid duration"
         );
 
-        uint256 lenderInterest = calculateInterestAccrued(
+        (uint256 lenderInterest, uint256 protocolInterest) = calculateInterestAccrued(
             nftContractAddress,
-            nftId,
-            true
-        );
-
-        uint256 protocolInterest = calculateInterestAccrued(
-            nftContractAddress,
-            nftId,
-            false
+            nftId
         );
 
         // reset timeOfinterestStart and update historic interest due to parameters of loan changing
@@ -1307,16 +1284,9 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             loanAuction.lender
         );
 
-        uint256 lenderInterest = calculateInterestAccrued(
+        (uint256 lenderInterest, uint256 protocolInterest) = calculateInterestAccrued(
             nftContractAddress,
-            nftId,
-            true
-        );
-
-        uint256 protocolInterest = calculateInterestAccrued(
-            nftContractAddress,
-            nftId,
-            false
+            nftId
         );
 
         // reset timeOfinterestStart and update historic interest due to parameters of loan changing
@@ -1395,17 +1365,9 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         );
 
         // calculate the amount of interest accrued by the lender
-        uint256 lenderInterest = calculateInterestAccrued(
+        (uint256 lenderInterest, uint256 protocolInterest) = calculateInterestAccrued(
             nftContractAddress,
-            nftId,
-            true
-        );
-
-        // calculate the amount of interest accrued by the lender
-        uint256 protocolInterest = calculateInterestAccrued(
-            nftContractAddress,
-            nftId,
-            false
+            nftId
         );
 
         // calculate total interest value owed
@@ -1523,16 +1485,9 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         );
 
         // calculate the amount of interest accrued by the lender
-        uint256 lenderInterest = calculateInterestAccrued(
+         (uint256 lenderInterest, uint256 protocolInterest) = calculateInterestAccrued(
             nftContractAddress,
-            nftId,
-            true
-        );
-
-        uint256 protocolInterest = calculateInterestAccrued(
-            nftContractAddress,
-            nftId,
-            false
+            nftId
         );
 
         loanAuction.historicLenderInterest += lenderInterest;
@@ -2047,12 +2002,11 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     }
 
     // returns the interest value earned by lender or protocol during timeOfInterest segment
-    function calculateInterestAccrued(
-        address nftContractAddress,
-        uint256 nftId,
-        // true for lender, false for protocol
-        bool lenderOrProtocol
-    ) public view returns (uint256) {
+    function calculateInterestAccrued(address nftContractAddress, uint256 nftId)
+        public
+        view
+        returns (uint256 lenderInterest, uint256 protocolInterest)
+    {
         // instantiate LoanAuction Struct
         LoanAuction memory loanAuction = _loanAuctions[nftContractAddress][
             nftId
@@ -2077,27 +2031,25 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         uint256 percentOfAmountDrawn = loanAuction.amountDrawn *
             percentOfTimeDrawn;
 
-        uint256 interestMulPercentOfAmountDrawn;
+        uint256 lenderInterestMulPercentOfAmountDrawn = loanAuction
+            .interestRate * percentOfAmountDrawn;
 
-        // Multiply principle by basis points first
-        if (lenderOrProtocol == true) {
-            interestMulPercentOfAmountDrawn =
-                loanAuction.interestRate *
+        uint256 protocolInterestMulPercentOfAmountDrawn = protocolDrawFeePercentage *
                 percentOfAmountDrawn;
-        } else if (lenderOrProtocol == false) {
-            interestMulPercentOfAmountDrawn =
-                protocolDrawFeePercentage *
-                percentOfAmountDrawn;
-        }
 
         // divide by basis decimals
-        uint256 interestDecimals = interestMulPercentOfAmountDrawn / 10000;
+        uint256 lenderInterestDecimals = lenderInterestMulPercentOfAmountDrawn /
+            10000;
 
         // divide by decimalCompensation
-        uint256 finalAmount = interestDecimals / decimalCompensation;
+        lenderInterest = lenderInterestDecimals / decimalCompensation;
 
-        // return interest amount
-        return finalAmount;
+        // divide by basis decimals
+        uint256 protocolInterestDecimals = protocolInterestMulPercentOfAmountDrawn /
+                10000;
+
+        // divide by decimalCompensation
+        protocolInterest = protocolInterestDecimals / decimalCompensation;
     }
 
     // calculate the fullRepayment of a loan
@@ -2110,11 +2062,10 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             nftId
         ];
 
-        uint256 lenderInterest = calculateInterestAccrued(
-            nftContractAddress,
-            nftId,
-            true
-        );
+        (
+            uint256 lenderInterest,
+            uint256 protocolInterest
+        ) = calculateInterestAccrued(nftContractAddress, nftId);
 
         return
             loanAuction.amountDrawn +
@@ -2131,11 +2082,10 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             nftId
         ];
 
-        uint256 lenderInterest = calculateInterestAccrued(
-            nftContractAddress,
-            nftId,
-            true
-        );
+        (
+            uint256 lenderInterest,
+            uint256 protocolInterest
+        ) = calculateInterestAccrued(nftContractAddress, nftId);
 
         // calculate and return refinanceAmount
         return
