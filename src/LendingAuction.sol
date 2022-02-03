@@ -1454,6 +1454,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                 msg.sender,
                 fullRepayment,
                 interestOwedToLender,
+                // interestOwedToProtocol,
                 currentAmountDrawn
             );
         }
@@ -1473,6 +1474,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                 msg.value,
                 msg.value,
                 interestOwedToLender,
+                // interestOwedToProtocol,
                 currentAmountDrawn
             );
         }
@@ -1558,6 +1560,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                 msg.sender,
                 partialAmount,
                 0,
+                // 0,
                 partialAmount
             );
         }
@@ -1578,6 +1581,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                 msg.value,
                 msg.value,
                 0,
+                // 0,
                 partialAmount
             );
         }
@@ -1589,6 +1593,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             partialAmount
         );
     }
+
     /**
      * @notice Allows anyone to seize an asset of a past due loan on behalf on the lender
      * @dev This functions can be called by anyone the second the duration + loanExecutedTime is past and the loan is not paid back in full
@@ -1656,7 +1661,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
     // ---------- Internal Payment, Balance, and Transfer Functions ---------- //
 
-
     function _checkAndUpdateLenderUtilizedBalanceInternal(
         address cAsset,
         uint256 amount,
@@ -1706,7 +1710,8 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         address to,
         address from,
         uint256 fullAmount,
-        uint256 interestAndPremiumAmount,
+        uint256 lenderInterestAndPremiumAmount,
+        // uint256 protocolInterestAndPremiumAmount,
         uint256 paymentAmount
     ) internal returns (uint256) {
         // Create a reference to the underlying asset contract, like DAI.
@@ -1716,7 +1721,9 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         ICERC20 cToken = ICERC20(cAsset);
 
         // instantiate interestAndPremiumTokens
-        uint256 interestAndPremiumTokens;
+        uint256 lenderInterestAndPremiumTokens;
+        // instantiate interestAndPremiumTokens
+        // uint256 protocolInterestAndPremiumTokens;
         // instantiate paymentTokens
         uint256 paymentTokens;
 
@@ -1730,9 +1737,9 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         // set exchange rate from erc20 to ICERC20
         vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
 
-        // convert interestAndPremiumAmount to ICERC20
-        (vars.mathErr, interestAndPremiumTokens) = divScalarByExpTruncate(
-            interestAndPremiumAmount,
+        // convert lenderInterestAndPremiumAmount to ICERC20
+        (vars.mathErr, lenderInterestAndPremiumTokens) = divScalarByExpTruncate(
+            lenderInterestAndPremiumAmount,
             Exp({mantissa: vars.exchangeRateMantissa})
         );
         if (vars.mathErr != MathError.NO_ERROR) {
@@ -1743,6 +1750,23 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                     uint256(vars.mathErr)
                 );
         }
+
+        // convert protocolInterestAndPremiumAmount to ICERC20
+        // (
+        //     vars.mathErr,
+        //     protocolInterestAndPremiumTokens
+        // ) = divScalarByExpTruncate(
+        //     protocolInterestAndPremiumAmount,
+        //     Exp({mantissa: vars.exchangeRateMantissa})
+        // );
+        // if (vars.mathErr != MathError.NO_ERROR) {
+        //     return
+        //         failOpaque(
+        //             Error.MATH_ERROR,
+        //             FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED,
+        //             uint256(vars.mathErr)
+        //         );
+        // }
 
         // convert paymentAmount to ICERC20
         (vars.mathErr, paymentTokens) = divScalarByExpTruncate(
@@ -1759,7 +1783,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         }
 
         // should have require statement to ensure mint is successful before proceeding
-        // protocolDrawFee is taken here as the fullAmount will be greater the paymentTokens + interestAndPremiumTokens and remain at the NA contract address
+        // protocolDrawFee is taken here as the fullAmount will be greater the paymentTokens + lenderInterestAndPremiumTokens and remain at the NA contract address
         // mint cTokens
         cToken.mint(fullAmount);
 
@@ -1767,7 +1791,9 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         utilizedCAssetBalances[cAsset][to] -= paymentTokens;
 
         // update the tos total balance
-        cAssetBalances[cAsset][to] += interestAndPremiumTokens;
+        cAssetBalances[cAsset][to] += lenderInterestAndPremiumTokens;
+        // update the owner total balance
+        // cAssetBalances[cAsset][owner()] += lenderInterestAndPremiumTokens;
 
         return 0;
     }
@@ -1778,14 +1804,17 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         address to,
         uint256 msgValue,
         uint256 msgValueMinusFee,
-        uint256 interestAndPremiumAmount,
+        uint256 lenderInterestAndPremiumAmount,
+        // uint256 protocolInterestAndPremiumAmount,
         uint256 paymentAmount
     ) internal returns (uint256) {
         // Create a reference to the corresponding cToken contract, like cDAI
         ICEther cToken = ICEther(cAsset);
 
         // instantiate interestAndPremiumTokens
-        uint256 interestAndPremiumTokens;
+        uint256 lenderInterestAndPremiumTokens;
+        // instantiate interestAndPremiumTokens
+        // uint256 protocolInterestAndPremiumTokens;
         // instantiate paymentTokens
         uint256 paymentTokens;
         // instantiate msgValueTokens
@@ -1814,8 +1843,8 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         }
 
         // convert interestAndPremiumAmount to ICERC20
-        (vars.mathErr, interestAndPremiumTokens) = divScalarByExpTruncate(
-            interestAndPremiumAmount,
+        (vars.mathErr, lenderInterestAndPremiumTokens) = divScalarByExpTruncate(
+            lenderInterestAndPremiumAmount,
             Exp({mantissa: vars.exchangeRateMantissa})
         );
         if (vars.mathErr != MathError.NO_ERROR) {
@@ -1826,6 +1855,20 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                     uint256(vars.mathErr)
                 );
         }
+
+        //         // convert interestAndPremiumAmount to ICERC20
+        // (vars.mathErr, protocolInterestAndPremiumTokens) = divScalarByExpTruncate(
+        //     protocolInterestAndPremiumAmount,
+        //     Exp({mantissa: vars.exchangeRateMantissa})
+        // );
+        // if (vars.mathErr != MathError.NO_ERROR) {
+        //     return
+        //         failOpaque(
+        //             Error.MATH_ERROR,
+        //             FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED,
+        //             uint256(vars.mathErr)
+        //         );
+        // }
 
         // convert paymentAmount to ICERC20
         (vars.mathErr, paymentTokens) = divScalarByExpTruncate(
@@ -1841,8 +1884,11 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                 );
         }
 
+        // uint256 mintDelta = msgValueTokens -
+        //     (lenderInterestAndPremiumTokens + protocolInterestAndPremiumTokens + paymentTokens);
+
         uint256 mintDelta = msgValueTokens -
-            (interestAndPremiumTokens + paymentTokens);
+            (lenderInterestAndPremiumTokens + paymentTokens);
 
         // should have require statement to ensure mint is successful before proceeding
         // // mint CEth tokens to this contract address
@@ -1852,7 +1898,11 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         utilizedCAssetBalances[cAsset][to] -= paymentTokens;
 
         // update the to's total balance
-        cAssetBalances[cAsset][to] += (interestAndPremiumTokens + mintDelta);
+        cAssetBalances[cAsset][to] += (lenderInterestAndPremiumTokens +
+            mintDelta);
+
+        // update the onwer's total balance
+        // cAssetBalances[cAsset][owner()] += protocolInterestAndPremiumTokens;
 
         return 0;
     }
