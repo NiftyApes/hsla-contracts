@@ -70,6 +70,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         returns (bytes32 offerhash)
     {
         return
+            // TODO(Consider encodePacked)
             _hashTypedDataV4(
                 keccak256(
                     abi.encode(
@@ -239,8 +240,11 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     {
         OfferBook storage offerBook = _floorOfferBooks[nftContractAddress];
 
-        offer.creator = msg.sender;
-        offer.floorTerm = true;
+        require(
+            offer.creator == msg.sender,
+            "The creator must match msg.sender"
+        );
+        require(offer.floorTerm == true, "Function requires a floor term");
 
         bytes32 offerHash = getOfferHash(offer);
 
@@ -317,6 +321,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     function removeFloorOffer(address nftContractAddress, bytes32 offerHash)
         external
     {
+        // TODO(Why are we creating extra storage pointers here?)
         OfferBook storage offerBook = _floorOfferBooks[nftContractAddress];
         Offer storage offer = offerBook.offers[offerHash];
 

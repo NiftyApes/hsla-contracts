@@ -221,6 +221,7 @@ interface ILendingAuction is ILiquidityProviders {
     function createFloorOffer(address nftContractAddress, Offer memory offer)
         external;
 
+    // TODO(The NFT contract here is duplicate, it's already contained in the offer struct)
     function createNftOffer(
         address nftContractAddress,
         uint256 nftId,

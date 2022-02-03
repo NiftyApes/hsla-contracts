@@ -17,6 +17,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
     IUniswapV2Router SushiSwapRouter;
     MockERC721Token mockNFT;
     IWETH WETH;
+    Hevm IHEVM;
     IERC20 DAI;
     ICERC20 cDAI;
     ICEther cETH;
@@ -38,6 +39,9 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         cETH = ICEther(0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5);
         // Mint some cETH
         cETH.mint{value: 10 ether}();
+
+        // Setup HEVM
+        IHEVM = Hevm(HEVM_ADDRESS);
 
         // Setup DAI balances
 
@@ -92,7 +96,6 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         LA.supplyErc20(address(DAI), 100000 ether);
         // Supply 10 ether to contract
         LA.supplyEth{value: 10 ether}();
-        // Offer NFT for sale
     }
 
     // Test Cases
@@ -121,5 +124,29 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
 
     function testUpdateRefinancePremiumProtocolPercentage() public {
         LA.updateRefinancePremiumProtocolPercentage(5);
+    }
+
+    function testCreateandRemoveFloorOffer(
+        bool fixedTerms,
+        uint256 amount,
+        uint256 nftId
+    ) public {
+        // Create a floor offer
+        LendingAuction.Offer memory offer;
+        offer.creator = address(this);
+        offer.nftContractAddress = address(mockNFT);
+        offer.nftId = nftId;
+        offer.asset = address(DAI);
+        offer.amount = amount;
+        offer.interestRate = 10;
+        offer.duration = 100000000;
+        offer.expiration = block.timestamp + 1000000;
+        offer.fixedTerms = fixedTerms;
+        offer.floorTerm = true;
+
+        LA.createFloorOffer(address(mockNFT), offer);
+
+        // And remove it
+        LA.removeFloorOffer(address(mockNFT), LA.getOfferHash(offer));
     }
 }
