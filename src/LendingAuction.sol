@@ -327,7 +327,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     {
         // TODO(Why are we creating extra storage pointers here?)
         OfferBook storage offerBook = _floorOfferBooks[nftContractAddress];
-        Offer storage offer = offerBook.offers[offerHash];
+        Offer memory offer = offerBook.offers[offerHash];
 
         require(
             msg.sender == offer.creator,
@@ -379,7 +379,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         bytes32 offerHash
     ) external {
         OfferBook storage offerBook = _nftOfferBooks[nftContractAddress][nftId];
-        Offer storage offer = offerBook.offers[offerHash];
+        Offer memory offer = offerBook.offers[offerHash];
 
         require(
             msg.sender == offer.creator,
@@ -812,7 +812,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
      */
     function sigRefinanceByBorrower(
         Offer calldata offer,
-        bytes memory signature,
+        bytes calldata signature,
         uint256 nftId
     ) external payable whenNotPaused nonReentrant {
         // ideally calculated, stored, and provided as parameter to save computation
@@ -842,6 +842,13 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             // execute state changes for executeLoanByBid
             _refinanceByBorrowerInternal(offer, offer.creator, nftId);
         }
+
+        // ensure all sig functions finalize signatures 
+
+        // finalize signature
+        _cancelledOrFinalized[signature] == true;
+
+        emit SigOfferFinalized(offer.nftContractAddress, offer.nftId, signature);
     }
 
     /**
@@ -950,10 +957,10 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         // need to ensure protocol fee is calculated correctly here. HistoricInterest is paid by new ledner, should protocol fee be as well?
 
         // calculate interest earned
-        uint256 interestAndPremiumOwedToCurrentLender = vars.currentLenderInterest +
+        vars.interestAndPremiumOwedToCurrentLender = vars.currentLenderInterest +
             loanAuction.historicLenderInterest;
 
-        vars.fullAmount = loanAuction.amountDrawn + interestAndPremiumOwedToCurrentLender;
+        vars.fullAmount = loanAuction.amountDrawn + vars.interestAndPremiumOwedToCurrentLender;
 
         // require statement for offer amount to be greater than or equal to full repayment
         require(
@@ -974,7 +981,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             loanAuction.lender,
             prospectiveLender,
             0,
-            interestAndPremiumOwedToCurrentLender,
+            vars.interestAndPremiumOwedToCurrentLender,
             loanAuction.amountDrawn
         );
 
@@ -993,19 +1000,16 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             currentHistoricProtocolInterest +
             vars.currentProtocolInterest;
 
-        // stack too deep for these event variables, need to refactor
-        // emit LoanRefinance(
-        //     lender,
-        //     nftOwner,
-        //     offer.nftContractAddress,
-        //     offer.nftId,
-        //     offer.asset,
-        //     offer.amount,
-        //     offer.interestRate,
-        //     offer.duration
-        // );
-
-        // emit SigOfferFinalized(offer.nftContractAddress, offer.nftId, signature);
+        emit LoanRefinance(
+            prospectiveLender,
+            nftOwner,
+            offer.nftContractAddress,
+            offer.nftId,
+            offer.asset,
+            offer.amount,
+            offer.interestRate,
+            offer.duration
+        );
     }
 
     /**
@@ -1158,18 +1162,16 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             currentHistoricProtocolInterest +
             vars.currentProtocolInterest;
 
-        // need to ensure event tracks protocolPremiumAmount so that we can accurately account funds to allocate to Regen Collective
-        // stack too deep problem, need to refactor
-        // emit LoanRefinance(
-        //     msg.sender,
-        //     loanAuction.nftOwner,
-        //     offer.nftContractAddress,
-        //     offer.nftId,
-        //     offer.asset,
-        //     offer.amount,
-        //     offer.interestRate,
-        //     offer.duration
-        // );
+        emit LoanRefinance(
+            msg.sender,
+            loanAuction.nftOwner,
+            offer.nftContractAddress,
+            offer.nftId,
+            offer.asset,
+            offer.amount,
+            offer.interestRate,
+            offer.duration
+        );
     }
 
     // ---------- Borrower Draw Functions ---------- //
@@ -1514,8 +1516,15 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         // update amountDrawn
         loanAuction.amountDrawn -= partialAmount;
 
-        // instantiate RedeemLocalVars
-        RedeemLocalVars memory vars;
+        // if asset is not 0x0 process as Erc20
+        if (
+            loanAuction.asset !=
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
+        ) {
+            require(
+                partialAmount < currentAmountDrawn,
+                "Msg.value must be less than amountDrawn"
+            );
 
             _payErc20AndUpdateBalancesInternal(
                 loanAuction.asset,
@@ -1550,18 +1559,12 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             );
         }
 
-        // require that the lenders available balance is sufficent to serve the loan
-        require(
-            // calculate lenders available ICERC20 balance and require it to be greater than or equal to vars.redeemTokens
-            (cAssetBalances[cAsset][lender] -
-                utilizedCAssetBalances[cAsset][lender]) >= vars.redeemTokens,
-            "Lender does not have a sufficient balance to serve this loan"
+         emit PartialRepayment(
+            nftContractAddress,
+            nftId,
+            loanAuction.asset,
+            partialAmount
         );
-
-        // update the lenders utilized balance
-        utilizedCAssetBalances[cAsset][lender] += vars.redeemTokens;
-
-        return 0;
     }
 
     /**
@@ -2107,8 +2110,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
         (uint256 lenderInterest, ) = calculateInterestAccrued(
             nftContractAddress,
-            nftId,
-            true
+            nftId
         );
 
         // calculate and return refinanceAmount
