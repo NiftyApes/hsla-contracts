@@ -3,6 +3,7 @@ pragma solidity ^0.8.11;
 
 import "./ILiquidityProviders.sol";
 
+// TODO(Remove duplicate entry points for floor and regular, as that data is already in the offer)
 interface ILendingAuction is ILiquidityProviders {
     // Structs
 
@@ -198,6 +199,7 @@ interface ILendingAuction is ILiquidityProviders {
     function withdrawBidOrAsk(Offer calldata offer, bytes calldata signature)
         external;
 
+    // TODO(All the parameters excluding the hash are/should be redundant here)
     function getOffer(
         address nftContractAddress,
         uint256 nftId,
@@ -205,6 +207,7 @@ interface ILendingAuction is ILiquidityProviders {
         bool floorTerm
     ) external view returns (Offer memory offer);
 
+    // TODO(What is this actually used for, it's not called internally anywhere)
     function getOfferAtIndex(
         address nftContractAddress,
         uint256 nftId,
@@ -212,16 +215,18 @@ interface ILendingAuction is ILiquidityProviders {
         bool floorTerm
     ) external view returns (Offer memory offer);
 
+    // TODO(What is this actually used for, it's not called internally anywhere)
     function size(
         address nftContractAddress,
         uint256 nftId,
         bool floorTerm
     ) external view returns (uint256);
 
+    // TODO(The NFT contract here is duplicate, it's already contained in the offer struct)
     function createFloorOffer(address nftContractAddress, Offer memory offer)
         external;
 
-    // TODO(The NFT contract here is duplicate, it's already contained in the offer struct)
+    // TODO(The NFT info here is duplicate, it's already contained in the offer struct)
     function createNftOffer(
         address nftContractAddress,
         uint256 nftId,

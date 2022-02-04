@@ -13,11 +13,13 @@ import "./Exponential.sol";
 import "./interfaces/ILiquidityProviders.sol";
 
 // TODO(need to implement Proxy and Intitializable contracts?)
+// For what purpose?
 
 // @title An interface for liquidity providers to supply and withdraw tokens
 // @author Kevin Seagraves
 // @notice This contract wraps and unwraps, tracks balances of deposited Assets and cAssets
 // TODO(Factor out Exponential to library)
+// TODO(The offer book mapping can be factored out to a library)
 contract LiquidityProviders is
     ILiquidityProviders,
     Exponential,

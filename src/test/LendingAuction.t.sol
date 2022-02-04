@@ -57,8 +57,8 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         path[0] = address(WETH);
         path[1] = address(DAI);
         // Let's trade for 100k dai
-        SushiSwapRouter.swapExactETHForTokens{value: 100000 ether}(
-            100 ether,
+        SushiSwapRouter.swapExactETHForTokens{value: 1000000 ether}(
+            1000 ether,
             path,
             address(this),
             block.timestamp + 1000
@@ -68,8 +68,8 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         // Point at the real compound DAI token deployment
         cDAI = ICERC20(0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643);
         // Mint 25 ether in cDAI
-        DAI.approve(address(cDAI), 50000 ether);
-        cDAI.mint(50000 ether);
+        DAI.approve(address(cDAI), 500000 ether);
+        cDAI.mint(500000 ether);
 
         // Setup the liquidity providers contract
         LA = new LendingAuction();
@@ -100,33 +100,26 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
 
     // Test Cases
 
-    function testProtocolDrawFeePercentage() public {
-        LA.protocolDrawFeePercentage();
-    }
-
-    function testRefinancePremiumLenderPercentage() public {
-        LA.refinancePremiumLenderPercentage();
-    }
-
-    function testRefinancePremiumProtocolPercentage() public {
-        LA.refinancePremiumProtocolPercentage();
-    }
-
+    // TODO(Using a consistent unit of basis points here for the next 3 tests/6 interfaces would be more scrutable.)
+    // Additionally, a basis points unit could let all 3 of these fit into one word of storage as uint64.
+    // Addtionally, none of these really look like a "percentage".
     function testUpdateLoanDrawFee() public {
-        //TODO(parametic sweep)
-        //TODO(Assert value)
-        LA.updateLoanDrawFee(5);
+        // TODO(Why not just make the fee in basis points and get rid of the divisions?)
+        LA.updateLoanDrawFee(50000);
+        assert(LA.protocolDrawFeePercentage() == (50000 / 10000));
     }
 
     function testUpdateRefinancePremiumLenderPercentage() public {
-        LA.updateRefinancePremiumLenderPercentage(5);
+        LA.updateRefinancePremiumLenderPercentage(500000);
+        assert(LA.refinancePremiumLenderPercentage() == (500000 / 100000));
     }
 
     function testUpdateRefinancePremiumProtocolPercentage() public {
-        LA.updateRefinancePremiumProtocolPercentage(5);
+        LA.updateRefinancePremiumProtocolPercentage(5000);
+        assert(LA.refinancePremiumProtocolPercentage() == (5000 / 1000));
     }
 
-    function testCreateandRemoveFloorOffer(
+    function testCreateGetandRemoveFloorOffer(
         bool fixedTerms,
         uint256 amount,
         uint256 nftId
@@ -144,9 +137,96 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         offer.fixedTerms = fixedTerms;
         offer.floorTerm = true;
 
+        bytes32 create_hash = LA.getOfferHash(offer);
+
         LA.createFloorOffer(address(mockNFT), offer);
 
+        LendingAuction.Offer memory get_offer = LA.getOffer(
+            address(mockNFT),
+            nftId,
+            create_hash,
+            true
+        );
+
+        assert(LA.getOfferHash(get_offer) == create_hash);
+
         // And remove it
-        LA.removeFloorOffer(address(mockNFT), LA.getOfferHash(offer));
+        LA.removeFloorOffer(address(mockNFT), create_hash);
+    }
+
+    function testCreateGetandRemoveNftOffer(
+        bool fixedTerms,
+        uint256 amount,
+        uint256 nftId,
+        uint256 interestRate
+    ) public {
+        // Create a floor offer
+        LendingAuction.Offer memory offer;
+        offer.creator = address(this);
+        offer.nftContractAddress = address(mockNFT);
+        offer.nftId = nftId;
+        offer.asset = address(DAI);
+        offer.amount = amount;
+        offer.interestRate = interestRate;
+        offer.duration = 172800;
+        offer.expiration = block.timestamp + 1000000;
+        offer.fixedTerms = fixedTerms;
+        offer.floorTerm = false;
+
+        bytes32 create_hash = LA.getOfferHash(offer);
+
+        LA.createNftOffer(address(mockNFT), nftId, offer);
+
+        LendingAuction.Offer memory get_offer = LA.getOffer(
+            address(mockNFT),
+            nftId,
+            create_hash,
+            false
+        );
+
+        assert(LA.getOfferHash(get_offer) == create_hash);
+
+        // And remove it
+        LA.removeNftOffer(address(mockNFT), nftId, create_hash);
+    }
+
+    // TODO(What is this underlying function useful for?)
+    function testSize(
+        address nftContractAddress,
+        uint256 nftId,
+        bool floorTerm
+    ) public {
+        assert(0 == LA.size(nftContractAddress, nftId, floorTerm));
+    }
+
+    function testChainLoan(
+        bool fixedTerms,
+        uint256 amount,
+        uint256 interestRate
+    ) public {
+        // Create a floor offer
+        LendingAuction.Offer memory offer;
+        offer.creator = address(this);
+        offer.nftContractAddress = address(mockNFT);
+        offer.nftId = 0;
+        offer.asset = address(DAI);
+        offer.amount = amount % 50000 ether;
+        offer.interestRate = interestRate;
+        offer.duration = 172800;
+        offer.expiration = block.timestamp + 1000000;
+        offer.fixedTerms = fixedTerms;
+        offer.floorTerm = true;
+
+        bytes32 create_hash = LA.getOfferHash(offer);
+
+        LA.createFloorOffer(address(mockNFT), offer);
+
+        mockNFT.approve(address(LA), 0);
+
+        LA.chainExecuteLoanByBorrowerFloor(address(mockNFT), 0, create_hash);
+
+        LA.getLoanAuction(address(mockNFT), 0);
+
+        // TODO(Test Refinance)
     }
 }
