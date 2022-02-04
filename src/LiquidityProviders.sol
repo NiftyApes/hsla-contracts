@@ -514,5 +514,4 @@ contract LiquidityProviders is
         return amountToWithdraw;
     }
 
-    // create admin withdraw functions to directly manipulate COMP and other balances of contract
 }
