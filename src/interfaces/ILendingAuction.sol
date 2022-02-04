@@ -67,6 +67,20 @@ interface ILendingAuction is ILiquidityProviders {
         mapping(bytes32 => bool) inserted;
     }
 
+    struct InterestAndPaymentVars {
+        uint256 currentLenderInterest;
+        uint256 currentProtocolInterest;
+        uint256 interestAndPremiumOwedToCurrentLender;
+        uint256 fullAmount;
+    }
+
+    struct TokenVars {
+        uint256 lenderInterestAndPremiumTokens;
+        uint256 protocolInterestAndPremiumTokens;
+        uint256 paymentTokens;
+        uint256 msgValueTokens;
+    }
+
     // Events
 
     event LoanExecuted(
@@ -315,10 +329,10 @@ interface ILendingAuction is ILiquidityProviders {
         view
         returns (address);
 
-    function calculateInterestAccrued(
-        address nftContractAddress,
-        uint256 nftId
-    ) external view returns (uint256, uint256);
+    function calculateInterestAccrued(address nftContractAddress, uint256 nftId)
+        external
+        view
+        returns (uint256, uint256);
 
     function calculateFullRepayment(address nftContractAddress, uint256 nftId)
         external
