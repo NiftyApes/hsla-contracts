@@ -200,7 +200,7 @@ interface ILendingAuction is ILiquidityProviders {
         view
         returns (bytes32 offerhash);
 
-    function getSignatureOfferStatus(bytes calldata signature)
+    function getOfferSignatureStatus(bytes calldata signature)
         external
         view
         returns (bool status);
@@ -210,8 +210,12 @@ interface ILendingAuction is ILiquidityProviders {
         pure
         returns (address signer);
 
-    function withdrawBidOrAsk(Offer calldata offer, bytes calldata signature)
-        external;
+    function withdrawOfferSignature(
+        address nftContractAddress,
+        uint256 nftId,
+        bytes32 offerHash,
+        bytes calldata signature
+    ) external;
 
     // TODO(All the parameters excluding the hash are/should be redundant here)
     function getOffer(
@@ -252,14 +256,9 @@ interface ILendingAuction is ILiquidityProviders {
         uint256 nftId
     ) external payable;
 
-    function chainExecuteLoanByBorrowerFloor(
+    function chainExecuteLoanByBorrower(
         address nftContractAddress,
-        uint256 nftId,
-        bytes32 offerHash
-    ) external payable;
-
-    function chainExecuteLoanByBorrowerNft(
-        address nftContractAddress,
+        bool floorTerm,
         uint256 nftId,
         bytes32 offerHash
     ) external payable;
@@ -271,6 +270,7 @@ interface ILendingAuction is ILiquidityProviders {
 
     function chainExecuteLoanByLender(
         address nftContractAddress,
+        bool floorTerm,
         uint256 nftId,
         bytes32 offerHash
     ) external payable;
@@ -282,14 +282,9 @@ interface ILendingAuction is ILiquidityProviders {
         uint256 nftId
     ) external payable;
 
-    function chainRefinanceByBorrowerFloor(
+    function chainRefinanceByBorrower(
         address nftContractAddress,
-        uint256 nftId,
-        bytes32 offerHash
-    ) external payable;
-
-    function chainRefinanceByBorrowerNft(
-        address nftContractAddress,
+        bool floorTerm,
         uint256 nftId,
         bytes32 offerHash
     ) external payable;

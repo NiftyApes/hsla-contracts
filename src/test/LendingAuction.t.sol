@@ -180,15 +180,12 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
 
         mockNFT.approve(address(LA), 0);
 
-        if (floorTerm) {
-            LA.chainExecuteLoanByBorrowerFloor(
-                address(mockNFT),
-                0,
-                create_hash
-            );
-        } else {
-            LA.chainExecuteLoanByBorrowerNft(address(mockNFT), 0, create_hash);
-        }
+        LA.chainExecuteLoanByBorrower(
+            address(mockNFT),
+            floorTerm,
+            0,
+            create_hash
+        );
 
         LA.getLoanAuction(address(mockNFT), 0);
 
