@@ -929,30 +929,33 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             "Msg.sender must be the owner of nftId to refinanceByBorrower"
         );
 
+                        //Instantiate MintLocalVars
+        InterestAndPaymentVars memory vars;
+
         // calculate the interest earned by current lender
-        (uint256 currentLenderInterest, uint256 currentProtocolInterest) = calculateInterestAccrued(
-            offer.nftContractAddress,
-            nftId
-        );
+        (
+            vars.currentLenderInterest,
+            vars.currentProtocolInterest
+        ) = calculateInterestAccrued(offer.nftContractAddress, nftId);
 
         // need to ensure protocol fee is calculated correctly here. HistoricInterest is paid by new ledner, should protocol fee be as well?
 
         // calculate interest earned
-        uint256 interestOwedToLender = currentLenderInterest +
+        uint256 interestAndPremiumOwedToCurrentLender = vars.currentLenderInterest +
             loanAuction.historicLenderInterest;
 
-        uint256 fullRepayment = loanAuction.amountDrawn + interestOwedToLender;
+        vars.fullAmount = loanAuction.amountDrawn + interestAndPremiumOwedToCurrentLender;
 
         // require statement for offer amount to be greater than or equal to full repayment
         require(
-            offer.amount >= fullRepayment,
+            offer.amount >= vars.fullAmount,
             "Offer amount must be greater than or equal to current amount drawn + interest owed"
         );
 
         require(
             (cAssetBalances[cAsset][prospectiveLender] -
                 utilizedCAssetBalances[cAsset][prospectiveLender]) >=
-                fullRepayment,
+                vars.fullAmount,
             "Prospective lender does not have sufficient balance to buy out loan"
         );
 
@@ -962,7 +965,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             loanAuction.lender,
             prospectiveLender,
             0,
-            interestOwedToLender,
+            interestAndPremiumOwedToCurrentLender,
             loanAuction.amountDrawn
         );
 
@@ -974,12 +977,12 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         loanAuction.amount = offer.amount;
         loanAuction.interestRate = offer.interestRate;
         loanAuction.duration = offer.duration;
-        loanAuction.amountDrawn = fullRepayment;
+        loanAuction.amountDrawn = vars.fullAmount;
         loanAuction.timeOfInterestStart = block.timestamp;
         loanAuction.historicLenderInterest = 0;
         loanAuction.historicProtocolInterest =
             currentHistoricProtocolInterest +
-            currentProtocolInterest;
+            vars.currentProtocolInterest;
 
         // stack too deep for these event variables, need to refactor
         // emit LoanRefinance(
@@ -1072,19 +1075,23 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             );
         }
 
+                //Instantiate MintLocalVars
+        InterestAndPaymentVars memory vars;
+
         // calculate the interest earned by current lender
-        (uint256 currentLenderInterest, uint256 currentProtocolInterest) = calculateInterestAccrued(
-            offer.nftContractAddress,
-            offer.nftId
-        );
+        (
+            vars.currentLenderInterest,
+            vars.currentProtocolInterest
+        ) = calculateInterestAccrued(offer.nftContractAddress, offer.nftId);
 
         // calculate interest earned
-        uint256 interestAndPremiumOwedToCurrentLender = currentLenderInterest +
+        vars.interestAndPremiumOwedToCurrentLender = vars.currentLenderInterest +
             loanAuction.historicLenderInterest +
             (loanAuction.amountDrawn * refinancePremiumLenderPercentage);
 
         // calculate fullRefinanceAmount
-        uint256 fullRefinanceAmount = interestAndPremiumOwedToCurrentLender + currentProtocolInterest +
+        vars.fullAmount = vars.interestAndPremiumOwedToCurrentLender +
+            vars.currentProtocolInterest +
             loanAuction.amountDrawn;
 
         // If refinancing is not done by current lender they must buy out the loan and pay fees
@@ -1093,7 +1100,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             require(
                 (cAssetBalances[cAsset][msg.sender] -
                     utilizedCAssetBalances[cAsset][msg.sender]) >=
-                    fullRefinanceAmount,
+                    vars.fullAmount,
                 "Prospective lender does not have sufficient balance to refinance loan"
             );
 
@@ -1102,8 +1109,8 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                 cAsset,
                 loanAuction.lender,
                 msg.sender,
-                currentProtocolInterest,
-                interestAndPremiumOwedToCurrentLender,
+                vars.currentProtocolInterest,
+                vars.interestAndPremiumOwedToCurrentLender,
                 loanAuction.amountDrawn
             );
 
@@ -1137,10 +1144,10 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         loanAuction.timeOfInterestStart = block.timestamp;
         loanAuction.historicLenderInterest =
             currentHistoricLenderInterest +
-            currentLenderInterest;
+            vars.currentLenderInterest;
         loanAuction.historicProtocolInterest =
             currentHistoricProtocolInterest +
-            currentProtocolInterest;
+            vars.currentProtocolInterest;
 
         // need to ensure event tracks protocolPremiumAmount so that we can accurately account funds to allocate to Regen Collective
         // stack too deep problem, need to refactor
@@ -1207,10 +1214,10 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             "Total Time drawn must not exceed best bid duration"
         );
 
-        (uint256 lenderInterest, uint256 protocolInterest) = calculateInterestAccrued(
-            nftContractAddress,
-            nftId
-        );
+        (
+            uint256 lenderInterest,
+            uint256 protocolInterest
+        ) = calculateInterestAccrued(nftContractAddress, nftId);
 
         // reset timeOfinterestStart and update historic interest due to parameters of loan changing
         loanAuction.historicLenderInterest += lenderInterest;
@@ -1284,10 +1291,10 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             loanAuction.lender
         );
 
-        (uint256 lenderInterest, uint256 protocolInterest) = calculateInterestAccrued(
-            nftContractAddress,
-            nftId
-        );
+        (
+            uint256 lenderInterest,
+            uint256 protocolInterest
+        ) = calculateInterestAccrued(nftContractAddress, nftId);
 
         // reset timeOfinterestStart and update historic interest due to parameters of loan changing
         loanAuction.historicLenderInterest += lenderInterest;
@@ -1365,10 +1372,10 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         );
 
         // calculate the amount of interest accrued by the lender
-        (uint256 lenderInterest, uint256 protocolInterest) = calculateInterestAccrued(
-            nftContractAddress,
-            nftId
-        );
+        (
+            uint256 lenderInterest,
+            uint256 protocolInterest
+        ) = calculateInterestAccrued(nftContractAddress, nftId);
 
         // calculate total interest value owed
         uint256 interestOwedToLender = lenderInterest +
@@ -1485,10 +1492,10 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         );
 
         // calculate the amount of interest accrued by the lender
-         (uint256 lenderInterest, uint256 protocolInterest) = calculateInterestAccrued(
-            nftContractAddress,
-            nftId
-        );
+        (
+            uint256 lenderInterest,
+            uint256 protocolInterest
+        ) = calculateInterestAccrued(nftContractAddress, nftId);
 
         loanAuction.historicLenderInterest += lenderInterest;
         loanAuction.historicProtocolInterest += protocolInterest;
@@ -1685,12 +1692,14 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         // transferFrom ERC20 from depositors address
         underlying.transferFrom(from, address(this), fullAmount);
 
-
         // set exchange rate from erc20 to ICERC20
         vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
 
         // convert lenderInterestAndPremiumAmount to ICERC20
-        (vars.mathErr, tokenVars.lenderInterestAndPremiumTokens) = divScalarByExpTruncate(
+        (
+            vars.mathErr,
+            tokenVars.lenderInterestAndPremiumTokens
+        ) = divScalarByExpTruncate(
             lenderInterestAndPremiumAmount,
             Exp({mantissa: vars.exchangeRateMantissa})
         );
@@ -1744,9 +1753,10 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
         // update the tos total balance
         cAssetBalances[cAsset][to] += tokenVars.lenderInterestAndPremiumTokens;
-        
+
         // update the owner total balance
-        cAssetBalances[cAsset][owner()] += tokenVars.lenderInterestAndPremiumTokens;
+        cAssetBalances[cAsset][owner()] += tokenVars
+            .lenderInterestAndPremiumTokens;
 
         return 0;
     }
@@ -1790,7 +1800,10 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         }
 
         // convert interestAndPremiumAmount to ICERC20
-        (vars.mathErr, tokenVars.lenderInterestAndPremiumTokens) = divScalarByExpTruncate(
+        (
+            vars.mathErr,
+            tokenVars.lenderInterestAndPremiumTokens
+        ) = divScalarByExpTruncate(
             lenderInterestAndPremiumAmount,
             Exp({mantissa: vars.exchangeRateMantissa})
         );
@@ -1803,8 +1816,11 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                 );
         }
 
-                // convert interestAndPremiumAmount to ICERC20
-        (vars.mathErr, tokenVars.protocolInterestAndPremiumTokens) = divScalarByExpTruncate(
+        // convert interestAndPremiumAmount to ICERC20
+        (
+            vars.mathErr,
+            tokenVars.protocolInterestAndPremiumTokens
+        ) = divScalarByExpTruncate(
             protocolInterestAndPremiumAmount,
             Exp({mantissa: vars.exchangeRateMantissa})
         );
@@ -1832,8 +1848,9 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         }
 
         uint256 mintDelta = tokenVars.msgValueTokens -
-            (tokenVars.lenderInterestAndPremiumTokens + tokenVars.protocolInterestAndPremiumTokens + tokenVars.paymentTokens);
-
+            (tokenVars.lenderInterestAndPremiumTokens +
+                tokenVars.protocolInterestAndPremiumTokens +
+                tokenVars.paymentTokens);
 
         // should have require statement to ensure mint is successful before proceeding
         // // mint CEth tokens to this contract address
@@ -1843,11 +1860,12 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         utilizedCAssetBalances[cAsset][to] -= tokenVars.paymentTokens;
 
         // update the to's total balance
-        cAssetBalances[cAsset][to] += (tokenVars.lenderInterestAndPremiumTokens +
-            mintDelta);
+        cAssetBalances[cAsset][to] += (tokenVars
+            .lenderInterestAndPremiumTokens + mintDelta);
 
         // update the owner's total balance
-        cAssetBalances[cAsset][owner()] += tokenVars.protocolInterestAndPremiumTokens;
+        cAssetBalances[cAsset][owner()] += tokenVars
+            .protocolInterestAndPremiumTokens;
 
         return 0;
     }
@@ -1902,6 +1920,8 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     ) internal returns (uint256) {
         // Create a reference to the corresponding cToken contract, like cDAI
         ICERC20 cToken = ICERC20(cAsset);
+
+        // refactor to use tokenVars
 
         // instantiate protocolPremiumFeeTokens
         uint256 protocolPremiumTokens;
@@ -2063,7 +2083,9 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         return
             loanAuction.amountDrawn +
             loanAuction.historicLenderInterest +
-            lenderInterest;
+            lenderInterest +
+            loanAuction.historicProtocolInterest +
+            protocolInterest;
     }
 
     // Returns fullRefinance cost at current timestamp
@@ -2075,10 +2097,10 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             nftId
         ];
 
-        (
-            uint256 lenderInterest,
-            uint256 protocolInterest
-        ) = calculateInterestAccrued(nftContractAddress, nftId);
+        (uint256 lenderInterest, ) = calculateInterestAccrued(
+            nftContractAddress,
+            nftId
+        );
 
         // calculate and return refinanceAmount
         return
