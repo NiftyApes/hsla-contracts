@@ -160,7 +160,11 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         assert(0 == LA.size(nftContractAddress, nftId, floorTerm));
     }
 
-    function testChainLoanAndRefinance(bool fixedTerms, bool floorTerm) public {
+    function testLoanAndRefinance(
+        bool fixedTerms,
+        bool floorTerm,
+        bool lender
+    ) public {
         // Create a floor offer
         LendingAuction.Offer memory offer;
         offer.creator = address(this);
@@ -180,12 +184,24 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
 
         mockNFT.approve(address(LA), 0);
 
-        LA.chainExecuteLoanByBorrower(
-            address(mockNFT),
-            floorTerm,
-            0,
-            create_hash
-        );
+        if (lender) {
+            LA.executeLoanByLender(
+                address(mockNFT),
+                floorTerm,
+                0,
+                create_hash
+            );
+        } else {
+            LA.executeLoanByBorrower(
+                address(mockNFT),
+                floorTerm,
+                0,
+                create_hash
+            );
+        }
+
+        // Let's move forward in time
+        hevm.warp(block.number + 10000);
 
         LA.getLoanAuction(address(mockNFT), 0);
 
@@ -193,7 +209,19 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
 
         if (!offer.fixedTerms) {
             // Test refinance
-            LA.refinanceByLender(offer);
+            if (lender) {
+                // TODO(Why is there an overflow here?)
+                LA.refinanceByLender(offer);
+            } else {
+                // TODO(This uses the incorrect interface to check who the owner of the nft is)
+                hevm.prank(address(this), address(this));
+                LA.refinanceByBorrower(
+                    offer.nftContractAddress,
+                    offer.floorTerm,
+                    offer.nftId,
+                    create_hash
+                );
+            }
         }
     }
 }

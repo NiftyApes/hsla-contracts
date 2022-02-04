@@ -3,7 +3,6 @@ pragma solidity ^0.8.11;
 
 import "./ILiquidityProviders.sol";
 
-// TODO(Remove duplicate entry points for floor and regular, as that data is already in the offer)
 interface ILendingAuction is ILiquidityProviders {
     // Structs
 
@@ -60,7 +59,7 @@ interface ILendingAuction is ILiquidityProviders {
         bool floorTerm;
     }
 
-    // Iterable mapping from address to uint;
+    // Structure representing an offer book per NFT or floor term
     struct OfferBook {
         bytes32[] keys;
         mapping(bytes32 => Offer) offers;
@@ -200,16 +199,19 @@ interface ILendingAuction is ILiquidityProviders {
         view
         returns (bytes32 offerhash);
 
+    // TODO(Test)
     function getOfferSignatureStatus(bytes calldata signature)
         external
         view
         returns (bool status);
 
+    // TODO(Test)
     function getOfferSigner(bytes32 offerHash, bytes memory signature)
         external
         pure
         returns (address signer);
 
+    // TODO(Test)
     function withdrawOfferSignature(
         address nftContractAddress,
         uint256 nftId,
@@ -217,7 +219,7 @@ interface ILendingAuction is ILiquidityProviders {
         bytes calldata signature
     ) external;
 
-    // TODO(All the parameters excluding the hash are/should be redundant here)
+    // TODO(Test)
     function getOffer(
         address nftContractAddress,
         uint256 nftId,
@@ -225,7 +227,7 @@ interface ILendingAuction is ILiquidityProviders {
         bool floorTerm
     ) external view returns (Offer memory offer);
 
-    // TODO(What is this actually used for, it's not called internally anywhere)
+    // TODO(Test)
     function getOfferAtIndex(
         address nftContractAddress,
         uint256 nftId,
@@ -233,7 +235,6 @@ interface ILendingAuction is ILiquidityProviders {
         bool floorTerm
     ) external view returns (Offer memory offer);
 
-    // TODO(What is this actually used for, it's not called internally anywhere)
     function size(
         address nftContractAddress,
         uint256 nftId,
@@ -249,44 +250,47 @@ interface ILendingAuction is ILiquidityProviders {
         bytes32 offerHash
     ) external;
 
-    // TODO(nftID is duplicate here, the data is already in the offer struct)
-    function sigExecuteLoanByBorrower(
-        Offer calldata offer,
-        bytes calldata signature,
-        uint256 nftId
-    ) external payable;
-
-    function chainExecuteLoanByBorrower(
+    function executeLoanByBorrower(
         address nftContractAddress,
         bool floorTerm,
         uint256 nftId,
         bytes32 offerHash
     ) external payable;
 
-    function sigExecuteLoanByLender(
+    // TODO(Test)
+    // TODO(nftID is duplicate here, the data is already in the offer struct)
+    function executeLoanByBorrowerSignature(
+        Offer calldata offer,
+        bytes calldata signature,
+        uint256 nftId
+    ) external payable;
+
+    function executeLoanByLender(
+        address nftContractAddress,
+        bool floorTerm,
+        uint256 nftId,
+        bytes32 offerHash
+    ) external payable;
+
+    // TODO(Test)
+    function executeLoanByLenderSignature(
         Offer calldata offer,
         bytes calldata signature
     ) external payable;
 
-    function chainExecuteLoanByLender(
+    function refinanceByBorrower(
         address nftContractAddress,
         bool floorTerm,
         uint256 nftId,
         bytes32 offerHash
     ) external payable;
 
+    // TODO(Test)
     // TODO(nftID is duplicate here, the data is already in the offer struct)
-    function sigRefinanceByBorrower(
+    function refinanceByBorrowerSignature(
         Offer calldata offer,
         bytes calldata signature,
         uint256 nftId
-    ) external payable;
-
-    function chainRefinanceByBorrower(
-        address nftContractAddress,
-        bool floorTerm,
-        uint256 nftId,
-        bytes32 offerHash
     ) external payable;
 
     function refinanceByLender(Offer calldata offer) external payable;

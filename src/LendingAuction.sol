@@ -328,65 +328,13 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     // ---------- Execute Loan Functions ---------- //
 
     /**
-     * @notice Allows a borrower to submit a signed offer from a lender and execute a loan using their NFT as collateral
-     * @param offer The details of the loan auction offer
-     * @param signature A signed offerHash
-     * @param nftId The id of a specified NFT
-     */
-    function sigExecuteLoanByBorrower(
-        Offer calldata offer,
-        bytes calldata signature,
-        uint256 nftId // nftId should match offer.nftId if offer.floorTerm false, nftId should not match if offer.floorTerm true. Need to provide as function parameter to pass nftId with floor terms.
-    ) external payable whenNotPaused nonReentrant {
-        // require signature has not been cancelled/bid withdrawn
-        require(
-            _cancelledOrFinalized[signature] == false,
-            "Cannot execute bid or ask. Signature has been cancelled or previously finalized."
-        );
-
-        // ideally calculated, stored, and provided as parameter to save computation
-        // generate hash of offer parameters
-        bytes32 offerHash = getOfferHash(offer);
-
-        // recover singer and confirm signed offer terms with function submitted offer terms
-        // we know the signer must be the lender because msg.sender must be the nftOwner/borrower
-        address lender = getOfferSigner(offerHash, signature);
-
-        require(
-            lender == offer.creator,
-            "Offer.creator must be offer signer to executeLoanByBid"
-        );
-
-        // // if floorTerm is false
-        if (offer.floorTerm == false) {
-            // require nftId == sigNftId
-            require(
-                nftId == offer.nftId,
-                "Function submitted nftId must match the signed offer nftId"
-            );
-        }
-
-        // execute state changes for executeLoanByBid
-        _executeLoanByBorrowerInternal(offer, nftId, lender);
-
-        // finalize signature
-        _cancelledOrFinalized[signature] == true;
-
-        emit SigOfferFinalized(
-            offer.nftContractAddress,
-            offer.nftId,
-            signature
-        );
-    }
-
-    /**
      * @notice Allows a borrower to submit an offer from the on-chain NFT offer book and execute a loan using their NFT as collateral
      * @param nftContractAddress The address of the NFT collection
      * @param floorTerm Whether or not this is a floor term
      * @param nftId The id of the specified NFT (ignored for floor term)
      * @param offerHash The hash of all parameters in an offer. This is used as the uniquge identifer of an offer.
      */
-    function chainExecuteLoanByBorrower(
+    function executeLoanByBorrower(
         address nftContractAddress,
         bool floorTerm,
         uint256 nftId,
@@ -416,7 +364,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     ) internal {
         // instantiate LoanAuction Struct
         LoanAuction storage loanAuction = _loanAuctions[
-            offer.nftContractAddress
+        offer.nftContractAddress
         ][nftId];
 
         address cAsset = assetToCAsset[offer.asset];
@@ -517,11 +465,87 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     }
 
     /**
+     * @notice Allows a borrower to submit a signed offer from a lender and execute a loan using their NFT as collateral
+     * @param offer The details of the loan auction offer
+     * @param signature A signed offerHash
+     * @param nftId The id of a specified NFT
+     */
+    function executeLoanByBorrowerSignature(
+        Offer calldata offer,
+        bytes calldata signature,
+        uint256 nftId // nftId should match offer.nftId if offer.floorTerm false, nftId should not match if offer.floorTerm true. Need to provide as function parameter to pass nftId with floor terms.
+    ) external payable whenNotPaused nonReentrant {
+        // require signature has not been cancelled/bid withdrawn
+        require(
+            _cancelledOrFinalized[signature] == false,
+            "Cannot execute bid or ask. Signature has been cancelled or previously finalized."
+        );
+
+        // ideally calculated, stored, and provided as parameter to save computation
+        // generate hash of offer parameters
+        bytes32 offerHash = getOfferHash(offer);
+
+        // recover singer and confirm signed offer terms with function submitted offer terms
+        // we know the signer must be the lender because msg.sender must be the nftOwner/borrower
+        address lender = getOfferSigner(offerHash, signature);
+
+        require(
+            lender == offer.creator,
+            "Offer.creator must be offer signer to executeLoanByBid"
+        );
+
+        // // if floorTerm is false
+        if (offer.floorTerm == false) {
+            // require nftId == sigNftId
+            require(
+                nftId == offer.nftId,
+                "Function submitted nftId must match the signed offer nftId"
+            );
+        }
+
+        // execute state changes for executeLoanByBid
+        _executeLoanByBorrowerInternal(offer, nftId, lender);
+
+        // finalize signature
+        _cancelledOrFinalized[signature] == true;
+
+        emit SigOfferFinalized(
+            offer.nftContractAddress,
+            offer.nftId,
+            signature
+        );
+    }
+
+    /**
+      * @notice Allows a lender to submit an offer from the borrower in the on-chain individual NFT offer book and execute a loan using the borrower's NFT as collateral
+     * @param nftContractAddress The address of the NFT collection
+     * @param nftId The id of the specified NFT
+     * @param offerHash The hash of all parameters in an offer. This is used as the uniquge identifer of an offer.
+     */
+    function executeLoanByLender(
+        address nftContractAddress,
+        bool floorTerm,
+        uint256 nftId,
+        bytes32 offerHash
+    ) public payable whenNotPaused nonReentrant {
+        Offer memory offer;
+
+        if (floorTerm) {
+            offer = _floorOfferBooks[nftContractAddress].offers[offerHash];
+        } else {
+            offer = _nftOfferBooks[nftContractAddress][nftId].offers[offerHash];
+        }
+
+        // execute state changes for executeLoanByAsk
+        _executeLoanByLenderInternal(offer, msg.sender, offer.creator);
+    }
+
+    /**
      * @notice Allows a lender to submit a signed offer from a borrower and execute a loan using the borrower's NFT as collateral
      * @param offer The details of the loan auction offer
      * @param signature A signed offerHash
      */
-    function sigExecuteLoanByLender(
+    function executeLoanByLenderSignature(
         Offer calldata offer,
         bytes calldata signature
     ) external payable whenNotPaused nonReentrant {
@@ -548,30 +572,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             offer.nftId,
             signature
         );
-    }
-
-    /**
-     * @notice Allows a lender to submit an offer from the borrower in the on-chain individual NFT offer book and execute a loan using the borrower's NFT as collateral
-     * @param nftContractAddress The address of the NFT collection
-     * @param nftId The id of the specified NFT
-     * @param offerHash The hash of all parameters in an offer. This is used as the uniquge identifer of an offer.
-     */
-    function chainExecuteLoanByLender(
-        address nftContractAddress,
-        bool floorTerm,
-        uint256 nftId,
-        bytes32 offerHash
-    ) public payable whenNotPaused nonReentrant {
-        Offer memory offer;
-
-        if (floorTerm) {
-            offer = _floorOfferBooks[nftContractAddress].offers[offerHash];
-        } else {
-            offer = _nftOfferBooks[nftContractAddress][nftId].offers[offerHash];
-        }
-
-        // execute state changes for executeLoanByAsk
-        _executeLoanByLenderInternal(offer, msg.sender, offer.creator);
     }
 
     /**
@@ -690,13 +690,41 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     // ---------- Refinance Loan Functions ---------- //
 
     /**
+    * @notice Allows a borrower to submit an offer from the on-chain offer book and refinance a loan with near arbitrary terms
+     * @dev The offer amount must be greater than the current loan amount plus interest owed to the lender
+     * @param nftContractAddress The address of the NFT collection
+     * @param nftId The id of the specified NFT
+     * @param offerHash The hash of all parameters in an offer. This is used as the uniquge identifer of an offer.
+     */
+    function refinanceByBorrower(
+        address nftContractAddress,
+        bool floorTerm,
+        uint256 nftId,
+        bytes32 offerHash
+    ) external payable whenNotPaused nonReentrant {
+        Offer memory offer;
+
+        if (floorTerm) {
+            offer = _floorOfferBooks[nftContractAddress].offers[offerHash];
+        } else {
+            offer = _nftOfferBooks[nftContractAddress][nftId].offers[offerHash];
+            require(
+                nftId == offer.nftId,
+                "Function submitted nftId must match the signed offer nftId"
+            );
+        }
+
+        _refinanceByBorrowerInternal(offer, offer.creator, nftId);
+    }
+
+    /**
      * @notice Allows a borrower to submit a signed offer from a lender and refinance a loan with near arbitrary terms
      * @dev The offer amount must be greater than the current loan amount plus interest owed to the lender
      * @param offer The details of the loan auction offer
      * @param signature A signed offerHash
      * @param nftId The id of a specified NFT
      */
-    function sigRefinanceByBorrower(
+    function refinanceByBorrowerSignature(
         Offer calldata offer,
         bytes calldata signature,
         uint256 nftId
@@ -734,34 +762,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             offer.nftId,
             signature
         );
-    }
-
-    /**
-     * @notice Allows a borrower to submit an offer from the on-chain offer book and refinance a loan with near arbitrary terms
-     * @dev The offer amount must be greater than the current loan amount plus interest owed to the lender
-     * @param nftContractAddress The address of the NFT collection
-     * @param nftId The id of the specified NFT
-     * @param offerHash The hash of all parameters in an offer. This is used as the uniquge identifer of an offer.
-     */
-    function chainRefinanceByBorrower(
-        address nftContractAddress,
-        bool floorTerm,
-        uint256 nftId,
-        bytes32 offerHash
-    ) external payable whenNotPaused nonReentrant {
-        Offer memory offer;
-
-        if (floorTerm) {
-            offer = _floorOfferBooks[nftContractAddress].offers[offerHash];
-        } else {
-            offer = _nftOfferBooks[nftContractAddress][nftId].offers[offerHash];
-            require(
-                nftId == offer.nftId,
-                "Function submitted nftId must match the signed offer nftId"
-            );
-        }
-
-        _refinanceByBorrowerInternal(offer, offer.creator, nftId);
     }
 
     /**
