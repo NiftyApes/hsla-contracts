@@ -173,11 +173,10 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
         if (floorTerm == true) {
             offerBook = _floorOfferBooks[nftContractAddress];
-            offer = offerBook.offers[offerHash];
-        } else if (floorTerm == false) {
+        } else {
             offerBook = _nftOfferBooks[nftContractAddress][nftId];
-            offer = offerBook.offers[offerHash];
         }
+        offer = offerBook.offers[offerHash];
     }
 
     /**
@@ -231,65 +230,22 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     }
 
     /**
-     * @notice Create an offer in the on-chain floor offer book
-     * @param nftContractAddress The address of the NFT collection
-     * @param offer The details of the loan auction floor offer
-     */
-    // TODO(Offer creation should be gated on lender liquidity)
-    function createFloorOffer(address nftContractAddress, Offer memory offer)
-        external
-    {
-        OfferBook storage offerBook = _floorOfferBooks[nftContractAddress];
-
-        require(
-            offer.creator == msg.sender,
-            "The creator must match msg.sender"
-        );
-        require(offer.floorTerm == true, "Function requires a floor term");
-
-        bytes32 offerHash = getOfferHash(offer);
-
-        if (offerBook.inserted[offerHash]) {
-            offerBook.offers[offerHash] = offer;
-        } else {
-            offerBook.inserted[offerHash] = true;
-            offerBook.offers[offerHash] = offer;
-            offerBook.indexOf[offerHash] = offerBook.keys.length;
-            offerBook.keys.push(offerHash);
-        }
-
-        emit NewOffer(
-            offer.creator,
-            offer.nftContractAddress,
-            offer.nftId,
-            offer.asset,
-            offer.amount,
-            offer.interestRate,
-            offer.duration,
-            offer.expiration,
-            offer.fixedTerms,
-            offer.floorTerm,
-            offerHash
-        );
-    }
-
-    /**
-     * @notice Create an offer in the on-chain individual NFT offer book
-     * @param nftContractAddress The address of the NFT collection
      * @param offer The details of the loan auction individual NFT offer
      */
-    function createNftOffer(
-        address nftContractAddress,
-        uint256 nftId,
-        Offer memory offer
-    ) external {
-        OfferBook storage offerBook = _nftOfferBooks[nftContractAddress][nftId];
+    // TODO(Offer creation should be gated on lender liquidity)
+    function createOffer(Offer calldata offer) external {
+        OfferBook storage offerBook;
 
         require(
             offer.creator == msg.sender,
             "The creator must match msg.sender"
         );
-        require(offer.floorTerm == false, "Function requires an NFT term");
+
+        if (offer.floorTerm) {
+            offerBook = _floorOfferBooks[offer.nftContractAddress];
+        } else {
+            offerBook = _nftOfferBooks[offer.nftContractAddress][offer.nftId];
+        }
 
         bytes32 offerHash = getOfferHash(offer);
 
@@ -322,63 +278,22 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
      * @param nftContractAddress The address of the NFT collection
      * @param offerHash The hash of all parameters in an offer
      */
-    function removeFloorOffer(address nftContractAddress, bytes32 offerHash)
-        external
-    {
-        // TODO(Why are we creating extra storage pointers here?)
-        OfferBook storage offerBook = _floorOfferBooks[nftContractAddress];
-        Offer memory offer = offerBook.offers[offerHash];
-
-        require(
-            msg.sender == offer.creator,
-            "msg.sender is not the offer creator"
-        );
-
-        if (!offerBook.inserted[offerHash]) {
-            return;
-        }
-
-        delete offerBook.inserted[offerHash];
-        delete offerBook.offers[offerHash];
-
-        uint256 index = offerBook.indexOf[offerHash];
-        uint256 lastIndex = offerBook.keys.length - 1;
-        bytes32 lastOfferHash = offerBook.keys[lastIndex];
-
-        offerBook.indexOf[lastOfferHash] = index;
-        delete offerBook.indexOf[offerHash];
-
-        offerBook.keys[index] = lastOfferHash;
-        offerBook.keys.pop();
-
-        // stack too deep, need to refactor
-
-        // emit OfferRemoved(
-        //     offer.creator,
-        //     offer.nftContractAddress,
-        //     offer.nftId,
-        //     offer.asset,
-        //     offer.amount,
-        //     offer.interestRate,
-        //     offer.duration,
-        //     offer.expiration,
-        //     offer.fixedTerms,
-        //     offer.floorTerm,
-        //     offerHash
-        // );
-    }
-
-    /**
-     * @notice Remove an offer in the on-chain individual NFT offer book
-     * @param nftContractAddress The address of the NFT collection
-     * @param offerHash The hash of all parameters in an offer
-     */
-    function removeNftOffer(
+    function removeOffer(
         address nftContractAddress,
+        bool floorTerm,
         uint256 nftId,
         bytes32 offerHash
     ) external {
-        OfferBook storage offerBook = _nftOfferBooks[nftContractAddress][nftId];
+        // Get pointer to offer book
+        OfferBook storage offerBook;
+
+        if (floorTerm) {
+            offerBook = _floorOfferBooks[nftContractAddress];
+        } else {
+            offerBook = _nftOfferBooks[nftContractAddress][nftId];
+        }
+
+        // Get memory pointer to offer
         Offer memory offer = offerBook.offers[offerHash];
 
         require(
@@ -386,38 +301,36 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             "msg.sender is not the offer creator"
         );
 
-        if (!offerBook.inserted[offerHash]) {
-            return;
+        require((offerBook.inserted[offerHash]), "Offer not found");
+
+        {
+            delete offerBook.inserted[offerHash];
+            delete offerBook.offers[offerHash];
+
+            uint256 index = offerBook.indexOf[offerHash];
+            uint256 lastIndex = offerBook.keys.length - 1;
+            bytes32 lastOfferHash = offerBook.keys[lastIndex];
+
+            offerBook.indexOf[lastOfferHash] = index;
+            delete offerBook.indexOf[offerHash];
+
+            offerBook.keys[index] = lastOfferHash;
+            offerBook.keys.pop();
         }
 
-        delete offerBook.inserted[offerHash];
-        delete offerBook.offers[offerHash];
-
-        uint256 index = offerBook.indexOf[offerHash];
-        uint256 lastIndex = offerBook.keys.length - 1;
-        bytes32 lastOfferHash = offerBook.keys[lastIndex];
-
-        offerBook.indexOf[lastOfferHash] = index;
-        delete offerBook.indexOf[offerHash];
-
-        offerBook.keys[index] = lastOfferHash;
-        offerBook.keys.pop();
-
-        // stack too deep need to refactor
-
-        // emit OfferRemoved(
-        //     offer.creator,
-        //     offer.nftContractAddress,
-        //     offer.nftId,
-        //     offer.asset,
-        //     offer.amount,
-        //     offer.interestRate,
-        //     offer.duration,
-        //     offer.expiration,
-        //     offer.fixedTerms,
-        //     offer.floorTerm,
-        //     offerHash
-        // );
+        emit OfferRemoved(
+            msg.sender,
+            nftContractAddress,
+            nftId,
+            offer.asset,
+            offer.amount,
+            offer.interestRate,
+            offer.duration,
+            offer.expiration,
+            offer.fixedTerms,
+            floorTerm,
+            offerHash
+        );
     }
 
     // ---------- Execute Loan Functions ---------- //
@@ -843,12 +756,16 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             _refinanceByBorrowerInternal(offer, offer.creator, nftId);
         }
 
-        // ensure all sig functions finalize signatures 
+        // ensure all sig functions finalize signatures
 
         // finalize signature
         _cancelledOrFinalized[signature] == true;
 
-        emit SigOfferFinalized(offer.nftContractAddress, offer.nftId, signature);
+        emit SigOfferFinalized(
+            offer.nftContractAddress,
+            offer.nftId,
+            signature
+        );
     }
 
     /**
@@ -945,7 +862,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             "Msg.sender must be the owner of nftId to refinanceByBorrower"
         );
 
-                        //Instantiate MintLocalVars
+        //Instantiate MintLocalVars
         InterestAndPaymentVars memory vars;
 
         // calculate the interest earned by current lender
@@ -957,10 +874,13 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         // need to ensure protocol fee is calculated correctly here. HistoricInterest is paid by new ledner, should protocol fee be as well?
 
         // calculate interest earned
-        vars.interestAndPremiumOwedToCurrentLender = vars.currentLenderInterest +
+        vars.interestAndPremiumOwedToCurrentLender =
+            vars.currentLenderInterest +
             loanAuction.historicLenderInterest;
 
-        vars.fullAmount = loanAuction.amountDrawn + vars.interestAndPremiumOwedToCurrentLender;
+        vars.fullAmount =
+            loanAuction.amountDrawn +
+            vars.interestAndPremiumOwedToCurrentLender;
 
         // require statement for offer amount to be greater than or equal to full repayment
         require(
@@ -1088,7 +1008,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             );
         }
 
-                //Instantiate MintLocalVars
+        //Instantiate MintLocalVars
         InterestAndPaymentVars memory vars;
 
         // calculate the interest earned by current lender
@@ -1098,12 +1018,14 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         ) = calculateInterestAccrued(offer.nftContractAddress, offer.nftId);
 
         // calculate interest earned
-        vars.interestAndPremiumOwedToCurrentLender = vars.currentLenderInterest +
+        vars.interestAndPremiumOwedToCurrentLender =
+            vars.currentLenderInterest +
             loanAuction.historicLenderInterest +
             (loanAuction.amountDrawn * refinancePremiumLenderPercentage);
 
         // calculate fullRefinanceAmount
-        vars.fullAmount = vars.interestAndPremiumOwedToCurrentLender +
+        vars.fullAmount =
+            vars.interestAndPremiumOwedToCurrentLender +
             vars.currentProtocolInterest +
             loanAuction.amountDrawn;
 
@@ -1559,7 +1481,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             );
         }
 
-         emit PartialRepayment(
+        emit PartialRepayment(
             nftContractAddress,
             nftId,
             loanAuction.asset,

@@ -236,26 +236,16 @@ interface ILendingAuction is ILiquidityProviders {
         bool floorTerm
     ) external view returns (uint256);
 
-    // TODO(The NFT contract here is duplicate, it's already contained in the offer struct)
-    function createFloorOffer(address nftContractAddress, Offer memory offer)
-        external;
+    function createOffer(Offer calldata offer) external;
 
-    // TODO(The NFT info here is duplicate, it's already contained in the offer struct)
-    function createNftOffer(
+    function removeOffer(
         address nftContractAddress,
-        uint256 nftId,
-        Offer memory offer
-    ) external;
-
-    function removeFloorOffer(address nftContractAddress, bytes32 offerHash)
-        external;
-
-    function removeNftOffer(
-        address nftContractAddress,
+        bool floorTerm,
         uint256 nftId,
         bytes32 offerHash
     ) external;
 
+    // TODO(nftID is duplicate here, the data is already in the offer struct)
     function sigExecuteLoanByBorrower(
         Offer calldata offer,
         bytes calldata signature,
@@ -285,6 +275,7 @@ interface ILendingAuction is ILiquidityProviders {
         bytes32 offerHash
     ) external payable;
 
+    // TODO(nftID is duplicate here, the data is already in the offer struct)
     function sigRefinanceByBorrower(
         Offer calldata offer,
         bytes calldata signature,

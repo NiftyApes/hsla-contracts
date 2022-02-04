@@ -119,78 +119,39 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         assert(LA.refinancePremiumProtocolPercentage() == (5000 / 1000));
     }
 
-    function testCreateGetandRemoveFloorOffer(
-        bool fixedTerms,
-        uint256 amount,
-        uint256 nftId
-    ) public {
+    function testCreateGetandRemoveOffer(bool fixedTerms, bool floorTerm)
+        public
+    {
         // Create a floor offer
         LendingAuction.Offer memory offer;
         offer.creator = address(this);
         offer.nftContractAddress = address(mockNFT);
-        offer.nftId = nftId;
+        offer.nftId = 0;
         offer.asset = address(DAI);
-        offer.amount = amount;
-        offer.interestRate = 10;
-        offer.duration = 100000000;
-        offer.expiration = block.timestamp + 1000000;
-        offer.fixedTerms = fixedTerms;
-        offer.floorTerm = true;
-
-        bytes32 create_hash = LA.getOfferHash(offer);
-
-        LA.createFloorOffer(address(mockNFT), offer);
-
-        LendingAuction.Offer memory get_offer = LA.getOffer(
-            address(mockNFT),
-            nftId,
-            create_hash,
-            true
-        );
-
-        assert(LA.getOfferHash(get_offer) == create_hash);
-
-        // And remove it
-        LA.removeFloorOffer(address(mockNFT), create_hash);
-    }
-
-    function testCreateGetandRemoveNftOffer(
-        bool fixedTerms,
-        uint256 amount,
-        uint256 nftId,
-        uint256 interestRate
-    ) public {
-        // Create a floor offer
-        LendingAuction.Offer memory offer;
-        offer.creator = address(this);
-        offer.nftContractAddress = address(mockNFT);
-        offer.nftId = nftId;
-        offer.asset = address(DAI);
-        offer.amount = amount;
-        offer.interestRate = interestRate;
+        offer.amount = 25000 ether;
+        offer.interestRate = 1000;
         offer.duration = 172800;
         offer.expiration = block.timestamp + 1000000;
         offer.fixedTerms = fixedTerms;
-        offer.floorTerm = false;
+        offer.floorTerm = floorTerm;
 
         bytes32 create_hash = LA.getOfferHash(offer);
 
-        LA.createNftOffer(address(mockNFT), nftId, offer);
+        LA.createOffer(offer);
 
         LendingAuction.Offer memory get_offer = LA.getOffer(
             address(mockNFT),
-            nftId,
+            0,
             create_hash,
-            false
+            floorTerm
         );
 
         assert(LA.getOfferHash(get_offer) == create_hash);
 
         // And remove it
-        LA.removeNftOffer(address(mockNFT), nftId, create_hash);
+        LA.removeOffer(address(mockNFT), floorTerm, 0, create_hash);
     }
 
-    // TODO(What is this underlying function useful for?)
     function testSize(
         address nftContractAddress,
         uint256 nftId,
@@ -199,34 +160,43 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         assert(0 == LA.size(nftContractAddress, nftId, floorTerm));
     }
 
-    function testChainLoan(
-        bool fixedTerms,
-        uint256 amount,
-        uint256 interestRate
-    ) public {
+    function testChainLoanAndRefinance(bool fixedTerms, bool floorTerm) public {
         // Create a floor offer
         LendingAuction.Offer memory offer;
         offer.creator = address(this);
         offer.nftContractAddress = address(mockNFT);
         offer.nftId = 0;
         offer.asset = address(DAI);
-        offer.amount = amount % 50000 ether;
-        offer.interestRate = interestRate;
+        offer.amount = 25000 ether;
+        offer.interestRate = 1000;
         offer.duration = 172800;
         offer.expiration = block.timestamp + 1000000;
         offer.fixedTerms = fixedTerms;
-        offer.floorTerm = true;
+        offer.floorTerm = floorTerm;
 
         bytes32 create_hash = LA.getOfferHash(offer);
 
-        LA.createFloorOffer(address(mockNFT), offer);
+        LA.createOffer(offer);
 
         mockNFT.approve(address(LA), 0);
 
-        LA.chainExecuteLoanByBorrowerFloor(address(mockNFT), 0, create_hash);
+        if (floorTerm) {
+            LA.chainExecuteLoanByBorrowerFloor(
+                address(mockNFT),
+                0,
+                create_hash
+            );
+        } else {
+            LA.chainExecuteLoanByBorrowerNft(address(mockNFT), 0, create_hash);
+        }
 
         LA.getLoanAuction(address(mockNFT), 0);
 
-        // TODO(Test Refinance)
+        offer.interestRate = offer.interestRate / 2;
+
+        if (!offer.fixedTerms) {
+            // Test refinance
+            LA.refinanceByLender(offer);
+        }
     }
 }

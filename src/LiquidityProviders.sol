@@ -513,5 +513,4 @@ contract LiquidityProviders is
 
         return amountToWithdraw;
     }
-
 }
