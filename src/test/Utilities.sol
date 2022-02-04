@@ -3,7 +3,6 @@ pragma solidity 0.8.11;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 
 interface Hevm {
     // sets the block timestamp to x
@@ -61,12 +60,12 @@ interface IUniswapV2Router {
     ) external payable returns (uint256[] memory amounts);
 }
 
-contract MockERC721Token is ERC721, ERC721Enumerable, Ownable {
+contract MockERC721Token is ERC721, ERC721Enumerable {
     constructor(string memory name, string memory symbol)
         ERC721(name, symbol)
     {}
 
-    function safeMint(address to, uint256 tokenId) public onlyOwner {
+    function safeMint(address to, uint256 tokenId) public {
         _safeMint(to, tokenId);
     }
 

@@ -57,6 +57,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         view
         returns (LoanAuction memory auction)
     {
+        // TODO(Should this revert on a null auction?)
         auction = _loanAuctions[nftContractAddress][nftId];
     }
 
@@ -208,7 +209,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     }
 
     /**
-     * @notice Retreive the size of the on-chain floor or individual NFT offer book
+     * @notice Retrieve the size of the on-chain floor or individual NFT offer book
      * @param nftContractAddress The address of the NFT collection
      * @param nftId The id of the specified NFT
      * @param floorTerm Indicates whether to return the floor or individual NFT offer book size. true = floor offer book. false = individual NFT offer book
@@ -223,7 +224,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         if (floorTerm == true) {
             offerBook = _floorOfferBooks[nftContractAddress];
             offerBookSize = offerBook.keys.length;
-        } else if (floorTerm == false) {
+        } else {
             offerBook = _nftOfferBooks[nftContractAddress][nftId];
             offerBookSize = offerBook.keys.length;
         }
@@ -234,13 +235,17 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
      * @param nftContractAddress The address of the NFT collection
      * @param offer The details of the loan auction floor offer
      */
+    // TODO(Offer creation should be gated on lender liquidity)
     function createFloorOffer(address nftContractAddress, Offer memory offer)
         external
     {
         OfferBook storage offerBook = _floorOfferBooks[nftContractAddress];
 
-        offer.creator = msg.sender;
-        offer.floorTerm = true;
+        require(
+            offer.creator == msg.sender,
+            "The creator must match msg.sender"
+        );
+        require(offer.floorTerm == true, "Function requires a floor term");
 
         bytes32 offerHash = getOfferHash(offer);
 
@@ -280,8 +285,11 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     ) external {
         OfferBook storage offerBook = _nftOfferBooks[nftContractAddress][nftId];
 
-        offer.creator = msg.sender;
-        offer.floorTerm = false;
+        require(
+            offer.creator == msg.sender,
+            "The creator must match msg.sender"
+        );
+        require(offer.floorTerm == false, "Function requires an NFT term");
 
         bytes32 offerHash = getOfferHash(offer);
 
@@ -317,6 +325,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     function removeFloorOffer(address nftContractAddress, bytes32 offerHash)
         external
     {
+        // TODO(Why are we creating extra storage pointers here?)
         OfferBook storage offerBook = _floorOfferBooks[nftContractAddress];
         Offer storage offer = offerBook.offers[offerHash];
 
@@ -536,6 +545,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             "Cannot execute bid, offer has expired"
         );
 
+        // TODO(1) Why, 2) This should be gated on offer creation if at all)
         // require offer has 24 hour minimum duration
         require(
             offer.duration >= 86400,
@@ -543,8 +553,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         );
 
         require(
-            assetToCAsset[offer.asset] !=
-                0x0000000000000000000000000000000000000000,
+            assetToCAsset[offer.asset] != address(0),
             "Asset not whitelisted on NiftyApes"
         );
 
@@ -803,7 +812,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
      */
     function sigRefinanceByBorrower(
         Offer calldata offer,
-        bytes calldata signature,
+        bytes memory signature,
         uint256 nftId
     ) external payable whenNotPaused nonReentrant {
         // ideally calculated, stored, and provided as parameter to save computation
@@ -1505,15 +1514,8 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         // update amountDrawn
         loanAuction.amountDrawn -= partialAmount;
 
-        // if asset is not 0x0 process as Erc20
-        if (
-            loanAuction.asset !=
-            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
-        ) {
-            require(
-                partialAmount < currentAmountDrawn,
-                "Msg.value must be less than amountDrawn"
-            );
+        // instantiate RedeemLocalVars
+        RedeemLocalVars memory vars;
 
             _payErc20AndUpdateBalancesInternal(
                 loanAuction.asset,
@@ -1548,12 +1550,18 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             );
         }
 
-        emit PartialRepayment(
-            nftContractAddress,
-            nftId,
-            loanAuction.asset,
-            partialAmount
+        // require that the lenders available balance is sufficent to serve the loan
+        require(
+            // calculate lenders available ICERC20 balance and require it to be greater than or equal to vars.redeemTokens
+            (cAssetBalances[cAsset][lender] -
+                utilizedCAssetBalances[cAsset][lender]) >= vars.redeemTokens,
+            "Lender does not have a sufficient balance to serve this loan"
         );
+
+        // update the lenders utilized balance
+        utilizedCAssetBalances[cAsset][lender] += vars.redeemTokens;
+
+        return 0;
     }
 
     /**
@@ -2099,7 +2107,8 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
         (uint256 lenderInterest, ) = calculateInterestAccrued(
             nftContractAddress,
-            nftId
+            nftId,
+            true
         );
 
         // calculate and return refinanceAmount
