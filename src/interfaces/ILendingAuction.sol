@@ -199,16 +199,14 @@ interface ILendingAuction is ILiquidityProviders {
         view
         returns (bytes32 offerhash);
 
-    // TODO(Test)
     function getOfferSignatureStatus(bytes calldata signature)
         external
         view
         returns (bool status);
 
-    // TODO(Test)
     function getOfferSigner(bytes32 offerHash, bytes memory signature)
         external
-        pure
+        view
         returns (address signer);
 
     // TODO(Test)
@@ -295,51 +293,61 @@ interface ILendingAuction is ILiquidityProviders {
 
     function refinanceByLender(Offer calldata offer) external payable;
 
+    // TODO(Test)
     function drawLoanTime(
         address nftContractAddress,
         uint256 nftId,
         uint256 drawTime
     ) external;
 
+    // TODO(Test)
     function drawLoanAmount(
         address nftContractAddress,
         uint256 nftId,
         uint256 drawAmount
     ) external;
 
+    // TODO(Test)
     function repayRemainingLoan(address nftContractAddress, uint256 nftId)
         external
         payable
         returns (uint256);
 
+    // TODO(Test)
     function partialPayment(
         address nftContractAddress,
         uint256 nftId,
         uint256 partialAmount
     ) external payable;
 
+    // TODO(Test)
     function seizeAsset(address nftContractAddress, uint256 nftId) external;
 
+    // TODO(Test)
     function ownerOf(address nftContractAddress, uint256 nftId)
         external
         view
         returns (address);
 
+    // TODO(Test)
     function calculateInterestAccrued(address nftContractAddress, uint256 nftId)
         external
         view
         returns (uint256, uint256);
 
+    // TODO(Test)
     function calculateFullRepayment(address nftContractAddress, uint256 nftId)
         external
         view
         returns (uint256);
 
+    // TODO(Test)
     function calculateFullRefinanceByLender(
         address nftContractAddress,
         uint256 nftId
     ) external view returns (uint256);
 
+    // TODO(Switch these to basis points)
     function updateLoanDrawFee(uint256 newFeeAmount) external;
 
     function updateRefinancePremiumLenderPercentage(

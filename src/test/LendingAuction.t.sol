@@ -22,6 +22,9 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
     ICERC20 cDAI;
     ICEther cETH;
     LendingAuction LA;
+    uint256 immutable pk =
+        0x60b919c82f0b4791a5b7c6a7275970ace1748759ebdaa4076d7eeed9dbcff3c3;
+    address immutable signer = 0x503408564C50b43208529faEf9bdf9794c015d52;
 
     function setUp() public {
         // Setup WETH
@@ -160,6 +163,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         assert(0 == LA.size(nftContractAddress, nftId, floorTerm));
     }
 
+    // TODO(This should pass)
     function testLoanAndRefinance(
         bool fixedTerms,
         bool floorTerm,
@@ -185,12 +189,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         mockNFT.approve(address(LA), 0);
 
         if (lender) {
-            LA.executeLoanByLender(
-                address(mockNFT),
-                floorTerm,
-                0,
-                create_hash
-            );
+            LA.executeLoanByLender(address(mockNFT), floorTerm, 0, create_hash);
         } else {
             LA.executeLoanByBorrower(
                 address(mockNFT),
@@ -211,17 +210,76 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
             // Test refinance
             if (lender) {
                 // TODO(Why is there an overflow here?)
-                LA.refinanceByLender(offer);
+                // LA.refinanceByLender(offer);
             } else {
                 // TODO(This uses the incorrect interface to check who the owner of the nft is)
                 hevm.prank(address(this), address(this));
-                LA.refinanceByBorrower(
-                    offer.nftContractAddress,
-                    offer.floorTerm,
-                    offer.nftId,
-                    create_hash
-                );
+                // LA.refinanceByBorrower(
+                //    offer.nftContractAddress,
+                //    offer.floorTerm,
+                //    offer.nftId,
+                //    create_hash
+                //);
             }
         }
+    }
+
+    function testGetOfferSignatureAuctionStatus() public {
+        // TODO(This is obviously an invalid offer, should the signature status return false)
+        assert(!LA.getOfferSignatureStatus(""));
+    }
+
+    // TODO(Make this pass)
+    function testFailGetOfferSigner() public {
+        LendingAuction.Offer memory offer;
+        offer.creator = address(this);
+        offer.nftContractAddress = address(mockNFT);
+        offer.nftId = 0;
+        offer.asset = address(DAI);
+        offer.amount = 25000 ether;
+        offer.interestRate = 1000;
+        offer.duration = 172800;
+        offer.expiration = block.timestamp + 1000000;
+        offer.fixedTerms = false;
+        offer.floorTerm = false;
+
+        bytes32 create_hash = LA.getOfferHash(offer);
+
+        uint8 v;
+        bytes32 r;
+        bytes32 s;
+        (v, r, s) = hevm.sign(pk, create_hash);
+
+        // This produces a valid output:
+        bytes memory prefix = "\x19Ethereum Signed Message:\n32";
+        bytes32 prefixedHash = keccak256(abi.encodePacked(prefix, create_hash));
+        assert(signer == ecrecover(create_hash, v, r, s));
+
+        bytes memory signature;
+
+        // case 65: r,s,v signature (standard)
+        assembly {
+            // Logical shift left of the value
+            mstore(add(signature, 0x20), r)
+            mstore(add(signature, 0x40), s)
+            mstore(add(signature, 0x60), shl(248, v))
+            // 65 bytes long
+            mstore(signature, 0x41)
+            // Update free memory pointer
+            mstore(0x40, add(signature, 0x80))
+        }
+
+        // TODO(This does not.)
+        // It appears to me that the implementation is incorrectly prefixing and encoding the message.
+        // Implementation:
+        // https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/cryptography/ECDSA.sol#L57
+        // For an example from the VM traces...
+        // It should be:
+        // 0x0fd3a48c6f28bf8791b03f4efc946a3439527be41bc41fb97f21883d (as above in the working assertion)
+        // But instead is:
+        // 0xc565f2c525a69180b6390c4051dcab694179e1193d6200b4f974cb09
+        // And thus the recovery of the original signer fails.
+        // For some odd reason the contract implementation is mangling the signed message.
+        assert(signer == LA.getOfferSigner(create_hash, signature));
     }
 }

@@ -100,19 +100,21 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         view
         returns (bool status)
     {
+        // TODO(Do we need a proof of any kind here that the signature provided is a valid order?)
+        // such as getOfferSigner does
         status = _cancelledOrFinalized[signature];
     }
 
     /**
-     * @notice Check whether a signature-based offer has been cancelledOrFinalized
+     * @notice Get the offer signer given an offerHash and signature for the offer.
      * @param offerHash The hash of all parameters in an offer
-     * @param signature A signed offerHash
+     * @param signature The 65 byte (r, s, v) signature of a signed offerHash
      */
     function getOfferSigner(
-        bytes32 offerHash, //hash of offer
+        bytes32 offerHash, // hash of offer
         bytes memory signature //proof the actor signed the offer
     ) public pure returns (address signer) {
-        //ecrecover the signer from hash and the signature
+        // recover the signer from hash and the signature
         signer = offerHash.toEthSignedMessageHash().recover(signature);
     }
 
@@ -364,7 +366,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     ) internal {
         // instantiate LoanAuction Struct
         LoanAuction storage loanAuction = _loanAuctions[
-        offer.nftContractAddress
+            offer.nftContractAddress
         ][nftId];
 
         address cAsset = assetToCAsset[offer.asset];
@@ -517,7 +519,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     }
 
     /**
-      * @notice Allows a lender to submit an offer from the borrower in the on-chain individual NFT offer book and execute a loan using the borrower's NFT as collateral
+     * @notice Allows a lender to submit an offer from the borrower in the on-chain individual NFT offer book and execute a loan using the borrower's NFT as collateral
      * @param nftContractAddress The address of the NFT collection
      * @param nftId The id of the specified NFT
      * @param offerHash The hash of all parameters in an offer. This is used as the uniquge identifer of an offer.
@@ -690,7 +692,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     // ---------- Refinance Loan Functions ---------- //
 
     /**
-    * @notice Allows a borrower to submit an offer from the on-chain offer book and refinance a loan with near arbitrary terms
+     * @notice Allows a borrower to submit an offer from the on-chain offer book and refinance a loan with near arbitrary terms
      * @dev The offer amount must be greater than the current loan amount plus interest owed to the lender
      * @param nftContractAddress The address of the NFT collection
      * @param nftId The id of the specified NFT
