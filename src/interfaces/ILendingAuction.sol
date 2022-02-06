@@ -194,20 +194,10 @@ interface ILendingAuction is ILiquidityProviders {
         view
         returns (LoanAuction memory auction);
 
-    function getOfferHash(Offer calldata offer)
-        external
-        view
-        returns (bytes32 offerhash);
-
     function getOfferSignatureStatus(bytes calldata signature)
         external
         view
         returns (bool status);
-
-    function getOfferSigner(bytes32 offerHash, bytes memory signature)
-        external
-        view
-        returns (address signer);
 
     // TODO(Test)
     function withdrawOfferSignature(

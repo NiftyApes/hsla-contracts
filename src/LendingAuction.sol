@@ -62,13 +62,38 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     }
 
     /**
-     * @notice Generate a hash of an offer and follow the EIP712
+     * @notice Generate a hash of an offer
      * @param offer The details of a loan auction offer
      */
     function getOfferHash(Offer memory offer)
         public
         view
-        returns (bytes32 offerhash)
+        returns (bytes32 offerHash)
+    {
+        offerHash = keccak256(
+            abi.encode(
+                offer.creator,
+                offer.nftContractAddress,
+                offer.nftId,
+                offer.asset,
+                offer.amount,
+                offer.interestRate,
+                offer.duration,
+                offer.expiration,
+                offer.fixedTerms,
+                offer.floorTerm
+            )
+        );
+    }
+
+    /**
+     * @notice Generate a hash of an offer and sign with the EIP712 standard
+     * @param offer The details of a loan auction offer
+     */
+    function getEIP712EncodedOffer(Offer memory offer)
+        public
+        view
+        returns (bytes32 signedOffer)
     {
         return
             _hashTypedDataV4(
@@ -95,7 +120,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
      * @notice Check whether a signature-based offer has been cancelledOrFinalized
      * @param signature A signed offerHash
      */
-    function getOfferSignatureStatus(bytes memory signature)
+    function getOfferSignatureStatus(bytes calldata signature)
         external
         view
         returns (bool status)
@@ -105,17 +130,40 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         status = _cancelledOrFinalized[signature];
     }
 
+    // TODO(Should these be internal for a gas savings?)
     /**
      * @notice Get the offer signer given an offerHash and signature for the offer.
-     * @param offerHash The hash of all parameters in an offer
-     * @param signature The 65 byte (r, s, v) signature of a signed offerHash
+     * @param eip712EncodedOffer encoded hash of an offer (from LoanAuction.getEIP712EncodedOffer(offer))
+     * @param signature The 65 byte (r, s, v) signature of a signedOffer
      */
     function getOfferSigner(
-        bytes32 offerHash, // hash of offer
+        bytes32 eip712EncodedOffer, // hash of offer
         bytes memory signature //proof the actor signed the offer
     ) public pure returns (address signer) {
-        // recover the signer from hash and the signature
-        signer = offerHash.toEthSignedMessageHash().recover(signature);
+        // Just doing this directly is more gas efficient than all the checks/overrides in the openzeppelin ECDSA
+        // implementation.
+        require(signature.length == 65, "Invalid signature");
+
+        bytes32 r;
+        bytes32 s;
+        uint8 v;
+        // ecrecover takes the signature parameters, and the only way to get them
+        // currently is to use assembly.
+        assembly {
+            r := mload(add(signature, 0x20))
+            s := mload(add(signature, 0x40))
+            v := byte(0, mload(add(signature, 0x60)))
+        }
+
+        require(
+            uint256(s) <
+                0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0,
+            "Invalid Signature s"
+        );
+
+        require(v == 27 || v == 28, "Invalid signature");
+
+        signer = ecrecover(eip712EncodedOffer, v, r, s);
     }
 
     /**
@@ -125,7 +173,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     function withdrawOfferSignature(
         address nftContractAddress,
         uint256 nftId,
-        bytes32 offerHash,
+        bytes32 eip712EncodedOffer,
         bytes calldata signature
     ) external {
         // require signature is still valid. This also ensures the signature is not utilized in an active loan
@@ -135,7 +183,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         );
 
         // recover signer
-        address signer = getOfferSigner(offerHash, signature);
+        address signer = getOfferSigner(eip712EncodedOffer, signature);
 
         // Require that msg.sender is signer of the signature
         require(
@@ -485,11 +533,11 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
         // ideally calculated, stored, and provided as parameter to save computation
         // generate hash of offer parameters
-        bytes32 offerHash = getOfferHash(offer);
+        bytes32 encodedOffer = getEIP712EncodedOffer(offer);
 
         // recover singer and confirm signed offer terms with function submitted offer terms
         // we know the signer must be the lender because msg.sender must be the nftOwner/borrower
-        address lender = getOfferSigner(offerHash, signature);
+        address lender = getOfferSigner(encodedOffer, signature);
 
         require(
             lender == offer.creator,
@@ -557,11 +605,11 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             "Cannot execute bid or ask. Signature has been cancelled or previously finalized."
         );
 
-        bytes32 offerHash = getOfferHash(offer);
+        bytes32 encodedOffer = getEIP712EncodedOffer(offer);
 
         // recover singer and confirm signed offer terms with function submitted offer terms
         // We assume the signer is the borrower and check in the following require statment
-        address borrower = getOfferSigner(offerHash, signature);
+        address borrower = getOfferSigner(encodedOffer, signature);
 
         // execute state changes for executeLoanByAsk
         _executeLoanByLenderInternal(offer, msg.sender, borrower);
@@ -732,11 +780,11 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         uint256 nftId
     ) external payable whenNotPaused nonReentrant {
         // ideally calculated, stored, and provided as parameter to save computation
-        bytes32 offerHash = getOfferHash(offer);
+        bytes32 encodedOffer = getEIP712EncodedOffer(offer);
 
         // recover singer and confirm signed offer terms with function submitted offer terms
         // We assume the signer is the lender because msg.sender must the the nftOwner
-        address prospectiveLender = getOfferSigner(offerHash, signature);
+        address prospectiveLender = getOfferSigner(encodedOffer, signature);
 
         require(
             offer.creator == prospectiveLender,

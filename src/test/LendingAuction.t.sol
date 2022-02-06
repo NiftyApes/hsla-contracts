@@ -9,6 +9,7 @@ import "../interfaces/compound/ICEther.sol";
 import "../LendingAuction.sol";
 import "./Utilities.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
+import "../../lib/openzeppelin-contracts/contracts/utils/cryptography/draft-EIP712.sol";
 
 // @dev These tests are intended to be run against a forked mainnet.
 
@@ -230,7 +231,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
     }
 
     // TODO(Make this pass)
-    function testFailGetOfferSigner() public {
+    function testGetOfferSigner() public {
         LendingAuction.Offer memory offer;
         offer.creator = address(this);
         offer.nftContractAddress = address(mockNFT);
@@ -243,17 +244,13 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         offer.fixedTerms = false;
         offer.floorTerm = false;
 
-        bytes32 create_hash = LA.getOfferHash(offer);
+        // This is the EIP712 signed hash
+        bytes32 encoded_offer = LA.getEIP712EncodedOffer(offer);
 
         uint8 v;
         bytes32 r;
         bytes32 s;
-        (v, r, s) = hevm.sign(pk, create_hash);
-
-        // This produces a valid output:
-        bytes memory prefix = "\x19Ethereum Signed Message:\n32";
-        bytes32 prefixedHash = keccak256(abi.encodePacked(prefix, create_hash));
-        assert(signer == ecrecover(create_hash, v, r, s));
+        (v, r, s) = hevm.sign(pk, encoded_offer);
 
         bytes memory signature;
 
@@ -269,17 +266,6 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
             mstore(0x40, add(signature, 0x80))
         }
 
-        // TODO(This does not.)
-        // It appears to me that the implementation is incorrectly prefixing and encoding the message.
-        // Implementation:
-        // https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/cryptography/ECDSA.sol#L57
-        // For an example from the VM traces...
-        // It should be:
-        // 0x0fd3a48c6f28bf8791b03f4efc946a3439527be41bc41fb97f21883d (as above in the working assertion)
-        // But instead is:
-        // 0xc565f2c525a69180b6390c4051dcab694179e1193d6200b4f974cb09
-        // And thus the recovery of the original signer fails.
-        // For some odd reason the contract implementation is mangling the signed message.
-        assert(signer == LA.getOfferSigner(create_hash, signature));
+        assert(signer == LA.getOfferSigner(encoded_offer, signature));
     }
 }
