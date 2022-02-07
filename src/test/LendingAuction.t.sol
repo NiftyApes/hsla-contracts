@@ -100,8 +100,8 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         cDAI.approve(address(LA), max);
         cETH.approve(address(LA), max);
 
-        // Supply to 10k DAI contract
-        LA.supplyErc20(address(DAI), 100000 ether);
+        // Supply to 200k DAI contract
+        LA.supplyErc20(address(DAI), 200000 ether);
         // Supply 10 ether to contract
         LA.supplyEth{value: 10 ether}();
     }
@@ -231,8 +231,8 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
                 // TODO(Why is there an overflow here?)
                 // LA.refinanceByLender(offer);
             } else {
-                // TODO(This uses the incorrect interface to check who the owner of the nft is)
-                hevm.prank(address(this), address(this));
+                // TODO(Why is there an overflow here?)
+                // hevm.prank(address(this), address(this));
                 // LA.refinanceByBorrower(
                 //    offer.nftContractAddress,
                 //    offer.floorTerm,
@@ -366,5 +366,115 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         }
 
         LA.executeLoanByLenderSignature(offer, signature);
+    }
+
+    function testExecuteLoanByBorrowerSignature() public {
+        LendingAuction.Offer memory offer;
+        offer.creator = signer;
+        offer.nftContractAddress = address(mockNFT);
+        offer.nftId = 0;
+        offer.asset = address(DAI);
+        offer.amount = 1000 ether;
+        offer.interestRate = 1000;
+        offer.duration = 172800;
+        offer.expiration = block.timestamp + 1000000;
+        offer.fixedTerms = false;
+        offer.floorTerm = false;
+
+        DAI.transfer(signer, 10000 ether);
+        hevm.startPrank(signer, signer);
+        DAI.approve(address(LA), type(uint256).max);
+        LA.supplyErc20(address(DAI), 10000 ether);
+        hevm.stopPrank();
+
+        mockNFT.approve(address(LA), 0);
+
+        bytes32 encoded_offer = LA.getEIP712EncodedOffer(offer);
+
+        uint8 v;
+        bytes32 r;
+        bytes32 s;
+        (v, r, s) = hevm.sign(pk, encoded_offer);
+
+        bytes memory signature = "";
+
+        assembly {
+            // Logical shift left of the value
+            mstore(add(signature, 0x20), r)
+            mstore(add(signature, 0x40), s)
+            mstore(add(signature, 0x60), shl(248, v))
+            // 65 bytes long
+            mstore(signature, 0x41)
+            // Update free memory pointer
+            mstore(0x40, add(signature, 0x80))
+        }
+
+        LA.executeLoanByBorrowerSignature(offer, signature, 0);
+    }
+
+    function testFailDrawLoan(bool floorTerm, bool lender) public {
+        // Create a floor offer
+        LendingAuction.Offer memory offer;
+        offer.creator = address(this);
+        offer.nftContractAddress = address(mockNFT);
+        offer.nftId = 0;
+        offer.asset = address(DAI);
+        offer.amount = 25000 ether;
+        offer.interestRate = 1000;
+        offer.duration = 172800;
+        offer.expiration = block.timestamp + 1000000;
+        offer.fixedTerms = false;
+        offer.floorTerm = floorTerm;
+
+        bytes32 create_hash = LA.getOfferHash(offer);
+
+        LA.createOffer(offer);
+
+        bytes32 created_hash = LA.getOfferHash(
+            LA.getOffer(address(mockNFT), 0, create_hash, floorTerm)
+        );
+
+        // Check that get offer worked
+        assert(create_hash == created_hash);
+
+        created_hash = LA.getOfferHash(
+            LA.getOfferAtIndex(address(mockNFT), 0, 0, floorTerm)
+        );
+
+        // Check that get offer worked
+        assert(create_hash == created_hash);
+
+        mockNFT.approve(address(LA), 0);
+
+        if (lender) {
+            LA.executeLoanByLender(address(mockNFT), floorTerm, 0, create_hash);
+        } else {
+            LA.executeLoanByBorrower(
+                address(mockNFT),
+                floorTerm,
+                0,
+                create_hash
+            );
+        }
+
+        offer.creator = address(this);
+        offer.nftContractAddress = address(mockNFT);
+        offer.nftId = 0;
+        offer.asset = address(DAI);
+        offer.amount = 35000 ether;
+        offer.interestRate = 100;
+        offer.duration = 272800;
+        offer.expiration = block.timestamp + 1000000;
+        offer.fixedTerms = false;
+        offer.floorTerm = floorTerm;
+
+        // TODO(This input value is in asset, but internal balances are incorrectly checked against cAsset)
+        LA.refinanceByLender(offer);
+
+        // TODO(These can't work until refinance does)
+        LA.drawLoanTime(address(mockNFT), 0, 10000);
+
+        // This amount should also be denominated in the unwrapped asset address.
+        LA.drawLoanAmount(address(mockNFT), 0, 10000);
     }
 }

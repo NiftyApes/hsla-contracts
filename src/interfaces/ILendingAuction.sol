@@ -242,7 +242,6 @@ interface ILendingAuction is ILiquidityProviders {
         bytes32 offerHash
     ) external payable;
 
-    // TODO(Test)
     // TODO(nftID is duplicate here, the data is already in the offer struct)
     function executeLoanByBorrowerSignature(
         Offer calldata offer,
@@ -279,14 +278,12 @@ interface ILendingAuction is ILiquidityProviders {
 
     function refinanceByLender(Offer calldata offer) external payable;
 
-    // TODO(Test)
     function drawLoanTime(
         address nftContractAddress,
         uint256 nftId,
         uint256 drawTime
     ) external;
 
-    // TODO(Test)
     function drawLoanAmount(
         address nftContractAddress,
         uint256 nftId,
@@ -308,12 +305,6 @@ interface ILendingAuction is ILiquidityProviders {
 
     // TODO(Test)
     function seizeAsset(address nftContractAddress, uint256 nftId) external;
-
-    // TODO(Test)
-    function ownerOf(address nftContractAddress, uint256 nftId)
-        external
-        view
-        returns (address);
 
     // TODO(Test)
     function calculateInterestAccrued(address nftContractAddress, uint256 nftId)

@@ -858,7 +858,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         );
 
         // get nft owner
-        address nftOwner = IERC721(offer.nftContractAddress).ownerOf(nftId);
+        address nftOwner = ownerOf(offer.nftContractAddress, offer.nftId);
 
         // require msg.sender is the nftOwner/borrower
         require(
@@ -1939,7 +1939,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
     // returns the owner of an NFT the has a loan against it
     function ownerOf(address nftContractAddress, uint256 nftId)
-        external
+        public
         view
         returns (address)
     {
