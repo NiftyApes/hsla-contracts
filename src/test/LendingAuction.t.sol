@@ -412,6 +412,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         LA.executeLoanByBorrowerSignature(offer, signature, 0);
     }
 
+    // TODO(This should pass)
     function testFailDrawLoan(bool floorTerm, bool lender) public {
         // Create a floor offer
         LendingAuction.Offer memory offer;
@@ -476,5 +477,124 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
 
         // This amount should also be denominated in the unwrapped asset address.
         LA.drawLoanAmount(address(mockNFT), 0, 10000);
+    }
+
+    // TODO(This should pass)
+    function testFailRepayRemainingLoan(bool floorTerm) public {
+        // Create a floor offer
+        LendingAuction.Offer memory offer;
+        offer.creator = address(this);
+        offer.nftContractAddress = address(mockNFT);
+        offer.nftId = 0;
+        offer.asset = address(DAI);
+        offer.amount = 25000 ether;
+        offer.interestRate = 1000;
+        offer.duration = 172800;
+        offer.expiration = block.timestamp + 1000000;
+        offer.fixedTerms = false;
+        offer.floorTerm = floorTerm;
+
+        bytes32 create_hash = LA.getOfferHash(offer);
+
+        LA.createOffer(offer);
+
+        mockNFT.approve(address(LA), 0);
+
+        LA.executeLoanByLender(address(mockNFT), floorTerm, 0, create_hash);
+
+        // So, we get some DAI with Sushiswap.
+        address[] memory path = new address[](2);
+        path[0] = address(WETH);
+        path[1] = address(DAI);
+
+        // TODO(This should transfer DAI, not compound DAI)
+        LA.repayRemainingLoan(address(mockNFT), 0);
+    }
+
+    // TODO(This should pass)
+    function testFailPartialPayment(bool floorTerm) public {
+        // Create a floor offer
+        LendingAuction.Offer memory offer;
+        offer.creator = address(this);
+        offer.nftContractAddress = address(mockNFT);
+        offer.nftId = 0;
+        offer.asset = address(DAI);
+        offer.amount = 25000 ether;
+        offer.interestRate = 1000;
+        offer.duration = 172800;
+        offer.expiration = block.timestamp + 1000000;
+        offer.fixedTerms = false;
+        offer.floorTerm = floorTerm;
+
+        bytes32 create_hash = LA.getOfferHash(offer);
+
+        LA.createOffer(offer);
+
+        mockNFT.approve(address(LA), 0);
+
+        LA.executeLoanByLender(address(mockNFT), floorTerm, 0, create_hash);
+
+        // TODO(This should transfer DAI, not compound DAI)
+        LA.partialPayment(address(mockNFT), 0, 10000 ether);
+    }
+
+    function testSeizeAsset() public {
+        LendingAuction.Offer memory offer;
+        offer.creator = address(this);
+        offer.nftContractAddress = address(mockNFT);
+        offer.nftId = 0;
+        offer.asset = address(DAI);
+        offer.amount = 25000 ether;
+        offer.interestRate = 1000;
+        offer.duration = 172800;
+        offer.expiration = block.timestamp + 1000000;
+        offer.fixedTerms = false;
+        offer.floorTerm = false;
+
+        bytes32 create_hash = LA.getOfferHash(offer);
+
+        LA.createOffer(offer);
+
+        mockNFT.approve(address(LA), 0);
+
+        LA.executeLoanByLender(address(mockNFT), false, 0, create_hash);
+
+        hevm.warp(block.timestamp + 172801);
+
+        LA.seizeAsset(address(mockNFT), 0);
+    }
+
+    function testCalculations() public {
+        LendingAuction.Offer memory offer;
+        offer.creator = address(this);
+        offer.nftContractAddress = address(mockNFT);
+        offer.nftId = 0;
+        offer.asset = address(DAI);
+        offer.amount = 25000 ether;
+        offer.interestRate = 1000;
+        offer.duration = 172800;
+        offer.expiration = block.timestamp + 1000000;
+        offer.fixedTerms = false;
+        offer.floorTerm = false;
+
+        bytes32 create_hash = LA.getOfferHash(offer);
+
+        LA.createOffer(offer);
+
+        mockNFT.approve(address(LA), 0);
+
+        LA.executeLoanByLender(address(mockNFT), false, 0, create_hash);
+
+        hevm.warp(block.timestamp + 10000);
+        hevm.roll(block.number + 1000);
+
+        // TODO(Add assertion about expected value after conversion of rate to basis points)
+        LA.calculateInterestAccrued(address(mockNFT), 0);
+
+        // TODO(Add assertion)
+        LA.calculateFullRepayment(address(mockNFT), 0);
+
+        // TODO(Add assertion)
+        LA.calculateFullRefinanceByLender(address(mockNFT), 0);
     }
 }

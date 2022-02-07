@@ -268,29 +268,24 @@ interface ILendingAuction is ILiquidityProviders {
         uint256 drawAmount
     ) external;
 
-    // TODO(Test)
     function repayRemainingLoan(address nftContractAddress, uint256 nftId)
         external
         payable
         returns (uint256);
 
-    // TODO(Test)
     function partialPayment(
         address nftContractAddress,
         uint256 nftId,
         uint256 partialAmount
     ) external payable;
 
-    // TODO(Test)
     function seizeAsset(address nftContractAddress, uint256 nftId) external;
 
-    // TODO(Test)
     function calculateInterestAccrued(address nftContractAddress, uint256 nftId)
         external
         view
         returns (uint256, uint256);
 
-    // TODO(Test)
     function calculateFullRepayment(address nftContractAddress, uint256 nftId)
         external
         view
