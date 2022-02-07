@@ -14,6 +14,7 @@ import "./interfaces/ILiquidityProviders.sol";
 
 // TODO(need to implement Proxy and Intitializable contracts?)
 // For what purpose?
+// It enables us to update the contract if needed
 
 // @title An interface for liquidity providers to supply and withdraw tokens
 // @author Kevin Seagraves

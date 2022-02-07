@@ -300,19 +300,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             offerBook.keys.push(offerHash);
         }
 
-        emit NewOffer(
-            offer.creator,
-            offer.nftContractAddress,
-            offer.nftId,
-            offer.asset,
-            offer.amount,
-            offer.interestRate,
-            offer.duration,
-            offer.expiration,
-            offer.fixedTerms,
-            offer.floorTerm,
-            offerHash
-        );
+        emit NewOffer(offer, offerHash);
     }
 
     /**
@@ -360,19 +348,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             offerBook.keys.pop();
         }
 
-        emit OfferRemoved(
-            msg.sender,
-            nftContractAddress,
-            nftId,
-            offer.asset,
-            offer.amount,
-            offer.interestRate,
-            offer.duration,
-            offer.expiration,
-            offer.fixedTerms,
-            floorTerm,
-            offerHash
-        );
+        emit OfferRemoved(offer, offerHash);
     }
 
     // ---------- Execute Loan Functions ---------- //
@@ -857,12 +833,9 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             "Cannot refinance loan that has expired"
         );
 
-        // get nft owner
-        address nftOwner = ownerOf(offer.nftContractAddress, offer.nftId);
-
-        // require msg.sender is the nftOwner/borrower
+        // get nftOwner and require msg.sender is the nftOwner/borrower
         require(
-            nftOwner == msg.sender,
+            msg.sender == IERC721(offer.nftContractAddress).ownerOf(nftId),
             "Msg.sender must be the owner of nftId to refinanceByBorrower"
         );
 
@@ -909,6 +882,8 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             loanAuction.amountDrawn
         );
 
+        uint256 currentHistoricLenderInterest = loanAuction
+            .historicLenderInterest;
         uint256 currentHistoricProtocolInterest = loanAuction
             .historicProtocolInterest;
 
@@ -919,14 +894,16 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         loanAuction.duration = offer.duration;
         loanAuction.amountDrawn = vars.fullAmount;
         loanAuction.timeOfInterestStart = block.timestamp;
-        loanAuction.historicLenderInterest = 0;
+        loanAuction.historicLenderInterest =
+            currentHistoricLenderInterest +
+            vars.currentLenderInterest;
         loanAuction.historicProtocolInterest =
             currentHistoricProtocolInterest +
             vars.currentProtocolInterest;
 
         emit LoanRefinance(
             prospectiveLender,
-            nftOwner,
+            loanAuction.nftOwner,
             offer.nftContractAddress,
             offer.nftId,
             offer.asset,
@@ -1027,10 +1004,13 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             loanAuction.historicLenderInterest +
             (loanAuction.amountDrawn * refinancePremiumLenderPercentage);
 
+        uint256 protocolPremium = loanAuction.amountDrawn *
+            refinancePremiumProtocolPercentage;
+
         // calculate fullRefinanceAmount
         vars.fullAmount =
             vars.interestAndPremiumOwedToCurrentLender +
-            vars.currentProtocolInterest +
+            protocolPremium +
             loanAuction.amountDrawn;
 
         // If refinancing is not done by current lender they must buy out the loan and pay fees
@@ -1048,7 +1028,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                 cAsset,
                 loanAuction.lender,
                 msg.sender,
-                vars.currentProtocolInterest,
+                protocolPremium,
                 vars.interestAndPremiumOwedToCurrentLender,
                 loanAuction.amountDrawn
             );
@@ -1077,6 +1057,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             .historicProtocolInterest;
 
         // update LoanAuction struct
+        loanAuction.lender = msg.sender;
         loanAuction.amount = offer.amount;
         loanAuction.interestRate = offer.interestRate;
         loanAuction.duration = offer.duration;
@@ -1627,7 +1608,10 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
         // should have require statement to ensure tranfer is successful before proceeding
         // transferFrom ERC20 from depositors address
-        underlying.transferFrom(from, address(this), fullAmount);
+        require(
+            underlying.transferFrom(from, address(this), fullAmount) == true,
+            "underlying.transferFrom() failed"
+        );
 
         // set exchange rate from erc20 to ICERC20
         vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
@@ -1683,7 +1667,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         // should have require statement to ensure mint is successful before proceeding
         // protocolDrawFee is taken here as the fullAmount will be greater the paymentTokens + lenderInterestAndPremiumTokens and remain at the NA contract address
         // mint cTokens
-        cToken.mint(fullAmount);
+        require(cToken.mint(fullAmount) == 0, "cToken.mint() failed");
 
         // update the tos utilized balance
         utilizedCAssetBalances[cAsset][to] -= tokenVars.paymentTokens;
@@ -1789,8 +1773,8 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                 tokenVars.protocolInterestAndPremiumTokens +
                 tokenVars.paymentTokens);
 
-        // should have require statement to ensure mint is successful before proceeding
-        // // mint CEth tokens to this contract address
+        // mint CEth tokens to this contract address
+        // cEth mint() reverts on failure so do not need a require statement
         cToken.mint{value: msgValue, gas: 250000}();
 
         // update the to's utilized balance
@@ -1821,10 +1805,16 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         ICERC20 cToken = ICERC20(cAsset);
 
         // redeem underlying from cToken to this contract
-        cToken.redeemUnderlying(amount);
+        require(
+            cToken.redeemUnderlying(amount) == 0,
+            "cToken.redeemUnderlying() failed"
+        );
 
         // transfer underlying from this contract to borrower
-        underlying.transfer(nftOwner, amount);
+        require(
+            underlying.transfer(nftOwner, amount) == true,
+            "underlying.transfer() failed"
+        );
     }
 
     // this internal functions handles transfer of eth for executeLoan functions
