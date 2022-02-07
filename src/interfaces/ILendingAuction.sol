@@ -199,7 +199,6 @@ interface ILendingAuction is ILiquidityProviders {
         view
         returns (bool status);
 
-    // TODO(Test)
     function withdrawOfferSignature(
         address nftContractAddress,
         uint256 nftId,
@@ -207,7 +206,6 @@ interface ILendingAuction is ILiquidityProviders {
         bytes calldata signature
     ) external;
 
-    // TODO(Test)
     function getOffer(
         address nftContractAddress,
         uint256 nftId,
@@ -215,7 +213,6 @@ interface ILendingAuction is ILiquidityProviders {
         bool floorTerm
     ) external view returns (Offer memory offer);
 
-    // TODO(Test)
     function getOfferAtIndex(
         address nftContractAddress,
         uint256 nftId,
@@ -260,7 +257,6 @@ interface ILendingAuction is ILiquidityProviders {
         bytes32 offerHash
     ) external payable;
 
-    // TODO(Test)
     function executeLoanByLenderSignature(
         Offer calldata offer,
         bytes calldata signature

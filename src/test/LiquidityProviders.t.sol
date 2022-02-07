@@ -105,6 +105,11 @@ contract LiquidityProvidersTest is DSTest, TestUtility {
         );
     }
 
+    function testSetCAssetAddress() public {
+        liquidityProviders.setCAssetAddress(address(DAI), address(cDAI));
+        assert(liquidityProviders.assetToCAsset(address(DAI)) == address(cDAI));
+    }
+
     function testCAssetBalances() public {
         assert(
             liquidityProviders.cAssetBalances(address(cDAI), address(this)) >
@@ -125,10 +130,6 @@ contract LiquidityProvidersTest is DSTest, TestUtility {
         address[] memory assetsIn = liquidityProviders.getAssetsIn(
             address(this)
         );
-    }
-
-    function testSetCAssetAddress() public {
-        liquidityProviders.setCAssetAddress(address(0), address(1));
     }
 
     function testSupplyErc20() public {

@@ -9,7 +9,6 @@ import "../interfaces/compound/ICEther.sol";
 import "../LendingAuction.sol";
 import "./Utilities.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
-import "../../lib/openzeppelin-contracts/contracts/utils/cryptography/draft-EIP712.sol";
 
 // @dev These tests are intended to be run against a forked mainnet.
 
@@ -18,7 +17,6 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
     IUniswapV2Router SushiSwapRouter;
     MockERC721Token mockNFT;
     IWETH WETH;
-    Hevm IHEVM;
     IERC20 DAI;
     ICERC20 cDAI;
     ICEther cETH;
@@ -26,6 +24,8 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
     uint256 immutable pk =
         0x60b919c82f0b4791a5b7c6a7275970ace1748759ebdaa4076d7eeed9dbcff3c3;
     address immutable signer = 0x503408564C50b43208529faEf9bdf9794c015d52;
+
+    //address immutable caller = ;
 
     function setUp() public {
         // Setup WETH
@@ -43,9 +43,6 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         cETH = ICEther(0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5);
         // Mint some cETH
         cETH.mint{value: 10 ether}();
-
-        // Setup HEVM
-        IHEVM = Hevm(HEVM_ADDRESS);
 
         // Setup DAI balances
 
@@ -90,6 +87,13 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
 
         // Give this contract some
         mockNFT.safeMint(address(this), 0);
+
+        // Give the signer some
+        mockNFT.safeMint(signer, 1);
+
+        hevm.startPrank(signer, signer);
+        mockNFT.approve(address(LA), 1);
+        hevm.stopPrank();
 
         // Approve spends
         DAI.approve(address(LA), max);
@@ -187,6 +191,20 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
 
         LA.createOffer(offer);
 
+        bytes32 created_hash = LA.getOfferHash(
+            LA.getOffer(address(mockNFT), 0, create_hash, floorTerm)
+        );
+
+        // Check that get offer worked
+        assert(create_hash == created_hash);
+
+        created_hash = LA.getOfferHash(
+            LA.getOfferAtIndex(address(mockNFT), 0, 0, floorTerm)
+        );
+
+        // Check that get offer worked
+        assert(create_hash == created_hash);
+
         mockNFT.approve(address(LA), 0);
 
         if (lender) {
@@ -230,7 +248,6 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         assert(!LA.getOfferSignatureStatus(""));
     }
 
-    // TODO(Make this pass)
     function testGetOfferSigner() public {
         LendingAuction.Offer memory offer;
         offer.creator = address(this);
@@ -252,7 +269,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         bytes32 s;
         (v, r, s) = hevm.sign(pk, encoded_offer);
 
-        bytes memory signature;
+        bytes memory signature = "";
 
         // case 65: r,s,v signature (standard)
         assembly {
@@ -267,5 +284,87 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         }
 
         assert(signer == LA.getOfferSigner(encoded_offer, signature));
+    }
+
+    function testWithdrawOfferSignature() public {
+        LendingAuction.Offer memory offer;
+        offer.creator = address(this);
+        offer.nftContractAddress = address(mockNFT);
+        offer.nftId = 0;
+        offer.asset = address(DAI);
+        offer.amount = 25000 ether;
+        offer.interestRate = 1000;
+        offer.duration = 172800;
+        offer.expiration = block.timestamp + 1000000;
+        offer.fixedTerms = false;
+        offer.floorTerm = false;
+
+        // This is the EIP712 signed hash
+        bytes32 encoded_offer = LA.getEIP712EncodedOffer(offer);
+
+        uint8 v;
+        bytes32 r;
+        bytes32 s;
+        (v, r, s) = hevm.sign(pk, encoded_offer);
+
+        bytes memory signature = "";
+
+        // case 65: r,s,v signature (standard)
+        assembly {
+            // Logical shift left of the value
+            mstore(add(signature, 0x20), r)
+            mstore(add(signature, 0x40), s)
+            mstore(add(signature, 0x60), shl(248, v))
+            // 65 bytes long
+            mstore(signature, 0x41)
+            // Update free memory pointer
+            mstore(0x40, add(signature, 0x80))
+        }
+
+        hevm.prank(signer, signer);
+        LA.withdrawOfferSignature(
+            address(mockNFT),
+            0,
+            encoded_offer,
+            signature
+        );
+
+        assert(LA.getOfferSignatureStatus(signature) == true);
+    }
+
+    function testExecuteLoanByLenderSignature() public {
+        LendingAuction.Offer memory offer;
+        offer.creator = signer;
+        offer.nftContractAddress = address(mockNFT);
+        offer.nftId = 1;
+        offer.asset = address(DAI);
+        offer.amount = 25000 ether;
+        offer.interestRate = 1000;
+        offer.duration = 172800;
+        offer.expiration = block.timestamp + 1000000;
+        offer.fixedTerms = false;
+        offer.floorTerm = false;
+
+        bytes32 encoded_offer = LA.getEIP712EncodedOffer(offer);
+
+        uint8 v;
+        bytes32 r;
+        bytes32 s;
+        (v, r, s) = hevm.sign(pk, encoded_offer);
+
+        bytes memory signature = "";
+
+        assembly {
+            // Logical shift left of the value
+            mstore(add(signature, 0x20), r)
+            mstore(add(signature, 0x40), s)
+            mstore(add(signature, 0x60), shl(248, v))
+            // 65 bytes long
+            mstore(signature, 0x41)
+            // Update free memory pointer
+            mstore(0x40, add(signature, 0x80))
+        }
+
+        LA.executeLoanByLenderSignature(offer, signature);
     }
 }

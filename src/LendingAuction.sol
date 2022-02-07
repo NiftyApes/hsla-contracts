@@ -130,7 +130,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         status = _cancelledOrFinalized[signature];
     }
 
-    // TODO(Should these be internal for a gas savings?)
+    // TODO(Should this be internal for a gas savings?)
     /**
      * @notice Get the offer signer given an offerHash and signature for the offer.
      * @param eip712EncodedOffer encoded hash of an offer (from LoanAuction.getEIP712EncodedOffer(offer))
@@ -608,7 +608,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         bytes32 encodedOffer = getEIP712EncodedOffer(offer);
 
         // recover singer and confirm signed offer terms with function submitted offer terms
-        // We assume the signer is the borrower and check in the following require statment
+        // We assume the signer is the borrower and check in the following require statement
         address borrower = getOfferSigner(encodedOffer, signature);
 
         // execute state changes for executeLoanByAsk
