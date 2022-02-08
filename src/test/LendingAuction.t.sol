@@ -110,23 +110,19 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
 
     // Test Cases
 
-    // TODO(Using a consistent unit of basis points here for the next 3 tests/6 interfaces would be more scrutable.)
-    // Additionally, a basis points unit could let all 3 of these fit into one word of storage as uint64.
-    // Addtionally, none of these really look like a "percentage".
-    function testUpdateLoanDrawFee() public {
-        // TODO(Why not just make the fee in basis points and get rid of the divisions?)
-        LA.updateLoanDrawFee(50000);
-        assert(LA.protocolDrawFeePercentage() == (50000 / 10000));
+    function testUpdateLoanDrawProtocolFee() public {
+        LA.updateLoanDrawProtocolFee(30);
+        assert(LA.loanDrawFeeProtocolBps() == 30);
     }
 
-    function testUpdateRefinancePremiumLenderPercentage() public {
-        LA.updateRefinancePremiumLenderPercentage(500000);
-        assert(LA.refinancePremiumLenderPercentage() == (500000 / 100000));
+    function testUpdateRefinancePremiumLenderFee() public {
+        LA.updateRefinancePremiumLenderFee(30);
+        assert(LA.refinancePremiumLenderBps() == 30);
     }
 
-    function testUpdateRefinancePremiumProtocolPercentage() public {
-        LA.updateRefinancePremiumProtocolPercentage(5000);
-        assert(LA.refinancePremiumProtocolPercentage() == (5000 / 1000));
+    function testUpdateRefinancePremiumProtocolFee() public {
+        LA.updateRefinancePremiumProtocolFee(30);
+        assert(LA.refinancePremiumProtocolBps() == 30);
     }
 
     function testCreateGetandRemoveOffer(bool fixedTerms, bool floorTerm)
@@ -139,7 +135,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         offer.nftId = 0;
         offer.asset = address(DAI);
         offer.amount = 25000 ether;
-        offer.interestRate = 1000;
+        offer.interestRateBps = 1000;
         offer.duration = 172800;
         offer.expiration = block.timestamp + 1000000;
         offer.fixedTerms = fixedTerms;
@@ -185,7 +181,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         offer.nftId = 0;
         offer.asset = address(DAI);
         offer.amount = 25000 ether;
-        offer.interestRate = 1000;
+        offer.interestRateBps = 1000;
         offer.duration = 172800;
         offer.expiration = block.timestamp + 1000000;
         offer.fixedTerms = fixedTerms;
@@ -230,7 +226,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
 
         LA.getLoanAuction(address(mockNFT), 0);
 
-        offer.interestRate = offer.interestRate / 2;
+        offer.interestRateBps = offer.interestRateBps / 2;
 
         if (!offer.fixedTerms) {
             // TODO assert statements to check math.
@@ -265,7 +261,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         offer.nftId = 0;
         offer.asset = address(DAI);
         offer.amount = 25000 ether;
-        offer.interestRate = 1000;
+        offer.interestRateBps = 1000;
         offer.duration = 172800;
         offer.expiration = block.timestamp + 1000000;
         offer.fixedTerms = false;
@@ -303,7 +299,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         offer.nftId = 0;
         offer.asset = address(DAI);
         offer.amount = 25000 ether;
-        offer.interestRate = 1000;
+        offer.interestRateBps = 1000;
         offer.duration = 172800;
         offer.expiration = block.timestamp + 1000000;
         offer.fixedTerms = false;
@@ -349,7 +345,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         offer.nftId = 1;
         offer.asset = address(DAI);
         offer.amount = 25000 ether;
-        offer.interestRate = 1000;
+        offer.interestRateBps = 1000;
         offer.duration = 172800;
         offer.expiration = block.timestamp + 1000000;
         offer.fixedTerms = false;
@@ -388,7 +384,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         offer.nftId = 0;
         offer.asset = address(DAI);
         offer.amount = 1000 ether;
-        offer.interestRate = 1000;
+        offer.interestRateBps = 1000;
         offer.duration = 172800;
         offer.expiration = block.timestamp + 1000000;
         offer.fixedTerms = false;
@@ -437,7 +433,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         offer.nftId = 0;
         offer.asset = address(DAI);
         offer.amount = 25000 ether;
-        offer.interestRate = 1000;
+        offer.interestRateBps = 1000;
         offer.duration = 172800;
         offer.expiration = block.timestamp + 1000000;
         offer.fixedTerms = false;
@@ -479,7 +475,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         offer.nftId = 0;
         offer.asset = address(DAI);
         offer.amount = 35000 ether;
-        offer.interestRate = 100;
+        offer.interestRateBps = 100;
         offer.duration = 272800;
         offer.expiration = block.timestamp + 1000000;
         offer.fixedTerms = false;
@@ -517,7 +513,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         offer.nftId = 0;
         offer.asset = address(DAI);
         offer.amount = 25000 ether;
-        offer.interestRate = 1000;
+        offer.interestRateBps = 1000;
         offer.duration = 172800;
         offer.expiration = block.timestamp + 1000000;
         offer.fixedTerms = false;
@@ -549,7 +545,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         offer.nftId = 0;
         offer.asset = address(DAI);
         offer.amount = 25000 ether;
-        offer.interestRate = 1000;
+        offer.interestRateBps = 1000;
         offer.duration = 172800;
         offer.expiration = block.timestamp + 1000000;
         offer.fixedTerms = false;
@@ -574,7 +570,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         offer.nftId = 0;
         offer.asset = address(DAI);
         offer.amount = 25000 ether;
-        offer.interestRate = 1000;
+        offer.interestRateBps = 1000;
         offer.duration = 172800;
         offer.expiration = block.timestamp + 1000000;
         offer.fixedTerms = false;
@@ -600,7 +596,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         offer.nftId = 0;
         offer.asset = address(DAI);
         offer.amount = 25000 ether;
-        offer.interestRate = 1000;
+        offer.interestRateBps = 1000;
         offer.duration = 172800;
         offer.expiration = block.timestamp + 1000000;
         offer.fixedTerms = false;

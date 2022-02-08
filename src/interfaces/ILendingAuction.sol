@@ -13,10 +13,13 @@ interface ILendingAuction is ILiquidityProviders {
         address lender;
         // loan asset
         address asset; // 0x0 in active loan denotes ETH
+        // loan interest rate in basis points for the loan duration
+        uint64 interestRateBps;
+        // boolean of whether fixedTerms has been accepted by a borrower
+        // if fixedTerms == true could mint an NFT that represents that loan to enable packaging and reselling.
+        bool fixedTerms;
         // loan amount
         uint256 amount;
-        // loan interest rate
-        uint256 interestRate;
         // loan duration of loan in number of seconds
         uint256 duration;
         // timestamp of loan execution
@@ -31,9 +34,6 @@ interface ILendingAuction is ILiquidityProviders {
         uint256 amountDrawn;
         // time withdrawn by the nftOwner. This is the time they will pay interest on, with this value as minimum
         uint256 timeDrawn;
-        // boolean of whether fixedTerms has been accepted by a borrower
-        // if fixedTerms == true could mint an NFT that represents that loan to enable packaging and reselling.
-        bool fixedTerms;
     }
 
     struct Offer {
@@ -41,22 +41,22 @@ interface ILendingAuction is ILiquidityProviders {
         address creator;
         // offer NFT contract address
         address nftContractAddress;
+        // offer interest rate in basis points for the loan duration
+        uint64 interestRateBps;
+        // is loan offer fixed terms or open for perpetual auction
+        bool fixedTerms;
+        // is offer for single NFT or for every NFT in a collection
+        bool floorTerm;
         // offer NFT ID
         uint256 nftId; // ignored if floorTerm is true
         // offer asset type
         address asset;
         // offer loan amount
         uint256 amount;
-        // offer interest rate
-        uint256 interestRate;
         // offer loan duration
         uint256 duration;
         // offer expiration
         uint256 expiration;
-        // is loan offer fixed terms or open for perpetual auction
-        bool fixedTerms;
-        // is offer for single NFT or for every NFT in a collection
-        bool floorTerm;
     }
 
     // Structure representing an offer book per NFT or floor term
@@ -151,14 +151,11 @@ interface ILendingAuction is ILiquidityProviders {
     event OfferRemoved(Offer offer, bytes32 offerHash);
 
     // Functions
-    function protocolDrawFeePercentage() external view returns (uint256);
+    function loanDrawFeeProtocolBps() external view returns (uint64);
 
-    function refinancePremiumLenderPercentage() external view returns (uint256);
+    function refinancePremiumLenderBps() external view returns (uint64);
 
-    function refinancePremiumProtocolPercentage()
-        external
-        view
-        returns (uint256);
+    function refinancePremiumProtocolBps() external view returns (uint64);
 
     function getLoanAuction(address nftContractAddress, uint256 nftId)
         external
@@ -294,14 +291,12 @@ interface ILendingAuction is ILiquidityProviders {
         uint256 nftId
     ) external view returns (uint256);
 
-    // TODO(Switch these to basis points)
-    function updateLoanDrawFee(uint256 newFeeAmount) external;
+    function updateLoanDrawProtocolFee(uint64 newLoanDrawProtocolFeeBps)
+        external;
 
-    function updateRefinancePremiumLenderPercentage(
-        uint256 newPremiumLenderPercentage
-    ) external;
+    function updateRefinancePremiumLenderFee(uint64 newPremiumLenderBps)
+        external;
 
-    function updateRefinancePremiumProtocolPercentage(
-        uint256 newPremiumProtocolPercentage
-    ) external;
+    function updateRefinancePremiumProtocolFee(uint64 newPremiumProtocolBps)
+        external;
 }
