@@ -98,10 +98,7 @@ interface ILendingAuction is ILiquidityProviders {
         address nftOwner,
         address indexed nftContractAddress,
         uint256 indexed nftId,
-        address asset,
-        uint256 amount,
-        uint256 interestRate,
-        uint256 duration
+        Offer offer
     );
 
     // cancellation sig event
@@ -218,7 +215,7 @@ interface ILendingAuction is ILiquidityProviders {
 
     // TODO(nftID is duplicate here, the data is already in the offer struct)
     // nftId is required in this function to serve floor offers. A floor offer can serve any nftId,
-    // so one is provided to this function, and if the nftId at that nftContractAddress is owned by msg.sender then the loan is exected
+    // so one is provided to this function, and if the nftId at that nftContractAddress is owned by msg.sender then the loan is executed
     function executeLoanByBorrowerSignature(
         Offer calldata offer,
         bytes memory signature,
@@ -247,7 +244,7 @@ interface ILendingAuction is ILiquidityProviders {
     // TODO(Test)
     // TODO(nftID is duplicate here, the data is already in the offer struct)
     // nftId is required in this function to serve floor offers. A floor offer can serve any nftId,
-    // so one is provided to this function, and if the nftId at that nftContractAddress is owned by msg.sender then the loan is exected
+    // so one is provided to this function, and if the nftId at that nftContractAddress is owned by msg.sender then the loan is executed
     function refinanceByBorrowerSignature(
         Offer calldata offer,
         bytes memory signature,

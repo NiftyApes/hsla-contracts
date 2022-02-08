@@ -132,6 +132,9 @@ contract LiquidityProvidersTest is DSTest, TestUtility {
         );
     }
 
+    // TODO create correctness and fail case tests for these functions
+    // TODO add failing asserts in each funtion to test each require statement.
+
     function testSupplyErc20() public {
         liquidityProviders.supplyErc20(address(DAI), 10000 ether);
     }

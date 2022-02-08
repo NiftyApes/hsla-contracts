@@ -12,6 +12,8 @@ import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 
 // @dev These tests are intended to be run against a forked mainnet.
 
+//  TODO Comment each line of testing for readability by auditors
+
 // TODO(Refactor/deduplicate with LiquidityProviders testing)
 contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
     IUniswapV2Router SushiSwapRouter;
@@ -158,6 +160,8 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
 
         // And remove it
         LA.removeOffer(address(mockNFT), floorTerm, 0, create_hash);
+
+        // TODO add assert to test that offer has been removed
     }
 
     function testSize(
@@ -207,6 +211,9 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
 
         mockNFT.approve(address(LA), 0);
 
+        // TODO create fail cases for each require statement.
+        // TODO assert statements to check math.
+
         if (lender) {
             LA.executeLoanByLender(address(mockNFT), floorTerm, 0, create_hash);
         } else {
@@ -226,6 +233,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         offer.interestRate = offer.interestRate / 2;
 
         if (!offer.fixedTerms) {
+            // TODO assert statements to check math.
             // Test refinance
             if (lender) {
                 // TODO(Why is there an overflow here?)
@@ -245,6 +253,8 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
 
     function testGetOfferSignatureAuctionStatus() public {
         // TODO(This is obviously an invalid offer, should the signature status return false)
+        // getOfferSignatureStatus does not check signature validity. Bool mappings return false by deafult.
+        // This function should only return true when a signature has been cancelled or finalized by a user or function
         assert(!LA.getOfferSignatureStatus(""));
     }
 
@@ -365,7 +375,10 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
             mstore(0x40, add(signature, 0x80))
         }
 
+        // TODO add fail cases to test each require statement.
         LA.executeLoanByLenderSignature(offer, signature);
+
+        // TODO add assert statement that checks the executed loan for correctness
     }
 
     function testExecuteLoanByBorrowerSignature() public {
@@ -408,8 +421,11 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
             // Update free memory pointer
             mstore(0x40, add(signature, 0x80))
         }
+        // TODO add fail cases to test each require statement.
 
         LA.executeLoanByBorrowerSignature(offer, signature, 0);
+
+        // TODO add assert statement that checks the executed loan for correctness
     }
 
     // TODO(This should pass)
@@ -469,13 +485,26 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         offer.fixedTerms = false;
         offer.floorTerm = floorTerm;
 
+        // TODO add assert statement that checks the refinanced loan for correctness
+        // TODO add fail cases to test each require statement.
+        // TODO assert statements to check math.
+
         // TODO(This input value is in asset, but internal balances are incorrectly checked against cAsset)
+        // All inputs should be for asset, unless it is supply/deposit cERC20/cETH. all internal balances are held in cAsset and should be checked in cAsset. I have updated refinanceByLender to resolve this instance.
         LA.refinanceByLender(offer);
 
+        // TODO add assert statement that checks the additional time for correctness
+        // TODO add fail cases to test each require statement.
+
         // TODO(These can't work until refinance does)
+        // this should not longer have an issue
         LA.drawLoanTime(address(mockNFT), 0, 10000);
 
+        // TODO add assert statement that checks the additional amount for correctness
+        // TODO add fail cases to test each require statement.
+
         // This amount should also be denominated in the unwrapped asset address.
+        // this is denominated in the asset of the loan
         LA.drawLoanAmount(address(mockNFT), 0, 10000);
     }
 

@@ -17,7 +17,8 @@ import "./interfaces/ILiquidityProviders.sol";
 // It enables us to update the contract if needed
 
 // @title An interface for liquidity providers to supply and withdraw tokens
-// @author Kevin Seagraves
+// @author Captnseagraves
+// @contributors Alcibiades
 // @notice This contract wraps and unwraps, tracks balances of deposited Assets and cAssets
 // TODO(Factor out Exponential to library)
 // TODO(The offer book mapping can be factored out to a library)

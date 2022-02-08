@@ -15,6 +15,8 @@ import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
  * @author NiftyApes
  */
 
+//  TODO Comment each function and each line of funtionality for readability by auditors
+
 contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     using ECDSA for bytes32;
 
@@ -57,10 +59,12 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         view
         returns (LoanAuction memory auction)
     {
-        // TODO(Should this revert on a null auction?)
         auction = _loanAuctions[nftContractAddress][nftId];
+
+        require(auction.loanExecutedTime != 0, "Loan not active");
     }
 
+    // TODO( @alcibiades Do we still need this function with getEIP712EncodedOffer below?)
     /**
      * @notice Generate a hash of an offer
      * @param offer The details of a loan auction offer
@@ -127,10 +131,15 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     {
         // TODO(Do we need a proof of any kind here that the signature provided is a valid order?)
         // such as getOfferSigner does
+        // is the suggestion to add a require statement like line 148? or add the series of require statements in getOfferSigner?
+        // the purpose of this function is to allow users/the contract to cancel/finalize signatures so that they can't be replayed.
+        // if a user wants to check an invalid signature in this function I dont see the harm other than gas cost to them. The contract checks for signer == msg.sender so can't be abused.
         status = _cancelledOrFinalized[signature];
     }
 
     // TODO(Should this be internal for a gas savings?)
+    // I dont think it would hurt. I can't image a scenario where an honest actor would neeed this publis function.
+    // making it internal though breaks the tests
     /**
      * @notice Get the offer signer given an offerHash and signature for the offer.
      * @param eip712EncodedOffer encoded hash of an offer (from LoanAuction.getEIP712EncodedOffer(offer))
@@ -274,13 +283,36 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     /**
      * @param offer The details of the loan auction individual NFT offer
      */
-    // TODO(Offer creation should be gated on lender liquidity)
     function createOffer(Offer calldata offer) external {
         OfferBook storage offerBook;
+
+        address cAsset = assetToCAsset[offer.asset];
+
+        // Create a reference to the corresponding cToken contract, like cDAI
+        ICERC20 cToken = ICERC20(cAsset);
 
         require(
             offer.creator == msg.sender,
             "The creator must match msg.sender"
+        );
+
+        require(
+            assetToCAsset[offer.asset] != address(0),
+            "Asset not whitelisted on NiftyApes"
+        );
+
+        uint256 exchangeRateMantissa = cToken.exchangeRateCurrent();
+
+        (, uint256 offerTokens) = divScalarByExpTruncate(
+            offer.amount,
+            Exp({mantissa: exchangeRateMantissa})
+        );
+
+        // require msg.sender has sufficient available balance of cErc20
+        require(
+            (cAssetBalances[cAsset][msg.sender] -
+                utilizedCAssetBalances[cAsset][msg.sender]) >= offerTokens,
+            "Must have an available balance greater than or equal to amountToWithdraw"
         );
 
         if (offer.floorTerm) {
@@ -353,6 +385,10 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
     // ---------- Execute Loan Functions ---------- //
 
+    // TODO Explore whether combining lender/borrower functions is possible.
+    // will result in less lines of code to test/reviw, may result in higher gas fees per function.
+    // Was not originally implemented because of 'stack too deep' errors.
+
     /**
      * @notice Allows a borrower to submit an offer from the on-chain NFT offer book and execute a loan using their NFT as collateral
      * @param nftContractAddress The address of the NFT collection
@@ -402,6 +438,9 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         );
 
         // TODO(1) Why, 2) This should be gated on offer creation if at all)
+        // 1) This prevents a malicous actor from providing a 1 second loan offer and duping a naive borrower into losing their asset.
+        // It ensures a borrower always has at least 24 hours to repay their loan
+        // 2) We unfortuantely can't gaurantee enforcement of this on signature based offer creation. Someone could construct a valid signature outside of our system.
         // require offer has 24 hour minimum duration
         require(
             offer.duration >= 86400,
@@ -906,10 +945,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             loanAuction.nftOwner,
             offer.nftContractAddress,
             offer.nftId,
-            offer.asset,
-            offer.amount,
-            offer.interestRate,
-            offer.duration
+            offer
         );
     }
 
@@ -932,6 +968,9 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         ][offer.nftId];
 
         address cAsset = assetToCAsset[loanAuction.asset];
+
+        // Create a reference to the corresponding cToken contract, like cDAI
+        ICERC20 cToken = ICERC20(cAsset);
 
         // Require that loan does not have fixedTerms
         require(
@@ -1015,13 +1054,22 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
         // If refinancing is not done by current lender they must buy out the loan and pay fees
         if (loanAuction.lender != msg.sender) {
+            uint256 exchangeRateMantissa = cToken.exchangeRateCurrent();
+
+            (, uint256 fullAmountTokens) = divScalarByExpTruncate(
+                vars.fullAmount,
+                Exp({mantissa: exchangeRateMantissa})
+            );
+
             // require prospective lender has sufficient available balance to refinance loan
             require(
                 (cAssetBalances[cAsset][msg.sender] -
                     utilizedCAssetBalances[cAsset][msg.sender]) >=
-                    vars.fullAmount,
-                "Prospective lender does not have sufficient balance to refinance loan"
+                    fullAmountTokens,
+                "Must have an available balance greater than or equal to amountToWithdraw"
             );
+
+            // require prospective lender has sufficient available balance to refinance loan
 
             // processes cEth and ICERC20 transactions
             _transferICERC20BalancesInternal(
@@ -1074,10 +1122,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             loanAuction.nftOwner,
             offer.nftContractAddress,
             offer.nftId,
-            offer.asset,
-            offer.amount,
-            offer.interestRate,
-            offer.duration
+            offer
         );
     }
 
