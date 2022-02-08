@@ -31,15 +31,14 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     // Cancelled / finalized orders, by signature
     mapping(bytes => bool) _cancelledOrFinalized;
 
-    // fee paid to protocol by borrower for drawing down loan
-    // decimal to 10000 because of whole number math
-    uint256 public protocolDrawFeePercentage = uint256(1) / 10000;
+    // fee in basis points paid to protocol by borrower for drawing down loan
+    uint64 public loanDrawFeeProtocolBps = 15;
 
-    // premium paid to current lender by new lender for buying out the loan
-    uint256 public refinancePremiumLenderPercentage = uint256(9) / 100000;
+    // premium in basis points paid to current lender by new lender for buying out the loan
+    uint64 public refinancePremiumLenderBps = 15;
 
-    // premium paid to protocol by new lender for buying out the loan
-    uint256 public refinancePremiumProtocolPercentage = uint256(1) / 100000;
+    // premium in basis points paid to protocol by new lender for buying out the loan
+    uint64 public refinancePremiumProtocolBps = 15;
 
     // ---------- FUNCTIONS -------------- //
 
@@ -81,7 +80,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                 offer.nftId,
                 offer.asset,
                 offer.amount,
-                offer.interestRate,
+                offer.interestRateBps,
                 offer.duration,
                 offer.expiration,
                 offer.fixedTerms,
@@ -108,7 +107,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                         offer.nftId,
                         offer.asset,
                         offer.amount,
-                        offer.interestRate,
+                        offer.interestRateBps,
                         offer.duration,
                         offer.expiration,
                         offer.fixedTerms,
@@ -129,17 +128,9 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         view
         returns (bool status)
     {
-        // TODO(Do we need a proof of any kind here that the signature provided is a valid order?)
-        // such as getOfferSigner does
-        // is the suggestion to add a require statement like line 148? or add the series of require statements in getOfferSigner?
-        // the purpose of this function is to allow users/the contract to cancel/finalize signatures so that they can't be replayed.
-        // if a user wants to check an invalid signature in this function I dont see the harm other than gas cost to them. The contract checks for signer == msg.sender so can't be abused.
         status = _cancelledOrFinalized[signature];
     }
 
-    // TODO(Should this be internal for a gas savings?)
-    // I dont think it would hurt. I can't image a scenario where an honest actor would neeed this publis function.
-    // making it internal though breaks the tests
     /**
      * @notice Get the offer signer given an offerHash and signature for the offer.
      * @param eip712EncodedOffer encoded hash of an offer (from LoanAuction.getEIP712EncodedOffer(offer))
@@ -480,7 +471,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         loanAuction.lender = lender;
         loanAuction.asset = offer.asset;
         loanAuction.amount = offer.amount;
-        loanAuction.interestRate = offer.interestRate;
+        loanAuction.interestRateBps = offer.interestRateBps;
         loanAuction.duration = offer.duration;
         loanAuction.timeOfInterestStart = block.timestamp;
         loanAuction.loanExecutedTime = block.timestamp;
@@ -524,7 +515,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             offer.nftId,
             offer.asset,
             offer.amount,
-            offer.interestRate,
+            offer.interestRateBps,
             offer.duration
         );
     }
@@ -706,7 +697,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         loanAuction.lender = lender;
         loanAuction.asset = offer.asset;
         loanAuction.amount = offer.amount;
-        loanAuction.interestRate = offer.interestRate;
+        loanAuction.interestRateBps = offer.interestRateBps;
         loanAuction.duration = offer.duration;
         loanAuction.timeOfInterestStart = block.timestamp;
         loanAuction.loanExecutedTime = block.timestamp;
@@ -747,7 +738,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             offer.nftId,
             offer.asset,
             offer.amount,
-            offer.interestRate,
+            offer.interestRateBps,
             offer.duration
         );
     }
@@ -939,7 +930,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         // update LoanAuction struct
         loanAuction.lender = prospectiveLender;
         loanAuction.amount = offer.amount;
-        loanAuction.interestRate = offer.interestRate;
+        loanAuction.interestRateBps = offer.interestRateBps;
         loanAuction.duration = offer.duration;
         loanAuction.amountDrawn = vars.fullAmount;
         loanAuction.timeOfInterestStart = block.timestamp;
@@ -1010,17 +1001,17 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         require(
             // Require bidAmount is greater than previous bid
             (offer.amount > loanAuction.amount &&
-                offer.interestRate <= loanAuction.interestRate &&
+                offer.interestRateBps <= loanAuction.interestRateBps &&
                 offer.duration >= loanAuction.duration) ||
                 // OR
                 // Require interestRate is lower than previous bid
                 (offer.amount >= loanAuction.amount &&
-                    offer.interestRate < loanAuction.interestRate &&
+                    offer.interestRateBps < loanAuction.interestRateBps &&
                     offer.duration >= loanAuction.duration) ||
                 // OR
                 // Require duration to be greater than previous bid
                 (offer.amount >= loanAuction.amount &&
-                    offer.interestRate <= loanAuction.interestRate &&
+                    offer.interestRateBps <= loanAuction.interestRateBps &&
                     offer.duration > loanAuction.duration),
             "Bid must have better terms than current loan"
         );
@@ -1028,7 +1019,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         // if duration is the only term updated
         if (
             offer.amount == loanAuction.amount &&
-            offer.interestRate == loanAuction.interestRate &&
+            offer.interestRateBps == loanAuction.interestRateBps &&
             offer.duration > loanAuction.duration
         ) {
             // require offer has at least 24 hour additional duration
@@ -1051,10 +1042,10 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         vars.interestAndPremiumOwedToCurrentLender =
             vars.currentLenderInterest +
             loanAuction.historicLenderInterest +
-            (loanAuction.amountDrawn * refinancePremiumLenderPercentage);
+            (loanAuction.amountDrawn * refinancePremiumLenderBps);
 
         uint256 protocolPremium = loanAuction.amountDrawn *
-            refinancePremiumProtocolPercentage;
+            refinancePremiumProtocolBps;
 
         // calculate fullRefinanceAmount
         vars.fullAmount =
@@ -1117,7 +1108,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         // update LoanAuction struct
         loanAuction.lender = msg.sender;
         loanAuction.amount = offer.amount;
-        loanAuction.interestRate = offer.interestRate;
+        loanAuction.interestRateBps = offer.interestRateBps;
         loanAuction.duration = offer.duration;
         loanAuction.timeOfInterestStart = block.timestamp;
         loanAuction.historicLenderInterest =
@@ -1374,7 +1365,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         loanAuction.lender = address(0);
         loanAuction.asset = address(0);
         loanAuction.amount = 0;
-        loanAuction.interestRate = 0;
+        loanAuction.interestRateBps = 0;
         loanAuction.duration = 0;
         loanAuction.loanExecutedTime = 0;
         loanAuction.timeOfInterestStart = 0;
@@ -1568,7 +1559,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         loanAuction.lender = address(0);
         loanAuction.asset = address(0);
         loanAuction.amount = 0;
-        loanAuction.interestRate = 0;
+        loanAuction.interestRateBps = 0;
         loanAuction.duration = 0;
         loanAuction.timeOfInterestStart = 0;
         loanAuction.loanExecutedTime = 0;
@@ -2027,9 +2018,9 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             percentOfTimeDrawn;
 
         uint256 lenderInterestMulPercentOfAmountDrawn = loanAuction
-            .interestRate * percentOfAmountDrawn;
+            .interestRateBps * percentOfAmountDrawn;
 
-        uint256 protocolInterestMulPercentOfAmountDrawn = protocolDrawFeePercentage *
+        uint256 protocolInterestMulPercentOfAmountDrawn = loanDrawFeeProtocolBps *
                 percentOfAmountDrawn;
 
         // divide by basis decimals
@@ -2089,27 +2080,30 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             loanAuction.amountDrawn +
             lenderInterest +
             loanAuction.historicLenderInterest +
-            (loanAuction.amountDrawn * refinancePremiumLenderPercentage) +
-            (loanAuction.amountDrawn * refinancePremiumProtocolPercentage);
+            ((loanAuction.amountDrawn * refinancePremiumLenderBps) / 10000) +
+            ((loanAuction.amountDrawn * refinancePremiumProtocolBps) / 10000);
     }
 
     // ---------- Fee Update Functions ---------- //
 
-    function updateLoanDrawFee(uint256 newFeeAmount) external onlyOwner {
-        protocolDrawFeePercentage = newFeeAmount / 10000;
+    function updateLoanDrawProtocolFee(uint64 newLoanDrawProtocolFeeBps)
+        external
+        onlyOwner
+    {
+        loanDrawFeeProtocolBps = newLoanDrawProtocolFeeBps;
     }
 
-    function updateRefinancePremiumLenderPercentage(
-        uint256 newPremiumLenderPercentage
-    ) external onlyOwner {
-        refinancePremiumLenderPercentage = newPremiumLenderPercentage / 100000;
+    function updateRefinancePremiumLenderFee(uint64 newPremiumLenderBps)
+        external
+        onlyOwner
+    {
+        refinancePremiumLenderBps = newPremiumLenderBps;
     }
 
-    function updateRefinancePremiumProtocolPercentage(
-        uint256 newPremiumProtocolPercentage
-    ) external onlyOwner {
-        refinancePremiumProtocolPercentage =
-            newPremiumProtocolPercentage /
-            1000;
+    function updateRefinancePremiumProtocolFee(uint64 newPremiumProtocolBps)
+        external
+        onlyOwner
+    {
+        refinancePremiumProtocolBps = newPremiumProtocolBps;
     }
 }
