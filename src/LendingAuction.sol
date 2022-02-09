@@ -742,124 +742,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
     // ---------- Refinance Loan Functions ---------- //
 
-    // TODO(Consolidate lender logic here)
-    /**
-     * @notice Handles internal checks, state transitions, and value/asset transfers for loan refinance
-     * @param offer The details of a loan auction offer
-     * @param prospectiveLender The prospective lender
-     */
-    function _refinance(Offer memory offer, address prospectiveLender)
-        internal
-    {
-        // Get information about present loan from storage
-
-        // TODO(Gas savings here by accessing members directly?)
-        LoanAuction storage loanAuction = _loanAuctions[
-            offer.nftContractAddress
-        ][offer.nftId];
-
-        // Require that loan does not have fixedTerms
-        require(
-            loanAuction.fixedTerms != true,
-            "Loan has fixed term and cannot be refinanced."
-        );
-
-        // Require that loan is active
-        require(
-            loanAuction.loanExecutedTime != 0,
-            "Loan is not active. Execute loan instead."
-        );
-
-        // require offer is same asset and cAsset
-        require(
-            offer.asset == loanAuction.asset,
-            "Offer asset must be the same as current loan"
-        );
-
-        // TODO(Why? This may be preferable to seizing in some cases)
-        // Require that loan has not expired
-        require(
-            block.timestamp <
-                loanAuction.loanExecutedTime + loanAuction.timeDrawn,
-            "Cannot refinance loan that has expired"
-        );
-
-        address cAsset = assetToCAsset[offer.asset];
-
-        // Variables for interest accrual.
-        uint256 currentLenderInterest;
-        uint256 currentProtocolInterest;
-        uint256 interestAndPremiumOwedToCurrentLender;
-        uint256 fullAmount;
-
-        // calculate the interest earned by current lender
-        (
-            currentLenderInterest,
-            currentProtocolInterest
-        ) = calculateInterestAccrued(offer.nftContractAddress, offer.nftId);
-
-        // calculate interest earned by all lenders
-        interestAndPremiumOwedToCurrentLender =
-            currentLenderInterest +
-            loanAuction.historicLenderInterest;
-
-        // Calculate total outstanding balance of the loan
-        fullAmount =
-            loanAuction.amountDrawn +
-            interestAndPremiumOwedToCurrentLender;
-
-        require(
-            offer.amount >= fullAmount,
-            "The loan offer must exceed the present outstanding balance."
-        );
-
-        // TODO(Use the non mutating libcompound type implementation here for a savings)
-        // Get the present cToken exchange rate
-        uint256 exchangeRateMantissa = ICToken(cAsset).exchangeRateCurrent();
-
-        // Get the full amount of the loan outstanding balance in cTokens
-        (, uint256 fullCTokenAmount) = divScalarByExpTruncate(
-            fullAmount,
-            Exp({mantissa: exchangeRateMantissa})
-        );
-
-        // require prospective lender has sufficient available balance to refinance loan
-        require(
-            (cAssetBalances[cAsset][msg.sender] -
-                utilizedCAssetBalances[cAsset][msg.sender]) >= fullCTokenAmount,
-            "Must have an available balance greater than or equal to amountToWithdraw"
-        );
-
-        // TODO(Examine this internal function for optimization)
-        // processes cEth and ICERC20 transactions
-        _transferICERC20BalancesInternal(
-            cAsset,
-            loanAuction.lender,
-            prospectiveLender,
-            0,
-            interestAndPremiumOwedToCurrentLender,
-            loanAuction.amountDrawn
-        );
-
-        // update Loan state
-        loanAuction.lender = prospectiveLender;
-        loanAuction.amount = offer.amount;
-        loanAuction.interestRateBps = offer.interestRateBps;
-        loanAuction.duration = offer.duration;
-        loanAuction.amountDrawn = fullAmount;
-        loanAuction.timeOfInterestStart = block.timestamp;
-        loanAuction.historicLenderInterest += currentLenderInterest;
-        loanAuction.historicProtocolInterest += currentProtocolInterest;
-
-        emit LoanRefinance(
-            prospectiveLender,
-            loanAuction.nftOwner,
-            offer.nftContractAddress,
-            offer.nftId,
-            offer
-        );
-    }
-
     /**
      * @notice Allows a borrower to submit an offer from the on-chain offer book and refinance a loan with near arbitrary terms
      * @dev The offer amount must be greater than the current loan amount plus interest owed to the lender
@@ -891,7 +773,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             "Msg.sender must be the owner of nftId to refinanceByBorrower"
         );
 
-        _refinance(offer, offer.creator);
+        _refinance(offer, offer.creator, nftId);
     }
 
     /**
@@ -932,7 +814,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             "Msg.sender must be the owner of nftId to refinanceByBorrower"
         );
 
-        _refinance(offer, offer.creator);
+        _refinance(offer, offer.creator, nftId);
 
         // ensure all sig functions finalize signatures
 
@@ -943,6 +825,202 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             offer.nftContractAddress,
             offer.nftId,
             signature
+        );
+    }
+
+    // TODO(Consolidate lender logic here)
+    // @Alcibades - we must supply the nftId to support floor offers. A floor offer will have only one nftId yet be valid for n nfts.
+    /**
+     * @notice Handles internal checks, state transitions, and value/asset transfers for loan refinance
+     * @param offer The details of a loan auction offer
+     * @param prospectiveLender The prospective lender
+     */
+    function _refinance(
+        Offer memory offer,
+        address prospectiveLender,
+        uint256 nftId,
+        RefinanceType type
+    ) internal {
+        // Get information about present loan from storage
+
+        // TODO(Gas savings here by accessing members directly?)
+        LoanAuction storage loanAuction = _loanAuctions[
+            offer.nftContractAddress
+        ][offer.nftId];
+
+        // Require that loan does not have fixedTerms
+        require(
+            loanAuction.fixedTerms != true,
+            "Loan has fixed term and cannot be refinanced."
+        );
+
+        // Require that loan is active
+        require(
+            loanAuction.loanExecutedTime != 0,
+            "Loan is not active. Execute loan instead."
+        );
+
+        // require offer is same asset and cAsset
+        require(
+            offer.asset == loanAuction.asset,
+            "Offer asset must be the same as current loan"
+        );
+
+        address cAsset = assetToCAsset[offer.asset];
+
+        // Variables for interest accrual.
+        uint256 currentLenderInterest;
+        uint256 currentProtocolInterest;
+        uint256 interestAndPremiumOwedToCurrentLender;
+        uint256 fullAmount;
+
+        // calculate the interest earned by current lender
+        (
+            currentLenderInterest,
+            currentProtocolInterest
+        ) = calculateInterestAccrued(offer.nftContractAddress, nftId);
+
+        if (refinanceType == borrower) {
+            // calculate interest earned by all lenders
+            interestAndPremiumOwedToCurrentLender =
+                currentLenderInterest +
+                loanAuction.historicLenderInterest;
+
+            // Calculate total outstanding balance of the loan
+            fullAmount =
+                loanAuction.amountDrawn +
+                interestAndPremiumOwedToCurrentLender;
+
+            require(
+                offer.amount >= fullAmount,
+                "The loan offer must exceed the present outstanding balance."
+            );
+
+            // TODO(Use the non mutating libcompound type implementation here for a savings)
+            // A major issue is the libcompound has not been audited at this point in time
+            // Get the present cToken exchange rate
+            uint256 exchangeRateMantissa = ICToken(cAsset)
+                .exchangeRateCurrent();
+
+            // Get the full amount of the loan outstanding balance in cTokens
+            (, uint256 fullCTokenAmount) = divScalarByExpTruncate(
+                fullAmount,
+                Exp({mantissa: exchangeRateMantissa})
+            );
+
+            // require prospective lender has sufficient available balance to refinance loan
+            require(
+                (cAssetBalances[cAsset][msg.sender] -
+                    utilizedCAssetBalances[cAsset][msg.sender]) >=
+                    fullCTokenAmount,
+                "Must have an available balance greater than or equal to amountToWithdraw"
+            );
+
+            // TODO(Examine this internal function for optimization)
+            // processes cEth and ICERC20 transactions
+            _transferICERC20BalancesInternal(
+                cAsset,
+                loanAuction.lender,
+                prospectiveLender,
+                0,
+                interestAndPremiumOwedToCurrentLender,
+                loanAuction.amountDrawn
+            );
+
+            // update Loan state
+            loanAuction.lender = prospectiveLender;
+            loanAuction.amount = offer.amount;
+            loanAuction.interestRateBps = offer.interestRateBps;
+            loanAuction.duration = offer.duration;
+            loanAuction.amountDrawn = fullAmount;
+            loanAuction.timeOfInterestStart = block.timestamp;
+            loanAuction.historicLenderInterest += currentLenderInterest;
+            loanAuction.historicProtocolInterest += currentProtocolInterest;
+        } else {
+            // calculate interest earned
+            interestAndPremiumOwedToCurrentLender =
+                currentLenderInterest +
+                loanAuction.historicLenderInterest +
+                ((loanAuction.amountDrawn * refinancePremiumLenderBps) / 10000);
+
+            uint256 protocolPremium = (loanAuction.amountDrawn *
+                refinancePremiumProtocolBps) / 10000;
+
+            // calculate fullRefinanceAmount
+            fullAmount =
+                interestAndPremiumOwedToCurrentLender +
+                protocolPremium +
+                loanAuction.amountDrawn;
+
+            // If refinancing is not done by current lender they must buy out the loan and pay fees
+            if (loanAuction.lender != msg.sender) {
+                uint256 exchangeRateMantissa = ICToken(cAsset)
+                    .exchangeRateCurrent();
+
+                (, uint256 fullAmountTokens) = divScalarByExpTruncate(
+                    fullAmount,
+                    Exp({mantissa: exchangeRateMantissa})
+                );
+
+                // require prospective lender has sufficient available balance to refinance loan
+                require(
+                    (cAssetBalances[cAsset][msg.sender] -
+                        utilizedCAssetBalances[cAsset][msg.sender]) >=
+                        fullAmountTokens,
+                    "Must have an available balance greater than or equal to amountToWithdraw"
+                );
+
+                // require prospective lender has sufficient available balance to refinance loan
+
+                // processes cEth and ICERC20 transactions
+                _transferICERC20BalancesInternal(
+                    cAsset,
+                    loanAuction.lender,
+                    msg.sender,
+                    protocolPremium,
+                    interestAndPremiumOwedToCurrentLender,
+                    loanAuction.amountDrawn
+                );
+
+                // update LoanAuction lender
+                loanAuction.lender = msg.sender;
+            } else {
+                // If current lender is refinancing the loan they do not need to pay any fees or buy themselves out.
+                // require prospective lender has sufficient available balance to refinance loan
+                uint256 exchangeRateMantissa = ICToken(cAsset)
+                    .exchangeRateCurrent();
+                (, uint256 cTokenAmountDrawn) = divScalarByExpTruncate(
+                    loanAuction.amountDrawn,
+                    Exp({mantissa: exchangeRateMantissa})
+                );
+                (, uint256 cTokenOfferAmount) = divScalarByExpTruncate(
+                    offer.amount,
+                    Exp({mantissa: exchangeRateMantissa})
+                );
+                require(
+                    (cAssetBalances[cAsset][msg.sender] -
+                        utilizedCAssetBalances[cAsset][msg.sender]) >=
+                        (cTokenOfferAmount - cTokenAmountDrawn),
+                    "Lender does not have sufficient balance to refinance loan"
+                );
+            }
+
+            // update LoanAuction struct
+            loanAuction.lender = msg.sender;
+            loanAuction.amount = offer.amount;
+            loanAuction.interestRateBps = offer.interestRateBps;
+            loanAuction.duration = offer.duration;
+            loanAuction.timeOfInterestStart = block.timestamp;
+            loanAuction.historicLenderInterest += currentLenderInterest;
+            loanAuction.historicProtocolInterest += currentProtocolInterest;
+        }
+
+        emit LoanRefinance(
+            prospectiveLender,
+            loanAuction.nftOwner,
+            offer.nftContractAddress,
+            offer.nftId,
+            offer
         );
     }
 
@@ -959,34 +1037,10 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         whenNotPaused
         nonReentrant
     {
-        // Instantiate LoanAuction Struct
         LoanAuction storage loanAuction = _loanAuctions[
             offer.nftContractAddress
         ][offer.nftId];
-
-        address cAsset = assetToCAsset[loanAuction.asset];
-
-        // Create a reference to the corresponding cToken contract, like cDAI
-        ICERC20 cToken = ICERC20(cAsset);
-
-        // Require that loan does not have fixedTerms
-        require(
-            loanAuction.fixedTerms != true,
-            "Loan has fixedTerms cannot refinanceBestOffer."
-        );
-
-        // Require that loan is active
-        require(
-            loanAuction.loanExecutedTime != 0,
-            "Loan is not active. No funds to withdraw. Please use executLoanByAsk()"
-        );
-
-        // require offer is same asset
-        require(
-            offer.asset == loanAuction.asset,
-            "Offer asset must be the same as the current loan"
-        );
-
+        // Require that loan has not expired. This prevents another lender from refinancing
         require(
             block.timestamp <
                 loanAuction.loanExecutedTime + loanAuction.timeDrawn,
@@ -1024,102 +1078,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                 "Cannot refinanceBestOffer. Offer duration must be at least 24 hours greater than current loan. "
             );
         }
-
-        //Instantiate MintLocalVars
-        InterestAndPaymentVars memory vars;
-
-        // calculate the interest earned by current lender
-        (
-            vars.currentLenderInterest,
-            vars.currentProtocolInterest
-        ) = calculateInterestAccrued(offer.nftContractAddress, offer.nftId);
-
-        // calculate interest earned
-        vars.interestAndPremiumOwedToCurrentLender =
-            vars.currentLenderInterest +
-            loanAuction.historicLenderInterest +
-            ((loanAuction.amountDrawn * refinancePremiumLenderBps) / 10000);
-
-        uint256 protocolPremium = (loanAuction.amountDrawn *
-            refinancePremiumProtocolBps) / 10000;
-
-        // calculate fullRefinanceAmount
-        vars.fullAmount =
-            vars.interestAndPremiumOwedToCurrentLender +
-            protocolPremium +
-            loanAuction.amountDrawn;
-
-        // If refinancing is not done by current lender they must buy out the loan and pay fees
-        if (loanAuction.lender != msg.sender) {
-            uint256 exchangeRateMantissa = cToken.exchangeRateCurrent();
-
-            (, uint256 fullAmountTokens) = divScalarByExpTruncate(
-                vars.fullAmount,
-                Exp({mantissa: exchangeRateMantissa})
-            );
-
-            // require prospective lender has sufficient available balance to refinance loan
-            require(
-                (cAssetBalances[cAsset][msg.sender] -
-                    utilizedCAssetBalances[cAsset][msg.sender]) >=
-                    fullAmountTokens,
-                "Must have an available balance greater than or equal to amountToWithdraw"
-            );
-
-            // require prospective lender has sufficient available balance to refinance loan
-
-            // processes cEth and ICERC20 transactions
-            _transferICERC20BalancesInternal(
-                cAsset,
-                loanAuction.lender,
-                msg.sender,
-                protocolPremium,
-                vars.interestAndPremiumOwedToCurrentLender,
-                loanAuction.amountDrawn
-            );
-
-            // update LoanAuction lender
-            loanAuction.lender = msg.sender;
-        } else {
-            // If current lender is refinancing the loan they do not need to pay any fees or buy themselves out.
-            // require prospective lender has sufficient available balance to refinance loan
-            uint256 exchangeRateMantissa = cToken.exchangeRateCurrent();
-            (, uint256 cTokenAmountDrawn) = divScalarByExpTruncate(
-                loanAuction.amountDrawn,
-                Exp({mantissa: exchangeRateMantissa})
-            );
-            (, uint256 cTokenOfferAmount) = divScalarByExpTruncate(
-                offer.amount,
-                Exp({mantissa: exchangeRateMantissa})
-            );
-            require(
-                (cAssetBalances[cAsset][msg.sender] -
-                    utilizedCAssetBalances[cAsset][msg.sender]) >=
-                    (cTokenOfferAmount - cTokenAmountDrawn),
-                "Lender does not have sufficient balance to refinance loan"
-            );
-        }
-
-        // need to ensure protocol interest is paid correctly in interal functions
-
-        // save temporary current historicLenderInterest
-        uint256 currentHistoricLenderInterest = loanAuction
-            .historicLenderInterest;
-        uint256 currentHistoricProtocolInterest = loanAuction
-            .historicProtocolInterest;
-
-        // update LoanAuction struct
-        loanAuction.lender = msg.sender;
-        loanAuction.amount = offer.amount;
-        loanAuction.interestRateBps = offer.interestRateBps;
-        loanAuction.duration = offer.duration;
-        loanAuction.timeOfInterestStart = block.timestamp;
-        loanAuction.historicLenderInterest =
-            currentHistoricLenderInterest +
-            vars.currentLenderInterest;
-        loanAuction.historicProtocolInterest =
-            currentHistoricProtocolInterest +
-            vars.currentProtocolInterest;
 
         emit LoanRefinance(
             msg.sender,
@@ -1662,7 +1620,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             "underlying.transferFrom() failed"
         );
 
-                require(
+        require(
             underlying.approve(cAsset, fullAmount) == true,
             "underlying.approve() failed"
         );
