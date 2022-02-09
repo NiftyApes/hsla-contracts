@@ -424,7 +424,6 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         // TODO add assert statement that checks the executed loan for correctness
     }
 
-    // TODO(This should pass)
     function testFailDrawLoan(bool floorTerm, bool lender) public {
         // Create a floor offer
         LendingAuction.Offer memory offer;
@@ -504,8 +503,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         LA.drawLoanAmount(address(mockNFT), 0, 10000);
     }
 
-    // TODO(This should pass)
-    function testFailRepayRemainingLoan(bool floorTerm) public {
+    function testRepayRemainingLoan(bool floorTerm) public {
         // Create a floor offer
         LendingAuction.Offer memory offer;
         offer.creator = address(this);
@@ -532,12 +530,11 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         path[0] = address(WETH);
         path[1] = address(DAI);
 
-        // TODO(This should transfer DAI, not compound DAI)
+        // TODO(Success assertions)
         LA.repayRemainingLoan(address(mockNFT), 0);
     }
 
-    // TODO(This should pass)
-    function testFailPartialPayment(bool floorTerm) public {
+    function testPartialPayment(bool floorTerm) public {
         // Create a floor offer
         LendingAuction.Offer memory offer;
         offer.creator = address(this);
@@ -553,13 +550,13 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
 
         bytes32 create_hash = LA.getOfferHash(offer);
 
+        // TODO(Success assertions)
         LA.createOffer(offer);
 
         mockNFT.approve(address(LA), 0);
 
         LA.executeLoanByLender(address(mockNFT), floorTerm, 0, create_hash);
 
-        // TODO(This should transfer DAI, not compound DAI)
         LA.partialPayment(address(mockNFT), 0, 10000 ether);
     }
 

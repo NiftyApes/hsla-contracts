@@ -82,6 +82,20 @@ contract LiquidityProviders is
         external
         onlyOwner
     {
+        if (asset != address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)) {
+            // If the asset is not ethereum
+            // Create a reference to the underlying asset contract, like DAI.
+            IERC20 underlying = IERC20(asset);
+
+            // LiquidityProviders/LendingAuction contract approves cAsset contract for max value
+            // The earth will likely be engulfed by the sun before this approval runs out.
+            // Then the owner could call this function again with the same values to re-up the approval.
+            require(
+                underlying.approve(cAsset, type(uint256).max) == true,
+                "underlying.approve() failed"
+            );
+        }
+
         assetToCAsset[asset] = cAsset;
         _cAssetToAsset[cAsset] = asset;
 
@@ -114,12 +128,6 @@ contract LiquidityProviders is
                 numTokensToSupply
             ) == true,
             "underlying.transferFrom() failed"
-        );
-
-        // Approve transfer on the ERC20 contract from LiquidityProviders contract
-        require(
-            underlying.approve(cAsset, numTokensToSupply) == true,
-            "underlying.approve() failed"
         );
 
         // calculate expectedAmountToBeMinted. This is the same conversion math performed in cToken.mint()

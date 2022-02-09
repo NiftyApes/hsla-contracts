@@ -838,6 +838,9 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
         address cAsset = assetToCAsset[loanAuction.asset];
 
+        // Create a reference to the corresponding cToken contract, like cDAI
+        ICERC20 cToken = ICERC20(cAsset);
+
         // Require that loan does not have fixedTerms
         require(
             loanAuction.fixedTerms != true,
@@ -895,11 +898,18 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             "Offer amount must be greater than or equal to current amount drawn + interest owed"
         );
 
+        uint256 exchangeRateMantissa = cToken.exchangeRateCurrent();
+
+        (, uint256 fullAmountTokens) = divScalarByExpTruncate(
+            vars.fullAmount,
+            Exp({mantissa: exchangeRateMantissa})
+        );
+
+        // require prospective lender has sufficient available balance to refinance loan
         require(
-            (cAssetBalances[cAsset][prospectiveLender] -
-                utilizedCAssetBalances[cAsset][prospectiveLender]) >=
-                vars.fullAmount,
-            "Prospective lender does not have sufficient balance to buy out loan"
+            (cAssetBalances[cAsset][msg.sender] -
+                utilizedCAssetBalances[cAsset][msg.sender]) >= fullAmountTokens,
+            "Must have an available balance greater than or equal to amountToWithdraw"
         );
 
         // processes cEth and ICERC20 transactions
@@ -1642,7 +1652,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         // instantiate MintLocalVars
         MintLocalVars memory vars;
 
-        // should have require statement to ensure tranfer is successful before proceeding
         // transferFrom ERC20 from depositors address
         require(
             underlying.transferFrom(from, address(this), fullAmount) == true,
@@ -1700,8 +1709,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                 );
         }
 
-        // should have require statement to ensure mint is successful before proceeding
-        // protocolDrawFee is taken here as the fullAmount will be greater the paymentTokens + lenderInterestAndPremiumTokens and remain at the NA contract address
         // mint cTokens
         require(cToken.mint(fullAmount) == 0, "cToken.mint() failed");
 
