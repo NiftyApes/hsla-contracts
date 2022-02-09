@@ -428,11 +428,8 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             "Cannot execute bid, offer has expired"
         );
 
-        // TODO(1) Why, 2) This should be gated on offer creation if at all)
-        // 1) This prevents a malicous actor from providing a 1 second loan offer and duping a naive borrower into losing their asset.
+        // This prevents a malicous actor from providing a 1 second loan offer and duping a naive borrower into losing their asset.
         // It ensures a borrower always has at least 24 hours to repay their loan
-        // 2) We unfortuantely can't gaurantee enforcement of this on signature based offer creation. Someone could construct a valid signature outside of our system.
-        // require offer has 24 hour minimum duration
         require(
             offer.duration >= 86400,
             "Offers must have 24 hours minimum duration"
@@ -745,6 +742,124 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
     // ---------- Refinance Loan Functions ---------- //
 
+    // TODO(Consolidate lender logic here)
+    /**
+     * @notice Handles internal checks, state transitions, and value/asset transfers for loan refinance
+     * @param offer The details of a loan auction offer
+     * @param prospectiveLender The prospective lender
+     */
+    function _refinance(Offer memory offer, address prospectiveLender)
+        internal
+    {
+        // Get information about present loan from storage
+
+        // TODO(Gas savings here by accessing members directly?)
+        LoanAuction storage loanAuction = _loanAuctions[
+            offer.nftContractAddress
+        ][offer.nftId];
+
+        // Require that loan does not have fixedTerms
+        require(
+            loanAuction.fixedTerms != true,
+            "Loan has fixed term and cannot be refinanced."
+        );
+
+        // Require that loan is active
+        require(
+            loanAuction.loanExecutedTime != 0,
+            "Loan is not active. Execute loan instead."
+        );
+
+        // require offer is same asset and cAsset
+        require(
+            offer.asset == loanAuction.asset,
+            "Offer asset must be the same as current loan"
+        );
+
+        // TODO(Why? This may be preferable to seizing in some cases)
+        // Require that loan has not expired
+        require(
+            block.timestamp <
+                loanAuction.loanExecutedTime + loanAuction.timeDrawn,
+            "Cannot refinance loan that has expired"
+        );
+
+        address cAsset = assetToCAsset[offer.asset];
+
+        // Variables for interest accrual.
+        uint256 currentLenderInterest;
+        uint256 currentProtocolInterest;
+        uint256 interestAndPremiumOwedToCurrentLender;
+        uint256 fullAmount;
+
+        // calculate the interest earned by current lender
+        (
+            currentLenderInterest,
+            currentProtocolInterest
+        ) = calculateInterestAccrued(offer.nftContractAddress, offer.nftId);
+
+        // calculate interest earned by all lenders
+        interestAndPremiumOwedToCurrentLender =
+            currentLenderInterest +
+            loanAuction.historicLenderInterest;
+
+        // Calculate total outstanding balance of the loan
+        fullAmount =
+            loanAuction.amountDrawn +
+            interestAndPremiumOwedToCurrentLender;
+
+        require(
+            offer.amount >= fullAmount,
+            "The loan offer must exceed the present outstanding balance."
+        );
+
+        // TODO(Use the non mutating libcompound type implementation here for a savings)
+        // Get the present cToken exchange rate
+        uint256 exchangeRateMantissa = ICToken(cAsset).exchangeRateCurrent();
+
+        // Get the full amount of the loan outstanding balance in cTokens
+        (, uint256 fullCTokenAmount) = divScalarByExpTruncate(
+            fullAmount,
+            Exp({mantissa: exchangeRateMantissa})
+        );
+
+        // require prospective lender has sufficient available balance to refinance loan
+        require(
+            (cAssetBalances[cAsset][msg.sender] -
+                utilizedCAssetBalances[cAsset][msg.sender]) >= fullCTokenAmount,
+            "Must have an available balance greater than or equal to amountToWithdraw"
+        );
+
+        // TODO(Examine this internal function for optimization)
+        // processes cEth and ICERC20 transactions
+        _transferICERC20BalancesInternal(
+            cAsset,
+            loanAuction.lender,
+            prospectiveLender,
+            0,
+            interestAndPremiumOwedToCurrentLender,
+            loanAuction.amountDrawn
+        );
+
+        // update Loan state
+        loanAuction.lender = prospectiveLender;
+        loanAuction.amount = offer.amount;
+        loanAuction.interestRateBps = offer.interestRateBps;
+        loanAuction.duration = offer.duration;
+        loanAuction.amountDrawn = fullAmount;
+        loanAuction.timeOfInterestStart = block.timestamp;
+        loanAuction.historicLenderInterest += currentLenderInterest;
+        loanAuction.historicProtocolInterest += currentProtocolInterest;
+
+        emit LoanRefinance(
+            prospectiveLender,
+            loanAuction.nftOwner,
+            offer.nftContractAddress,
+            offer.nftId,
+            offer
+        );
+    }
+
     /**
      * @notice Allows a borrower to submit an offer from the on-chain offer book and refinance a loan with near arbitrary terms
      * @dev The offer amount must be greater than the current loan amount plus interest owed to the lender
@@ -770,7 +885,13 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             );
         }
 
-        _refinanceByBorrowerInternal(offer, offer.creator, nftId);
+        // check if nftOwner and require msg.sender is the nftOwner/borrower in the protocol
+        require(
+            msg.sender == ownerOf(nftContractAddress, nftId),
+            "Msg.sender must be the owner of nftId to refinanceByBorrower"
+        );
+
+        _refinance(offer, offer.creator);
     }
 
     /**
@@ -805,8 +926,13 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             );
         }
 
-        // Execute
-        _refinanceByBorrowerInternal(offer, offer.creator, nftId);
+        // check if nftOwner and require msg.sender is the nftOwner/borrower in the protocol
+        require(
+            msg.sender == ownerOf(offer.nftContractAddress, nftId),
+            "Msg.sender must be the owner of nftId to refinanceByBorrower"
+        );
+
+        _refinance(offer, offer.creator);
 
         // ensure all sig functions finalize signatures
 
@@ -817,136 +943,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             offer.nftContractAddress,
             offer.nftId,
             signature
-        );
-    }
-
-    /**
-     * @notice Handles checks, state transitions, and value/asset transfers for executeLoanbyLender
-     * @param offer The details of a loan auction offer
-     * @param prospectiveLender The prospective lender
-     * @param nftId The id of the specified NFT
-     */
-    function _refinanceByBorrowerInternal(
-        Offer memory offer,
-        address prospectiveLender,
-        uint256 nftId
-    ) internal {
-        // Instantiate LoanAuction Struct
-        LoanAuction storage loanAuction = _loanAuctions[
-            offer.nftContractAddress
-        ][nftId];
-
-        address cAsset = assetToCAsset[loanAuction.asset];
-
-        // Create a reference to the corresponding cToken contract, like cDAI
-        ICERC20 cToken = ICERC20(cAsset);
-
-        // Require that loan does not have fixedTerms
-        require(
-            loanAuction.fixedTerms != true,
-            "Loan has fixedTerms cannot refinanceBestOffer."
-        );
-
-        // Require that loan is active
-        require(
-            loanAuction.loanExecutedTime != 0,
-            "Loan is not active. No funds to withdraw. Please use executeLoanByBid()"
-        );
-
-        // require offer is same asset and cAsset
-        require(
-            offer.asset == loanAuction.asset,
-            "Offer asset and cAsset must be the same as the current loan"
-        );
-
-        // Require that loan has not expired
-        require(
-            block.timestamp <
-                loanAuction.loanExecutedTime + loanAuction.timeDrawn,
-            "Cannot refinance loan that has expired"
-        );
-
-        // get nftOwner and require msg.sender is the nftOwner/borrower
-        require(
-            msg.sender == IERC721(offer.nftContractAddress).ownerOf(nftId),
-            "Msg.sender must be the owner of nftId to refinanceByBorrower"
-        );
-
-        //Instantiate MintLocalVars
-        InterestAndPaymentVars memory vars;
-
-        // calculate the interest earned by current lender
-        (
-            vars.currentLenderInterest,
-            vars.currentProtocolInterest
-        ) = calculateInterestAccrued(offer.nftContractAddress, nftId);
-
-        // need to ensure protocol fee is calculated correctly here. HistoricInterest is paid by new ledner, should protocol fee be as well?
-
-        // calculate interest earned
-        vars.interestAndPremiumOwedToCurrentLender =
-            vars.currentLenderInterest +
-            loanAuction.historicLenderInterest;
-
-        vars.fullAmount =
-            loanAuction.amountDrawn +
-            vars.interestAndPremiumOwedToCurrentLender;
-
-        // require statement for offer amount to be greater than or equal to full repayment
-        require(
-            offer.amount >= vars.fullAmount,
-            "Offer amount must be greater than or equal to current amount drawn + interest owed"
-        );
-
-        uint256 exchangeRateMantissa = cToken.exchangeRateCurrent();
-
-        (, uint256 fullAmountTokens) = divScalarByExpTruncate(
-            vars.fullAmount,
-            Exp({mantissa: exchangeRateMantissa})
-        );
-
-        // require prospective lender has sufficient available balance to refinance loan
-        require(
-            (cAssetBalances[cAsset][msg.sender] -
-                utilizedCAssetBalances[cAsset][msg.sender]) >= fullAmountTokens,
-            "Must have an available balance greater than or equal to amountToWithdraw"
-        );
-
-        // processes cEth and ICERC20 transactions
-        _transferICERC20BalancesInternal(
-            cAsset,
-            loanAuction.lender,
-            prospectiveLender,
-            0,
-            vars.interestAndPremiumOwedToCurrentLender,
-            loanAuction.amountDrawn
-        );
-
-        uint256 currentHistoricLenderInterest = loanAuction
-            .historicLenderInterest;
-        uint256 currentHistoricProtocolInterest = loanAuction
-            .historicProtocolInterest;
-
-        // update LoanAuction struct
-        loanAuction.lender = prospectiveLender;
-        loanAuction.amount = offer.amount;
-        loanAuction.interestRateBps = offer.interestRateBps;
-        loanAuction.duration = offer.duration;
-        loanAuction.amountDrawn = vars.fullAmount;
-        loanAuction.timeOfInterestStart = block.timestamp;
-        loanAuction.historicLenderInterest =
-            currentHistoricLenderInterest +
-            vars.currentLenderInterest;
-        loanAuction.historicProtocolInterest =
-            currentHistoricProtocolInterest +
-            vars.currentProtocolInterest;
-
-        emit LoanRefinance(
-            prospectiveLender,
-            loanAuction.nftOwner,
-            offer.nftContractAddress,
-            offer.nftId,
-            offer
         );
     }
 
@@ -1042,10 +1038,10 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         vars.interestAndPremiumOwedToCurrentLender =
             vars.currentLenderInterest +
             loanAuction.historicLenderInterest +
-            (loanAuction.amountDrawn * refinancePremiumLenderBps);
+            ((loanAuction.amountDrawn * refinancePremiumLenderBps) / 10000);
 
-        uint256 protocolPremium = loanAuction.amountDrawn *
-            refinancePremiumProtocolBps;
+        uint256 protocolPremium = (loanAuction.amountDrawn *
+            refinancePremiumProtocolBps) / 10000;
 
         // calculate fullRefinanceAmount
         vars.fullAmount =
@@ -1084,15 +1080,22 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
             // update LoanAuction lender
             loanAuction.lender = msg.sender;
-
+        } else {
             // If current lender is refinancing the loan they do not need to pay any fees or buy themselves out.
-        } else if (loanAuction.lender == msg.sender) {
-            // check this require statment, might be duplictive to ofer checks above.
-
+            // require prospective lender has sufficient available balance to refinance loan
+            uint256 exchangeRateMantissa = cToken.exchangeRateCurrent();
+            (, uint256 cTokenAmountDrawn) = divScalarByExpTruncate(
+                loanAuction.amountDrawn,
+                Exp({mantissa: exchangeRateMantissa})
+            );
+            (, uint256 cTokenOfferAmount) = divScalarByExpTruncate(
+                offer.amount,
+                Exp({mantissa: exchangeRateMantissa})
+            );
             require(
                 (cAssetBalances[cAsset][msg.sender] -
                     utilizedCAssetBalances[cAsset][msg.sender]) >=
-                    offer.amount - loanAuction.amountDrawn,
+                    (cTokenOfferAmount - cTokenAmountDrawn),
                 "Lender does not have sufficient balance to refinance loan"
             );
         }
@@ -1360,6 +1363,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         address currentLender = loanAuction.lender;
         uint256 currentAmountDrawn = loanAuction.amountDrawn;
 
+        // TODO(Just delete the struct?)
         // reset loanAuction
         loanAuction.nftOwner = address(0);
         loanAuction.lender = address(0);
@@ -1652,7 +1656,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         // instantiate MintLocalVars
         MintLocalVars memory vars;
 
-        // should have require statement to ensure tranfer is successful before proceeding
         // transferFrom ERC20 from depositors address
         require(
             underlying.transferFrom(from, address(this), fullAmount) == true,
@@ -1710,8 +1713,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                 );
         }
 
-        // should have require statement to ensure mint is successful before proceeding
-        // protocolDrawFee is taken here as the fullAmount will be greater the paymentTokens + lenderInterestAndPremiumTokens and remain at the NA contract address
         // mint cTokens
         require(cToken.mint(fullAmount) == 0, "cToken.mint() failed");
 
@@ -1977,14 +1978,13 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     function ownerOf(address nftContractAddress, uint256 nftId)
         public
         view
-        returns (address)
+        returns (address nftOwner)
     {
-        // instantiate LoanAuction Struct
-        LoanAuction memory loanAuction = _loanAuctions[nftContractAddress][
-            nftId
-        ];
+        // Get the internal owner of the NFT
+        nftOwner = _loanAuctions[nftContractAddress][nftId].nftOwner;
 
-        return loanAuction.nftOwner;
+        // If the NFT is not in the protocol, revert
+        require(nftOwner != address(0), "This NFT not in protocol");
     }
 
     // returns the interest value earned by lender or protocol during timeOfInterest segment
@@ -1993,49 +1993,39 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         view
         returns (uint256 lenderInterest, uint256 protocolInterest)
     {
-        // instantiate LoanAuction Struct
-        LoanAuction memory loanAuction = _loanAuctions[nftContractAddress][
-            nftId
-        ];
+        uint256 timeDrawn = _loanAuctions[nftContractAddress][nftId].timeDrawn;
+        uint256 amountDrawn = _loanAuctions[nftContractAddress][nftId]
+            .amountDrawn;
+        uint256 loanExecutedTime = _loanAuctions[nftContractAddress][nftId]
+            .loanExecutedTime;
+        uint256 timeOfInterestStart = _loanAuctions[nftContractAddress][nftId]
+            .timeOfInterestStart;
+        uint64 interestRateBps = _loanAuctions[nftContractAddress][nftId]
+            .interestRateBps;
 
-        // Require that loan is active
-        require(
-            loanAuction.loanExecutedTime != 0,
-            "Loan must be active to calculate interest accrued"
-        );
+        // TODO(Check: Is this updated every time a draw of time or funds/a repayment/a refinance occur?)
+        if (
+            block.timestamp <= timeOfInterestStart ||
+            timeDrawn == 0 ||
+            amountDrawn == 0 ||
+            loanExecutedTime == 0
+        ) {
+            protocolInterest = 0;
+            lenderInterest = 0;
+        } else {
+            uint256 timeOutstanding = block.timestamp - timeOfInterestStart;
 
-        uint256 decimalCompensation = 100000000;
+            uint256 fractionOfTimeDrawn = timeOutstanding / timeDrawn;
 
-        // calculate seconds as lender
-        uint256 secondsOfInterest = decimalCompensation *
-            (block.timestamp - loanAuction.timeOfInterestStart);
+            uint256 fractionOfAmountDrawn = amountDrawn * fractionOfTimeDrawn;
 
-        // percent of time drawn as Lender
-        uint256 percentOfTimeDrawn = secondsOfInterest / loanAuction.timeDrawn;
+            lenderInterest = (interestRateBps * fractionOfAmountDrawn) / 10000;
 
-        // percent of value of amountDrawn earned
-        uint256 percentOfAmountDrawn = loanAuction.amountDrawn *
-            percentOfTimeDrawn;
-
-        uint256 lenderInterestMulPercentOfAmountDrawn = loanAuction
-            .interestRateBps * percentOfAmountDrawn;
-
-        uint256 protocolInterestMulPercentOfAmountDrawn = loanDrawFeeProtocolBps *
-                percentOfAmountDrawn;
-
-        // divide by basis decimals
-        uint256 lenderInterestDecimals = lenderInterestMulPercentOfAmountDrawn /
-            10000;
-
-        // divide by decimalCompensation
-        lenderInterest = lenderInterestDecimals / decimalCompensation;
-
-        // divide by basis decimals
-        uint256 protocolInterestDecimals = protocolInterestMulPercentOfAmountDrawn /
+            // TODO(Could this be accrued right when the loan is drawn and simplified as such?)
+            protocolInterest =
+                (loanDrawFeeProtocolBps * fractionOfAmountDrawn) /
                 10000;
-
-        // divide by decimalCompensation
-        protocolInterest = protocolInterestDecimals / decimalCompensation;
+        }
     }
 
     // calculate the fullRepayment of a loan

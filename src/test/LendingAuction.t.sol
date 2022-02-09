@@ -221,28 +221,33 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
             );
         }
 
-        // Let's move forward in time
-        hevm.warp(block.number + 10000);
+        // Let's move forward in time and blocks
+        hevm.warp(block.number + 1000);
+        hevm.roll(block.timestamp + 10000);
 
         LA.getLoanAuction(address(mockNFT), 0);
 
-        offer.interestRateBps = offer.interestRateBps / 2;
+        // Create a new offer
+
+        offer.interestRateBps = offer.interestRateBps / 10;
+        offer.amount += 1000 ether;
+
+        create_hash = LA.getOfferHash(offer);
+
+        LA.createOffer(offer);
 
         if (!offer.fixedTerms) {
-            // TODO assert statements to check math.
             // Test refinance
             if (lender) {
-                // TODO(Why is there an overflow here?)
-                // LA.refinanceByLender(offer);
+                // TODO(Fix arithmetic overflows)
+                LA.refinanceByLender(offer);
             } else {
-                // TODO(Why is there an overflow here?)
-                // hevm.prank(address(this), address(this));
-                // LA.refinanceByBorrower(
-                //    offer.nftContractAddress,
-                //    offer.floorTerm,
-                //    offer.nftId,
-                //    create_hash
-                //);
+                LA.refinanceByBorrower(
+                    offer.nftContractAddress,
+                    offer.floorTerm,
+                    offer.nftId,
+                    create_hash
+                );
             }
         }
     }
@@ -424,8 +429,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         // TODO add assert statement that checks the executed loan for correctness
     }
 
-    // TODO(This should pass)
-    function testFailDrawLoan(bool floorTerm, bool lender) public {
+    function testDrawLoan(bool floorTerm, bool lender) public {
         // Create a floor offer
         LendingAuction.Offer memory offer;
         offer.creator = address(this);
@@ -485,14 +489,11 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         // TODO add fail cases to test each require statement.
         // TODO assert statements to check math.
 
-        // TODO(This input value is in asset, but internal balances are incorrectly checked against cAsset)
-        // All inputs should be for asset, unless it is supply/deposit cERC20/cETH. all internal balances are held in cAsset and should be checked in cAsset. I have updated refinanceByLender to resolve this instance.
         LA.refinanceByLender(offer);
 
         // TODO add assert statement that checks the additional time for correctness
         // TODO add fail cases to test each require statement.
 
-        // TODO(These can't work until refinance does)
         // this should not longer have an issue
         LA.drawLoanTime(address(mockNFT), 0, 10000);
 
@@ -501,11 +502,10 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
 
         // This amount should also be denominated in the unwrapped asset address.
         // this is denominated in the asset of the loan
-        LA.drawLoanAmount(address(mockNFT), 0, 10000);
+        LA.drawLoanAmount(address(mockNFT), 0, 5000 ether);
     }
 
-    // TODO(This should pass)
-    function testFailRepayRemainingLoan(bool floorTerm) public {
+    function testRepayRemainingLoan(bool floorTerm) public {
         // Create a floor offer
         LendingAuction.Offer memory offer;
         offer.creator = address(this);
@@ -532,12 +532,11 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         path[0] = address(WETH);
         path[1] = address(DAI);
 
-        // TODO(This should transfer DAI, not compound DAI)
+        // TODO(Success assertions)
         LA.repayRemainingLoan(address(mockNFT), 0);
     }
 
-    // TODO(This should pass)
-    function testFailPartialPayment(bool floorTerm) public {
+    function testPartialPayment(bool floorTerm) public {
         // Create a floor offer
         LendingAuction.Offer memory offer;
         offer.creator = address(this);
@@ -553,13 +552,13 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
 
         bytes32 create_hash = LA.getOfferHash(offer);
 
+        // TODO(Success assertions)
         LA.createOffer(offer);
 
         mockNFT.approve(address(LA), 0);
 
         LA.executeLoanByLender(address(mockNFT), floorTerm, 0, create_hash);
 
-        // TODO(This should transfer DAI, not compound DAI)
         LA.partialPayment(address(mockNFT), 0, 10000 ether);
     }
 
@@ -589,15 +588,27 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         LA.seizeAsset(address(mockNFT), 0);
     }
 
-    function testCalculations() public {
+    function testCalculations(
+        uint64 amount,
+        uint64 interestRateBps,
+        uint64 duration
+    ) public {
+        if (duration < 86401) {
+            duration += uint32(86401);
+        }
+        // TODO(Otherwise compound math fails at some point)
+        if (amount < 1 ether) {
+            amount += 1 ether;
+        }
+
         LendingAuction.Offer memory offer;
         offer.creator = address(this);
         offer.nftContractAddress = address(mockNFT);
         offer.nftId = 0;
         offer.asset = address(DAI);
-        offer.amount = 25000 ether;
-        offer.interestRateBps = 1000;
-        offer.duration = 172800;
+        offer.amount = amount;
+        offer.interestRateBps = interestRateBps;
+        offer.duration = duration;
         offer.expiration = block.timestamp + 1000000;
         offer.fixedTerms = false;
         offer.floorTerm = false;
@@ -610,7 +621,8 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
 
         LA.executeLoanByLender(address(mockNFT), false, 0, create_hash);
 
-        hevm.warp(block.timestamp + 10000);
+        // Warp to right before it expires
+        hevm.warp(block.timestamp + (duration - 1));
         hevm.roll(block.number + 1000);
 
         // TODO(Add assertion about expected value after conversion of rate to basis points)
