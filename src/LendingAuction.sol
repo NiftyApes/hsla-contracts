@@ -1662,6 +1662,11 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             "underlying.transferFrom() failed"
         );
 
+                require(
+            underlying.approve(cAsset, fullAmount) == true,
+            "underlying.approve() failed"
+        );
+
         // set exchange rate from erc20 to ICERC20
         vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
 
