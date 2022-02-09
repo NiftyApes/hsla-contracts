@@ -32,13 +32,13 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     mapping(bytes => bool) _cancelledOrFinalized;
 
     // fee in basis points paid to protocol by borrower for drawing down loan
-    uint64 public loanDrawFeeProtocolBps = 15;
+    uint64 public loanDrawFeeProtocolBps = 50;
 
     // premium in basis points paid to current lender by new lender for buying out the loan
-    uint64 public refinancePremiumLenderBps = 15;
+    uint64 public refinancePremiumLenderBps = 50;
 
     // premium in basis points paid to protocol by new lender for buying out the loan
-    uint64 public refinancePremiumProtocolBps = 15;
+    uint64 public refinancePremiumProtocolBps = 50;
 
     // ---------- FUNCTIONS -------------- //
 
@@ -2004,6 +2004,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             .interestRateBps;
 
         // TODO(Check: Is this updated every time a draw of time or funds/a repayment/a refinance occur?)
+        // yes, this should be updated on each update of loan terms in order to charge pro-rata interest
         if (
             block.timestamp <= timeOfInterestStart ||
             timeDrawn == 0 ||
@@ -2022,6 +2023,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             lenderInterest = (interestRateBps * fractionOfAmountDrawn) / 10000;
 
             // TODO(Could this be accrued right when the loan is drawn and simplified as such?)
+            //  the protocol will charge protocol interest and so must accrue as terms are updated
             protocolInterest =
                 (loanDrawFeeProtocolBps * fractionOfAmountDrawn) /
                 10000;
