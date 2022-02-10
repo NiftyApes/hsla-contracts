@@ -81,11 +81,6 @@ interface ILendingAuction is ILiquidityProviders {
         uint256 msgValueTokens;
     }
 
-    enum RefinanceType {
-        lender,
-        borrower
-    }
-
     // Events
     event LoanExecuted(
         address lender,

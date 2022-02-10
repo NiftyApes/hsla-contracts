@@ -773,7 +773,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             "Msg.sender must be the owner of nftId to refinanceByBorrower"
         );
 
-        _refinance(offer, offer.creator, nftId);
+        _refinance(offer, offer.creator, nftId, true);
     }
 
     /**
@@ -814,7 +814,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             "Msg.sender must be the owner of nftId to refinanceByBorrower"
         );
 
-        _refinance(offer, offer.creator, nftId);
+        _refinance(offer, offer.creator, nftId, true);
 
         // ensure all sig functions finalize signatures
 
@@ -828,7 +828,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         );
     }
 
-    // TODO(Consolidate lender logic here)
     // @Alcibades - we must supply the nftId to support floor offers. A floor offer will have only one nftId yet be valid for n nfts.
     /**
      * @notice Handles internal checks, state transitions, and value/asset transfers for loan refinance
@@ -839,11 +838,12 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         Offer memory offer,
         address prospectiveLender,
         uint256 nftId,
-        RefinanceType type
+        bool byBorrower
     ) internal {
         // Get information about present loan from storage
 
         // TODO(Gas savings here by accessing members directly?)
+        // this can't be done in this function without triggering a 'stack too deep' error
         LoanAuction storage loanAuction = _loanAuctions[
             offer.nftContractAddress
         ][offer.nftId];
@@ -880,7 +880,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             currentProtocolInterest
         ) = calculateInterestAccrued(offer.nftContractAddress, nftId);
 
-        if (refinanceType == borrower) {
+        if (byBorrower == true) {
             // calculate interest earned by all lenders
             interestAndPremiumOwedToCurrentLender =
                 currentLenderInterest +
@@ -1037,55 +1037,60 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         whenNotPaused
         nonReentrant
     {
-        LoanAuction storage loanAuction = _loanAuctions[
-            offer.nftContractAddress
-        ][offer.nftId];
+        uint256 timeDrawn = _loanAuctions[offer.nftContractAddress][offer.nftId]
+            .timeDrawn;
+        uint256 loanExecutedTime = _loanAuctions[offer.nftContractAddress][
+            offer.nftId
+        ].loanExecutedTime;
+        uint256 amount = _loanAuctions[offer.nftContractAddress][offer.nftId]
+            .amount;
+        uint256 interestRateBps = _loanAuctions[offer.nftContractAddress][
+            offer.nftId
+        ].interestRateBps;
+        uint256 duration = _loanAuctions[offer.nftContractAddress][offer.nftId]
+            .duration;
+        address nftOwner = _loanAuctions[offer.nftContractAddress][offer.nftId]
+            .nftOwner;
+
         // Require that loan has not expired. This prevents another lender from refinancing
         require(
-            block.timestamp <
-                loanAuction.loanExecutedTime + loanAuction.timeDrawn,
+            block.timestamp < loanExecutedTime + timeDrawn,
             "Cannot refinance loan that has expired"
         );
 
         // require that terms are parity + 1
         require(
             // Require bidAmount is greater than previous bid
-            (offer.amount > loanAuction.amount &&
-                offer.interestRateBps <= loanAuction.interestRateBps &&
-                offer.duration >= loanAuction.duration) ||
+            (offer.amount > amount &&
+                offer.interestRateBps <= interestRateBps &&
+                offer.duration >= duration) ||
                 // OR
                 // Require interestRate is lower than previous bid
-                (offer.amount >= loanAuction.amount &&
-                    offer.interestRateBps < loanAuction.interestRateBps &&
-                    offer.duration >= loanAuction.duration) ||
+                (offer.amount >= amount &&
+                    offer.interestRateBps < interestRateBps &&
+                    offer.duration >= duration) ||
                 // OR
                 // Require duration to be greater than previous bid
-                (offer.amount >= loanAuction.amount &&
-                    offer.interestRateBps <= loanAuction.interestRateBps &&
-                    offer.duration > loanAuction.duration),
+                (offer.amount >= amount &&
+                    offer.interestRateBps <= interestRateBps &&
+                    offer.duration > duration),
             "Bid must have better terms than current loan"
         );
 
         // if duration is the only term updated
         if (
-            offer.amount == loanAuction.amount &&
-            offer.interestRateBps == loanAuction.interestRateBps &&
-            offer.duration > loanAuction.duration
+            offer.amount == amount &&
+            offer.interestRateBps == interestRateBps &&
+            offer.duration > duration
         ) {
             // require offer has at least 24 hour additional duration
             require(
-                offer.duration >= (loanAuction.duration + 86400),
+                offer.duration >= (duration + 86400),
                 "Cannot refinanceBestOffer. Offer duration must be at least 24 hours greater than current loan. "
             );
         }
 
-        emit LoanRefinance(
-            msg.sender,
-            loanAuction.nftOwner,
-            offer.nftContractAddress,
-            offer.nftId,
-            offer
-        );
+        _refinance(offer, offer.creator, offer.nftId, false);
     }
 
     // ---------- Borrower Draw Functions ---------- //
