@@ -136,14 +136,25 @@ contract LiquidityProvidersTest is DSTest, TestUtility {
     // TODO add failing asserts in each funtion to test each require statement.
 
     function testSupplyErc20() public {
+        // TODO(This needs to assert the cAsset balance of address(this), based on the asset -> cAsset exchange rate)
         liquidityProviders.supplyErc20(address(DAI), 10000 ether);
     }
 
-    function testSupplyCErc20() public {
-        liquidityProviders.supplyCErc20(address(cDAI), 10000000);
+    function testSupplyCErc20(uint32 deposit) public {
+        uint256 cAssetBalInit = liquidityProviders.cAssetBalances(
+            address(cDAI),
+            address(this)
+        );
+        liquidityProviders.supplyCErc20(address(cDAI), deposit);
+        cAssetBalInit += deposit;
+        assert(
+            liquidityProviders.cAssetBalances(address(cDAI), address(this)) ==
+                cAssetBalInit
+        );
     }
 
     function testWithdrawErc20True() public {
+        // TODO(This needs to assert the cAsset balance of address(this), based on the asset -> cAsset exchange rate)
         liquidityProviders.withdrawErc20(address(DAI), true, 10000000);
     }
 
