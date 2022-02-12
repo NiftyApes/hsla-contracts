@@ -153,13 +153,34 @@ contract LiquidityProvidersTest is DSTest, TestUtility {
         );
     }
 
-    function testWithdrawErc20True() public {
+    // TODO (Fix overflow)
+    function testWithdrawErc20(uint256 amount, bool redeemType) public {
         // TODO(This needs to assert the cAsset balance of address(this), based on the asset -> cAsset exchange rate)
-        liquidityProviders.withdrawErc20(address(DAI), true, 10000000);
-    }
-
-    function testWithdrawErc20False() public {
-        liquidityProviders.withdrawErc20(address(DAI), false, 1 ether);
+        if (amount < 1 ether) {
+            amount += 1 ether;
+        }
+        else if (amount > 100 ether) {
+            amount = 100 ether;
+        }
+        if (redeemType) {
+            liquidityProviders.withdrawErc20(address(DAI), redeemType, amount);
+        }
+        else {
+            // FIXME(There is a bug here where the incorrect cAsset bal is returned)
+            uint256 cAssetBalInit = liquidityProviders.cAssetBalances(
+                address(cDAI),
+                address(this)
+            );
+            if (amount >= cAssetBalInit) {
+                amount = cAssetBalInit - 1;
+            }
+            liquidityProviders.withdrawErc20(address(DAI), redeemType, amount);
+            cAssetBalInit -= amount;
+            assert(
+                liquidityProviders.cAssetBalances(address(cDAI), address(this)) ==
+                cAssetBalInit
+            );
+        }
     }
 
     function testWithdrawCErc20() public {
