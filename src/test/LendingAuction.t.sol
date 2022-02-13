@@ -215,9 +215,9 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         } else {
             LA.executeLoanByBorrower(
                 address(mockNFT),
-                floorTerm,
                 0,
-                create_hash
+                create_hash,
+                floorTerm
             );
         }
 
@@ -468,9 +468,9 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         } else {
             LA.executeLoanByBorrower(
                 address(mockNFT),
-                floorTerm,
                 0,
-                create_hash
+                create_hash,
+                floorTerm
             );
         }
 

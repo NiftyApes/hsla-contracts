@@ -129,7 +129,7 @@ contract LiquidityProviders is
 
         vars.mintAmount = numTokensToSupply;
 
-        (vars.mathErr, vars.mintTokens) = divScalarByExpTruncate(
+        (, vars.mintTokens) = divScalarByExpTruncate(
             vars.mintAmount,
             Exp({mantissa: vars.exchangeRateMantissa})
         );
@@ -203,18 +203,10 @@ contract LiquidityProviders is
 
             vars.redeemTokens = amountToWithdraw;
 
-            (vars.mathErr, vars.redeemAmount) = mulScalarTruncate(
+            (, vars.redeemAmount) = mulScalarTruncate(
                 Exp({mantissa: vars.exchangeRateMantissa}),
                 amountToWithdraw
             );
-            if (vars.mathErr != MathError.NO_ERROR) {
-                return
-                    failOpaque(
-                        Error.MATH_ERROR,
-                        FailureInfo.REDEEM_EXCHANGE_TOKENS_CALCULATION_FAILED,
-                        uint256(vars.mathErr)
-                    );
-            }
 
             // require msg.sender has sufficient available balance of cErc20
             require(
@@ -243,18 +235,10 @@ contract LiquidityProviders is
 
             vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
 
-            (vars.mathErr, vars.redeemTokens) = divScalarByExpTruncate(
+            (, vars.redeemTokens) = divScalarByExpTruncate(
                 amountToWithdraw,
                 Exp({mantissa: vars.exchangeRateMantissa})
             );
-            if (vars.mathErr != MathError.NO_ERROR) {
-                return
-                    failOpaque(
-                        Error.MATH_ERROR,
-                        FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED,
-                        uint256(vars.mathErr)
-                    );
-            }
 
             vars.redeemAmount = amountToWithdraw;
 

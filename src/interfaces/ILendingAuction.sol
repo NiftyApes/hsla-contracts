@@ -87,10 +87,7 @@ interface ILendingAuction is ILiquidityProviders {
         address nftOwner,
         address indexed nftContractAddress,
         uint256 indexed nftId,
-        address asset,
-        uint256 amount,
-        uint256 interestRate,
-        uint256 duration
+        Offer offer
     );
 
     event LoanRefinance(
@@ -205,9 +202,9 @@ interface ILendingAuction is ILiquidityProviders {
 
     function executeLoanByBorrower(
         address nftContractAddress,
-        bool floorTerm,
         uint256 nftId,
-        bytes32 offerHash
+        bytes32 offerHash,
+        bool floorTerm
     ) external payable;
 
     // TODO(nftID is duplicate here, the data is already in the offer struct)
@@ -265,8 +262,7 @@ interface ILendingAuction is ILiquidityProviders {
 
     function repayRemainingLoan(address nftContractAddress, uint256 nftId)
         external
-        payable
-        returns (uint256);
+        payable;
 
     function partialPayment(
         address nftContractAddress,

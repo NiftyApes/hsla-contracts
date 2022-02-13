@@ -63,14 +63,14 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         require(auction.loanExecutedTime != 0, "Loan not active");
     }
 
-    // TODO( @alcibiades Do we still need this function with getEIP712EncodedOffer below?)
+    //This function is in addition to getEIP712EncodedOffer in order to save gas in createOffer()
     /**
      * @notice Generate a hash of an offer
      * @param offer The details of a loan auction offer
      */
     function getOfferHash(Offer memory offer)
         public
-        view
+        pure
         returns (bytes32 offerHash)
     {
         offerHash = keccak256(
@@ -376,10 +376,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
     // ---------- Execute Loan Functions ---------- //
 
-    // TODO Explore whether combining lender/borrower functions is possible.
-    // will result in less lines of code to test/reviw, may result in higher gas fees per function.
-    // Was not originally implemented because of 'stack too deep' errors.
-
     /**
      * @notice Allows a borrower to submit an offer from the on-chain NFT offer book and execute a loan using their NFT as collateral
      * @param nftContractAddress The address of the NFT collection
@@ -389,132 +385,20 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
      */
     function executeLoanByBorrower(
         address nftContractAddress,
-        bool floorTerm,
         uint256 nftId,
-        bytes32 offerHash
+        bytes32 offerHash,
+        bool floorTerm
     ) external payable whenNotPaused nonReentrant {
         Offer memory offer;
 
         if (floorTerm) {
             offer = _floorOfferBooks[nftContractAddress].offers[offerHash];
         } else {
+            // can this result in an null offer value?
             offer = _nftOfferBooks[nftContractAddress][nftId].offers[offerHash];
         }
 
-        _executeLoanByBorrowerInternal(offer, nftId, offer.creator);
-    }
-
-    /**
-     * @notice handles the checks, state transitions, and value/asset transfers for executeLoanByBorrower
-     * @param offer The details of a loan auction offer
-     * @param nftId The id of the specified NFT
-     * @param lender The prospective lender
-     */
-    function _executeLoanByBorrowerInternal(
-        Offer memory offer,
-        uint256 nftId,
-        address lender
-    ) internal {
-        // instantiate LoanAuction Struct
-        LoanAuction storage loanAuction = _loanAuctions[
-            offer.nftContractAddress
-        ][nftId];
-
-        address cAsset = assetToCAsset[offer.asset];
-
-        // require offer has not expired
-        require(
-            offer.expiration > block.timestamp,
-            "Cannot execute bid, offer has expired"
-        );
-
-        // This prevents a malicous actor from providing a 1 second loan offer and duping a naive borrower into losing their asset.
-        // It ensures a borrower always has at least 24 hours to repay their loan
-        require(
-            offer.duration >= 86400,
-            "Offers must have 24 hours minimum duration"
-        );
-
-        require(
-            assetToCAsset[offer.asset] != address(0),
-            "Asset not whitelisted on NiftyApes"
-        );
-
-        // get nft owner
-        address nftOwner = IERC721(offer.nftContractAddress).ownerOf(nftId);
-
-        // require msg.sender is the nftOwner. This ensures function submitted nftId is valid to execute against
-        // this also provides a check for floor term offers that the msg.sender owns an asset in the collection
-        require(
-            nftOwner == msg.sender,
-            "Msg.sender must be the owner of nftId to executeLoanByBid"
-        );
-
-        // Require that loan is not active
-        require(
-            loanAuction.loanExecutedTime == 0,
-            "Loan is already active. Please use refinanceByBorrower()"
-        );
-
-        // check if lender has sufficient available balance and update utilizedBalance
-        _checkAndUpdateLenderUtilizedBalanceInternal(
-            cAsset,
-            offer.amount,
-            lender
-        );
-
-        // update loanAuction struct
-        loanAuction.nftOwner = nftOwner;
-        loanAuction.lender = lender;
-        loanAuction.asset = offer.asset;
-        loanAuction.amount = offer.amount;
-        loanAuction.interestRateBps = offer.interestRateBps;
-        loanAuction.duration = offer.duration;
-        loanAuction.timeOfInterestStart = block.timestamp;
-        loanAuction.loanExecutedTime = block.timestamp;
-        loanAuction.timeDrawn = offer.duration;
-        loanAuction.amountDrawn = offer.amount;
-        loanAuction.fixedTerms = offer.fixedTerms;
-
-        // *------- value and asset transfers -------* //
-
-        // transferFrom NFT from nftOwner to contract
-        IERC721(offer.nftContractAddress).transferFrom(
-            nftOwner,
-            address(this),
-            nftId
-        );
-
-        // if asset is not 0x0 process as Erc20
-        if (
-            offer.asset != address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
-        ) {
-            // redeem cTokens and transfer underlying to borrower
-            _redeemAndTransferErc20Internal(
-                offer.asset,
-                cAsset,
-                offer.amount,
-                nftOwner
-            );
-        }
-        // else process as ETH
-        else if (
-            offer.asset == address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
-        ) {
-            // redeem cTokens and transfer underlying to borrower
-            _redeemAndTransferEthInternal(cAsset, offer.amount, nftOwner);
-        }
-
-        emit LoanExecuted(
-            lender,
-            nftOwner,
-            offer.nftContractAddress,
-            offer.nftId,
-            offer.asset,
-            offer.amount,
-            offer.interestRateBps,
-            offer.duration
-        );
+        _executeLoanInternal(offer, offer.creator, msg.sender, nftId);
     }
 
     /**
@@ -557,7 +441,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         }
 
         // execute state changes for executeLoanByBid
-        _executeLoanByBorrowerInternal(offer, nftId, lender);
+        _executeLoanInternal(offer, lender, msg.sender, nftId);
 
         // finalize signature
         _cancelledOrFinalized[signature] == true;
@@ -590,7 +474,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         }
 
         // execute state changes for executeLoanByAsk
-        _executeLoanByLenderInternal(offer, msg.sender, offer.creator);
+        _executeLoanInternal(offer, msg.sender, offer.creator, nftId);
     }
 
     /**
@@ -615,7 +499,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         address borrower = getOfferSigner(encodedOffer, signature);
 
         // execute state changes for executeLoanByAsk
-        _executeLoanByLenderInternal(offer, msg.sender, borrower);
+        _executeLoanInternal(offer, msg.sender, borrower, offer.nftId);
 
         // finalize signature
         _cancelledOrFinalized[signature] == true;
@@ -633,10 +517,11 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
      * @param lender The prospective lender
      * @param borrower The prospective borrower and owner of the NFT
      */
-    function _executeLoanByLenderInternal(
+    function _executeLoanInternal(
         Offer memory offer,
         address lender,
-        address borrower
+        address borrower,
+        uint256 nftId
     ) internal {
         // instantiate LoanAuction Struct
         LoanAuction storage loanAuction = _loanAuctions[
@@ -664,16 +549,15 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             "Cannot execute bid, offer has expired"
         );
 
-        // require offer has 24 hour minimum duration
+        // This prevents a malicous actor from providing a 1 second loan offer and duping a naive borrower into losing their asset.
+        // It ensures a borrower always has at least 24 hours to repay their loan
         require(
             offer.duration >= 86400,
             "Offers must have 24 hours minimum duration"
         );
 
         // get nft owner
-        address nftOwner = IERC721(offer.nftContractAddress).ownerOf(
-            offer.nftId
-        );
+        address nftOwner = IERC721(offer.nftContractAddress).ownerOf(nftId);
 
         require(
             borrower == nftOwner,
@@ -733,10 +617,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             borrower,
             offer.nftContractAddress,
             offer.nftId,
-            offer.asset,
-            offer.amount,
-            offer.interestRateBps,
-            offer.duration
+            offer
         );
     }
 
@@ -918,7 +799,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
             // TODO(Examine this internal function for optimization)
             // processes cEth and ICERC20 transactions
-            _transferICERC20BalancesInternal(
+            _transferCERC20BalancesInternal(
                 cAsset,
                 loanAuction.lender,
                 prospectiveLender,
@@ -973,7 +854,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                 // require prospective lender has sufficient available balance to refinance loan
 
                 // processes cEth and ICERC20 transactions
-                _transferICERC20BalancesInternal(
+                _transferCERC20BalancesInternal(
                     cAsset,
                     loanAuction.lender,
                     msg.sender,
@@ -1049,8 +930,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         ].interestRateBps;
         uint256 duration = _loanAuctions[offer.nftContractAddress][offer.nftId]
             .duration;
-        address nftOwner = _loanAuctions[offer.nftContractAddress][offer.nftId]
-            .nftOwner;
 
         // Require that loan has not expired. This prevents another lender from refinancing
         require(
@@ -1280,7 +1159,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         payable
         whenNotPaused
         nonReentrant
-        returns (uint256)
     {
         // Instantiate LoanAuction Struct
         LoanAuction storage loanAuction = _loanAuctions[nftContractAddress][
@@ -1326,21 +1204,10 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         address currentLender = loanAuction.lender;
         uint256 currentAmountDrawn = loanAuction.amountDrawn;
 
-        // TODO(Just delete the struct?)
         // reset loanAuction
-        loanAuction.nftOwner = address(0);
-        loanAuction.lender = address(0);
-        loanAuction.asset = address(0);
-        loanAuction.amount = 0;
-        loanAuction.interestRateBps = 0;
-        loanAuction.duration = 0;
-        loanAuction.loanExecutedTime = 0;
-        loanAuction.timeOfInterestStart = 0;
-        loanAuction.historicLenderInterest = 0;
-        loanAuction.historicLenderInterest = 0;
-        loanAuction.amountDrawn = 0;
-        loanAuction.timeDrawn = 0;
-        loanAuction.fixedTerms = false;
+        delete _loanAuctions[nftContractAddress][
+            nftId
+        ];
 
         // if asset is not 0x0 process as Erc20
         if (
@@ -1387,8 +1254,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         );
 
         emit LoanRepaidInFull(nftContractAddress, nftId);
-
-        return 0;
     }
 
     /**
@@ -1554,46 +1419,35 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
     // ---------- Internal Payment, Balance, and Transfer Functions ---------- //
 
+    // does this functino need an eth version?
     function _checkAndUpdateLenderUtilizedBalanceInternal(
         address cAsset,
         uint256 amount,
         address lender
-    ) internal returns (uint256) {
-        // create a reference to the corresponding cToken contract, like cDAI
+    ) internal {
+        // Create a reference to the corresponding cToken contract, like cDAI
         ICERC20 cToken = ICERC20(cAsset);
 
-        // instantiate RedeemLocalVars
-        RedeemLocalVars memory vars;
-
         // set exchangeRate of erc20 to ICERC20
-        vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
+        uint256 exchangeRateMantissa = cToken.exchangeRateCurrent();
+        uint256 redeemTokens;
 
         // convert amount to ICERC20
-        (vars.mathErr, vars.redeemTokens) = divScalarByExpTruncate(
+        (, redeemTokens) = divScalarByExpTruncate(
             amount,
-            Exp({mantissa: vars.exchangeRateMantissa})
+            Exp({mantissa: exchangeRateMantissa})
         );
-        if (vars.mathErr != MathError.NO_ERROR) {
-            return
-                failOpaque(
-                    Error.MATH_ERROR,
-                    FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED,
-                    uint256(vars.mathErr)
-                );
-        }
 
         // require that the lenders available balance is sufficent to serve the loan
         require(
-            // calculate lenders available ICERC20 balance and require it to be greater than or equal to vars.redeemTokens
+            // calculate lenders available ICERC20 balance and require it to be greater than or equal to redeemTokens
             (cAssetBalances[cAsset][lender] -
-                utilizedCAssetBalances[cAsset][lender]) >= vars.redeemTokens,
+                utilizedCAssetBalances[cAsset][lender]) >= redeemTokens,
             "Lender does not have a sufficient balance to serve this loan"
         );
 
         // update the lenders utilized balance
-        utilizedCAssetBalances[cAsset][lender] += vars.redeemTokens;
-
-        return 0;
+        utilizedCAssetBalances[cAsset][lender] += redeemTokens;
     }
 
     // this internal functions handles transfer of erc20 tokens and updating lender balances for refinanceLoan, repayRemainingLoan, and partialRepayment functions
@@ -1606,18 +1460,11 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         uint256 lenderInterestAndPremiumAmount,
         uint256 protocolInterestAndPremiumAmount,
         uint256 paymentAmount
-    ) internal returns (uint256) {
+    ) internal {
         // Create a reference to the underlying asset contract, like DAI.
         IERC20 underlying = IERC20(asset);
-
         // Create a reference to the corresponding cToken contract, like cDAI
         ICERC20 cToken = ICERC20(cAsset);
-
-        //Instantiate MintLocalVars
-        TokenVars memory tokenVars;
-
-        // instantiate MintLocalVars
-        MintLocalVars memory vars;
 
         // transferFrom ERC20 from depositors address
         require(
@@ -1631,70 +1478,37 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         );
 
         // set exchange rate from erc20 to ICERC20
-        vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
+        uint256 exchangeRateMantissa = ICERC20(cAsset).exchangeRateCurrent();
 
         // convert lenderInterestAndPremiumAmount to ICERC20
-        (
-            vars.mathErr,
-            tokenVars.lenderInterestAndPremiumTokens
-        ) = divScalarByExpTruncate(
+        (, uint256 lenderInterestAndPremiumTokens) = divScalarByExpTruncate(
             lenderInterestAndPremiumAmount,
-            Exp({mantissa: vars.exchangeRateMantissa})
+            Exp({mantissa: exchangeRateMantissa})
         );
-        if (vars.mathErr != MathError.NO_ERROR) {
-            return
-                failOpaque(
-                    Error.MATH_ERROR,
-                    FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED,
-                    uint256(vars.mathErr)
-                );
-        }
 
         // convert protocolInterestAndPremiumAmount to ICERC20
-        (
-            vars.mathErr,
-            tokenVars.protocolInterestAndPremiumTokens
-        ) = divScalarByExpTruncate(
+        (, uint256 protocolInterestAndPremiumTokens) = divScalarByExpTruncate(
             protocolInterestAndPremiumAmount,
-            Exp({mantissa: vars.exchangeRateMantissa})
+            Exp({mantissa: exchangeRateMantissa})
         );
-        if (vars.mathErr != MathError.NO_ERROR) {
-            return
-                failOpaque(
-                    Error.MATH_ERROR,
-                    FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED,
-                    uint256(vars.mathErr)
-                );
-        }
 
         // convert paymentAmount to ICERC20
-        (vars.mathErr, tokenVars.paymentTokens) = divScalarByExpTruncate(
+        (, uint256 paymentTokens) = divScalarByExpTruncate(
             paymentAmount,
-            Exp({mantissa: vars.exchangeRateMantissa})
+            Exp({mantissa: exchangeRateMantissa})
         );
-        if (vars.mathErr != MathError.NO_ERROR) {
-            return
-                failOpaque(
-                    Error.MATH_ERROR,
-                    FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED,
-                    uint256(vars.mathErr)
-                );
-        }
 
         // mint cTokens
         require(cToken.mint(fullAmount) == 0, "cToken.mint() failed");
 
         // update the tos utilized balance
-        utilizedCAssetBalances[cAsset][to] -= tokenVars.paymentTokens;
+        utilizedCAssetBalances[cAsset][to] -= paymentTokens;
 
         // update the tos total balance
-        cAssetBalances[cAsset][to] += tokenVars.lenderInterestAndPremiumTokens;
+        cAssetBalances[cAsset][to] += lenderInterestAndPremiumTokens;
 
         // update the owner total balance
-        cAssetBalances[cAsset][owner()] += tokenVars
-            .lenderInterestAndPremiumTokens;
-
-        return 0;
+        cAssetBalances[cAsset][owner()] += protocolInterestAndPremiumTokens;
     }
 
     // this internal functions handles transfer of Eth and updating lender balances for refinanceLoan, repayRemainingLoan, and partialRepayment functions
@@ -1706,104 +1520,56 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         uint256 lenderInterestAndPremiumAmount,
         uint256 protocolInterestAndPremiumAmount,
         uint256 paymentAmount
-    ) internal returns (uint256) {
+    ) internal {
         // Create a reference to the corresponding cToken contract, like cDAI
         ICEther cToken = ICEther(cAsset);
 
-        //Instantiate MintLocalVars
-        TokenVars memory tokenVars;
-
-        //Instantiate MintLocalVars
-        MintLocalVars memory vars;
-
         // set exchange rate from eth to ICERC20
-        vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
+        uint256 exchangeRateMantissa = cToken.exchangeRateCurrent();
 
         // convert msgValueMinusFee to ICERC20
         // This accounts for any extra Eth sent to function, since cant use transferFrom for exact amount
         // Any extra value is given to to
-        (vars.mathErr, tokenVars.msgValueTokens) = divScalarByExpTruncate(
+        (, uint256 msgValueTokens) = divScalarByExpTruncate(
             msgValueMinusFee,
-            Exp({mantissa: vars.exchangeRateMantissa})
+            Exp({mantissa: exchangeRateMantissa})
         );
-        if (vars.mathErr != MathError.NO_ERROR) {
-            return
-                failOpaque(
-                    Error.MATH_ERROR,
-                    FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED,
-                    uint256(vars.mathErr)
-                );
-        }
 
         // convert interestAndPremiumAmount to ICERC20
-        (
-            vars.mathErr,
-            tokenVars.lenderInterestAndPremiumTokens
-        ) = divScalarByExpTruncate(
+        (, uint256 lenderInterestAndPremiumTokens) = divScalarByExpTruncate(
             lenderInterestAndPremiumAmount,
-            Exp({mantissa: vars.exchangeRateMantissa})
+            Exp({mantissa: exchangeRateMantissa})
         );
-        if (vars.mathErr != MathError.NO_ERROR) {
-            return
-                failOpaque(
-                    Error.MATH_ERROR,
-                    FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED,
-                    uint256(vars.mathErr)
-                );
-        }
 
         // convert interestAndPremiumAmount to ICERC20
-        (
-            vars.mathErr,
-            tokenVars.protocolInterestAndPremiumTokens
-        ) = divScalarByExpTruncate(
+        (, uint256 protocolInterestAndPremiumTokens) = divScalarByExpTruncate(
             protocolInterestAndPremiumAmount,
-            Exp({mantissa: vars.exchangeRateMantissa})
+            Exp({mantissa: exchangeRateMantissa})
         );
-        if (vars.mathErr != MathError.NO_ERROR) {
-            return
-                failOpaque(
-                    Error.MATH_ERROR,
-                    FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED,
-                    uint256(vars.mathErr)
-                );
-        }
 
         // convert paymentAmount to ICERC20
-        (vars.mathErr, tokenVars.paymentTokens) = divScalarByExpTruncate(
+        (, uint256 paymentTokens) = divScalarByExpTruncate(
             paymentAmount,
-            Exp({mantissa: vars.exchangeRateMantissa})
+            Exp({mantissa: exchangeRateMantissa})
         );
-        if (vars.mathErr != MathError.NO_ERROR) {
-            return
-                failOpaque(
-                    Error.MATH_ERROR,
-                    FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED,
-                    uint256(vars.mathErr)
-                );
-        }
-
-        uint256 mintDelta = tokenVars.msgValueTokens -
-            (tokenVars.lenderInterestAndPremiumTokens +
-                tokenVars.protocolInterestAndPremiumTokens +
-                tokenVars.paymentTokens);
 
         // mint CEth tokens to this contract address
         // cEth mint() reverts on failure so do not need a require statement
         cToken.mint{value: msgValue, gas: 250000}();
 
         // update the to's utilized balance
-        utilizedCAssetBalances[cAsset][to] -= tokenVars.paymentTokens;
+        utilizedCAssetBalances[cAsset][to] -= paymentTokens;
 
-        // update the to's total balance
-        cAssetBalances[cAsset][to] += (tokenVars
-            .lenderInterestAndPremiumTokens + mintDelta);
+        // update the to's total balance + the delta of msgValueTokens minus all other tokens
+        cAssetBalances[cAsset][to] +=
+            lenderInterestAndPremiumTokens +
+            (msgValueTokens -
+                (lenderInterestAndPremiumTokens +
+                    protocolInterestAndPremiumTokens +
+                    paymentTokens));
 
         // update the owner's total balance
-        cAssetBalances[cAsset][owner()] += tokenVars
-            .protocolInterestAndPremiumTokens;
-
-        return 0;
+        cAssetBalances[cAsset][owner()] += protocolInterestAndPremiumTokens;
     }
 
     // this internal functions handles transfer of erc20 tokens for executeLoan functions
@@ -1813,9 +1579,8 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         uint256 amount,
         address nftOwner
     ) internal {
-        // Create a reference to the underlying asset contract, like DAI.
+                // Create a reference to the underlying asset contract, like DAI.
         IERC20 underlying = IERC20(asset);
-
         // Create a reference to the corresponding cToken contract, like cDAI
         ICERC20 cToken = ICERC20(cAsset);
 
@@ -1838,8 +1603,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         uint256 amount,
         address nftOwner
     ) internal {
-        // Create a reference to the corresponding cToken contract, like cDAI
-        ICERC20 cToken = ICERC20(cAsset);
+        ICEther cToken = ICEther(cAsset);
 
         // redeem underlying from cToken to this contract
         require(
@@ -1852,73 +1616,37 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         require(success, "Send eth to depositor failed");
     }
 
-    function _transferICERC20BalancesInternal(
+    function _transferCERC20BalancesInternal(
         address cAsset,
         address to,
         address from,
         uint256 protocolPremiumAmount,
         uint256 lenderInterestAndPremiumAmount,
         uint256 paymentAmount
-    ) internal returns (uint256) {
+    ) internal {
         // Create a reference to the corresponding cToken contract, like cDAI
         ICERC20 cToken = ICERC20(cAsset);
 
-        // refactor to use tokenVars
-
-        // instantiate protocolPremiumFeeTokens
-        uint256 protocolPremiumTokens;
-        // instantiate interestAndPremiumTokens
-        uint256 interestAndPremiumTokens;
-        // instantiate paymentTokens
-        uint256 paymentTokens;
-
-        // instantiate MintLocalVars
-        MintLocalVars memory vars;
-
         // set exchange rate from erc20 to ICERC20
-        vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
+        uint256 exchangeRateMantissa = cToken.exchangeRateCurrent();
 
         // convert protocolPremiumAmount to ICERC20
-        (vars.mathErr, protocolPremiumTokens) = divScalarByExpTruncate(
+        (, uint256 protocolPremiumTokens) = divScalarByExpTruncate(
             protocolPremiumAmount,
-            Exp({mantissa: vars.exchangeRateMantissa})
+            Exp({mantissa: exchangeRateMantissa})
         );
-        if (vars.mathErr != MathError.NO_ERROR) {
-            return
-                failOpaque(
-                    Error.MATH_ERROR,
-                    FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED,
-                    uint256(vars.mathErr)
-                );
-        }
 
         // convert lenderInterestAndPremiumAmount to ICERC20
-        (vars.mathErr, interestAndPremiumTokens) = divScalarByExpTruncate(
+        (, uint256 interestAndPremiumTokens) = divScalarByExpTruncate(
             lenderInterestAndPremiumAmount,
-            Exp({mantissa: vars.exchangeRateMantissa})
+            Exp({mantissa: exchangeRateMantissa})
         );
-        if (vars.mathErr != MathError.NO_ERROR) {
-            return
-                failOpaque(
-                    Error.MATH_ERROR,
-                    FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED,
-                    uint256(vars.mathErr)
-                );
-        }
 
         // convert paymentAmount to ICERC20
-        (vars.mathErr, paymentTokens) = divScalarByExpTruncate(
+        (, uint256 paymentTokens) = divScalarByExpTruncate(
             paymentAmount,
-            Exp({mantissa: vars.exchangeRateMantissa})
+            Exp({mantissa: exchangeRateMantissa})
         );
-        if (vars.mathErr != MathError.NO_ERROR) {
-            return
-                failOpaque(
-                    Error.MATH_ERROR,
-                    FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED,
-                    uint256(vars.mathErr)
-                );
-        }
 
         // check calling functions require from has a sufficient total balance to buy out loan
 
@@ -1936,8 +1664,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
         // update the owner's total balance
         cAssetBalances[cAsset][owner()] += protocolPremiumTokens;
-
-        return 0;
     }
 
     // ---------- Helper Functions ---------- //
