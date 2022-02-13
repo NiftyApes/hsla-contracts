@@ -38,21 +38,7 @@ contract LiquidityProviders is
     // Reverse mapping of assetAddress to cAssetAddress
     mapping(address => address) internal _cAssetToAsset;
 
-    // TODO(These could be combined into a struct for gas savings)
-    // Mapping of cAssetBalance to cAssetAddress to depositor address
-    mapping(address => mapping(address => uint256)) public cAssetBalances;
-
-    // Mapping of cAssetBalance to cAssetAddress to depositor address
-    // only initialized in LendingAuction.sol
-    mapping(address => mapping(address => uint256))
-        public utilizedCAssetBalances;
-
-    /**
-     * @notice Mapping of allCAssetsEntered to depositorAddress
-     */
-    // TODO(This could be obviated with iterable mapping and reversing input order tuple for cAssetBalances)
-    // TODO this is not fully implemented. There is no addition of new assets when a user deposits.
-    mapping(address => address[]) internal accountAssets;
+    mapping(address => AccountAssets) internal _accountAssets;
 
     // ---------- FUNCTIONS -------------- //
 
@@ -65,28 +51,78 @@ contract LiquidityProviders is
         revert();
     }
 
-    // @notice returns the assets a depositor has deposited on NiftyApes.
-    // @dev combined with cAssetBalances and/or utilizedCAssetBalances to calculate depositors total balance and total available balance.
-    function getAssetsIn(address depositor)
-        external
-        view
-        returns (address[] memory)
-    {
-        address[] memory assetsIn = accountAssets[depositor];
-
-        return assetsIn;
-    }
-
     // @notice Sets an asset as allowed on the platform and creates asset => cAsset mapping
     function setCAssetAddress(address asset, address cAsset)
         external
         onlyOwner
     {
-
         assetToCAsset[asset] = cAsset;
         _cAssetToAsset[cAsset] = asset;
 
         emit newAssetWhitelisted(asset, cAsset);
+    }
+
+    // @notice returns the assets a depositor has deposited on NiftyApes.
+    // @dev combined with cAssetBalances and/or utilizedCAssetBalances to calculate depositors total balance and total available balance.
+    function getAssetsIn(address depositor)
+        external
+        view
+        returns (address[] memory assetsIn)
+    {
+        assetsIn = _accountAssets[depositor].keys;
+    }
+
+    function getCAssetBalances(address account, address cAsset)
+        external
+        view
+        returns (
+            uint256 cAssetBalance,
+            uint256 utilizedCAssetBalance,
+            uint256 availableCAssetBalance
+        )
+    {
+        cAssetBalance = _accountAssets[account].cAssetBalance[cAsset];
+        utilizedCAssetBalance = _accountAssets[account].utilizedCAssetBalance[
+            cAsset
+        ];
+        availableCAssetBalance = cAssetBalance - utilizedCAssetBalance;
+    }
+
+    function getAvailableCAssetBalance(address account, address cAsset)
+        public
+        view
+        returns (uint256 availableCAssetBalance)
+    {
+        availableCAssetBalance =
+            _accountAssets[account].cAssetBalance[cAsset] -
+            _accountAssets[account].utilizedCAssetBalance[cAsset];
+    }
+
+    function getCAssetBalancesAtIndex(address account, uint256 index)
+        external
+        view
+        returns (
+            uint256 cAssetBalance,
+            uint256 utilizedCAssetBalance,
+            uint256 availableCAssetBalance
+        )
+    {
+        address asset = _accountAssets[account].keys[index];
+        address cAsset = assetToCAsset[asset];
+
+        cAssetBalance = _accountAssets[account].cAssetBalance[cAsset];
+        utilizedCAssetBalance = _accountAssets[account].utilizedCAssetBalance[
+            cAsset
+        ];
+        availableCAssetBalance = cAssetBalance - utilizedCAssetBalance;
+    }
+
+    function accountAssetsSize(address account)
+        external
+        view
+        returns (uint256 numberOfAccountAssets)
+    {
+        numberOfAccountAssets = _accountAssets[account].keys.length;
     }
 
     // @notice returns number of cErc20 tokens added to balance
@@ -107,6 +143,14 @@ contract LiquidityProviders is
         // Create a reference to the corresponding cToken contract, like cDAI
         ICERC20 cToken = ICERC20(cAsset);
 
+        if (!_accountAssets[msg.sender].inserted[asset]) {
+            _accountAssets[msg.sender].inserted[asset] = true;
+            _accountAssets[msg.sender].indexOf[asset] = _accountAssets[
+                msg.sender
+            ].keys.length;
+            _accountAssets[msg.sender].keys.push(asset);
+        }
+
         // transferFrom ERC20 from depositors address
         require(
             underlying.transferFrom(
@@ -122,16 +166,13 @@ contract LiquidityProviders is
             "underlying.approve() failed"
         );
 
-        // calculate expectedAmountToBeMinted. This is the same conversion math performed in cToken.mint()
-        MintLocalVars memory vars;
+        uint256 exchangeRateMantissa = cToken.exchangeRateCurrent();
 
-        vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
+        uint256 mintAmount = numTokensToSupply;
 
-        vars.mintAmount = numTokensToSupply;
-
-        (, vars.mintTokens) = divScalarByExpTruncate(
-            vars.mintAmount,
-            Exp({mantissa: vars.exchangeRateMantissa})
+        (, uint256 mintTokens) = divScalarByExpTruncate(
+            mintAmount,
+            Exp({mantissa: exchangeRateMantissa})
         );
 
         // Mint cTokens
@@ -139,11 +180,12 @@ contract LiquidityProviders is
         require(cToken.mint(numTokensToSupply) == 0, "cToken.mint() failed");
 
         // updating the depositors cErc20 balance
-        cAssetBalances[cAsset][msg.sender] += vars.mintTokens;
+        // cAssetBalances[cAsset][msg.sender] += mintTokens;
+        _accountAssets[msg.sender].cAssetBalance[cAsset] += mintTokens;
 
         emit Erc20Supplied(msg.sender, asset, numTokensToSupply);
 
-        return vars.mintTokens;
+        return mintTokens;
     }
 
     // @notice returns the number of CERC20 tokens added to balance
@@ -158,8 +200,18 @@ contract LiquidityProviders is
             "Asset not whitelisted on NiftyApes"
         );
 
+        address asset = _cAssetToAsset[cAsset];
+
         // Create a reference to the corresponding cToken contract, like cDAI
         ICERC20 cToken = ICERC20(cAsset);
+
+        if (!_accountAssets[msg.sender].inserted[asset]) {
+            _accountAssets[msg.sender].inserted[asset] = true;
+            _accountAssets[msg.sender].indexOf[asset] = _accountAssets[
+                msg.sender
+            ].keys.length;
+            _accountAssets[msg.sender].keys.push(asset);
+        }
 
         // transferFrom ERC20 from depositors address
         require(
@@ -169,7 +221,8 @@ contract LiquidityProviders is
         );
 
         // updating the depositors cErc20 balance
-        cAssetBalances[cAsset][msg.sender] += numTokensToSupply;
+        // cAssetBalances[cAsset][msg.sender] += numTokensToSupply;
+        _accountAssets[msg.sender].cAssetBalance[cAsset] += numTokensToSupply;
 
         emit CErc20Supplied(msg.sender, cAsset, numTokensToSupply);
 
@@ -195,78 +248,108 @@ contract LiquidityProviders is
         // Create a reference to the corresponding cToken contract, like cDAI
         ICERC20 cToken = ICERC20(cAsset);
 
+        uint256 exchangeRateMantissa;
+        uint256 redeemTokens;
+        uint256 redeemAmount;
+
         // redeemType == true >> withdraw based on amount of cErc20
         if (redeemType == true) {
-            RedeemLocalVars memory vars;
+            exchangeRateMantissa = cToken.exchangeRateCurrent();
 
-            vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
+            redeemTokens = amountToWithdraw;
 
-            vars.redeemTokens = amountToWithdraw;
-
-            (, vars.redeemAmount) = mulScalarTruncate(
-                Exp({mantissa: vars.exchangeRateMantissa}),
+            (, redeemAmount) = mulScalarTruncate(
+                Exp({mantissa: exchangeRateMantissa}),
                 amountToWithdraw
             );
 
             // require msg.sender has sufficient available balance of cErc20
             require(
-                (cAssetBalances[cAsset][msg.sender] -
-                    utilizedCAssetBalances[cAsset][msg.sender]) >=
-                    vars.redeemTokens,
+                getAvailableCAssetBalance(msg.sender, cAsset) >= redeemTokens,
                 "Must have an available balance greater than or equal to amountToWithdraw"
             );
 
-            cAssetBalances[cAsset][msg.sender] -= vars.redeemTokens;
+            _accountAssets[msg.sender].cAssetBalance[cAsset] -= redeemTokens;
+
+            if (
+                _accountAssets[msg.sender].cAssetBalance[cAsset] == 0 &&
+                _accountAssets[msg.sender].utilizedCAssetBalance[cAsset] == 0
+            ) {
+                delete _accountAssets[msg.sender].inserted[asset];
+
+                uint256 index = _accountAssets[msg.sender].indexOf[asset];
+                uint256 lastIndex = _accountAssets[msg.sender].keys.length - 1;
+                address lastAsset = _accountAssets[msg.sender].keys[lastIndex];
+
+                _accountAssets[msg.sender].indexOf[lastAsset] = index;
+                delete _accountAssets[msg.sender].indexOf[asset];
+
+                _accountAssets[msg.sender].keys[index] = lastAsset;
+                _accountAssets[msg.sender].keys.pop();
+            }
 
             // Retrieve your asset based on an amountToWithdraw of the asset
             require(
-                cToken.redeemUnderlying(vars.redeemAmount) == 0,
+                cToken.redeemUnderlying(redeemAmount) == 0,
                 "cToken.redeemUnderlying failed"
             );
 
             require(
-                underlying.transfer(msg.sender, vars.redeemAmount) == true,
+                underlying.transfer(msg.sender, redeemAmount) == true,
                 "underlying.transfer() failed"
             );
 
             // redeemType == false >> withdraw based on amount of underlying
         } else {
-            RedeemLocalVars memory vars;
+            exchangeRateMantissa = cToken.exchangeRateCurrent();
 
-            vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
-
-            (, vars.redeemTokens) = divScalarByExpTruncate(
+            (, redeemTokens) = divScalarByExpTruncate(
                 amountToWithdraw,
-                Exp({mantissa: vars.exchangeRateMantissa})
+                Exp({mantissa: exchangeRateMantissa})
             );
 
-            vars.redeemAmount = amountToWithdraw;
+            redeemAmount = amountToWithdraw;
 
             // require msg.sender has sufficient available balance of cErc20
             require(
-                (cAssetBalances[cAsset][msg.sender] -
-                    utilizedCAssetBalances[cAsset][msg.sender]) >=
-                    vars.redeemTokens,
+                getAvailableCAssetBalance(msg.sender, cAsset) >= redeemTokens,
                 "Must have an available balance greater than or equal to amountToWithdraw"
             );
 
-            cAssetBalances[cAsset][msg.sender] -= vars.redeemTokens;
+            _accountAssets[msg.sender].cAssetBalance[cAsset] -= redeemTokens;
+
+            if (
+                _accountAssets[msg.sender].cAssetBalance[cAsset] == 0 &&
+                _accountAssets[msg.sender].utilizedCAssetBalance[cAsset] == 0
+            ) {
+                delete _accountAssets[msg.sender].inserted[asset];
+
+                uint256 index = _accountAssets[msg.sender].indexOf[asset];
+                uint256 lastIndex = _accountAssets[msg.sender].keys.length - 1;
+                address lastAsset = _accountAssets[msg.sender].keys[lastIndex];
+
+                _accountAssets[msg.sender].indexOf[lastAsset] = index;
+                delete _accountAssets[msg.sender].indexOf[asset];
+
+                _accountAssets[msg.sender].keys[index] = lastAsset;
+                _accountAssets[msg.sender].keys.pop();
+            }
 
             // Retrieve your asset based on an amountToWithdraw of the asset
             require(
-                cToken.redeemUnderlying(vars.redeemAmount) == 0,
+                cToken.redeemUnderlying(redeemAmount) == 0,
                 "cToken.redeemUnderlying() failed"
             );
 
             require(
-                underlying.transfer(msg.sender, vars.redeemAmount) == true,
+                underlying.transfer(msg.sender, redeemAmount) == true,
                 "underlying.transfer() failed"
             );
         }
 
         emit Erc20Withdrawn(msg.sender, asset, redeemType, amountToWithdraw);
 
-        return 0;
+        return redeemAmount;
     }
 
     function withdrawCErc20(address cAsset, uint256 amountToWithdraw)
@@ -280,17 +363,35 @@ contract LiquidityProviders is
             "Asset not whitelisted on NiftyApes"
         );
 
+        address asset = _cAssetToAsset[cAsset];
+
         // Create a reference to the corresponding cToken contract, like cDAI
         ICERC20 cToken = ICERC20(cAsset);
 
         // require msg.sender has sufficient available balance of cErc20
         require(
-            (cAssetBalances[cAsset][msg.sender] -
-                utilizedCAssetBalances[cAsset][msg.sender]) >= amountToWithdraw,
+            getAvailableCAssetBalance(msg.sender, cAsset) >= amountToWithdraw,
             "Must have an available balance greater than or equal to amountToWithdraw"
         );
         // updating the depositors cErc20 balance
-        cAssetBalances[cAsset][msg.sender] -= amountToWithdraw;
+        _accountAssets[msg.sender].cAssetBalance[cAsset] -= amountToWithdraw;
+
+        if (
+            _accountAssets[msg.sender].cAssetBalance[cAsset] == 0 &&
+            _accountAssets[msg.sender].utilizedCAssetBalance[cAsset] == 0
+        ) {
+            delete _accountAssets[msg.sender].inserted[asset];
+
+            uint256 index = _accountAssets[msg.sender].indexOf[asset];
+            uint256 lastIndex = _accountAssets[msg.sender].keys.length - 1;
+            address lastAsset = _accountAssets[msg.sender].keys[lastIndex];
+
+            _accountAssets[msg.sender].indexOf[lastAsset] = index;
+            delete _accountAssets[msg.sender].indexOf[asset];
+
+            _accountAssets[msg.sender].keys[index] = lastAsset;
+            _accountAssets[msg.sender].keys.pop();
+        }
 
         // transfer cErc20 tokens to depositor
         require(
@@ -304,23 +405,28 @@ contract LiquidityProviders is
     }
 
     function supplyEth() external payable returns (uint256) {
+        address eth = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
+
         // set cEth address
         // utilize reference to allow update of cEth address by compound in future versions
-        address cEtherContract = assetToCAsset[
-            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
-        ];
+        address cEth = assetToCAsset[eth];
 
         // Create a reference to the corresponding cToken contract
-        ICEther cToken = ICEther(cEtherContract);
+        ICEther cToken = ICEther(cEth);
 
-        // calculate expectedAmountToBeMinted
-        MintLocalVars memory vars;
+        if (!_accountAssets[msg.sender].inserted[eth]) {
+            _accountAssets[msg.sender].inserted[eth] = true;
+            _accountAssets[msg.sender].indexOf[eth] = _accountAssets[msg.sender]
+                .keys
+                .length;
+            _accountAssets[msg.sender].keys.push(eth);
+        }
 
-        vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
+        uint256 exchangeRateMantissa = cToken.exchangeRateCurrent();
 
-        (vars.mathErr, vars.mintTokens) = divScalarByExpTruncate(
+        (, uint256 mintTokens) = divScalarByExpTruncate(
             msg.value,
-            Exp({mantissa: vars.exchangeRateMantissa})
+            Exp({mantissa: exchangeRateMantissa})
         );
 
         // mint CEth tokens to this contract address
@@ -328,22 +434,31 @@ contract LiquidityProviders is
         cToken.mint{value: msg.value, gas: 250000}();
 
         // updating the depositors cErc20 balance
-        cAssetBalances[cEtherContract][msg.sender] += vars.mintTokens;
+        // cAssetBalances[cEth][msg.sender] += mintTokens;
+        _accountAssets[msg.sender].cAssetBalance[cEth] += mintTokens;
 
         emit EthSupplied(msg.sender, msg.value);
 
-        return vars.mintTokens;
+        return mintTokens;
     }
 
     function supplyCEth(uint256 numTokensToSupply) external returns (uint256) {
+        address eth = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
+
         // set cEth address
         // utilize reference to allow update of cEth address by compound in future versions
-        address cEtherContract = assetToCAsset[
-            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
-        ];
+        address cEth = assetToCAsset[eth];
 
         // Create a reference to the corresponding cToken contract
-        ICEther cToken = ICEther(cEtherContract);
+        ICEther cToken = ICEther(cEth);
+
+        if (!_accountAssets[msg.sender].inserted[eth]) {
+            _accountAssets[msg.sender].inserted[eth] = true;
+            _accountAssets[msg.sender].indexOf[eth] = _accountAssets[msg.sender]
+                .keys
+                .length;
+            _accountAssets[msg.sender].keys.push(eth);
+        }
 
         // transferFrom ERC20 from supplyers address
         require(
@@ -352,7 +467,8 @@ contract LiquidityProviders is
             "cToken.transferFrom failed"
         );
 
-        cAssetBalances[cEtherContract][msg.sender] += numTokensToSupply;
+        // cAssetBalances[cEth][msg.sender] += numTokensToSupply;
+        _accountAssets[msg.sender].cAssetBalance[cEth] += numTokensToSupply;
 
         emit CEthSupplied(msg.sender, numTokensToSupply);
 
@@ -366,101 +482,117 @@ contract LiquidityProviders is
         nonReentrant
         returns (uint256)
     {
+        address eth = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
+
         // set cEth address
         // utilize reference to allow update of cEth address by compound in future versions
-        address cEtherContract = assetToCAsset[
-            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
-        ];
+        address cEth = assetToCAsset[eth];
 
         // Create a reference to the corresponding cToken contract, like cDAI
-        ICEther cToken = ICEther(cEtherContract);
+        ICEther cToken = ICEther(cEth);
+
+        uint256 exchangeRateMantissa;
+        uint256 redeemTokens;
+        uint256 redeemAmount;
 
         // redeemType == true >> withdraw based on amount of cErc20
         if (redeemType == true) {
-            RedeemLocalVars memory vars;
+            exchangeRateMantissa = cToken.exchangeRateCurrent();
 
-            vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
+            redeemTokens = amountToWithdraw;
 
-            vars.redeemTokens = amountToWithdraw;
-
-            (vars.mathErr, vars.redeemAmount) = mulScalarTruncate(
-                Exp({mantissa: vars.exchangeRateMantissa}),
+            (, redeemAmount) = mulScalarTruncate(
+                Exp({mantissa: exchangeRateMantissa}),
                 amountToWithdraw
             );
-            if (vars.mathErr != MathError.NO_ERROR) {
-                return
-                    failOpaque(
-                        Error.MATH_ERROR,
-                        FailureInfo.REDEEM_EXCHANGE_TOKENS_CALCULATION_FAILED,
-                        uint256(vars.mathErr)
-                    );
-            }
 
             // require msg.sender has sufficient available balance of cEth
             require(
-                (cAssetBalances[cEtherContract][msg.sender] -
-                    utilizedCAssetBalances[cEtherContract][msg.sender]) >=
-                    vars.redeemTokens,
+                getAvailableCAssetBalance(msg.sender, cEth) >=
+                    redeemTokens,
                 "Must have an available balance greater than or equal to amountToWithdraw"
             );
 
-            cAssetBalances[cEtherContract][msg.sender] -= vars.redeemTokens;
+            _accountAssets[msg.sender].cAssetBalance[cEth] -= redeemTokens;
+
+            if (
+                _accountAssets[msg.sender].cAssetBalance[cEth] == 0 &&
+                _accountAssets[msg.sender].utilizedCAssetBalance[cEth] == 0
+            ) {
+                delete _accountAssets[msg.sender].inserted[eth];
+
+                uint256 index = _accountAssets[msg.sender].indexOf[eth];
+                uint256 lastIndex = _accountAssets[msg.sender].keys.length - 1;
+                address lastAsset = _accountAssets[msg.sender].keys[lastIndex];
+
+                _accountAssets[msg.sender].indexOf[lastAsset] = index;
+                delete _accountAssets[msg.sender].indexOf[eth];
+
+                _accountAssets[msg.sender].keys[index] = lastAsset;
+                _accountAssets[msg.sender].keys.pop();
+            }
 
             // Retrieve your asset based on an amountToWithdraw of the asset
             require(
-                cToken.redeemUnderlying(vars.redeemAmount) == 0,
+                cToken.redeemUnderlying(redeemAmount) == 0,
                 "cToken.redeemUnderlying() failed"
             );
 
             // Repay eth to depositor
-            (bool success, ) = (msg.sender).call{value: vars.redeemAmount}("");
+            (bool success, ) = (msg.sender).call{value: redeemAmount}("");
             require(success, "Send eth to depositor failed");
 
             // redeemType == false >> withdraw based on amount of underlying
         } else {
-            RedeemLocalVars memory vars;
+            exchangeRateMantissa = cToken.exchangeRateCurrent();
 
-            vars.exchangeRateMantissa = cToken.exchangeRateCurrent();
-
-            (vars.mathErr, vars.redeemTokens) = divScalarByExpTruncate(
+            (, redeemTokens) = divScalarByExpTruncate(
                 amountToWithdraw,
-                Exp({mantissa: vars.exchangeRateMantissa})
+                Exp({mantissa: exchangeRateMantissa})
             );
-            if (vars.mathErr != MathError.NO_ERROR) {
-                return
-                    failOpaque(
-                        Error.MATH_ERROR,
-                        FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED,
-                        uint256(vars.mathErr)
-                    );
-            }
 
-            vars.redeemAmount = amountToWithdraw;
+            redeemAmount = amountToWithdraw;
 
             // require msg.sender has sufficient available balance of cEth
             require(
-                (cAssetBalances[cEtherContract][msg.sender] -
-                    utilizedCAssetBalances[cEtherContract][msg.sender]) >=
-                    vars.redeemTokens,
+                getAvailableCAssetBalance(msg.sender, cEth) >=
+                    redeemTokens,
                 "Must have an available balance greater than or equal to amountToWithdraw"
             );
 
-            cAssetBalances[cEtherContract][msg.sender] -= vars.redeemTokens;
+            _accountAssets[msg.sender].cAssetBalance[cEth] -= redeemTokens;
+
+            if (
+                _accountAssets[msg.sender].cAssetBalance[cEth] == 0 &&
+                _accountAssets[msg.sender].utilizedCAssetBalance[cEth] == 0
+            ) {
+                delete _accountAssets[msg.sender].inserted[eth];
+
+                uint256 index = _accountAssets[msg.sender].indexOf[eth];
+                uint256 lastIndex = _accountAssets[msg.sender].keys.length - 1;
+                address lastAsset = _accountAssets[msg.sender].keys[lastIndex];
+
+                _accountAssets[msg.sender].indexOf[lastAsset] = index;
+                delete _accountAssets[msg.sender].indexOf[eth];
+
+                _accountAssets[msg.sender].keys[index] = lastAsset;
+                _accountAssets[msg.sender].keys.pop();
+            }
 
             // Retrieve your asset based on an amountToWithdraw of the asset
             require(
-                cToken.redeemUnderlying(vars.redeemAmount) == 0,
+                cToken.redeemUnderlying(redeemAmount) == 0,
                 "cToken.redeemUnderlying() failed"
             );
 
             // Repay eth to depositor
-            (bool success, ) = (msg.sender).call{value: vars.redeemAmount}("");
+            (bool success, ) = (msg.sender).call{value: redeemAmount}("");
             require(success, "Send eth to depositor failed");
         }
 
         emit EthWithdrawn(msg.sender, redeemType, amountToWithdraw);
 
-        return 0;
+        return redeemAmount;
     }
 
     function withdrawCEth(uint256 amountToWithdraw)
@@ -469,25 +601,40 @@ contract LiquidityProviders is
         nonReentrant
         returns (uint256)
     {
+        address eth = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
+
         // set cEth address
         // utilize reference to allow update of cEth address by compound in future versions
-        address cEtherContract = assetToCAsset[
-            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
-        ];
+        address cEth = assetToCAsset[eth];
 
         // Create a reference to the corresponding cToken contract, like cDAI
-        ICEther cToken = ICEther(cEtherContract);
+        ICEther cToken = ICEther(cEth);
 
         // require msg.sender has sufficient available balance of cEth
         require(
-            (cAssetBalances[cEtherContract][msg.sender] -
-                utilizedCAssetBalances[cEtherContract][msg.sender]) >=
-                amountToWithdraw,
+            getAvailableCAssetBalance(msg.sender, cEth) >= amountToWithdraw,
             "Must have an available balance greater than or equal to amountToWithdraw"
         );
 
         // updating the depositors cErc20 balance
-        cAssetBalances[cEtherContract][msg.sender] -= amountToWithdraw;
+        _accountAssets[msg.sender].cAssetBalance[cEth] -= amountToWithdraw;
+
+        if (
+            _accountAssets[msg.sender].cAssetBalance[cEth] == 0 &&
+            _accountAssets[msg.sender].utilizedCAssetBalance[cEth] == 0
+        ) {
+            delete _accountAssets[msg.sender].inserted[eth];
+
+            uint256 index = _accountAssets[msg.sender].indexOf[eth];
+            uint256 lastIndex = _accountAssets[msg.sender].keys.length - 1;
+            address lastAsset = _accountAssets[msg.sender].keys[lastIndex];
+
+            _accountAssets[msg.sender].indexOf[lastAsset] = index;
+            delete _accountAssets[msg.sender].indexOf[eth];
+
+            _accountAssets[msg.sender].keys[index] = lastAsset;
+            _accountAssets[msg.sender].keys.pop();
+        }
 
         // transfer cErc20 tokens to depositor
         require(

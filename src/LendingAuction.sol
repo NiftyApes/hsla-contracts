@@ -16,6 +16,8 @@ import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
  */
 
 //  TODO Comment each function and each line of funtionality for readability by auditors
+// TODO(Use the non mutating libcompound type implementation for major gas savings)
+// A major issue is the libcompound has not been audited at this point in time
 
 contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     using ECDSA for bytes32;
@@ -301,8 +303,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
         // require msg.sender has sufficient available balance of cErc20
         require(
-            (cAssetBalances[cAsset][msg.sender] -
-                utilizedCAssetBalances[cAsset][msg.sender]) >= offerTokens,
+            getAvailableCAssetBalance(msg.sender, cAsset) >= offerTokens,
             "Must have an available balance greater than or equal to amountToWithdraw"
         );
 
@@ -356,20 +357,18 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
         require((offerBook.inserted[offerHash]), "Offer not found");
 
-        {
-            delete offerBook.inserted[offerHash];
-            delete offerBook.offers[offerHash];
+        delete offerBook.inserted[offerHash];
+        delete offerBook.offers[offerHash];
 
-            uint256 index = offerBook.indexOf[offerHash];
-            uint256 lastIndex = offerBook.keys.length - 1;
-            bytes32 lastOfferHash = offerBook.keys[lastIndex];
+        uint256 index = offerBook.indexOf[offerHash];
+        uint256 lastIndex = offerBook.keys.length - 1;
+        bytes32 lastOfferHash = offerBook.keys[lastIndex];
 
-            offerBook.indexOf[lastOfferHash] = index;
-            delete offerBook.indexOf[offerHash];
+        offerBook.indexOf[lastOfferHash] = index;
+        delete offerBook.indexOf[offerHash];
 
-            offerBook.keys[index] = lastOfferHash;
-            offerBook.keys.pop();
-        }
+        offerBook.keys[index] = lastOfferHash;
+        offerBook.keys.pop();
 
         emit OfferRemoved(offer, offerHash);
     }
@@ -722,9 +721,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         bool byBorrower
     ) internal {
         // Get information about present loan from storage
-
-        // TODO(Gas savings here by accessing members directly?)
-        // this can't be done in this function without triggering a 'stack too deep' error
+        // Can't accessing members directly in this function without triggering a 'stack too deep' error
         LoanAuction storage loanAuction = _loanAuctions[
             offer.nftContractAddress
         ][offer.nftId];
@@ -777,9 +774,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                 "The loan offer must exceed the present outstanding balance."
             );
 
-            // TODO(Use the non mutating libcompound type implementation here for a savings)
-            // A major issue is the libcompound has not been audited at this point in time
-            // Get the present cToken exchange rate
             uint256 exchangeRateMantissa = ICToken(cAsset)
                 .exchangeRateCurrent();
 
@@ -791,13 +785,11 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
             // require prospective lender has sufficient available balance to refinance loan
             require(
-                (cAssetBalances[cAsset][msg.sender] -
-                    utilizedCAssetBalances[cAsset][msg.sender]) >=
+                getAvailableCAssetBalance(msg.sender, cAsset) >=
                     fullCTokenAmount,
                 "Must have an available balance greater than or equal to amountToWithdraw"
             );
 
-            // TODO(Examine this internal function for optimization)
             // processes cEth and ICERC20 transactions
             _transferCERC20BalancesInternal(
                 cAsset,
@@ -845,8 +837,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
                 // require prospective lender has sufficient available balance to refinance loan
                 require(
-                    (cAssetBalances[cAsset][msg.sender] -
-                        utilizedCAssetBalances[cAsset][msg.sender]) >=
+                    getAvailableCAssetBalance(msg.sender, cAsset) >=
                         fullAmountTokens,
                     "Must have an available balance greater than or equal to amountToWithdraw"
                 );
@@ -879,8 +870,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                     Exp({mantissa: exchangeRateMantissa})
                 );
                 require(
-                    (cAssetBalances[cAsset][msg.sender] -
-                        utilizedCAssetBalances[cAsset][msg.sender]) >=
+                    getAvailableCAssetBalance(msg.sender, cAsset) >=
                         (cTokenOfferAmount - cTokenAmountDrawn),
                     "Lender does not have sufficient balance to refinance loan"
                 );
@@ -1205,9 +1195,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         uint256 currentAmountDrawn = loanAuction.amountDrawn;
 
         // reset loanAuction
-        delete _loanAuctions[nftContractAddress][
-            nftId
-        ];
+        delete _loanAuctions[nftContractAddress][nftId];
 
         // if asset is not 0x0 process as Erc20
         if (
@@ -1401,11 +1389,11 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         loanAuction.fixedTerms = false;
 
         // update lenders utilized balance
-        utilizedCAssetBalances[cAsset][loanAuction.lender] -= loanAuction
+        _accountAssets[loanAuction.lender].utilizedCAssetBalance[cAsset] -= loanAuction
             .amountDrawn;
 
         // update lenders total balance
-        cAssetBalances[cAsset][loanAuction.lender] -= loanAuction.amountDrawn;
+        _accountAssets[loanAuction.lender].cAssetBalance[cAsset] -= loanAuction.amountDrawn;
 
         // transferFrom NFT from contract to lender
         IERC721(nftContractAddress).transferFrom(
@@ -1441,13 +1429,12 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         // require that the lenders available balance is sufficent to serve the loan
         require(
             // calculate lenders available ICERC20 balance and require it to be greater than or equal to redeemTokens
-            (cAssetBalances[cAsset][lender] -
-                utilizedCAssetBalances[cAsset][lender]) >= redeemTokens,
+            getAvailableCAssetBalance(msg.sender, cAsset) >= redeemTokens,
             "Lender does not have a sufficient balance to serve this loan"
         );
 
         // update the lenders utilized balance
-        utilizedCAssetBalances[cAsset][lender] += redeemTokens;
+        _accountAssets[lender].utilizedCAssetBalance[cAsset] += redeemTokens;
     }
 
     // this internal functions handles transfer of erc20 tokens and updating lender balances for refinanceLoan, repayRemainingLoan, and partialRepayment functions
@@ -1502,13 +1489,13 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         require(cToken.mint(fullAmount) == 0, "cToken.mint() failed");
 
         // update the tos utilized balance
-        utilizedCAssetBalances[cAsset][to] -= paymentTokens;
+        _accountAssets[to].utilizedCAssetBalance[cAsset] -= paymentTokens;
 
         // update the tos total balance
-        cAssetBalances[cAsset][to] += lenderInterestAndPremiumTokens;
+        _accountAssets[to].cAssetBalance[cAsset] += lenderInterestAndPremiumTokens;
 
         // update the owner total balance
-        cAssetBalances[cAsset][owner()] += protocolInterestAndPremiumTokens;
+        _accountAssets[owner()].cAssetBalance[cAsset] += protocolInterestAndPremiumTokens;
     }
 
     // this internal functions handles transfer of Eth and updating lender balances for refinanceLoan, repayRemainingLoan, and partialRepayment functions
@@ -1558,10 +1545,10 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         cToken.mint{value: msgValue, gas: 250000}();
 
         // update the to's utilized balance
-        utilizedCAssetBalances[cAsset][to] -= paymentTokens;
+        _accountAssets[to].utilizedCAssetBalance[cAsset] -= paymentTokens;
 
         // update the to's total balance + the delta of msgValueTokens minus all other tokens
-        cAssetBalances[cAsset][to] +=
+        _accountAssets[to].cAssetBalance[cAsset] +=
             lenderInterestAndPremiumTokens +
             (msgValueTokens -
                 (lenderInterestAndPremiumTokens +
@@ -1569,7 +1556,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                     paymentTokens));
 
         // update the owner's total balance
-        cAssetBalances[cAsset][owner()] += protocolInterestAndPremiumTokens;
+        _accountAssets[owner()].cAssetBalance[cAsset] += protocolInterestAndPremiumTokens;
     }
 
     // this internal functions handles transfer of erc20 tokens for executeLoan functions
@@ -1579,7 +1566,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         uint256 amount,
         address nftOwner
     ) internal {
-                // Create a reference to the underlying asset contract, like DAI.
+        // Create a reference to the underlying asset contract, like DAI.
         IERC20 underlying = IERC20(asset);
         // Create a reference to the corresponding cToken contract, like cDAI
         ICERC20 cToken = ICERC20(cAsset);
@@ -1651,19 +1638,19 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         // check calling functions require from has a sufficient total balance to buy out loan
 
         // update from's utilized balance
-        utilizedCAssetBalances[cAsset][from] += paymentTokens;
+        _accountAssets[from].utilizedCAssetBalance[cAsset] += paymentTokens;
 
         // update from's total balance
-        cAssetBalances[cAsset][from] -= protocolPremiumTokens;
+        _accountAssets[from].cAssetBalance[cAsset] -= protocolPremiumTokens;
 
         // update the to's utilized balance
-        utilizedCAssetBalances[cAsset][to] -= paymentTokens;
+        _accountAssets[to].utilizedCAssetBalance[cAsset] -= paymentTokens;
 
         // update the to's total balance
-        cAssetBalances[cAsset][to] += interestAndPremiumTokens;
+        _accountAssets[to].cAssetBalance[cAsset] += interestAndPremiumTokens;
 
         // update the owner's total balance
-        cAssetBalances[cAsset][owner()] += protocolPremiumTokens;
+        _accountAssets[owner()].cAssetBalance[cAsset] += protocolPremiumTokens;
     }
 
     // ---------- Helper Functions ---------- //
@@ -1697,8 +1684,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         uint64 interestRateBps = _loanAuctions[nftContractAddress][nftId]
             .interestRateBps;
 
-        // TODO(Check: Is this updated every time a draw of time or funds/a repayment/a refinance occur?)
-        // yes, this should be updated on each update of loan terms in order to charge pro-rata interest
         if (
             block.timestamp <= timeOfInterestStart ||
             timeDrawn == 0 ||
@@ -1716,8 +1701,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
             lenderInterest = (interestRateBps * fractionOfAmountDrawn) / 10000;
 
-            // TODO(Could this be accrued right when the loan is drawn and simplified as such?)
-            //  the protocol will charge protocol interest and so must accrue as terms are updated
             protocolInterest =
                 (loanDrawFeeProtocolBps * fractionOfAmountDrawn) /
                 10000;

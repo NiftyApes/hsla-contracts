@@ -110,19 +110,19 @@ contract LiquidityProvidersTest is DSTest, TestUtility {
         assert(liquidityProviders.assetToCAsset(address(DAI)) == address(cDAI));
     }
 
-    function testCAssetBalances() public {
+    function testGetCAssetBalances() public {
+        (uint256 cAssetBalance, uint256 utilizedAssetBalance, uint256 availableCAssetBalance) = liquidityProviders.getCAssetBalances(address(cDAI), address(this));
         assert(
-            liquidityProviders.cAssetBalances(address(cDAI), address(this)) >
+            cAssetBalance >
                 0 ether
         );
-    }
-
-    function testUtilizedCAssetBalances() public {
         assert(
-            liquidityProviders.utilizedCAssetBalances(
-                address(cDAI),
-                address(this)
-            ) == 0
+            utilizedAssetBalance ==
+                0 ether
+        );
+        assert(
+            availableCAssetBalance ==
+                0 ether
         );
     }
 
