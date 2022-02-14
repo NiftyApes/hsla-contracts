@@ -239,7 +239,6 @@ interface ILendingAuction is ILiquidityProviders {
         uint256 nftId
     ) external payable;
 
-    // TODO(This function is broken, fix)
     function refinanceByLender(Offer calldata offer) external payable;
 
     function drawLoanTime(
