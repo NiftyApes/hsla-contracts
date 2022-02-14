@@ -15,10 +15,10 @@ import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
  * @author NiftyApes
  */
 
-//  TODO Comment each function and each line of funtionality for readability by auditors
-// TODO(Use the non mutating libcompound type implementation for major gas savings)
-// A major issue is the libcompound has not been audited at this point in time
-// TODO(Can the offer book mapping be factored out to a library?)
+//  TODO Comment each function and each line of funtionality for readability by auditors - essential
+// TODO(Use the non mutating libcompound type implementation for major gas savings) - nice to have
+// A major issue is the libcompound has not been audited at this point in time 
+// TODO(Can the offer book mapping be factored out to a library?) - nice to have
 // I dont think so due to storage value needed in the library
 // TODO(need to implement Proxy and Intitializable contracts to enable upgarability and big fixes?)
 
@@ -338,9 +338,9 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
      */
     function removeOffer(
         address nftContractAddress,
-        bool floorTerm,
         uint256 nftId,
-        bytes32 offerHash
+        bytes32 offerHash,
+        bool floorTerm
     ) external {
         // Get pointer to offer book
         OfferBook storage offerBook;
