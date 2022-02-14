@@ -110,19 +110,19 @@ contract LiquidityProvidersTest is DSTest, TestUtility {
         assert(liquidityProviders.assetToCAsset(address(DAI)) == address(cDAI));
     }
 
-    function testCAssetBalances() public {
+    function testGetCAssetBalances() public {
+        (uint256 cAssetBalance, uint256 utilizedAssetBalance, uint256 availableCAssetBalance) = liquidityProviders.getCAssetBalances(address(cDAI), address(this));
         assert(
-            liquidityProviders.cAssetBalances(address(cDAI), address(this)) >
+            cAssetBalance >
                 0 ether
         );
-    }
-
-    function testUtilizedCAssetBalances() public {
         assert(
-            liquidityProviders.utilizedCAssetBalances(
-                address(cDAI),
-                address(this)
-            ) == 0
+            utilizedAssetBalance ==
+                0 ether
+        );
+        assert(
+            availableCAssetBalance >
+                0 ether
         );
     }
 
@@ -136,19 +136,51 @@ contract LiquidityProvidersTest is DSTest, TestUtility {
     // TODO add failing asserts in each funtion to test each require statement.
 
     function testSupplyErc20() public {
+        // TODO(This needs to assert the cAsset balance of address(this), based on the asset -> cAsset exchange rate)
         liquidityProviders.supplyErc20(address(DAI), 10000 ether);
     }
 
-    function testSupplyCErc20() public {
-        liquidityProviders.supplyCErc20(address(cDAI), 10000000);
+    function testSupplyCErc20(uint32 deposit) public {
+        uint256 cAssetBalInit = liquidityProviders.cAssetBalances(
+            address(cDAI),
+            address(this)
+        );
+        liquidityProviders.supplyCErc20(address(cDAI), deposit);
+        cAssetBalInit += deposit;
+        assert(
+            liquidityProviders.cAssetBalances(address(cDAI), address(this)) ==
+                cAssetBalInit
+        );
     }
 
-    function testWithdrawErc20True() public {
-        liquidityProviders.withdrawErc20(address(DAI), true, 10000000);
-    }
-
-    function testWithdrawErc20False() public {
-        liquidityProviders.withdrawErc20(address(DAI), false, 1 ether);
+    // TODO (Fix overflow)
+    function testWithdrawErc20(uint256 amount, bool redeemType) public {
+        // TODO(This needs to assert the cAsset balance of address(this), based on the asset -> cAsset exchange rate)
+        if (amount < 1 ether) {
+            amount += 1 ether;
+        }
+        else if (amount > 100 ether) {
+            amount = 100 ether;
+        }
+        if (redeemType) {
+            liquidityProviders.withdrawErc20(address(DAI), redeemType, amount);
+        }
+        else {
+            // FIXME(There is a bug here where the incorrect cAsset bal is returned)
+            uint256 cAssetBalInit = liquidityProviders.cAssetBalances(
+                address(cDAI),
+                address(this)
+            );
+            if (amount >= cAssetBalInit) {
+                amount = cAssetBalInit - 1;
+            }
+            liquidityProviders.withdrawErc20(address(DAI), redeemType, amount);
+            cAssetBalInit -= amount;
+            assert(
+                liquidityProviders.cAssetBalances(address(cDAI), address(this)) ==
+                cAssetBalInit
+            );
+        }
     }
 
     function testWithdrawCErc20() public {

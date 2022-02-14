@@ -8,24 +8,12 @@ import "../CarefulMath.sol";
 interface ILiquidityProviders {
     // Structs
 
-    struct MintLocalVars {
-        ComptrollerErrorReporter.Error err;
-        CarefulMath.MathError mathErr;
-        uint256 exchangeRateMantissa;
-        uint256 mintTokens;
-        uint256 totalSupplyNew;
-        uint256 accountTokensNew;
-        uint256 mintAmount;
-    }
-
-    struct RedeemLocalVars {
-        ComptrollerErrorReporter.Error err;
-        CarefulMath.MathError mathErr;
-        uint256 exchangeRateMantissa;
-        uint256 redeemTokens;
-        uint256 redeemAmount;
-        uint256 totalSupplyNew;
-        uint256 accountTokensNew;
+        struct AccountAssets {
+        address[] keys;
+        mapping(address => uint256) cAssetBalance;
+        mapping(address => uint256) utilizedCAssetBalance;
+        mapping(address => uint256) indexOf;
+        mapping(address => bool) inserted;
     }
 
     // Events
@@ -60,22 +48,40 @@ interface ILiquidityProviders {
         view
         returns (address cAsset);
 
-    function cAssetBalances(address cAsset, address depositor)
-        external
-        view
-        returns (uint256 balance);
-
-    function utilizedCAssetBalances(address cAsset, address depositor)
-        external
-        view
-        returns (uint256 balance);
+    function setCAssetAddress(address asset, address cAsset) external;
 
     function getAssetsIn(address depositor)
         external
         view
-        returns (address[] memory enteredMarkets);
+        returns (address[] memory assetsIn);
 
-    function setCAssetAddress(address asset, address cAsset) external;
+    function getCAssetBalances(address account, address cAsset)
+        external
+        view
+        returns (
+            uint256 cAssetBalance,
+            uint256 utilizedCAssetBalance,
+            uint256 availableCAssetBalance
+        );
+
+    function getAvailableCAssetBalance(address account, address cAsset)
+        external
+        view
+        returns (uint256 availableCAssetBalance);
+
+    function getCAssetBalancesAtIndex(address account, uint256 index)
+        external
+        view
+        returns (
+            uint256 cAssetBalance,
+            uint256 utilizedCAssetBalance,
+            uint256 availableCAssetBalance
+        );
+
+    function accountAssetsSize(address account)
+        external
+        view
+        returns (uint256 numberOfAccountAssets);
 
     function supplyErc20(address asset, uint256 numTokensToSupply)
         external
