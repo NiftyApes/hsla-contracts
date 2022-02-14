@@ -18,6 +18,10 @@ import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 //  TODO Comment each function and each line of funtionality for readability by auditors
 // TODO(Use the non mutating libcompound type implementation for major gas savings)
 // A major issue is the libcompound has not been audited at this point in time
+// TODO(Can the offer book mapping be factored out to a library?)
+// I dont think so due to storage value needed in the library
+// TODO(need to implement Proxy and Intitializable contracts to enable upgarability and big fixes?)
+
 
 contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     using ECDSA for bytes32;

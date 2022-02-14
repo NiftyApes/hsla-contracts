@@ -12,16 +12,11 @@ import "./ErrorReporter.sol";
 import "./Exponential.sol";
 import "./interfaces/ILiquidityProviders.sol";
 
-// TODO(need to implement Proxy and Intitializable contracts?)
-// For what purpose?
-// It enables us to update the contract if needed
-
 // @title An interface for liquidity providers to supply and withdraw tokens
 // @author Captnseagraves
 // @contributors Alcibiades
 // @notice This contract wraps and unwraps, tracks balances of deposited Assets and cAssets
-// TODO(Factor out Exponential to library)
-// TODO(The offer book mapping can be factored out to a library)
+
 contract LiquidityProviders is
     ILiquidityProviders,
     Exponential,
@@ -125,6 +120,28 @@ contract LiquidityProviders is
         numberOfAccountAssets = _accountAssets[account].keys.length;
     }
 
+    function removeAssetFromAccount(address account, address asset) internal {
+        delete _accountAssets[account].inserted[asset];
+
+        uint256 index = _accountAssets[account].indexOf[asset];
+        uint256 lastIndex = _accountAssets[account].keys.length - 1;
+        address lastAsset = _accountAssets[account].keys[lastIndex];
+
+        _accountAssets[account].indexOf[lastAsset] = index;
+        delete _accountAssets[account].indexOf[asset];
+
+        _accountAssets[account].keys[index] = lastAsset;
+        _accountAssets[account].keys.pop();
+    }
+
+    function addAssetToAccount(address account, address asset) internal {
+        _accountAssets[account].inserted[asset] = true;
+        _accountAssets[account].indexOf[asset] = _accountAssets[account]
+            .keys
+            .length;
+        _accountAssets[account].keys.push(asset);
+    }
+
     // @notice returns number of cErc20 tokens added to balance
     function supplyErc20(address asset, uint256 numTokensToSupply)
         external
@@ -144,11 +161,7 @@ contract LiquidityProviders is
         ICERC20 cToken = ICERC20(cAsset);
 
         if (!_accountAssets[msg.sender].inserted[asset]) {
-            _accountAssets[msg.sender].inserted[asset] = true;
-            _accountAssets[msg.sender].indexOf[asset] = _accountAssets[
-                msg.sender
-            ].keys.length;
-            _accountAssets[msg.sender].keys.push(asset);
+            addAssetToAccount(msg.sender, asset);
         }
 
         // transferFrom ERC20 from depositors address
@@ -206,11 +219,7 @@ contract LiquidityProviders is
         ICERC20 cToken = ICERC20(cAsset);
 
         if (!_accountAssets[msg.sender].inserted[asset]) {
-            _accountAssets[msg.sender].inserted[asset] = true;
-            _accountAssets[msg.sender].indexOf[asset] = _accountAssets[
-                msg.sender
-            ].keys.length;
-            _accountAssets[msg.sender].keys.push(asset);
+            addAssetToAccount(msg.sender, asset);
         }
 
         // transferFrom ERC20 from depositors address
@@ -275,17 +284,7 @@ contract LiquidityProviders is
                 _accountAssets[msg.sender].cAssetBalance[cAsset] == 0 &&
                 _accountAssets[msg.sender].utilizedCAssetBalance[cAsset] == 0
             ) {
-                delete _accountAssets[msg.sender].inserted[asset];
-
-                uint256 index = _accountAssets[msg.sender].indexOf[asset];
-                uint256 lastIndex = _accountAssets[msg.sender].keys.length - 1;
-                address lastAsset = _accountAssets[msg.sender].keys[lastIndex];
-
-                _accountAssets[msg.sender].indexOf[lastAsset] = index;
-                delete _accountAssets[msg.sender].indexOf[asset];
-
-                _accountAssets[msg.sender].keys[index] = lastAsset;
-                _accountAssets[msg.sender].keys.pop();
+                removeAssetFromAccount(msg.sender, asset);
             }
 
             // Retrieve your asset based on an amountToWithdraw of the asset
@@ -322,17 +321,7 @@ contract LiquidityProviders is
                 _accountAssets[msg.sender].cAssetBalance[cAsset] == 0 &&
                 _accountAssets[msg.sender].utilizedCAssetBalance[cAsset] == 0
             ) {
-                delete _accountAssets[msg.sender].inserted[asset];
-
-                uint256 index = _accountAssets[msg.sender].indexOf[asset];
-                uint256 lastIndex = _accountAssets[msg.sender].keys.length - 1;
-                address lastAsset = _accountAssets[msg.sender].keys[lastIndex];
-
-                _accountAssets[msg.sender].indexOf[lastAsset] = index;
-                delete _accountAssets[msg.sender].indexOf[asset];
-
-                _accountAssets[msg.sender].keys[index] = lastAsset;
-                _accountAssets[msg.sender].keys.pop();
+                removeAssetFromAccount(msg.sender, asset);
             }
 
             // Retrieve your asset based on an amountToWithdraw of the asset
@@ -380,17 +369,7 @@ contract LiquidityProviders is
             _accountAssets[msg.sender].cAssetBalance[cAsset] == 0 &&
             _accountAssets[msg.sender].utilizedCAssetBalance[cAsset] == 0
         ) {
-            delete _accountAssets[msg.sender].inserted[asset];
-
-            uint256 index = _accountAssets[msg.sender].indexOf[asset];
-            uint256 lastIndex = _accountAssets[msg.sender].keys.length - 1;
-            address lastAsset = _accountAssets[msg.sender].keys[lastIndex];
-
-            _accountAssets[msg.sender].indexOf[lastAsset] = index;
-            delete _accountAssets[msg.sender].indexOf[asset];
-
-            _accountAssets[msg.sender].keys[index] = lastAsset;
-            _accountAssets[msg.sender].keys.pop();
+            removeAssetFromAccount(msg.sender, asset);
         }
 
         // transfer cErc20 tokens to depositor
@@ -415,11 +394,7 @@ contract LiquidityProviders is
         ICEther cToken = ICEther(cEth);
 
         if (!_accountAssets[msg.sender].inserted[eth]) {
-            _accountAssets[msg.sender].inserted[eth] = true;
-            _accountAssets[msg.sender].indexOf[eth] = _accountAssets[msg.sender]
-                .keys
-                .length;
-            _accountAssets[msg.sender].keys.push(eth);
+            addAssetToAccount(msg.sender, eth);
         }
 
         uint256 exchangeRateMantissa = cToken.exchangeRateCurrent();
@@ -453,11 +428,7 @@ contract LiquidityProviders is
         ICEther cToken = ICEther(cEth);
 
         if (!_accountAssets[msg.sender].inserted[eth]) {
-            _accountAssets[msg.sender].inserted[eth] = true;
-            _accountAssets[msg.sender].indexOf[eth] = _accountAssets[msg.sender]
-                .keys
-                .length;
-            _accountAssets[msg.sender].keys.push(eth);
+            addAssetToAccount(msg.sender, eth);
         }
 
         // transferFrom ERC20 from supplyers address
@@ -508,8 +479,7 @@ contract LiquidityProviders is
 
             // require msg.sender has sufficient available balance of cEth
             require(
-                getAvailableCAssetBalance(msg.sender, cEth) >=
-                    redeemTokens,
+                getAvailableCAssetBalance(msg.sender, cEth) >= redeemTokens,
                 "Must have an available balance greater than or equal to amountToWithdraw"
             );
 
@@ -519,17 +489,7 @@ contract LiquidityProviders is
                 _accountAssets[msg.sender].cAssetBalance[cEth] == 0 &&
                 _accountAssets[msg.sender].utilizedCAssetBalance[cEth] == 0
             ) {
-                delete _accountAssets[msg.sender].inserted[eth];
-
-                uint256 index = _accountAssets[msg.sender].indexOf[eth];
-                uint256 lastIndex = _accountAssets[msg.sender].keys.length - 1;
-                address lastAsset = _accountAssets[msg.sender].keys[lastIndex];
-
-                _accountAssets[msg.sender].indexOf[lastAsset] = index;
-                delete _accountAssets[msg.sender].indexOf[eth];
-
-                _accountAssets[msg.sender].keys[index] = lastAsset;
-                _accountAssets[msg.sender].keys.pop();
+                removeAssetFromAccount(msg.sender, eth);
             }
 
             // Retrieve your asset based on an amountToWithdraw of the asset
@@ -555,8 +515,7 @@ contract LiquidityProviders is
 
             // require msg.sender has sufficient available balance of cEth
             require(
-                getAvailableCAssetBalance(msg.sender, cEth) >=
-                    redeemTokens,
+                getAvailableCAssetBalance(msg.sender, cEth) >= redeemTokens,
                 "Must have an available balance greater than or equal to amountToWithdraw"
             );
 
@@ -566,17 +525,7 @@ contract LiquidityProviders is
                 _accountAssets[msg.sender].cAssetBalance[cEth] == 0 &&
                 _accountAssets[msg.sender].utilizedCAssetBalance[cEth] == 0
             ) {
-                delete _accountAssets[msg.sender].inserted[eth];
-
-                uint256 index = _accountAssets[msg.sender].indexOf[eth];
-                uint256 lastIndex = _accountAssets[msg.sender].keys.length - 1;
-                address lastAsset = _accountAssets[msg.sender].keys[lastIndex];
-
-                _accountAssets[msg.sender].indexOf[lastAsset] = index;
-                delete _accountAssets[msg.sender].indexOf[eth];
-
-                _accountAssets[msg.sender].keys[index] = lastAsset;
-                _accountAssets[msg.sender].keys.pop();
+                removeAssetFromAccount(msg.sender, eth);
             }
 
             // Retrieve your asset based on an amountToWithdraw of the asset
@@ -623,17 +572,7 @@ contract LiquidityProviders is
             _accountAssets[msg.sender].cAssetBalance[cEth] == 0 &&
             _accountAssets[msg.sender].utilizedCAssetBalance[cEth] == 0
         ) {
-            delete _accountAssets[msg.sender].inserted[eth];
-
-            uint256 index = _accountAssets[msg.sender].indexOf[eth];
-            uint256 lastIndex = _accountAssets[msg.sender].keys.length - 1;
-            address lastAsset = _accountAssets[msg.sender].keys[lastIndex];
-
-            _accountAssets[msg.sender].indexOf[lastAsset] = index;
-            delete _accountAssets[msg.sender].indexOf[eth];
-
-            _accountAssets[msg.sender].keys[index] = lastAsset;
-            _accountAssets[msg.sender].keys.pop();
+            removeAssetFromAccount(msg.sender, eth);
         }
 
         // transfer cErc20 tokens to depositor

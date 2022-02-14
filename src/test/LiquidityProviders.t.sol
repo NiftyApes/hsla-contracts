@@ -121,7 +121,7 @@ contract LiquidityProvidersTest is DSTest, TestUtility {
                 0 ether
         );
         assert(
-            availableCAssetBalance ==
+            availableCAssetBalance >
                 0 ether
         );
     }

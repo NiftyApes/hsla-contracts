@@ -253,9 +253,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
     }
 
     function testGetOfferSignatureAuctionStatus() public {
-        // TODO(This is obviously an invalid offer, should the signature status return false)
-        // getOfferSignatureStatus does not check signature validity. Bool mappings return false by deafult.
-        // This function should only return true when a signature has been cancelled or finalized by a user or function
+        // TODO(cancel signature and check if true)
         assert(!LA.getOfferSignatureStatus(""));
     }
 
