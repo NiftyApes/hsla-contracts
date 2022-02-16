@@ -218,7 +218,6 @@ interface ILendingAuction is ILiquidityProviders {
         bytes32 offerHash
     ) external payable;
 
-    // TODO(Test)
     function refinanceByBorrowerSignature(
         Offer calldata offer,
         bytes memory signature,
