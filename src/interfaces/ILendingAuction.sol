@@ -238,7 +238,6 @@ interface ILendingAuction is ILiquidityProviders {
         bytes32 offerHash
     ) external payable;
 
-    // TODO(Test)
     // TODO(nftID is duplicate here, the data is already in the offer struct)
     // nftId is required in this function to serve floor offers. A floor offer can serve any nftId,
     // so one is provided to this function, and if the nftId at that nftContractAddress is owned by msg.sender then the loan is executed
@@ -248,7 +247,6 @@ interface ILendingAuction is ILiquidityProviders {
         uint256 nftId
     ) external payable;
 
-    // TODO(This function is broken, fix)
     function refinanceByLender(Offer calldata offer) external payable;
 
     function drawLoanTime(
