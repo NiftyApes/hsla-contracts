@@ -67,30 +67,13 @@ interface ILendingAuction is ILiquidityProviders {
         mapping(bytes32 => bool) inserted;
     }
 
-    struct InterestAndPaymentVars {
-        uint256 currentLenderInterest;
-        uint256 currentProtocolInterest;
-        uint256 interestAndPremiumOwedToCurrentLender;
-        uint256 fullAmount;
-    }
-
-    struct TokenVars {
-        uint256 lenderInterestAndPremiumTokens;
-        uint256 protocolInterestAndPremiumTokens;
-        uint256 paymentTokens;
-        uint256 msgValueTokens;
-    }
-
     // Events
     event LoanExecuted(
         address lender,
         address nftOwner,
         address indexed nftContractAddress,
         uint256 indexed nftId,
-        address asset,
-        uint256 amount,
-        uint256 interestRate,
-        uint256 duration
+        Offer offer
     );
 
     event LoanRefinance(
@@ -198,21 +181,18 @@ interface ILendingAuction is ILiquidityProviders {
 
     function removeOffer(
         address nftContractAddress,
-        bool floorTerm,
         uint256 nftId,
-        bytes32 offerHash
+        bytes32 offerHash,
+        bool floorTerm
     ) external;
 
     function executeLoanByBorrower(
         address nftContractAddress,
-        bool floorTerm,
         uint256 nftId,
-        bytes32 offerHash
+        bytes32 offerHash,
+        bool floorTerm
     ) external payable;
 
-    // TODO(nftID is duplicate here, the data is already in the offer struct)
-    // nftId is required in this function to serve floor offers. A floor offer can serve any nftId,
-    // so one is provided to this function, and if the nftId at that nftContractAddress is owned by msg.sender then the loan is executed
     function executeLoanByBorrowerSignature(
         Offer calldata offer,
         bytes memory signature,
@@ -238,9 +218,6 @@ interface ILendingAuction is ILiquidityProviders {
         bytes32 offerHash
     ) external payable;
 
-    // TODO(nftID is duplicate here, the data is already in the offer struct)
-    // nftId is required in this function to serve floor offers. A floor offer can serve any nftId,
-    // so one is provided to this function, and if the nftId at that nftContractAddress is owned by msg.sender then the loan is executed
     function refinanceByBorrowerSignature(
         Offer calldata offer,
         bytes memory signature,
@@ -263,8 +240,7 @@ interface ILendingAuction is ILiquidityProviders {
 
     function repayRemainingLoan(address nftContractAddress, uint256 nftId)
         external
-        payable
-        returns (uint256);
+        payable;
 
     function partialPayment(
         address nftContractAddress,

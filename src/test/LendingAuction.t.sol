@@ -155,9 +155,26 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         assert(LA.getOfferHash(get_offer) == create_hash);
 
         // And remove it
-        LA.removeOffer(address(mockNFT), floorTerm, 0, create_hash);
+        LA.removeOffer(address(mockNFT), 0, create_hash, floorTerm);
 
-        // TODO add assert to test that offer has been removed
+        // test that offer has been removed
+        LendingAuction.Offer memory get_offer_2 = LA.getOffer(
+            address(mockNFT),
+            0,
+            create_hash,
+            floorTerm
+        );
+
+        assert(get_offer_2.creator == address(0));
+        assert(get_offer_2.nftContractAddress == address(0));
+        assert(get_offer_2.nftId == 0);
+        assert(get_offer_2.asset == address(0));
+        assert(get_offer_2.amount == 0 ether);
+        assert(get_offer_2.interestRateBps == 0);
+        assert(get_offer_2.duration == 0);
+        assert(get_offer_2.expiration == 0);
+        assert(get_offer_2.fixedTerms == false);
+        assert(get_offer_2.floorTerm == false);
     }
 
     function testSize(
@@ -169,7 +186,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
     }
 
     // TODO(This should pass)
-    function testLoanAndRefinance(
+    function testExecuteLoanAndRefinance(
         bool fixedTerms,
         bool floorTerm,
         bool lender
@@ -215,9 +232,9 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         } else {
             LA.executeLoanByBorrower(
                 address(mockNFT),
-                floorTerm,
                 0,
-                create_hash
+                create_hash,
+                floorTerm
             );
         }
 
@@ -250,13 +267,6 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
                 );
             }
         }
-    }
-
-    function testGetOfferSignatureAuctionStatus() public {
-        // TODO(This is obviously an invalid offer, should the signature status return false)
-        // getOfferSignatureStatus does not check signature validity. Bool mappings return false by deafult.
-        // This function should only return true when a signature has been cancelled or finalized by a user or function
-        assert(!LA.getOfferSignatureStatus(""));
     }
 
     function testGetOfferSigner() public {
@@ -468,9 +478,9 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         } else {
             LA.executeLoanByBorrower(
                 address(mockNFT),
-                floorTerm,
                 0,
-                create_hash
+                create_hash,
+                floorTerm
             );
         }
 
@@ -597,6 +607,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
             duration += uint32(86401);
         }
         // TODO(Otherwise compound math fails at some point)
+        // @alcibiades How should this TODO be addressed? 
         if (amount < 1 ether) {
             amount += 1 ether;
         }
