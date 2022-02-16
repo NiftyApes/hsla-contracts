@@ -120,6 +120,14 @@ contract LiquidityProviders is
         numberOfAccountAssets = _accountAssets[account].keys.length;
     }
 
+    function addAssetToAccount(address account, address asset) internal {
+        _accountAssets[account].inserted[asset] = true;
+        _accountAssets[account].indexOf[asset] = _accountAssets[account]
+            .keys
+            .length;
+        _accountAssets[account].keys.push(asset);
+    }
+
     function removeAssetFromAccount(address account, address asset) internal {
         delete _accountAssets[account].inserted[asset];
 
@@ -132,14 +140,6 @@ contract LiquidityProviders is
 
         _accountAssets[account].keys[index] = lastAsset;
         _accountAssets[account].keys.pop();
-    }
-
-    function addAssetToAccount(address account, address asset) internal {
-        _accountAssets[account].inserted[asset] = true;
-        _accountAssets[account].indexOf[asset] = _accountAssets[account]
-            .keys
-            .length;
-        _accountAssets[account].keys.push(asset);
     }
 
     // @notice returns number of cErc20 tokens added to balance
@@ -192,6 +192,9 @@ contract LiquidityProviders is
         // Require a successful mint to proceed
         require(cToken.mint(numTokensToSupply) == 0, "cToken.mint() failed");
 
+        // This state variable is written after external calls because external calls 
+        // add value or assets to this contract and this state variable could be re-entered to 
+        // increase balance, then withdrawing more funds than have been supplied. 
         // updating the depositors cErc20 balance
         // cAssetBalances[cAsset][msg.sender] += mintTokens;
         _accountAssets[msg.sender].cAssetBalance[cAsset] += mintTokens;
@@ -229,6 +232,9 @@ contract LiquidityProviders is
             "cToken transferFrom failed. Have you approved the correct amount of Tokens?"
         );
 
+        // This state variable is written after external calls because external calls 
+        // add value or assets to this contract and this state variable could be re-entered to 
+        // increase balance, then withdrawing more funds than have been supplied. 
         // updating the depositors cErc20 balance
         // cAssetBalances[cAsset][msg.sender] += numTokensToSupply;
         _accountAssets[msg.sender].cAssetBalance[cAsset] += numTokensToSupply;
@@ -404,10 +410,14 @@ contract LiquidityProviders is
             Exp({mantissa: exchangeRateMantissa})
         );
 
+
         // mint CEth tokens to this contract address
         // cEth mint() reverts on failure so do not need a require statement
         cToken.mint{value: msg.value, gas: 250000}();
 
+        // This state variable is written after external calls because external calls 
+        // add value or assets to this contract and this state variable could be re-entered to 
+        // increase balance, then withdrawing more funds than have been supplied. 
         // updating the depositors cErc20 balance
         // cAssetBalances[cEth][msg.sender] += mintTokens;
         _accountAssets[msg.sender].cAssetBalance[cEth] += mintTokens;

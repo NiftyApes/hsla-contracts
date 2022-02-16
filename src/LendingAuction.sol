@@ -1563,6 +1563,8 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         _accountAssets[owner()].cAssetBalance[cAsset] += protocolInterestAndPremiumTokens;
     }
 
+    // This function has a slither warning for sending eth to an abritrary address, but the 
+    // function is internal and value of function are checked and supplied in parent functions
     // this internal functions handles transfer of erc20 tokens for executeLoan functions
     function _redeemAndTransferErc20Internal(
         address asset,
@@ -1699,14 +1701,14 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         } else {
             uint256 timeOutstanding = block.timestamp - timeOfInterestStart;
 
-            uint256 fractionOfTimeDrawn = timeOutstanding / timeDrawn;
+            uint256 maxDrawn =  amountDrawn * timeDrawn;
 
-            uint256 fractionOfAmountDrawn = amountDrawn * fractionOfTimeDrawn;
+            uint256 fractionOfDrawn = maxDrawn / timeOutstanding;
 
-            lenderInterest = (interestRateBps * fractionOfAmountDrawn) / 10000;
+            lenderInterest = (interestRateBps * fractionOfDrawn) / 10000;
 
             protocolInterest =
-                (loanDrawFeeProtocolBps * fractionOfAmountDrawn) /
+                (loanDrawFeeProtocolBps * fractionOfDrawn) /
                 10000;
         }
     }
