@@ -47,7 +47,7 @@ interface ILiquidityProviders {
         external
         view
         returns (address cAsset);
-
+        
     function setCAssetAddress(address asset, address cAsset) external;
 
     function getAssetsIn(address depositor)

@@ -17,11 +17,10 @@ import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
 //  TODO Comment each function and each line of funtionality for readability by auditors - essential
 // TODO(Use the non mutating libcompound type implementation for major gas savings) - nice to have
-// A major issue is the libcompound has not been audited at this point in time 
+// A major issue is the libcompound has not been audited at this point in time
 // TODO(Can the offer book mapping be factored out to a library?) - nice to have
 // I dont think so due to storage value needed in the library
 // TODO(need to implement Proxy and Intitializable contracts to enable upgarability and big fixes?)
-
 
 contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     using ECDSA for bytes32;
@@ -569,13 +568,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
         // *------------ State Transitions ------------* //
 
-        // check if lender has sufficient available balance and update utilizedBalance
-        _checkAndUpdateLenderUtilizedBalanceInternal(
-            cAsset,
-            offer.amount,
-            lender
-        );
-
         // update LoanAuction struct
         loanAuction.nftOwner = borrower;
         loanAuction.lender = lender;
@@ -588,6 +580,13 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         loanAuction.timeDrawn = offer.duration;
         loanAuction.amountDrawn = offer.amount;
         loanAuction.fixedTerms = offer.fixedTerms;
+
+        // check if lender has sufficient available balance and update utilizedBalance
+        _checkAndUpdateLenderUtilizedBalanceInternal(
+            cAsset,
+            offer.amount,
+            lender
+        );
 
         // *------- Value and asset transfers -------* //
 
@@ -789,19 +788,9 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
             // require prospective lender has sufficient available balance to refinance loan
             require(
-                getAvailableCAssetBalance(msg.sender, cAsset) >=
+                getAvailableCAssetBalance(prospectiveLender, cAsset) >=
                     fullCTokenAmount,
                 "Must have an available balance greater than or equal to amountToWithdraw"
-            );
-
-            // processes cEth and ICERC20 transactions
-            _transferCERC20BalancesInternal(
-                cAsset,
-                loanAuction.lender,
-                prospectiveLender,
-                0,
-                interestAndPremiumOwedToCurrentLender,
-                loanAuction.amountDrawn
             );
 
             // update Loan state
@@ -813,6 +802,16 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             loanAuction.timeOfInterestStart = block.timestamp;
             loanAuction.historicLenderInterest += currentLenderInterest;
             loanAuction.historicProtocolInterest += currentProtocolInterest;
+
+            // processes cEth and ICERC20 transactions
+            _transferCERC20BalancesInternal(
+                cAsset,
+                loanAuction.lender,
+                prospectiveLender,
+                0,
+                interestAndPremiumOwedToCurrentLender,
+                loanAuction.amountDrawn
+            );
         } else {
             // calculate interest earned
             interestAndPremiumOwedToCurrentLender =
@@ -829,8 +828,16 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                 protocolPremium +
                 loanAuction.amountDrawn;
 
+            // update LoanAuction struct
+            loanAuction.amount = offer.amount;
+            loanAuction.interestRateBps = offer.interestRateBps;
+            loanAuction.duration = offer.duration;
+            loanAuction.timeOfInterestStart = block.timestamp;
+            loanAuction.historicLenderInterest += currentLenderInterest;
+            loanAuction.historicProtocolInterest += currentProtocolInterest;
+
             // If refinancing is not done by current lender they must buy out the loan and pay fees
-            if (loanAuction.lender != msg.sender) {
+            if (loanAuction.lender != prospectiveLender) {
                 uint256 exchangeRateMantissa = ICToken(cAsset)
                     .exchangeRateCurrent();
 
@@ -841,25 +848,25 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
                 // require prospective lender has sufficient available balance to refinance loan
                 require(
-                    getAvailableCAssetBalance(msg.sender, cAsset) >=
+                    getAvailableCAssetBalance(prospectiveLender, cAsset) >=
                         fullAmountTokens,
                     "Must have an available balance greater than or equal to amountToWithdraw"
                 );
 
-                // require prospective lender has sufficient available balance to refinance loan
+                address currentlender = loanAuction.lender;
+
+                // update LoanAuction lender
+                loanAuction.lender = prospectiveLender;
 
                 // processes cEth and ICERC20 transactions
                 _transferCERC20BalancesInternal(
                     cAsset,
-                    loanAuction.lender,
-                    msg.sender,
+                    currentlender,
+                    prospectiveLender,
                     protocolPremium,
                     interestAndPremiumOwedToCurrentLender,
                     loanAuction.amountDrawn
                 );
-
-                // update LoanAuction lender
-                loanAuction.lender = msg.sender;
             } else {
                 // If current lender is refinancing the loan they do not need to pay any fees or buy themselves out.
                 // require prospective lender has sufficient available balance to refinance loan
@@ -874,20 +881,11 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                     Exp({mantissa: exchangeRateMantissa})
                 );
                 require(
-                    getAvailableCAssetBalance(msg.sender, cAsset) >=
+                    getAvailableCAssetBalance(prospectiveLender, cAsset) >=
                         (cTokenOfferAmount - cTokenAmountDrawn),
                     "Lender does not have sufficient balance to refinance loan"
                 );
             }
-
-            // update LoanAuction struct
-            loanAuction.lender = msg.sender;
-            loanAuction.amount = offer.amount;
-            loanAuction.interestRateBps = offer.interestRateBps;
-            loanAuction.duration = offer.duration;
-            loanAuction.timeOfInterestStart = block.timestamp;
-            loanAuction.historicLenderInterest += currentLenderInterest;
-            loanAuction.historicProtocolInterest += currentProtocolInterest;
         }
 
         emit LoanRefinance(
@@ -1088,12 +1086,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             "Cannot draw more value after a loan has expired"
         );
 
-        _checkAndUpdateLenderUtilizedBalanceInternal(
-            cAsset,
-            drawAmount,
-            loanAuction.lender
-        );
-
         (
             uint256 lenderInterest,
             uint256 protocolInterest
@@ -1106,6 +1098,12 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
         // set amountDrawn
         loanAuction.amountDrawn += drawAmount;
+
+        _checkAndUpdateLenderUtilizedBalanceInternal(
+            cAsset,
+            drawAmount,
+            loanAuction.lender
+        );
 
         // if asset is not 0x0 process as Erc20
         if (
@@ -1393,11 +1391,13 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         loanAuction.fixedTerms = false;
 
         // update lenders utilized balance
-        _accountAssets[loanAuction.lender].utilizedCAssetBalance[cAsset] -= loanAuction
-            .amountDrawn;
+        _accountAssets[loanAuction.lender].utilizedCAssetBalance[
+            cAsset
+        ] -= loanAuction.amountDrawn;
 
         // update lenders total balance
-        _accountAssets[loanAuction.lender].cAssetBalance[cAsset] -= loanAuction.amountDrawn;
+        _accountAssets[loanAuction.lender].cAssetBalance[cAsset] -= loanAuction
+            .amountDrawn;
 
         // transferFrom NFT from contract to lender
         IERC721(nftContractAddress).transferFrom(
@@ -1496,10 +1496,14 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         _accountAssets[to].utilizedCAssetBalance[cAsset] -= paymentTokens;
 
         // update the tos total balance
-        _accountAssets[to].cAssetBalance[cAsset] += lenderInterestAndPremiumTokens;
+        _accountAssets[to].cAssetBalance[
+            cAsset
+        ] += lenderInterestAndPremiumTokens;
 
         // update the owner total balance
-        _accountAssets[owner()].cAssetBalance[cAsset] += protocolInterestAndPremiumTokens;
+        _accountAssets[owner()].cAssetBalance[
+                cAsset
+            ] += protocolInterestAndPremiumTokens;
     }
 
     // this internal functions handles transfer of Eth and updating lender balances for refinanceLoan, repayRemainingLoan, and partialRepayment functions
@@ -1560,10 +1564,12 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                     paymentTokens));
 
         // update the owner's total balance
-        _accountAssets[owner()].cAssetBalance[cAsset] += protocolInterestAndPremiumTokens;
+        _accountAssets[owner()].cAssetBalance[
+                cAsset
+            ] += protocolInterestAndPremiumTokens;
     }
 
-    // This function has a slither warning for sending eth to an abritrary address, but the 
+    // This function has a slither warning for sending eth to an abritrary address, but the
     // function is internal and value of function are checked and supplied in parent functions
     // this internal functions handles transfer of erc20 tokens for executeLoan functions
     function _redeemAndTransferErc20Internal(
@@ -1701,7 +1707,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         } else {
             uint256 timeOutstanding = block.timestamp - timeOfInterestStart;
 
-            uint256 maxDrawn =  amountDrawn * timeDrawn;
+            uint256 maxDrawn = amountDrawn * timeDrawn;
 
             uint256 fractionOfDrawn = maxDrawn / timeOutstanding;
 
