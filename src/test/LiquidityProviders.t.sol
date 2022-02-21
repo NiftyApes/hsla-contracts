@@ -7,11 +7,12 @@ import "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "../interfaces/compound/ICERC20.sol";
 import "../interfaces/compound/ICEther.sol";
 import "../LiquidityProviders.sol";
+import "../Exponential.sol";
 import "./Utilities.sol";
 
 // @dev These tests are intended to be run against a forked mainnet.
 
-contract LiquidityProvidersTest is DSTest, TestUtility {
+contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
     IUniswapV2Router SushiSwapRouter;
     IWETH WETH;
     IERC20 DAI;
@@ -111,19 +112,15 @@ contract LiquidityProvidersTest is DSTest, TestUtility {
     }
 
     function testGetCAssetBalances() public {
-        (uint256 cAssetBalance, uint256 utilizedAssetBalance, uint256 availableCAssetBalance) = liquidityProviders.getCAssetBalances(address(cDAI), address(this));
-        assert(
-            cAssetBalance >
-                0 ether
-        );
-        assert(
-            utilizedAssetBalance ==
-                0 ether
-        );
-        assert(
-            availableCAssetBalance >
-                0 ether
-        );
+        (
+            uint256 cAssetBalance,
+            uint256 utilizedAssetBalance,
+            uint256 availableCAssetBalance
+        ) = liquidityProviders.getCAssetBalances(address(this), address(cDAI));
+
+        assert(cAssetBalance > 0 ether);
+        assert(utilizedAssetBalance == 0 ether);
+        assert(availableCAssetBalance > 0 ether);
     }
 
     function testGetAssetsIn() public {
@@ -136,56 +133,74 @@ contract LiquidityProvidersTest is DSTest, TestUtility {
     // TODO(Fix all failing/commented out test cases here)
     // TODO(Create failing tests/assertions for each function)
 
-    function testSupplyErc20() public {
-        // TODO(This needs to assert the cAsset balance of address(this), based on the asset -> cAsset exchange rate)
-        liquidityProviders.supplyErc20(address(DAI), 10000 ether);
+    function testSupplyErc20(uint32 deposit) public {
+        (
+            uint256 cAssetBalanceInit,
+            uint256 utilizedCAssetBalanceInit,
+            uint256 availableCAssetBalanceInit
+        ) = liquidityProviders.getCAssetBalances(address(this), address(cDAI));
+        
+        liquidityProviders.supplyErc20(address(DAI), deposit);
+
+        ICERC20 cToken = ICERC20(cDAI);
+
+        emit log_named_uint("deposit", deposit);
+        emit log_named_uint(
+            "cToken.exchangeRateCurrent()",
+            cToken.exchangeRateCurrent()
+        );
+
+        (, uint256 mintTokens) = divScalarByExpTruncate(
+            deposit,
+            Exp({mantissa: cToken.exchangeRateCurrent()})
+        );
+
+        (
+            uint256 cAssetBalance,
+            uint256 utilizedCAssetBalance,
+            uint256 availableCAssetBalance
+        ) = liquidityProviders.getCAssetBalances(address(this), address(cDAI));
+
+        emit log_named_uint("cAssetBalanceInit", cAssetBalanceInit);
+        emit log_named_uint("cAssetBalance", cAssetBalance);
+        emit log_named_uint("mintTokens", mintTokens);
+        emit log_named_uint("availableCAssetBalance", availableCAssetBalance);
+        emit log_named_uint(
+            "balanceInComp",
+            cToken.balanceOf(address(liquidityProviders))
+        );
+
+        assert(cAssetBalance == (cAssetBalanceInit + mintTokens));
+        assert(utilizedCAssetBalance == 0 ether);
+        assert(availableCAssetBalance == cAssetBalance);
+        assert(cAssetBalance == cToken.balanceOf(address(liquidityProviders)));
     }
 
     function testSupplyCErc20(uint32 deposit) public {
-        uint256 cAssetBalInit = liquidityProviders.cAssetBalances(
-            address(cDAI),
-            address(this)
-        );
+        (
+            uint256 cAssetBalanceInit,
+            uint256 utilizedCAssetBalanceInit,
+            uint256 availableCAssetBalanceInit
+        ) = liquidityProviders.getCAssetBalances(address(this), address(cDAI));
+
         liquidityProviders.supplyCErc20(address(cDAI), deposit);
-        cAssetBalInit += deposit;
+        cAssetBalanceInit += deposit;
+
+        (
+            uint256 cAssetBalance,
+            uint256 utilizedCAssetBalance,
+            uint256 availableCAssetBalance
+        ) = liquidityProviders.getCAssetBalances(address(this), address(cDAI));
+
+        assert(cAssetBalanceInit == cAssetBalance);
         assert(
-            liquidityProviders.cAssetBalances(address(cDAI), address(this)) ==
-                cAssetBalInit
+            cAssetBalance ==
+                ICERC20(cDAI).balanceOf(address(liquidityProviders))
         );
     }
 
     // TODO (Fix overflow)
     function testWithdrawErc20(uint256 amount, bool redeemType) public {
-        // TODO(This needs to assert the cAsset balance of address(this), based on the asset -> cAsset exchange rate)
-        if (amount < 1 ether) {
-            amount += 1 ether;
-        }
-        else if (amount > 100 ether) {
-            amount = 100 ether;
-        }
-        if (redeemType) {
-            liquidityProviders.withdrawErc20(address(DAI), redeemType, amount);
-        }
-        else {
-            // FIXME(There is a bug here where the incorrect cAsset bal is returned)
-            uint256 cAssetBalInit = liquidityProviders.cAssetBalances(
-                address(cDAI),
-                address(this)
-            );
-            if (amount >= cAssetBalInit) {
-                amount = cAssetBalInit - 1;
-            }
-            liquidityProviders.withdrawErc20(address(DAI), redeemType, amount);
-            cAssetBalInit -= amount;
-            assert(
-                liquidityProviders.cAssetBalances(address(cDAI), address(this)) ==
-                cAssetBalInit
-            );
-        }
-    }
-
-    // TODO(Fix the bug)
-    function testFailWithdrawErc20(uint256 amount, bool redeemType) public {
         // TODO(This needs to assert the cAsset balance of address(this), based on the asset -> cAsset exchange rate)
         if (amount < 1 ether) {
             amount += 1 ether;
@@ -196,72 +211,165 @@ contract LiquidityProvidersTest is DSTest, TestUtility {
             liquidityProviders.withdrawErc20(address(DAI), redeemType, amount);
         } else {
             // FIXME(There is a bug here where the incorrect cAsset bal is returned)
-            uint256 cAssetBalInit = liquidityProviders.cAssetBalances(
-                address(cDAI),
-                address(this)
-            );
-            if (amount >= cAssetBalInit) {
-                amount = cAssetBalInit - 1;
+            // check to see if addressed by changes
+            (
+                uint256 cAssetBalanceInit,
+                uint256 utilizedCAssetBalanceInit,
+                uint256 availableCAssetBalanceInit
+            ) = liquidityProviders.getCAssetBalances(
+                    address(this),
+                    address(cDAI)
+                );
+
+            if (amount >= cAssetBalanceInit) {
+                amount = cAssetBalanceInit - 1;
             }
             liquidityProviders.withdrawErc20(address(DAI), redeemType, amount);
-            cAssetBalInit -= amount;
+            cAssetBalanceInit -= amount;
+            (
+                uint256 cAssetBalance,
+                uint256 utilizedCAssetBalance,
+                uint256 availableCAssetBalance
+            ) = liquidityProviders.getCAssetBalances(
+                    address(this),
+                    address(cDAI)
+                );
+
+            // TODO add assertion to check token conversion math
+
+            assert(cAssetBalanceInit == cAssetBalance);
             assert(
-                liquidityProviders.cAssetBalances(
-                    address(cDAI),
-                    address(this)
-                ) == cAssetBalInit
+                cAssetBalance ==
+                    ICERC20(cDAI).balanceOf(address(liquidityProviders))
+            );
+        }
+    }
+
+    // TODO(Fix the bug)
+    // this does not currently test for a fail case
+    function testFailWithdrawErc20(uint256 amount, bool redeemType) public {
+        // TODO(This needs to assert the cAsset balance of address(this), based on the asset -> cAsset exchange rate)
+        // check to see if addressed by changes
+        if (amount < 1 ether) {
+            amount += 1 ether;
+        } else if (amount > 100 ether) {
+            amount = 100 ether;
+        }
+        if (redeemType) {
+            liquidityProviders.withdrawErc20(address(DAI), redeemType, amount);
+        } else {
+            // FIXME(There is a bug here where the incorrect cAsset bal is returned)
+            (uint256 cAssetBalanceInit, , ) = liquidityProviders
+                .getCAssetBalances(address(this), address(cDAI));
+
+            if (amount >= cAssetBalanceInit) {
+                amount = cAssetBalanceInit - 1;
+            }
+            liquidityProviders.withdrawErc20(address(DAI), redeemType, amount);
+            cAssetBalanceInit -= amount;
+
+            (uint256 cAssetBalance, , ) = liquidityProviders.getCAssetBalances(
+                address(this),
+                address(cDAI)
+            );
+
+            assert(cAssetBalanceInit == cAssetBalance);
+            assert(
+                cAssetBalance ==
+                    ICERC20(cDAI).balanceOf(address(liquidityProviders))
             );
         }
     }
 
     function testWithdrawCErc20(uint64 amount) public {
-        uint256 cAssetBalAnte = liquidityProviders.cAssetBalances(
-            address(cDAI),
-            address(this)
+        (uint256 cAssetBalanceInit, , ) = liquidityProviders.getCAssetBalances(
+            address(this),
+            address(cDAI)
         );
-        if (amount > cAssetBalAnte) {
-            amount = uint64(cAssetBalAnte - 10);
+        if (amount > cAssetBalanceInit) {
+            amount = uint64(cAssetBalanceInit - 10);
         }
         liquidityProviders.withdrawCErc20(address(cDAI), amount);
-        uint256 cAssetBalPost = liquidityProviders.cAssetBalances(
-            address(cDAI),
-            address(this)
+        (uint256 cAssetBalance, , ) = liquidityProviders.getCAssetBalances(
+            address(this),
+            address(cDAI)
         );
-        assert(cAssetBalPost == (cAssetBalAnte - amount));
+        assert(cAssetBalance == (cAssetBalanceInit - amount));
     }
 
-    function testSupplyEth(uint64 amount) public {
-        if (amount < 1 ether) {
-            amount += 1 ether;
+    function testSupplyEth(uint64 deposit) public {
+        if (deposit < 1 ether) {
+            deposit += 1 ether;
         }
-        uint256 balAnte = liquidityProviders.cAssetBalances(
-            address(cETH),
-            address(this)
+        (uint256 cAssetBalanceInit, , ) = liquidityProviders.getCAssetBalances(
+            address(this),
+            address(cETH)
         );
+
+        ICEther cToken = ICEther(cETH);
+
+        (, uint256 mintTokens) = divScalarByExpTruncate(
+            deposit,
+            Exp({mantissa: cToken.exchangeRateCurrent()})
+        );
+
         // TODO(Calculate cAsset conversion rate here)
-        liquidityProviders.supplyEth{value: amount}();
-        uint256 balPost = liquidityProviders.cAssetBalances(
-            address(cETH),
-            address(this)
+        liquidityProviders.supplyEth{value: deposit}();
+
+        (uint256 cAssetBalance, , ) = liquidityProviders.getCAssetBalances(
+            address(this),
+            address(cETH)
         );
-        assert(balAnte < balPost);
+        assert(cAssetBalanceInit < cAssetBalance);
+        assert(cAssetBalance == mintTokens);
+        assert(cAssetBalance == cToken.balanceOf(address(liquidityProviders)));
     }
 
     // TODO(Fix this test, which fails because of transfer approval)
-    function testFailSupplyCEth(uint64 amount) public {
-        if (amount < 1 ether) {
-            amount += 1 ether;
+    function testSupplyCEth(uint64 deposit) public {
+        if (deposit < 1 ether) {
+            deposit += 1 ether;
         }
-        uint256 balAnte = liquidityProviders.cAssetBalances(
-            address(cETH),
-            address(this)
+        (uint256 cAssetBalanceInit, , ) = liquidityProviders.getCAssetBalances(
+            address(this),
+            address(cETH)
         );
-        liquidityProviders.supplyCEth(amount);
-        uint256 balPost = liquidityProviders.cAssetBalances(
-            address(cETH),
-            address(this)
+
+        liquidityProviders.supplyCEth(deposit);
+
+        (uint256 cAssetBalance, , ) = liquidityProviders.getCAssetBalances(
+            address(this),
+            address(cETH)
         );
-        assert((balAnte + amount) == balPost);
+        assert((cAssetBalanceInit + deposit) == cAssetBalance);
+        assert(
+            cAssetBalance ==
+                ICEther(cETH).balanceOf(address(liquidityProviders))
+        );
+    }
+
+    // TODO(Fix this test, which fails because of transfer approval)
+    // this does not currently test for a fail case
+    function testFailSupplyCEth(uint64 deposit) public {
+        if (deposit < 1 ether) {
+            deposit += 1 ether;
+        }
+        (uint256 cAssetBalanceInit, , ) = liquidityProviders.getCAssetBalances(
+            address(this),
+            address(cETH)
+        );
+
+        liquidityProviders.supplyCEth(deposit);
+
+        (uint256 cAssetBalance, , ) = liquidityProviders.getCAssetBalances(
+            address(this),
+            address(cETH)
+        );
+        assert((cAssetBalanceInit + deposit) == cAssetBalance);
+        assert(
+            cAssetBalance ==
+                ICEther(cETH).balanceOf(address(liquidityProviders))
+        );
     }
 
     // TODO(Fix: Must have an available balance greater than or equal to amountToWithdraw)
@@ -272,26 +380,30 @@ contract LiquidityProvidersTest is DSTest, TestUtility {
         }
         if (!redeem) {
             liquidityProviders.supplyEth{value: amount}();
-            uint256 balAnte = address(this).balance;
+            uint256 ethBalanceInit = address(this).balance;
             liquidityProviders.withdrawEth(redeem, amount);
-            uint256 balPost = address(this).balance;
-            assert((balAnte + amount) == balPost);
+            uint256 ethBalancePost = address(this).balance;
+            assert(ethBalancePost == (ethBalanceInit - amount));
         } else {
             // TODO(Fix approvals here, which seem to be broken)
-            //liquidityProviders.supplyCErc20(address(cETH), amount);
-            uint256 balAnte = liquidityProviders.cAssetBalances(
-                address(cETH),
-                address(this)
-            );
-            // This could just be withdrawcEth for interface clarity
-            // TODO(if for eth, than this input amount should be for eth)
+            liquidityProviders.supplyCErc20(address(cETH), amount);
+
+            (uint256 cAssetBalanceInit, , ) = liquidityProviders
+                .getCAssetBalances(address(this), address(cETH));
+
             // TODO(Fix broken approval in contract)
-            //liquidityProviders.withdrawEth(redeem, amount);
-            uint256 balPost = liquidityProviders.cAssetBalances(
-                address(cETH),
-                address(this)
+            liquidityProviders.withdrawEth(redeem, amount);
+
+            (uint256 cAssetBalance, , ) = liquidityProviders.getCAssetBalances(
+                address(this),
+                address(cETH)
             );
-            //assert(balAnte == (balPost - amount));
+
+            assert(cAssetBalanceInit == (cAssetBalance - amount));
+            assert(
+                cAssetBalance ==
+                    ICEther(cETH).balanceOf(address(liquidityProviders))
+            );
         }
     }
 
@@ -300,16 +412,23 @@ contract LiquidityProvidersTest is DSTest, TestUtility {
             amount += 0.01 ether;
         }
         // TODO(Fix approvals here, which seem to be broken)
-        //liquidityProviders.supplyCErc20(address(cETH), amount);
-        uint256 balAnte = liquidityProviders.cAssetBalances(
-            address(cETH),
-            address(this)
+        liquidityProviders.supplyCErc20(address(cETH), amount);
+
+        (uint256 cAssetBalanceInit, , ) = liquidityProviders.getCAssetBalances(
+            address(this),
+            address(cETH)
         );
-        //liquidityProviders.withdrawCEth(amount);
-        uint256 balPost = liquidityProviders.cAssetBalances(
-            address(cETH),
-            address(this)
+
+        liquidityProviders.withdrawCEth(amount);
+
+        (uint256 cAssetBalance, , ) = liquidityProviders.getCAssetBalances(
+            address(this),
+            address(cETH)
         );
-        //assert(balAnte == (balPost - amount));
+        assert(cAssetBalanceInit == (cAssetBalance - amount));
+        assert(
+            cAssetBalance ==
+                ICEther(cETH).balanceOf(address(liquidityProviders))
+        );
     }
 }
