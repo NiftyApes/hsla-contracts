@@ -198,64 +198,65 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
     // TODO (Fix overflow)
     function testWithdrawErc20(uint256 amount, bool redeemType) public {
         // TODO(This needs to assert the cAsset balance of address(this), based on the asset -> cAsset exchange rate)
-        emit log_named_uint("deposit", amount);
+        emit log_named_uint("amount", amount);
 
         IERC20 underlying = IERC20(DAI);
         ICERC20 cToken = ICERC20(cDAI);
 
         uint256 assetBalanceInit = underlying.balanceOf(address(this));
 
-        if (amount < 1 ether) {
-            amount += 1 ether;
-        } else if (amount > 100 ether) {
-            amount = 100 ether;
+        // if (amount < 1 ether) {
+        //     amount += 1 ether;
+        // we only supplied 100000 ether in setUp so we limit the max fuzz value here. 
+        // Greater values and fail case will be tested below. 
+        // } else 
+        if (amount > 100000 ether) {
+            amount = 100000 ether;
         }
-        emit log_named_uint("deposit", amount);
-        if (redeemType) {
-            liquidityProviders.withdrawErc20(address(DAI), redeemType, amount);
-        } else {
-            // FIXME(There is a bug here where the incorrect cAsset bal is returned)
-            // check to see if addressed by changes
-            (
-                uint256 cAssetBalanceInit,
-                uint256 utilizedCAssetBalanceInit,
-                uint256 availableCAssetBalanceInit
-            ) = liquidityProviders.getCAssetBalances(
-                    address(this),
-                    address(cDAI)
-                );
+        emit log_named_uint("amount", amount);
+        // if (redeemType) {
+        //     // liquidityProviders.withdrawErc20(address(DAI), redeemType, amount);
+        // } else {
+        // FIXME(There is a bug here where the incorrect cAsset bal is returned)
+        // check to see if addressed by changes
+        (
+            uint256 cAssetBalanceInit,
+            uint256 utilizedCAssetBalanceInit,
+            uint256 availableCAssetBalanceInit
+        ) = liquidityProviders.getCAssetBalances(address(this), address(cDAI));
 
-            // if (amount >= cAssetBalanceInit) {
-            //     amount = cAssetBalanceInit - 1;
-            // }
+        emit log_named_uint("cAssetBalanceInit", cAssetBalanceInit);
+        emit log_named_uint(
+            "balanceInComp",
+            ICERC20(cDAI).balanceOf(address(liquidityProviders))
+        );
 
-            liquidityProviders.withdrawErc20(address(DAI), redeemType, amount);
+        liquidityProviders.withdrawErc20(address(DAI), false, amount);
 
-            (, uint256 redeemTokens) = divScalarByExpTruncate(
-                amount,
-                Exp({mantissa: cToken.exchangeRateCurrent()})
-            );
+        (, uint256 redeemTokens) = divScalarByExpTruncate(
+            amount,
+            Exp({mantissa: cToken.exchangeRateCurrent()})
+        );
 
-            uint256 assetBalance = underlying.balanceOf(address(this));
+        uint256 assetBalance = underlying.balanceOf(address(this));
 
-            (
-                uint256 cAssetBalance,
-                uint256 utilizedCAssetBalance,
-                uint256 availableCAssetBalance
-            ) = liquidityProviders.getCAssetBalances(
-                    address(this),
-                    address(cDAI)
-                );
+        (
+            uint256 cAssetBalance,
+            uint256 utilizedCAssetBalance,
+            uint256 availableCAssetBalance
+        ) = liquidityProviders.getCAssetBalances(address(this), address(cDAI));
 
-            // TODO add assertion to check token conversion math
+        emit log_named_uint("cAssetBalanceInit", cAssetBalanceInit);
+        emit log_named_uint("cAssetBalance", cAssetBalance);
+        emit log_named_uint(
+            "balanceInComp",
+            ICERC20(cDAI).balanceOf(address(liquidityProviders))
+        );
 
-            assert(assetBalance == (assetBalanceInit + amount));
-
-            assert(cAssetBalance == (cAssetBalanceInit - redeemTokens));
-            assert(
-                cAssetBalance == cToken.balanceOf(address(liquidityProviders))
-            );
-        }
+        assert(assetBalance == (assetBalanceInit + amount));
+        assert(cAssetBalance == (cAssetBalanceInit - redeemTokens));
+        assert(cAssetBalance == cToken.balanceOf(address(liquidityProviders)));
+        // }
     }
 
     // TODO(Fix the bug)
@@ -265,8 +266,10 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
         // check to see if addressed by changes
         if (amount < 1 ether) {
             amount += 1 ether;
-        } else if (amount > 100 ether) {
-            amount = 100 ether;
+        // we only supplied 100000 ether in setUp so we limit the max fuzz value here. 
+        // Greater values and fail case will be tested below. 
+        } else if (amount > 100000 ether) {
+            amount = 100000 ether;
         }
         if (redeemType) {
             liquidityProviders.withdrawErc20(address(DAI), redeemType, amount);
