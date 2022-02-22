@@ -134,26 +134,24 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
     // TODO(Create failing tests/assertions for each function)
 
     function testSupplyErc20(uint32 deposit) public {
-        (
-            uint256 cAssetBalanceInit,
-            uint256 utilizedCAssetBalanceInit,
-            uint256 availableCAssetBalanceInit
-        ) = liquidityProviders.getCAssetBalances(address(this), address(cDAI));
-        
-        liquidityProviders.supplyErc20(address(DAI), deposit);
-
+        IERC20 underlying = IERC20(DAI);
         ICERC20 cToken = ICERC20(cDAI);
 
-        emit log_named_uint("deposit", deposit);
-        emit log_named_uint(
-            "cToken.exchangeRateCurrent()",
-            cToken.exchangeRateCurrent()
+        uint256 assetBalanceInit = underlying.balanceOf(address(this));
+
+        (uint256 cAssetBalanceInit, , ) = liquidityProviders.getCAssetBalances(
+            address(this),
+            address(cDAI)
         );
+
+        liquidityProviders.supplyErc20(address(DAI), deposit);
 
         (, uint256 mintTokens) = divScalarByExpTruncate(
             deposit,
             Exp({mantissa: cToken.exchangeRateCurrent()})
         );
+
+        uint256 assetBalance = underlying.balanceOf(address(this));
 
         (
             uint256 cAssetBalance,
@@ -161,15 +159,7 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
             uint256 availableCAssetBalance
         ) = liquidityProviders.getCAssetBalances(address(this), address(cDAI));
 
-        emit log_named_uint("cAssetBalanceInit", cAssetBalanceInit);
-        emit log_named_uint("cAssetBalance", cAssetBalance);
-        emit log_named_uint("mintTokens", mintTokens);
-        emit log_named_uint("availableCAssetBalance", availableCAssetBalance);
-        emit log_named_uint(
-            "balanceInComp",
-            cToken.balanceOf(address(liquidityProviders))
-        );
-
+        assert(assetBalance == (assetBalanceInit - deposit));
         assert(cAssetBalance == (cAssetBalanceInit + mintTokens));
         assert(utilizedCAssetBalance == 0 ether);
         assert(availableCAssetBalance == cAssetBalance);
@@ -177,22 +167,28 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
     }
 
     function testSupplyCErc20(uint32 deposit) public {
-        (
-            uint256 cAssetBalanceInit,
-            uint256 utilizedCAssetBalanceInit,
-            uint256 availableCAssetBalanceInit
-        ) = liquidityProviders.getCAssetBalances(address(this), address(cDAI));
+        emit log_named_uint("deposit", deposit);
+
+        (uint256 cAssetBalanceInit, , ) = liquidityProviders.getCAssetBalances(
+            address(this),
+            address(cDAI)
+        );
 
         liquidityProviders.supplyCErc20(address(cDAI), deposit);
-        cAssetBalanceInit += deposit;
 
-        (
-            uint256 cAssetBalance,
-            uint256 utilizedCAssetBalance,
-            uint256 availableCAssetBalance
-        ) = liquidityProviders.getCAssetBalances(address(this), address(cDAI));
+        (uint256 cAssetBalance, , ) = liquidityProviders.getCAssetBalances(
+            address(this),
+            address(cDAI)
+        );
 
-        assert(cAssetBalanceInit == cAssetBalance);
+        emit log_named_uint("cAssetBalanceInit", cAssetBalanceInit);
+        emit log_named_uint("cAssetBalance", cAssetBalance);
+        emit log_named_uint(
+            "balanceInComp",
+            ICERC20(cDAI).balanceOf(address(liquidityProviders))
+        );
+
+        assert(cAssetBalance == (cAssetBalanceInit + deposit));
         assert(
             cAssetBalance ==
                 ICERC20(cDAI).balanceOf(address(liquidityProviders))
@@ -202,11 +198,19 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
     // TODO (Fix overflow)
     function testWithdrawErc20(uint256 amount, bool redeemType) public {
         // TODO(This needs to assert the cAsset balance of address(this), based on the asset -> cAsset exchange rate)
+        emit log_named_uint("deposit", amount);
+
+        IERC20 underlying = IERC20(DAI);
+        ICERC20 cToken = ICERC20(cDAI);
+
+        uint256 assetBalanceInit = underlying.balanceOf(address(this));
+
         if (amount < 1 ether) {
             amount += 1 ether;
         } else if (amount > 100 ether) {
             amount = 100 ether;
         }
+        emit log_named_uint("deposit", amount);
         if (redeemType) {
             liquidityProviders.withdrawErc20(address(DAI), redeemType, amount);
         } else {
@@ -221,11 +225,19 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
                     address(cDAI)
                 );
 
-            if (amount >= cAssetBalanceInit) {
-                amount = cAssetBalanceInit - 1;
-            }
+            // if (amount >= cAssetBalanceInit) {
+            //     amount = cAssetBalanceInit - 1;
+            // }
+
             liquidityProviders.withdrawErc20(address(DAI), redeemType, amount);
-            cAssetBalanceInit -= amount;
+
+            (, uint256 redeemTokens) = divScalarByExpTruncate(
+                amount,
+                Exp({mantissa: cToken.exchangeRateCurrent()})
+            );
+
+            uint256 assetBalance = underlying.balanceOf(address(this));
+
             (
                 uint256 cAssetBalance,
                 uint256 utilizedCAssetBalance,
@@ -237,10 +249,11 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
 
             // TODO add assertion to check token conversion math
 
-            assert(cAssetBalanceInit == cAssetBalance);
+            assert(assetBalance == (assetBalanceInit + amount));
+
+            assert(cAssetBalance == (cAssetBalanceInit - redeemTokens));
             assert(
-                cAssetBalance ==
-                    ICERC20(cDAI).balanceOf(address(liquidityProviders))
+                cAssetBalance == cToken.balanceOf(address(liquidityProviders))
             );
         }
     }
