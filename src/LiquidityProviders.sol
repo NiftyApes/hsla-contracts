@@ -18,6 +18,8 @@ import "./interfaces/ILiquidityProviders.sol";
 // @notice This contract wraps and unwraps, tracks balances of deposited Assets and cAssets
 
 // TODO document reentrancy bugs for auditors
+// TODO Implement a proxy
+
 contract LiquidityProviders is
     ILiquidityProviders,
     Exponential,
@@ -143,6 +145,8 @@ contract LiquidityProviders is
         _accountAssets[account].keys.pop();
     }
 
+    // implement 10M limit for MVP
+
     // @notice returns number of cErc20 tokens added to balance
     function supplyErc20(address asset, uint256 numTokensToSupply)
         external
@@ -166,6 +170,7 @@ contract LiquidityProviders is
         }
 
         // transferFrom ERC20 from depositors address
+        // review for safeTransferFrom
         require(
             underlying.transferFrom(
                 msg.sender,
@@ -197,7 +202,6 @@ contract LiquidityProviders is
         // add value or assets to this contract and this state variable could be re-entered to
         // increase balance, then withdrawing more funds than have been supplied.
         // updating the depositors cErc20 balance
-        // cAssetBalances[cAsset][msg.sender] += mintTokens;
         _accountAssets[msg.sender].cAssetBalance[cAsset] += mintTokens;
 
         emit Erc20Supplied(msg.sender, asset, numTokensToSupply);
@@ -237,7 +241,6 @@ contract LiquidityProviders is
         // add value or assets to this contract and this state variable could be re-entered to
         // increase balance, then withdrawing more funds than have been supplied.
         // updating the depositors cErc20 balance
-        // cAssetBalances[cAsset][msg.sender] += numTokensToSupply;
         _accountAssets[msg.sender].cAssetBalance[cAsset] += numTokensToSupply;
 
         emit CErc20Supplied(msg.sender, cAsset, numTokensToSupply);
@@ -269,7 +272,7 @@ contract LiquidityProviders is
         uint256 redeemAmount;
 
         // redeemType == true >> withdraw based on amount of cErc20
-        if (redeemType == true) {
+        if (redeemType) {
             exchangeRateMantissa = cToken.exchangeRateCurrent();
 
             redeemTokens = amountToWithdraw;
@@ -301,7 +304,7 @@ contract LiquidityProviders is
             );
 
             require(
-                underlying.transfer(msg.sender, redeemAmount) == true,
+                underlying.transfer(msg.sender, redeemAmount),
                 "underlying.transfer() failed"
             );
 
@@ -319,7 +322,7 @@ contract LiquidityProviders is
             // require msg.sender has sufficient available balance of cErc20
             require(
                 getAvailableCAssetBalance(msg.sender, cAsset) >= redeemTokens,
-                "Must have an available balance greater than or equal to amountToWithdraw"
+                "Must have sufficient balance"
             );
 
             _accountAssets[msg.sender].cAssetBalance[cAsset] -= redeemTokens;
@@ -338,7 +341,7 @@ contract LiquidityProviders is
             );
 
             require(
-                underlying.transfer(msg.sender, redeemAmount) == true,
+                underlying.transfer(msg.sender, redeemAmount),
                 "underlying.transfer() failed"
             );
         }
@@ -356,7 +359,7 @@ contract LiquidityProviders is
     {
         require(
             _cAssetToAsset[cAsset] != address(0),
-            "Asset not whitelisted on NiftyApes"
+            "Asset not whitelisted"
         );
 
         address asset = _cAssetToAsset[cAsset];

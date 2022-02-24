@@ -22,6 +22,8 @@ import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 // I dont think so due to storage value needed in the library
 // TODO(need to implement Proxy and Intitializable contracts to enable upgarability and big fixes?)
 
+// TODO refactor to ensure that capital can't be moved or is present for amountDrawn
+
 contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     using ECDSA for bytes32;
 
@@ -297,6 +299,8 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             "Asset not whitelisted on NiftyApes"
         );
 
+        // if statement for lender or borrower, borrower should not have to have balance
+
         uint256 exchangeRateMantissa = cToken.exchangeRateCurrent();
 
         (, uint256 offerTokens) = divScalarByExpTruncate(
@@ -342,13 +346,9 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         bool floorTerm
     ) external {
         // Get pointer to offer book
-        OfferBook storage offerBook;
-
-        if (floorTerm) {
-            offerBook = _floorOfferBooks[nftContractAddress];
-        } else {
-            offerBook = _nftOfferBooks[nftContractAddress][nftId];
-        }
+        OfferBook storage offerBook = floorTerm
+            ? _floorOfferBooks[nftContractAddress]
+            : _nftOfferBooks[nftContractAddress][nftId];
 
         // Get memory pointer to offer
         Offer memory offer = offerBook.offers[offerHash];
@@ -551,10 +551,11 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             "Cannot execute bid, offer has expired"
         );
 
+        // TODO update other 1 day values to 1 day in contract
         // This prevents a malicous actor from providing a 1 second loan offer and duping a naive borrower into losing their asset.
         // It ensures a borrower always has at least 24 hours to repay their loan
         require(
-            offer.duration >= 86400,
+            offer.duration >= 1 days,
             "Offers must have 24 hours minimum duration"
         );
 
@@ -761,7 +762,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             currentProtocolInterest
         ) = calculateInterestAccrued(offer.nftContractAddress, nftId);
 
-        if (byBorrower == true) {
+        if (byBorrower) {
             // calculate interest earned by all lenders
             interestAndPremiumOwedToCurrentLender =
                 currentLenderInterest +
@@ -950,13 +951,13 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
         // if duration is the only term updated
         if (
-            offer.amount == amount &&
-            offer.interestRateBps == interestRateBps &&
+            offer.amount >= amount &&
+            offer.interestRateBps >= interestRateBps &&
             offer.duration > duration
         ) {
             // require offer has at least 24 hour additional duration
             require(
-                offer.duration >= (duration + 86400),
+                offer.duration >= (duration + 1 days),
                 "Cannot refinanceBestOffer. Offer duration must be at least 24 hours greater than current loan. "
             );
         }
@@ -1411,6 +1412,8 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
     // ---------- Internal Payment, Balance, and Transfer Functions ---------- //
 
+    // need to verify that it is impossible to have a negative interest in Compound
+
     // does this functino need an eth version?
     function _checkAndUpdateLenderUtilizedBalanceInternal(
         address cAsset,
@@ -1591,7 +1594,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
         // transfer underlying from this contract to borrower
         require(
-            underlying.transfer(nftOwner, amount) == true,
+            underlying.transfer(nftOwner, amount),
             "underlying.transfer() failed"
         );
     }
@@ -1671,13 +1674,10 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     function ownerOf(address nftContractAddress, uint256 nftId)
         public
         view
-        returns (address nftOwner)
+        returns (address)
     {
         // Get the internal owner of the NFT
-        nftOwner = _loanAuctions[nftContractAddress][nftId].nftOwner;
-
-        // If the NFT is not in the protocol, revert
-        require(nftOwner != address(0), "This NFT not in protocol");
+        return _loanAuctions[nftContractAddress][nftId].nftOwner;
     }
 
     // returns the interest value earned by lender or protocol during timeOfInterest segment
@@ -1766,6 +1766,8 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     }
 
     // ---------- Fee Update Functions ---------- //
+
+    // provide an upper bound at 1000 bps or similar
 
     function updateLoanDrawProtocolFee(uint64 newLoanDrawProtocolFeeBps)
         external

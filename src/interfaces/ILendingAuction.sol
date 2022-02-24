@@ -6,6 +6,8 @@ import "./ILiquidityProviders.sol";
 interface ILendingAuction is ILiquidityProviders {
     // Structs
 
+    //TODO update timestamps to uint32, will expire in 2048
+
     struct LoanAuction {
         // NFT owner
         address nftOwner;
