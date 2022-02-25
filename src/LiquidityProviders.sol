@@ -232,9 +232,8 @@ contract LiquidityProviders is
 
         // transferFrom ERC20 from depositors address
         require(
-            cToken.transferFrom(msg.sender, address(this), numTokensToSupply) ==
-                true,
-            "cToken transferFrom failed. Have you approved the correct amount of Tokens?"
+            cToken.transferFrom(msg.sender, address(this), numTokensToSupply),
+            "cToken transferFrom failed"
         );
 
         // This state variable is written after external calls because external calls
@@ -446,8 +445,7 @@ contract LiquidityProviders is
 
         // transferFrom ERC20 from supplyers address
         require(
-            cToken.transferFrom(msg.sender, address(this), numTokensToSupply) ==
-                true,
+            cToken.transferFrom(msg.sender, address(this), numTokensToSupply),
             "cToken.transferFrom failed"
         );
 

@@ -166,11 +166,15 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
         assert(cAssetBalance == cToken.balanceOf(address(liquidityProviders)));
     }
 
-    function testSupplyCErc20(uint32 deposit) public {
+    function testSupplyCErc20(uint256 deposit) public {
         (uint256 cAssetBalanceInit, , ) = liquidityProviders.getCAssetBalances(
             address(this),
             address(cDAI)
         );
+
+        if (deposit > cAssetBalanceInit) {
+            deposit = cAssetBalanceInit;
+        }
 
         liquidityProviders.supplyCErc20(address(cDAI), deposit);
 
@@ -436,12 +440,15 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
         assert(cAssetBalance == cToken.balanceOf(address(liquidityProviders)));
     }
 
-    // TODO(Fix this test, which fails because of transfer approval)
-    function testSupplyCEth(uint64 deposit) public {
+    function testSupplyCEth(uint256 deposit) public {
         (uint256 cAssetBalanceInit, , ) = liquidityProviders.getCAssetBalances(
             address(this),
             address(cETH)
         );
+
+        if (deposit > cAssetBalanceInit) {
+            deposit = cAssetBalanceInit;
+        }
 
         liquidityProviders.supplyCEth(deposit);
 
@@ -456,7 +463,7 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
             "balanceInComp",
             ICEther(cETH).balanceOf(address(liquidityProviders))
         );
-        
+
         assert(cAssetBalance == (cAssetBalanceInit + deposit));
         assert(
             cAssetBalance ==
