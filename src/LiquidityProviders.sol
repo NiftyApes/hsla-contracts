@@ -176,12 +176,12 @@ contract LiquidityProviders is
                 msg.sender,
                 address(this),
                 numTokensToSupply
-            ) == true,
+            ),
             "underlying.transferFrom() failed"
         );
 
         require(
-            underlying.approve(cAsset, numTokensToSupply) == true,
+            underlying.approve(cAsset, numTokensToSupply),
             "underlying.approve() failed"
         );
 
@@ -383,7 +383,7 @@ contract LiquidityProviders is
 
         // transfer cErc20 tokens to depositor
         require(
-            cToken.transfer(msg.sender, amountToWithdraw) == true,
+            cToken.transfer(msg.sender, amountToWithdraw),
             "cToken.transfer failed. Have you approved the correct amount of Tokens"
         );
 
@@ -480,8 +480,8 @@ contract LiquidityProviders is
         uint256 redeemTokens;
         uint256 redeemAmount;
 
-        // redeemType == true >> withdraw based on amount of cErc20
-        if (redeemType == true) {
+        // redeemType >> withdraw based on amount of cErc20
+        if (redeemType) {
             exchangeRateMantissa = cToken.exchangeRateCurrent();
 
             redeemTokens = amountToWithdraw;
@@ -530,7 +530,7 @@ contract LiquidityProviders is
             // require msg.sender has sufficient available balance of cEth
             require(
                 getAvailableCAssetBalance(msg.sender, cEth) >= redeemTokens,
-                "Must have an available balance greater than or equal to amountToWithdraw"
+                "Must have sufficient balance"
             );
 
             _accountAssets[msg.sender].cAssetBalance[cEth] -= redeemTokens;
@@ -591,7 +591,7 @@ contract LiquidityProviders is
 
         // transfer cErc20 tokens to depositor
         require(
-            cToken.transfer(msg.sender, amountToWithdraw) == true,
+            cToken.transfer(msg.sender, amountToWithdraw),
             "cToken.transfer failed. Have you approved the correct amount of Tokens"
         );
 
