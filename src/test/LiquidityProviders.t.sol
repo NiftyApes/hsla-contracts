@@ -449,17 +449,17 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
                 redeemTokens
             );
 
+            emit log_named_uint("redeemTokens", redeemTokens);
+            emit log_named_uint("redeemAmount", redeemAmount);
+
+            liquidityProviders.withdrawEth(redeemType, redeemTokens);
+
             uint256 assetBalance = address(this).balance;
 
             (uint256 cAssetBalance, , ) = liquidityProviders.getCAssetBalances(
                 address(this),
                 address(cETH)
             );
-
-            emit log_named_uint("redeemTokens", redeemTokens);
-            emit log_named_uint("redeemAmount", redeemAmount);
-
-            liquidityProviders.withdrawEth(redeemType, redeemTokens);
 
             emit log_named_uint("assetBalanceInit", assetBalanceInit);
             emit log_named_uint("assetBalance", assetBalance);
@@ -484,16 +484,16 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
 
             // this test identifies a either math rounding error or odd math dynamic via fuzzing, sometimes it rounds, sometimes not so can't just add one.
             // need to investigate this rounding, may be inside compound math.
-            // assert(
-            //     amount >= redeemAmount && amount <= redeemAmount + 150000000
-            // );
-            // // this test identifies a either math rounding error or odd math dynamic via fuzzing, sometimes it rounds, sometimes not so can't just add one.
-            // // need to investigate this rounding, may be inside compound math.
-            // assert(
-            //     assetBalance >= (assetBalanceInit + redeemAmount - 10000) &&
-            //         assetBalance <= (assetBalanceInit + redeemAmount + 10000)
-            // );
-            // assert(cAssetBalance == (cAssetBalanceInit - redeemTokens));
+            assert(
+                amount >= redeemAmount && amount <= redeemAmount + 150000000
+            );
+            // this test identifies a either math rounding error or odd math dynamic via fuzzing, sometimes it rounds, sometimes not so can't just add one.
+            // need to investigate this rounding, may be inside compound math.
+            assert(
+                assetBalance >= (assetBalanceInit + redeemAmount - 10000) &&
+                    assetBalance <= (assetBalanceInit + redeemAmount + 10000)
+            );
+            assert(cAssetBalance == (cAssetBalanceInit - redeemTokens));
             // still experiencing a rounding error that leaves the cAssetBalance lesser by 1 wei
             assert(
                 cAssetBalance + 1 ==
