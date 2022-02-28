@@ -434,7 +434,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         );
 
         // // if floorTerm is false
-        if (offer.floorTerm == false) {
+        if (!offer.floorTerm) {
             // require nftId == sigNftId
             require(
                 nftId == offer.nftId,
@@ -446,7 +446,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         _executeLoanInternal(offer, lender, msg.sender, nftId);
 
         // finalize signature
-        _cancelledOrFinalized[signature] == true;
+        _cancelledOrFinalized[signature] = true;
 
         emit SigOfferFinalized(
             offer.nftContractAddress,
@@ -712,6 +712,73 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         );
     }
 
+        /**
+     * @notice Allows a lender to offer better terms than the current loan, refinance, and take over a loan
+     * @dev The offer amount, interest rate, and duration must be at parity with the current loan, plus "1". Meaning at least one term must be better than the current loan.
+     * @dev new lender balance must be sufficient to pay fullRefinance amount
+     * @dev current lender balance must be sufficient to fund new offer amount
+     * @param offer The details of the loan auction offer
+     */
+    function refinanceByLender(Offer calldata offer)
+        external
+        payable
+        whenNotPaused
+        nonReentrant
+    {
+        uint256 timeDrawn = _loanAuctions[offer.nftContractAddress][offer.nftId]
+            .timeDrawn;
+        uint256 loanExecutedTime = _loanAuctions[offer.nftContractAddress][
+            offer.nftId
+        ].loanExecutedTime;
+        uint256 amount = _loanAuctions[offer.nftContractAddress][offer.nftId]
+            .amount;
+        uint256 interestRateBps = _loanAuctions[offer.nftContractAddress][
+            offer.nftId
+        ].interestRateBps;
+        uint256 duration = _loanAuctions[offer.nftContractAddress][offer.nftId]
+            .duration;
+
+        // Require that loan has not expired. This prevents another lender from refinancing
+        require(
+            block.timestamp < loanExecutedTime + timeDrawn,
+            "Cannot refinance loan that has expired"
+        );
+
+        // require that terms are parity + 1
+        require(
+            // Require bidAmount is greater than previous bid
+            (offer.amount > amount &&
+                offer.interestRateBps <= interestRateBps &&
+                offer.duration >= duration) ||
+                // OR
+                // Require interestRate is lower than previous bid
+                (offer.amount >= amount &&
+                    offer.interestRateBps < interestRateBps &&
+                    offer.duration >= duration) ||
+                // OR
+                // Require duration to be greater than previous bid
+                (offer.amount >= amount &&
+                    offer.interestRateBps <= interestRateBps &&
+                    offer.duration > duration),
+            "Bid must have better terms than current loan"
+        );
+
+        // if duration is the only term updated
+        if (
+            offer.amount >= amount &&
+            offer.interestRateBps >= interestRateBps &&
+            offer.duration > duration
+        ) {
+            // require offer has at least 24 hour additional duration
+            require(
+                offer.duration >= (duration + 1 days),
+                "Cannot refinanceBestOffer. Offer duration must be at least 24 hours greater than current loan. "
+            );
+        }
+
+        _refinance(offer, offer.creator, offer.nftId, false);
+    }
+
     // @Alcibades - we must supply the nftId to support floor offers. A floor offer will have only one nftId yet be valid for n nfts.
     /**
      * @notice Handles internal checks, state transitions, and value/asset transfers for loan refinance
@@ -889,80 +956,12 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             }
         }
 
-        emit LoanRefinance(
+        emit Refinance(
             prospectiveLender,
-            loanAuction.nftOwner,
             offer.nftContractAddress,
             offer.nftId,
             offer
         );
-    }
-
-    /**
-     * @notice Allows a lender to offer better terms than the current loan, refinance, and take over a loan
-     * @dev The offer amount, interest rate, and duration must be at parity with the current loan, plus "1". Meaning at least one term must be better than the current loan.
-     * @dev new lender balance must be sufficient to pay fullRefinance amount
-     * @dev current lender balance must be sufficient to fund new offer amount
-     * @param offer The details of the loan auction offer
-     */
-    function refinanceByLender(Offer calldata offer)
-        external
-        payable
-        whenNotPaused
-        nonReentrant
-    {
-        uint256 timeDrawn = _loanAuctions[offer.nftContractAddress][offer.nftId]
-            .timeDrawn;
-        uint256 loanExecutedTime = _loanAuctions[offer.nftContractAddress][
-            offer.nftId
-        ].loanExecutedTime;
-        uint256 amount = _loanAuctions[offer.nftContractAddress][offer.nftId]
-            .amount;
-        uint256 interestRateBps = _loanAuctions[offer.nftContractAddress][
-            offer.nftId
-        ].interestRateBps;
-        uint256 duration = _loanAuctions[offer.nftContractAddress][offer.nftId]
-            .duration;
-
-        // Require that loan has not expired. This prevents another lender from refinancing
-        require(
-            block.timestamp < loanExecutedTime + timeDrawn,
-            "Cannot refinance loan that has expired"
-        );
-
-        // require that terms are parity + 1
-        require(
-            // Require bidAmount is greater than previous bid
-            (offer.amount > amount &&
-                offer.interestRateBps <= interestRateBps &&
-                offer.duration >= duration) ||
-                // OR
-                // Require interestRate is lower than previous bid
-                (offer.amount >= amount &&
-                    offer.interestRateBps < interestRateBps &&
-                    offer.duration >= duration) ||
-                // OR
-                // Require duration to be greater than previous bid
-                (offer.amount >= amount &&
-                    offer.interestRateBps <= interestRateBps &&
-                    offer.duration > duration),
-            "Bid must have better terms than current loan"
-        );
-
-        // if duration is the only term updated
-        if (
-            offer.amount >= amount &&
-            offer.interestRateBps >= interestRateBps &&
-            offer.duration > duration
-        ) {
-            // require offer has at least 24 hour additional duration
-            require(
-                offer.duration >= (duration + 1 days),
-                "Cannot refinanceBestOffer. Offer duration must be at least 24 hours greater than current loan. "
-            );
-        }
-
-        _refinance(offer, offer.creator, offer.nftId, false);
     }
 
     // ---------- Borrower Draw Functions ---------- //
@@ -1244,7 +1243,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             nftId
         );
 
-        emit LoanRepaidInFull(nftContractAddress, nftId);
+        emit LoanRepaid(nftContractAddress, nftId);
     }
 
     /**

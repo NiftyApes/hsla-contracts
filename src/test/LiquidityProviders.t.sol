@@ -133,7 +133,6 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
     }
 
     // TODO(Add assertions around expected event emissions)
-    // TODO(Fix all failing/commented out test cases here)
     // TODO(Create failing tests/assertions for each function)
 
     function testSupplyErc20(uint32 deposit) public {
@@ -170,8 +169,6 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
     }
 
     function testSupplyCErc20(uint256 deposit) public {
-        emit log_named_uint("deposit", deposit);
-
         (uint256 cAssetBalanceInit, , ) = liquidityProviders.getCAssetBalances(
             address(this),
             address(cDAI)
@@ -181,21 +178,11 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
             deposit = cAssetBalanceInit;
         }
 
-        emit log_named_uint("cAssetBalanceInit", cAssetBalanceInit);
-        emit log_named_uint("deposit2", deposit);
-
         liquidityProviders.supplyCErc20(address(cDAI), deposit);
 
         (uint256 cAssetBalance, , ) = liquidityProviders.getCAssetBalances(
             address(this),
             address(cDAI)
-        );
-
-        emit log_named_uint("cAssetBalanceInit", cAssetBalanceInit);
-        emit log_named_uint("cAssetBalance", cAssetBalance);
-        emit log_named_uint(
-            "balanceInComp",
-            ICERC20(cDAI).balanceOf(address(liquidityProviders))
         );
 
         assert(cAssetBalance == (cAssetBalanceInit + deposit));
@@ -206,8 +193,6 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
     }
 
     function testWithdrawErc20(uint256 amount) public {
-        emit log_named_uint("amount", amount);
-
         IERC20 underlying = IERC20(DAI);
         ICERC20 cToken = ICERC20(cDAI);
 
@@ -234,13 +219,6 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
         (uint256 cAssetBalance, , ) = liquidityProviders.getCAssetBalances(
             address(this),
             address(cDAI)
-        );
-
-        emit log_named_uint("cAssetBalanceInit", cAssetBalanceInit);
-        emit log_named_uint("cAssetBalance", cAssetBalance);
-        emit log_named_uint(
-            "balanceInComp",
-            ICERC20(cDAI).balanceOf(address(liquidityProviders))
         );
 
         assert(assetBalance == (assetBalanceInit + amount));
@@ -299,16 +277,6 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
             address(cETH)
         );
 
-        emit log_named_uint("assetBalanceInit", assetBalanceInit);
-        emit log_named_uint("assetBalance", assetBalance);
-        emit log_named_uint("cAssetBalanceInit", cAssetBalanceInit);
-        emit log_named_uint("cAssetBalance", cAssetBalance);
-        emit log_named_uint(
-            "balanceInComp",
-            ICEther(cETH).balanceOf(address(liquidityProviders))
-        );
-        emit log_named_uint("mintTokens", mintTokens);
-
         assert(assetBalance == (assetBalanceInit - deposit));
         assert(cAssetBalance == (cAssetBalanceInit + mintTokens));
         assert(cAssetBalance == cToken.balanceOf(address(liquidityProviders)));
@@ -329,13 +297,6 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
         (uint256 cAssetBalance, , ) = liquidityProviders.getCAssetBalances(
             address(this),
             address(cETH)
-        );
-
-        emit log_named_uint("cAssetBalanceInit", cAssetBalanceInit);
-        emit log_named_uint("cAssetBalance", cAssetBalance);
-        emit log_named_uint(
-            "balanceInComp",
-            ICEther(cETH).balanceOf(address(liquidityProviders))
         );
 
         assert(cAssetBalance == (cAssetBalanceInit + deposit));
@@ -370,15 +331,6 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
         (uint256 cAssetBalance, , ) = liquidityProviders.getCAssetBalances(
             address(this),
             address(cETH)
-        );
-
-        emit log_named_uint("assetBalanceInit", assetBalanceInit);
-        emit log_named_uint("assetBalance", assetBalance);
-        emit log_named_uint("cAssetBalanceInit", cAssetBalanceInit);
-        emit log_named_uint("cAssetBalance", cAssetBalance);
-        emit log_named_uint(
-            "balanceInComp",
-            ICEther(cETH).balanceOf(address(liquidityProviders))
         );
 
         assert(assetBalance == (assetBalanceInit + amount));
