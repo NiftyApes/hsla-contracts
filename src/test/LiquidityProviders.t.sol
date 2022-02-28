@@ -205,8 +205,7 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
         );
     }
 
-    function testWithdrawErc20(uint256 amount, bool redeemType) public {
-        // TODO(This needs to assert the cAsset balance of address(this), based on the asset -> cAsset exchange rate)
+    function testWithdrawErc20(uint256 amount) public {
         emit log_named_uint("amount", amount);
 
         IERC20 underlying = IERC20(DAI);
@@ -214,113 +213,39 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
 
         uint256 assetBalanceInit = underlying.balanceOf(address(this));
 
-        // we only supplied 100000 ether in setUp so we limit the max fuzz value here.
-        // Greater values and fail case will be tested below.
-        if (redeemType) {
-            // not sure exactly why we cant supply less than 18 decimals place values
-            if (amount < 1 ether) {
-                amount += 1 ether;
-            } else if (amount > 10000 ether) {
-                amount = 10000 ether;
-            }
-            emit log_named_uint("amount", amount);
-
-            (uint256 cAssetBalanceInit, , ) = liquidityProviders
-                .getCAssetBalances(address(this), address(cDAI));
-
-            (, uint256 redeemTokens) = divScalarByExpTruncate(
-                amount,
-                Exp({mantissa: cToken.exchangeRateCurrent()})
-            );
-
-            (, uint256 redeemAmount) = mulScalarTruncate(
-                Exp({mantissa: cToken.exchangeRateCurrent()}),
-                redeemTokens
-            );
-
-            emit log_named_uint("redeemTokens", redeemTokens);
-            emit log_named_uint("redeemAmount", redeemAmount);
-
-            liquidityProviders.withdrawErc20(
-                address(DAI),
-                redeemType,
-                redeemTokens
-            );
-
-            uint256 assetBalance = underlying.balanceOf(address(this));
-
-            (uint256 cAssetBalance, , ) = liquidityProviders.getCAssetBalances(
-                address(this),
-                address(cDAI)
-            );
-
-            emit log_named_uint("assetBalanceInit", assetBalanceInit);
-            emit log_named_uint("assetBalance", assetBalance);
-            emit log_named_uint(
-                "assetBalance + redeemAmount",
-                assetBalanceInit + redeemAmount
-            );
-            emit log_named_uint(
-                "assetBalance + redeemAmount + 10000",
-                assetBalanceInit + redeemAmount + 10000
-            );
-            emit log_named_uint(
-                "assetBalance + redeemAmount - 10000",
-                assetBalanceInit + redeemAmount - 10000
-            );
-
-            // this test identifies a either math rounding error or odd math dynamic via fuzzing, sometimes it rounds, sometimes not so can't just add one.
-            // need to investigate this rounding, may be inside compound math.
-            assert(
-                amount >= redeemAmount && amount <= redeemAmount + 150000000
-            );
-            // this test identifies a either math rounding error or odd math dynamic via fuzzing, sometimes it rounds, sometimes not so can't just add one.
-            // need to investigate this rounding, may be inside compound math.
-            assert(
-                assetBalance >= (assetBalanceInit + redeemAmount - 10000) &&
-                    assetBalance <= (assetBalanceInit + redeemAmount + 10000)
-            );
-            assert(cAssetBalance == (cAssetBalanceInit - redeemTokens));
-            // still experiencing a rounding error that leaves the cAssetBalance lesser by 1 wei
-            assert(
-                cAssetBalance + 1 ==
-                    cToken.balanceOf(address(liquidityProviders))
-            );
-        } else {
-            if (amount > 10000 ether) {
-                amount = 10000 ether;
-            }
-
-            (uint256 cAssetBalanceInit, , ) = liquidityProviders
-                .getCAssetBalances(address(this), address(cDAI));
-
-            liquidityProviders.withdrawErc20(address(DAI), redeemType, amount);
-
-            (, uint256 redeemTokens) = divScalarByExpTruncate(
-                amount,
-                Exp({mantissa: cToken.exchangeRateCurrent()})
-            );
-
-            uint256 assetBalance = underlying.balanceOf(address(this));
-
-            (uint256 cAssetBalance, , ) = liquidityProviders.getCAssetBalances(
-                address(this),
-                address(cDAI)
-            );
-
-            emit log_named_uint("cAssetBalanceInit", cAssetBalanceInit);
-            emit log_named_uint("cAssetBalance", cAssetBalance);
-            emit log_named_uint(
-                "balanceInComp",
-                ICERC20(cDAI).balanceOf(address(liquidityProviders))
-            );
-
-            assert(assetBalance == (assetBalanceInit + amount));
-            assert(cAssetBalance == (cAssetBalanceInit - redeemTokens));
-            assert(
-                cAssetBalance == cToken.balanceOf(address(liquidityProviders))
-            );
+        if (amount > 10000 ether) {
+            amount = 10000 ether;
         }
+
+        (uint256 cAssetBalanceInit, , ) = liquidityProviders.getCAssetBalances(
+            address(this),
+            address(cDAI)
+        );
+
+        liquidityProviders.withdrawErc20(address(DAI), amount);
+
+        (, uint256 redeemTokens) = divScalarByExpTruncate(
+            amount,
+            Exp({mantissa: cToken.exchangeRateCurrent()})
+        );
+
+        uint256 assetBalance = underlying.balanceOf(address(this));
+
+        (uint256 cAssetBalance, , ) = liquidityProviders.getCAssetBalances(
+            address(this),
+            address(cDAI)
+        );
+
+        emit log_named_uint("cAssetBalanceInit", cAssetBalanceInit);
+        emit log_named_uint("cAssetBalance", cAssetBalance);
+        emit log_named_uint(
+            "balanceInComp",
+            ICERC20(cDAI).balanceOf(address(liquidityProviders))
+        );
+
+        assert(assetBalance == (assetBalanceInit + amount));
+        assert(cAssetBalance == (cAssetBalanceInit - redeemTokens));
+        assert(cAssetBalance == cToken.balanceOf(address(liquidityProviders)));
     }
 
     function testWithdrawCErc20(uint256 amount) public {
@@ -336,6 +261,7 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
         }
 
         liquidityProviders.withdrawCErc20(address(cDAI), amount);
+
         (uint256 cAssetBalance, , ) = liquidityProviders.getCAssetBalances(
             address(this),
             address(cDAI)
@@ -419,124 +345,48 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
         );
     }
 
-    // TODO(Fix: Must have an available balance greater than or equal to amountToWithdraw)
-    function testWithdrawEth(uint256 amount, bool redeemType) public {
+    function testWithdrawEth(uint256 amount) public {
         ICEther cToken = ICEther(cETH);
 
         uint256 assetBalanceInit = address(this).balance;
-
-        // TODO(RedeemTokens fails on too small of an amount)
-        // if (amount <= 0.01 ether) {
-        //     amount += 0.01 ether;
-        // }
-        if (redeemType) {
-            // not sure exactly why we cant supply less than 18 decimals place values
-            if (amount < 1 ether) {
-                amount += 1 ether;
-            } else if (amount > 10000 ether) {
-                amount = 10000 ether;
-            }
-            (uint256 cAssetBalanceInit, , ) = liquidityProviders
-                .getCAssetBalances(address(this), address(cETH));
-
-            (, uint256 redeemTokens) = divScalarByExpTruncate(
-                amount,
-                Exp({mantissa: cToken.exchangeRateCurrent()})
-            );
-
-            (, uint256 redeemAmount) = mulScalarTruncate(
-                Exp({mantissa: cToken.exchangeRateCurrent()}),
-                redeemTokens
-            );
-
-            emit log_named_uint("redeemTokens", redeemTokens);
-            emit log_named_uint("redeemAmount", redeemAmount);
-
-            liquidityProviders.withdrawEth(redeemType, redeemTokens);
-
-            uint256 assetBalance = address(this).balance;
-
-            (uint256 cAssetBalance, , ) = liquidityProviders.getCAssetBalances(
-                address(this),
-                address(cETH)
-            );
-
-            emit log_named_uint("assetBalanceInit", assetBalanceInit);
-            emit log_named_uint("assetBalance", assetBalance);
-            emit log_named_uint(
-                "assetBalance + redeemAmount",
-                assetBalanceInit + redeemAmount
-            );
-            emit log_named_uint(
-                "assetBalance + redeemAmount + 10000",
-                assetBalanceInit + redeemAmount + 10000
-            );
-            emit log_named_uint(
-                "assetBalance + redeemAmount - 10000",
-                assetBalanceInit + redeemAmount - 10000
-            );
-            emit log_named_uint("cAssetBalanceInit", cAssetBalanceInit);
-            emit log_named_uint("cAssetBalance", cAssetBalance);
-            emit log_named_uint(
-                "balanceInComp",
-                ICEther(cETH).balanceOf(address(liquidityProviders))
-            );
-
-            // this test identifies a either math rounding error or odd math dynamic via fuzzing, sometimes it rounds, sometimes not so can't just add one.
-            // need to investigate this rounding, may be inside compound math.
-            assert(
-                amount >= redeemAmount && amount <= redeemAmount + 150000000
-            );
-            // this test identifies a either math rounding error or odd math dynamic via fuzzing, sometimes it rounds, sometimes not so can't just add one.
-            // need to investigate this rounding, may be inside compound math.
-            assert(
-                assetBalance >= (assetBalanceInit + redeemAmount - 10000) &&
-                    assetBalance <= (assetBalanceInit + redeemAmount + 10000)
-            );
-            assert(cAssetBalance == (cAssetBalanceInit - redeemTokens));
-            // still experiencing a rounding error that leaves the cAssetBalance lesser by 1 wei
-            assert(
-                cAssetBalance + 1 ==
-                    cToken.balanceOf(address(liquidityProviders))
-            );
-        } else {
-            if (amount > 10000 ether) {
-                amount = 10000 ether;
-            }
-
-            (uint256 cAssetBalanceInit, , ) = liquidityProviders
-                .getCAssetBalances(address(this), address(cETH));
-
-            liquidityProviders.withdrawEth(redeemType, amount);
-
-            (, uint256 redeemTokens) = divScalarByExpTruncate(
-                amount,
-                Exp({mantissa: cToken.exchangeRateCurrent()})
-            );
-
-            uint256 assetBalance = address(this).balance;
-
-            (uint256 cAssetBalance, , ) = liquidityProviders.getCAssetBalances(
-                address(this),
-                address(cETH)
-            );
-
-            emit log_named_uint("assetBalanceInit", assetBalanceInit);
-            emit log_named_uint("assetBalance", assetBalance);
-            emit log_named_uint("cAssetBalanceInit", cAssetBalanceInit);
-            emit log_named_uint("cAssetBalance", cAssetBalance);
-            emit log_named_uint(
-                "balanceInComp",
-                ICEther(cETH).balanceOf(address(liquidityProviders))
-            );
-
-            assert(assetBalance == (assetBalanceInit + amount));
-            assert(cAssetBalance == (cAssetBalanceInit - redeemTokens));
-            assert(
-                cAssetBalance ==
-                    ICEther(cETH).balanceOf(address(liquidityProviders))
-            );
+        if (amount > 10000 ether) {
+            amount = 10000 ether;
         }
+
+        (uint256 cAssetBalanceInit, , ) = liquidityProviders.getCAssetBalances(
+            address(this),
+            address(cETH)
+        );
+
+        liquidityProviders.withdrawEth(amount);
+
+        (, uint256 redeemTokens) = divScalarByExpTruncate(
+            amount,
+            Exp({mantissa: cToken.exchangeRateCurrent()})
+        );
+
+        uint256 assetBalance = address(this).balance;
+
+        (uint256 cAssetBalance, , ) = liquidityProviders.getCAssetBalances(
+            address(this),
+            address(cETH)
+        );
+
+        emit log_named_uint("assetBalanceInit", assetBalanceInit);
+        emit log_named_uint("assetBalance", assetBalance);
+        emit log_named_uint("cAssetBalanceInit", cAssetBalanceInit);
+        emit log_named_uint("cAssetBalance", cAssetBalance);
+        emit log_named_uint(
+            "balanceInComp",
+            ICEther(cETH).balanceOf(address(liquidityProviders))
+        );
+
+        assert(assetBalance == (assetBalanceInit + amount));
+        assert(cAssetBalance == (cAssetBalanceInit - redeemTokens));
+        assert(
+            cAssetBalance ==
+                ICEther(cETH).balanceOf(address(liquidityProviders))
+        );
     }
 
     function testWithdrawCEth(uint256 amount) public {

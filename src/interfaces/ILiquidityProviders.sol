@@ -8,7 +8,7 @@ import "../CarefulMath.sol";
 interface ILiquidityProviders {
     // Structs
 
-        struct AccountAssets {
+    struct AccountAssets {
         address[] keys;
         mapping(address => uint256) cAssetBalance;
         mapping(address => uint256) utilizedCAssetBalance;
@@ -27,7 +27,6 @@ interface ILiquidityProviders {
     event Erc20Withdrawn(
         address depositor,
         address asset,
-        bool redeemType,
         uint256 amount
     );
 
@@ -37,7 +36,7 @@ interface ILiquidityProviders {
 
     event CEthSupplied(address depositor, uint256 amount);
 
-    event EthWithdrawn(address depositor, bool redeemType, uint256 amount);
+    event EthWithdrawn(address depositor, uint256 amount);
 
     event CEthWithdrawn(address depositor, uint256 amount);
 
@@ -47,7 +46,7 @@ interface ILiquidityProviders {
         external
         view
         returns (address cAsset);
-        
+
     function setCAssetAddress(address asset, address cAsset) external;
 
     function getAssetsIn(address depositor)
@@ -91,11 +90,9 @@ interface ILiquidityProviders {
         external
         returns (uint256);
 
-    function withdrawErc20(
-        address asset,
-        bool redeemType,
-        uint256 amountToWithdraw
-    ) external returns (uint256);
+    function withdrawErc20(address asset, uint256 amountToWithdraw)
+        external
+        returns (uint256);
 
     function withdrawCErc20(address asset, uint256 amountToWithdraw)
         external
@@ -105,9 +102,7 @@ interface ILiquidityProviders {
 
     function supplyCEth(uint256 numTokensToSupply) external returns (uint256);
 
-    function withdrawEth(bool redeemType, uint256 amountToWithdraw)
-        external
-        returns (uint256);
+    function withdrawEth(uint256 amountToWithdraw) external returns (uint256);
 
     function withdrawCEth(uint256 amountToWithdraw) external returns (uint256);
 }

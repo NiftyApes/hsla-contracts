@@ -248,11 +248,12 @@ contract LiquidityProviders is
     }
 
     // True to withdraw based on cErc20 amount. False to withdraw based on amount of underlying erc20
-    function withdrawErc20(
-        address asset,
-        bool redeemType,
-        uint256 amountToWithdraw
-    ) public whenNotPaused nonReentrant returns (uint256) {
+    function withdrawErc20(address asset, uint256 amountToWithdraw)
+        public
+        whenNotPaused
+        nonReentrant
+        returns (uint256)
+    {
         require(
             assetToCAsset[asset] != address(0),
             "Asset not whitelisted on NiftyApes"
@@ -270,82 +271,42 @@ contract LiquidityProviders is
         uint256 redeemTokens;
         uint256 redeemAmount;
 
-        // redeemType == true >> withdraw based on amount of cErc20
-        if (redeemType) {
-            exchangeRateMantissa = cToken.exchangeRateCurrent();
+        exchangeRateMantissa = cToken.exchangeRateCurrent();
 
-            redeemTokens = amountToWithdraw;
+        (, redeemTokens) = divScalarByExpTruncate(
+            amountToWithdraw,
+            Exp({mantissa: exchangeRateMantissa})
+        );
 
-            (, redeemAmount) = mulScalarTruncate(
-                Exp({mantissa: exchangeRateMantissa}),
-                amountToWithdraw
-            );
+        redeemAmount = amountToWithdraw;
 
-            // require msg.sender has sufficient available balance of cErc20
-            require(
-                getAvailableCAssetBalance(msg.sender, cAsset) >= redeemTokens,
-                "Must have an available balance greater than or equal to amountToWithdraw"
-            );
+        // require msg.sender has sufficient available balance of cErc20
+        require(
+            getAvailableCAssetBalance(msg.sender, cAsset) >= redeemTokens,
+            "Must have sufficient balance"
+        );
 
-            _accountAssets[msg.sender].cAssetBalance[cAsset] -= redeemTokens;
+        _accountAssets[msg.sender].cAssetBalance[cAsset] -= redeemTokens;
 
-            if (
-                _accountAssets[msg.sender].cAssetBalance[cAsset] == 0 &&
-                _accountAssets[msg.sender].utilizedCAssetBalance[cAsset] == 0
-            ) {
-                removeAssetFromAccount(msg.sender, asset);
-            }
-
-            // Retrieve your asset based on an amountToWithdraw of the asset
-            require(
-                cToken.redeemUnderlying(redeemAmount) == 0,
-                "cToken.redeemUnderlying failed"
-            );
-
-            require(
-                underlying.transfer(msg.sender, redeemAmount),
-                "underlying.transfer() failed"
-            );
-
-            // redeemType == false >> withdraw based on amount of underlying
-        } else {
-            exchangeRateMantissa = cToken.exchangeRateCurrent();
-
-            (, redeemTokens) = divScalarByExpTruncate(
-                amountToWithdraw,
-                Exp({mantissa: exchangeRateMantissa})
-            );
-
-            redeemAmount = amountToWithdraw;
-
-            // require msg.sender has sufficient available balance of cErc20
-            require(
-                getAvailableCAssetBalance(msg.sender, cAsset) >= redeemTokens,
-                "Must have sufficient balance"
-            );
-
-            _accountAssets[msg.sender].cAssetBalance[cAsset] -= redeemTokens;
-
-            if (
-                _accountAssets[msg.sender].cAssetBalance[cAsset] == 0 &&
-                _accountAssets[msg.sender].utilizedCAssetBalance[cAsset] == 0
-            ) {
-                removeAssetFromAccount(msg.sender, asset);
-            }
-
-            // Retrieve your asset based on an amountToWithdraw of the asset
-            require(
-                cToken.redeemUnderlying(redeemAmount) == 0,
-                "cToken.redeemUnderlying() failed"
-            );
-
-            require(
-                underlying.transfer(msg.sender, redeemAmount),
-                "underlying.transfer() failed"
-            );
+        if (
+            _accountAssets[msg.sender].cAssetBalance[cAsset] == 0 &&
+            _accountAssets[msg.sender].utilizedCAssetBalance[cAsset] == 0
+        ) {
+            removeAssetFromAccount(msg.sender, asset);
         }
 
-        emit Erc20Withdrawn(msg.sender, asset, redeemType, amountToWithdraw);
+        // Retrieve your asset based on an amountToWithdraw of the asset
+        require(
+            cToken.redeemUnderlying(redeemAmount) == 0,
+            "cToken.redeemUnderlying() failed"
+        );
+
+        require(
+            underlying.transfer(msg.sender, redeemAmount),
+            "underlying.transfer() failed"
+        );
+
+        emit Erc20Withdrawn(msg.sender, asset, amountToWithdraw);
 
         return redeemAmount;
     }
@@ -356,10 +317,7 @@ contract LiquidityProviders is
         nonReentrant
         returns (uint256)
     {
-        require(
-            _cAssetToAsset[cAsset] != address(0),
-            "Asset not whitelisted"
-        );
+        require(_cAssetToAsset[cAsset] != address(0), "Asset not whitelisted");
 
         address asset = _cAssetToAsset[cAsset];
 
@@ -460,8 +418,7 @@ contract LiquidityProviders is
         return numTokensToSupply;
     }
 
-    // True to withdraw based on cEth amount. False to withdraw based on amount of Eth
-    function withdrawEth(bool redeemType, uint256 amountToWithdraw)
+    function withdrawEth(uint256 amountToWithdraw)
         external
         whenNotPaused
         nonReentrant
@@ -479,81 +436,41 @@ contract LiquidityProviders is
         uint256 exchangeRateMantissa;
         uint256 redeemTokens;
         uint256 redeemAmount;
+        exchangeRateMantissa = cToken.exchangeRateCurrent();
 
-        // redeemType >> withdraw based on amount of cErc20
-        if (redeemType) {
-            exchangeRateMantissa = cToken.exchangeRateCurrent();
+        (, redeemTokens) = divScalarByExpTruncate(
+            amountToWithdraw,
+            Exp({mantissa: exchangeRateMantissa})
+        );
 
-            redeemTokens = amountToWithdraw;
+        redeemAmount = amountToWithdraw;
 
-            (, redeemAmount) = mulScalarTruncate(
-                Exp({mantissa: exchangeRateMantissa}),
-                amountToWithdraw
-            );
+        // require msg.sender has sufficient available balance of cEth
+        require(
+            getAvailableCAssetBalance(msg.sender, cEth) >= redeemTokens,
+            "Must have sufficient balance"
+        );
 
-            // require msg.sender has sufficient available balance of cEth
-            require(
-                getAvailableCAssetBalance(msg.sender, cEth) >= redeemTokens,
-                "Must have an available balance greater than or equal to amountToWithdraw"
-            );
+        _accountAssets[msg.sender].cAssetBalance[cEth] -= redeemTokens;
 
-            _accountAssets[msg.sender].cAssetBalance[cEth] -= redeemTokens;
-
-            if (
-                _accountAssets[msg.sender].cAssetBalance[cEth] == 0 &&
-                _accountAssets[msg.sender].utilizedCAssetBalance[cEth] == 0
-            ) {
-                removeAssetFromAccount(msg.sender, eth);
-            }
-
-            // Retrieve your asset based on an amountToWithdraw of the asset
-            require(
-                cToken.redeemUnderlying(redeemAmount) == 0,
-                "cToken.redeemUnderlying() failed"
-            );
-
-            // Repay eth to depositor
-            (bool success, ) = (msg.sender).call{value: redeemAmount}("");
-            require(success, "Send eth to depositor failed");
-
-            // redeemType == false >> withdraw based on amount of underlying
-        } else {
-            exchangeRateMantissa = cToken.exchangeRateCurrent();
-
-            (, redeemTokens) = divScalarByExpTruncate(
-                amountToWithdraw,
-                Exp({mantissa: exchangeRateMantissa})
-            );
-
-            redeemAmount = amountToWithdraw;
-
-            // require msg.sender has sufficient available balance of cEth
-            require(
-                getAvailableCAssetBalance(msg.sender, cEth) >= redeemTokens,
-                "Must have sufficient balance"
-            );
-
-            _accountAssets[msg.sender].cAssetBalance[cEth] -= redeemTokens;
-
-            if (
-                _accountAssets[msg.sender].cAssetBalance[cEth] == 0 &&
-                _accountAssets[msg.sender].utilizedCAssetBalance[cEth] == 0
-            ) {
-                removeAssetFromAccount(msg.sender, eth);
-            }
-
-            // Retrieve your asset based on an amountToWithdraw of the asset
-            require(
-                cToken.redeemUnderlying(redeemAmount) == 0,
-                "cToken.redeemUnderlying() failed"
-            );
-
-            // Repay eth to depositor
-            (bool success, ) = (msg.sender).call{value: redeemAmount}("");
-            require(success, "Send eth to depositor failed");
+        if (
+            _accountAssets[msg.sender].cAssetBalance[cEth] == 0 &&
+            _accountAssets[msg.sender].utilizedCAssetBalance[cEth] == 0
+        ) {
+            removeAssetFromAccount(msg.sender, eth);
         }
 
-        emit EthWithdrawn(msg.sender, redeemType, amountToWithdraw);
+        // Retrieve your asset based on an amountToWithdraw of the asset
+        require(
+            cToken.redeemUnderlying(redeemAmount) == 0,
+            "cToken.redeemUnderlying() failed"
+        );
+
+        // Repay eth to depositor
+        (bool success, ) = (msg.sender).call{value: redeemAmount}("");
+        require(success, "Send eth to depositor failed");
+
+        emit EthWithdrawn(msg.sender, amountToWithdraw);
 
         return redeemAmount;
     }
