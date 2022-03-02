@@ -234,8 +234,12 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
 
         // this enables us to test all values up to the deposited amount in setUp.
         // there should be fail case test that tries above the initial balance
-        if (amount > cAssetBalanceInit) {
-            amount = cAssetBalanceInit;
+        // we have an initial balance of 10000, so we prevent the fuzzer from testing higher values.
+        // the proper solution would be to provide a bounded fuzz via foundry
+        if (amount > 10000 ether) {
+            amount = 10000 ether;
+        } else if (amount < 0.000000001 ether) {
+            amount = 0.000000001 ether;
         }
 
         liquidityProviders.withdrawCErc20(address(cDAI), amount);
@@ -310,8 +314,13 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
         ICEther cToken = ICEther(cETH);
 
         uint256 assetBalanceInit = address(this).balance;
+        
+        // we have an initial balance of 10000, so we prevent the fuzzer from testing higher values.
+        // the proper solution would be to provide a bounded fuzz via foundry
         if (amount > 10000 ether) {
             amount = 10000 ether;
+        } else if (amount < 0.000000001 ether) {
+            amount = 0.000000001 ether;
         }
 
         (uint256 cAssetBalanceInit, , ) = liquidityProviders.getCAssetBalances(
