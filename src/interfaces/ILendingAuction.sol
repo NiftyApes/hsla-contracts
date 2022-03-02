@@ -22,11 +22,11 @@ interface ILendingAuction is ILiquidityProviders {
         // loan amount
         uint256 amount;
         // loan duration of loan in number of seconds
-        uint32 duration;
+        uint256 duration;
         // timestamp of loan execution
-        uint32 loanExecutedTime;
+        uint256 loanExecutedTime;
         // timestamp of start of interest acummulation. Is reset when a new lender takes over the loan or the borrower makes a partial repayment.
-        uint32 timeOfInterestStart;
+        uint256 timeOfInterestStart;
         // cumulative interest of varying rates paid by new lenders to buy out the loan auction
         uint256 historicLenderInterest;
         // cumulative interest of varying rates accrued by the protocol. To be repaid at the end of the loan.
@@ -34,7 +34,7 @@ interface ILendingAuction is ILiquidityProviders {
         // amount withdrawn by the nftOwner. This is the amount they will pay interest on, with this value as minimum
         uint256 amountDrawn;
         // time withdrawn by the nftOwner. This is the time they will pay interest on, with this value as minimum
-        uint32 timeDrawn;
+        uint256 timeDrawn;
     }
 
     struct Offer {
@@ -55,9 +55,9 @@ interface ILendingAuction is ILiquidityProviders {
         // offer loan amount
         uint256 amount;
         // offer loan duration
-        uint32 duration;
+        uint256 duration;
         // offer expiration
-        uint32 expiration;
+        uint256 expiration;
     }
 
     // Structure representing an offer book per NFT or floor term
