@@ -203,7 +203,7 @@ contract LiquidityProviders is
     // @notice returns the number of CERC20 tokens added to balance
     // @dev takes the underlying asset address, not cAsset address
     //
-    function supplyCErc20(address cAsset, uint256 numTokensToSupply) external returns (uint256) {
+    function supplyCErc20(address cAsset, uint256 numTokensToSupply) public returns (uint256) {
         require(_cAssetToAsset[cAsset] != address(0), "Asset not whitelisted on NiftyApes");
 
         address asset = _cAssetToAsset[cAsset];
@@ -347,7 +347,7 @@ contract LiquidityProviders is
         return mintTokens;
     }
 
-    function supplyCEth(uint256 numTokensToSupply) returns (uint256) {
+    function supplyCEth(uint256 numTokensToSupply) external returns (uint256) {
         return supplyCErc20(assetToCAsset[ETH_ADDRESS], numTokensToSupply);
     }
 
