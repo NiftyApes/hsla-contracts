@@ -54,7 +54,7 @@ contract LiquidityProviders is
         assetToCAsset[asset] = cAsset;
         _cAssetToAsset[cAsset] = asset;
 
-        emit newAssetWhitelisted(asset, cAsset);
+        emit NewAssetWhitelisted(asset, cAsset);
     }
 
     // @notice returns the assets a depositor has deposited on NiftyApes.

@@ -18,7 +18,7 @@ interface ILiquidityProviders {
 
     // Events
 
-    event newAssetWhitelisted(address asset, address cAsset);
+    event NewAssetWhitelisted(address asset, address cAsset);
 
     event Erc20Supplied(address depositor, address asset, uint256 amount);
 
