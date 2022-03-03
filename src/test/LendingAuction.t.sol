@@ -23,8 +23,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
     ICERC20 cDAI;
     ICEther cETH;
     LendingAuction LA;
-    uint256 immutable pk =
-        0x60b919c82f0b4791a5b7c6a7275970ace1748759ebdaa4076d7eeed9dbcff3c3;
+    uint256 immutable pk = 0x60b919c82f0b4791a5b7c6a7275970ace1748759ebdaa4076d7eeed9dbcff3c3;
     address immutable signer = 0x503408564C50b43208529faEf9bdf9794c015d52;
 
     //address immutable caller = ;
@@ -37,14 +36,12 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         DAI = IERC20(0x6B175474E89094C44Da98b954EedeAC495271d0F);
 
         // Setup SushiSwapRouter
-        SushiSwapRouter = IUniswapV2Router(
-            0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F
-        );
+        SushiSwapRouter = IUniswapV2Router(0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F);
 
         // Setup cETH and balances
         cETH = ICEther(0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5);
         // Mint some cETH
-        cETH.mint{value: 10 ether}();
+        cETH.mint{ value: 10 ether }();
 
         // Setup DAI balances
 
@@ -60,7 +57,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         path[0] = address(WETH);
         path[1] = address(DAI);
         // Let's trade for 100k dai
-        SushiSwapRouter.swapExactETHForTokens{value: 1000000 ether}(
+        SushiSwapRouter.swapExactETHForTokens{ value: 1000000 ether }(
             1000 ether,
             path,
             address(this),
@@ -78,10 +75,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         LA = new LendingAuction();
         // Allow assets for testing
         LA.setCAssetAddress(address(DAI), address(cDAI));
-        LA.setCAssetAddress(
-            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
-            address(cETH)
-        );
+        LA.setCAssetAddress(address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE), address(cETH));
         uint256 max = type(uint256).max;
 
         // Setup mock NFT
@@ -105,7 +99,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         // Supply to 200k DAI contract
         LA.supplyErc20(address(DAI), 200000 ether);
         // Supply 10 ether to contract
-        LA.supplyEth{value: 10 ether}();
+        LA.supplyEth{ value: 10 ether }();
     }
 
     // Test Cases
@@ -125,9 +119,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         assert(LA.refinancePremiumProtocolBps() == 30);
     }
 
-    function testCreateGetandRemoveOffer(bool fixedTerms, bool floorTerm)
-        public
-    {
+    function testCreateGetandRemoveOffer(bool fixedTerms, bool floorTerm) public {
         // Create a floor offer
         LendingAuction.Offer memory offer;
         offer.creator = address(this);
@@ -215,9 +207,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         // Check that get offer worked
         assert(create_hash == created_hash);
 
-        created_hash = LA.getOfferHash(
-            LA.getOfferAtIndex(address(mockNFT), 0, 0, floorTerm)
-        );
+        created_hash = LA.getOfferHash(LA.getOfferAtIndex(address(mockNFT), 0, 0, floorTerm));
 
         // Check that get offer worked
         assert(create_hash == created_hash);
@@ -230,12 +220,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         if (lender) {
             LA.executeLoanByLender(address(mockNFT), floorTerm, 0, create_hash);
         } else {
-            LA.executeLoanByBorrower(
-                address(mockNFT),
-                0,
-                create_hash,
-                floorTerm
-            );
+            LA.executeLoanByBorrower(address(mockNFT), 0, create_hash, floorTerm);
         }
 
         // Let's move forward in time and blocks
@@ -343,12 +328,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         }
 
         hevm.prank(signer, signer);
-        LA.withdrawOfferSignature(
-            address(mockNFT),
-            0,
-            encoded_offer,
-            signature
-        );
+        LA.withdrawOfferSignature(address(mockNFT), 0, encoded_offer, signature);
 
         assert(LA.getOfferSignatureStatus(signature) == true);
     }
@@ -464,9 +444,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         // Check that get offer worked
         assert(create_hash == created_hash);
 
-        created_hash = LA.getOfferHash(
-            LA.getOfferAtIndex(address(mockNFT), 0, 0, floorTerm)
-        );
+        created_hash = LA.getOfferHash(LA.getOfferAtIndex(address(mockNFT), 0, 0, floorTerm));
 
         // Check that get offer worked
         assert(create_hash == created_hash);
@@ -476,12 +454,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         if (lender) {
             LA.executeLoanByLender(address(mockNFT), floorTerm, 0, create_hash);
         } else {
-            LA.executeLoanByBorrower(
-                address(mockNFT),
-                0,
-                create_hash,
-                floorTerm
-            );
+            LA.executeLoanByBorrower(address(mockNFT), 0, create_hash, floorTerm);
         }
 
         offer.creator = address(this);
@@ -607,7 +580,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
             duration += uint32(86401);
         }
         // TODO(Otherwise compound math fails at some point)
-        // @alcibiades How should this TODO be addressed? 
+        // @alcibiades How should this TODO be addressed?
         if (amount < 1 ether) {
             amount += 1 ether;
         }

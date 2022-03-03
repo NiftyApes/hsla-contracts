@@ -55,7 +55,5 @@ interface ICEther is ICToken {
      * @param borrower The borrower of this cToken to be liquidated
      * @param cTokenCollateral The market in which to seize collateral from the borrower
      */
-    function liquidateBorrow(address borrower, ICToken cTokenCollateral)
-        external
-        payable;
+    function liquidateBorrow(address borrower, ICToken cTokenCollateral) external payable;
 }
