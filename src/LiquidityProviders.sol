@@ -347,31 +347,8 @@ contract LiquidityProviders is
         return mintTokens;
     }
 
-    function supplyCEth(uint256 numTokensToSupply) external returns (uint256) {
-        // set cEth address
-        // utilize reference to allow update of cEth address by compound in future versions
-        address cEth = assetToCAsset[ETH_ADDRESS];
-
-        // Create a reference to the corresponding cToken contract
-        ICEther cToken = ICEther(cEth);
-
-        ensureAssetInAccount(msg.sender, ETH_ADDRESS);
-
-        // transferFrom ERC20 from supplyers address
-        require(
-            cToken.transferFrom(msg.sender, address(this), numTokensToSupply),
-            "cToken.transferFrom failed"
-        );
-
-        // This state variable is written after external calls because external calls
-        // add value or assets to this contract and this state variable could be re-entered to
-        // increase balance, then withdrawing more funds than have been supplied.
-        // cAssetBalances[cEth][msg.sender] += numTokensToSupply;
-        _accountAssets[msg.sender].balance[cEth].cAssetBalance += numTokensToSupply;
-
-        emit CEthSupplied(msg.sender, numTokensToSupply);
-
-        return numTokensToSupply;
+    function supplyCEth(uint256 numTokensToSupply) returns (uint256) {
+        return supplyCErc20(assetToCAsset[ETH_ADDRESS], numTokensToSupply);
     }
 
     function withdrawEth(uint256 amountToWithdraw)

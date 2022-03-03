@@ -34,8 +34,6 @@ interface ILiquidityProviders {
 
     event EthSupplied(address depositor, uint256 amount);
 
-    event CEthSupplied(address depositor, uint256 amount);
-
     event EthWithdrawn(address depositor, uint256 amount);
 
     // Functions
