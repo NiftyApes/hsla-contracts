@@ -281,7 +281,7 @@ contract LiquidityProviders is
     }
 
     function withdrawCErc20(address cAsset, uint256 amountToWithdraw)
-        external
+        public
         whenNotPaused
         nonReentrant
         returns (uint256)
@@ -421,12 +421,7 @@ contract LiquidityProviders is
         return redeemAmount;
     }
 
-    function withdrawCEth(uint256 amountToWithdraw)
-        external
-        whenNotPaused
-        nonReentrant
-        returns (uint256)
-    {
+    function withdrawCEth(uint256 amountToWithdraw) external returns (uint256) {
         address cEth = assetToCAsset[ETH_ADDRESS];
 
         // TODO(dankurka): Discuss but we can probably delete the entire method
