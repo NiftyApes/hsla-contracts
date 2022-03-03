@@ -134,30 +134,8 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     function getOfferSigner(
         bytes32 eip712EncodedOffer, // hash of offer
         bytes memory signature //proof the actor signed the offer
-    ) public pure returns (address signer) {
-        // Just doing this directly is more gas efficient than all the checks/overrides in the openzeppelin ECDSA
-        // implementation.
-        require(signature.length == 65, "Invalid signature");
-
-        bytes32 r;
-        bytes32 s;
-        uint8 v;
-        // ecrecover takes the signature parameters, and the only way to get them
-        // currently is to use assembly.
-        assembly {
-            r := mload(add(signature, 0x20))
-            s := mload(add(signature, 0x40))
-            v := byte(0, mload(add(signature, 0x60)))
-        }
-
-        require(
-            uint256(s) < 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0,
-            "Invalid Signature s"
-        );
-
-        require(v == 27 || v == 28, "Invalid signature");
-
-        signer = ecrecover(eip712EncodedOffer, v, r, s);
+    ) public pure returns (address) {
+        return ECDSA.recover(eip712EncodedOffer, signature);
     }
 
     /**
@@ -187,6 +165,17 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
     // ---------- On-chain Offer Functions ---------- //
 
+    function getOfferBook(
+        address nftContractAddress,
+        uint256 nftId,
+        bool floorTerm
+    ) internal view returns (OfferBook storage) {
+        return
+            floorTerm
+                ? _floorOfferBooks[nftContractAddress]
+                : _nftOfferBooks[nftContractAddress][nftId];
+    }
+
     /**
      * @notice Retrieve an offer from the on-chain floor or individual NFT offer books by offerHash identifier
      * @param nftContractAddress The address of the NFT collection
@@ -199,16 +188,8 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         uint256 nftId,
         bytes32 offerHash,
         bool floorTerm
-    ) external view returns (Offer memory offer) {
-        // Offer storage offer;
-        OfferBook storage offerBook;
-
-        if (floorTerm) {
-            offerBook = _floorOfferBooks[nftContractAddress];
-        } else {
-            offerBook = _nftOfferBooks[nftContractAddress][nftId];
-        }
-        offer = offerBook.offers[offerHash];
+    ) external view returns (Offer memory) {
+        return getOfferBook(nftContractAddress, nftId, floorTerm).offers[offerHash];
     }
 
     /**
@@ -223,18 +204,9 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         uint256 nftId,
         uint256 index,
         bool floorTerm
-    ) external view returns (Offer memory offer) {
-        OfferBook storage offerBook;
-
-        bytes32 offerHash;
-
-        if (floorTerm) {
-            offerBook = _floorOfferBooks[nftContractAddress];
-        } else {
-            offerBook = _nftOfferBooks[nftContractAddress][nftId];
-        }
-        offerHash = offerBook.keys[index];
-        offer = offerBook.offers[offerHash];
+    ) external view returns (Offer memory) {
+        OfferBook storage offerBook = getOfferBook(nftContractAddress, nftId, floorTerm);
+        return offerBook.offers[offerBook.keys[index]];
     }
 
     /**
@@ -247,24 +219,14 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         address nftContractAddress,
         uint256 nftId,
         bool floorTerm
-    ) external view returns (uint256 offerBookSize) {
-        OfferBook storage offerBook;
-
-        if (floorTerm) {
-            offerBook = _floorOfferBooks[nftContractAddress];
-            offerBookSize = offerBook.keys.length;
-        } else {
-            offerBook = _nftOfferBooks[nftContractAddress][nftId];
-            offerBookSize = offerBook.keys.length;
-        }
+    ) external view returns (uint256) {
+        return getOfferBook(nftContractAddress, nftId, floorTerm).keys.length;
     }
 
     /**
      * @param offer The details of the loan auction individual NFT offer
      */
     function createOffer(Offer calldata offer) external {
-        OfferBook storage offerBook;
-
         address cAsset = assetToCAsset[offer.asset];
 
         // Create a reference to the corresponding cToken contract, like cDAI
@@ -289,11 +251,11 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             "Must have an available balance greater than or equal to amountToWithdraw"
         );
 
-        if (offer.floorTerm) {
-            offerBook = _floorOfferBooks[offer.nftContractAddress];
-        } else {
-            offerBook = _nftOfferBooks[offer.nftContractAddress][offer.nftId];
-        }
+        OfferBook storage offerBook = getOfferBook(
+            offer.nftContractAddress,
+            offer.nftId,
+            offer.floorTerm
+        );
 
         bytes32 offerHash = getOfferHash(offer);
 
@@ -321,9 +283,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         bool floorTerm
     ) external {
         // Get pointer to offer book
-        OfferBook storage offerBook = floorTerm
-            ? _floorOfferBooks[nftContractAddress]
-            : _nftOfferBooks[nftContractAddress][nftId];
+        OfferBook storage offerBook = getOfferBook(nftContractAddress, nftId, floorTerm);
 
         // Get memory pointer to offer
         Offer memory offer = offerBook.offers[offerHash];
@@ -1186,10 +1146,11 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         loanAuction.fixedTerms = false;
 
         // update lenders utilized balance
-        _accountAssets[loanAuction.lender].utilizedCAssetBalance[cAsset] -= loanAuction.amountDrawn;
+        _accountAssets[loanAuction.lender].balance[cAsset].utilizedCAssetBalance -= loanAuction
+            .amountDrawn;
 
         // update lenders total balance
-        _accountAssets[loanAuction.lender].cAssetBalance[cAsset] -= loanAuction.amountDrawn;
+        _accountAssets[loanAuction.lender].balance[cAsset].cAssetBalance -= loanAuction.amountDrawn;
 
         // transferFrom NFT from contract to lender
         IERC721(nftContractAddress).transferFrom(address(this), currentlender, nftId);
@@ -1225,7 +1186,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         );
 
         // update the lenders utilized balance
-        _accountAssets[lender].utilizedCAssetBalance[cAsset] += redeemTokens;
+        _accountAssets[lender].balance[cAsset].utilizedCAssetBalance += redeemTokens;
     }
 
     // this internal functions handles transfer of erc20 tokens and updating lender balances for refinanceLoan, repayRemainingLoan, and partialRepayment functions
@@ -1277,13 +1238,13 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         require(cToken.mint(fullAmount) == 0, "cToken.mint() failed");
 
         // update the tos utilized balance
-        _accountAssets[to].utilizedCAssetBalance[cAsset] -= paymentTokens;
+        _accountAssets[to].balance[cAsset].utilizedCAssetBalance -= paymentTokens;
 
         // update the tos total balance
-        _accountAssets[to].cAssetBalance[cAsset] += lenderInterestAndPremiumTokens;
+        _accountAssets[to].balance[cAsset].cAssetBalance += lenderInterestAndPremiumTokens;
 
         // update the owner total balance
-        _accountAssets[owner()].cAssetBalance[cAsset] += protocolInterestAndPremiumTokens;
+        _accountAssets[owner()].balance[cAsset].cAssetBalance += protocolInterestAndPremiumTokens;
     }
 
     // this internal functions handles transfer of Eth and updating lender balances for refinanceLoan, repayRemainingLoan, and partialRepayment functions
@@ -1333,10 +1294,10 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         cToken.mint{ value: msgValue, gas: 250000 }();
 
         // update the to's utilized balance
-        _accountAssets[to].utilizedCAssetBalance[cAsset] -= paymentTokens;
+        _accountAssets[to].balance[cAsset].utilizedCAssetBalance -= paymentTokens;
 
         // update the to's total balance + the delta of msgValueTokens minus all other tokens
-        _accountAssets[to].cAssetBalance[cAsset] +=
+        _accountAssets[to].balance[cAsset].cAssetBalance +=
             lenderInterestAndPremiumTokens +
             (msgValueTokens -
                 (lenderInterestAndPremiumTokens +
@@ -1344,7 +1305,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                     paymentTokens));
 
         // update the owner's total balance
-        _accountAssets[owner()].cAssetBalance[cAsset] += protocolInterestAndPremiumTokens;
+        _accountAssets[owner()].balance[cAsset].cAssetBalance += protocolInterestAndPremiumTokens;
     }
 
     // This function has a slither warning for sending eth to an abritrary address, but the
@@ -1419,19 +1380,19 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         // check calling functions require from has a sufficient total balance to buy out loan
 
         // update from's utilized balance
-        _accountAssets[from].utilizedCAssetBalance[cAsset] += paymentTokens;
+        _accountAssets[from].balance[cAsset].utilizedCAssetBalance += paymentTokens;
 
         // update from's total balance
-        _accountAssets[from].cAssetBalance[cAsset] -= protocolPremiumTokens;
+        _accountAssets[from].balance[cAsset].cAssetBalance -= protocolPremiumTokens;
 
         // update the to's utilized balance
-        _accountAssets[to].utilizedCAssetBalance[cAsset] -= paymentTokens;
+        _accountAssets[to].balance[cAsset].utilizedCAssetBalance -= paymentTokens;
 
         // update the to's total balance
-        _accountAssets[to].cAssetBalance[cAsset] += interestAndPremiumTokens;
+        _accountAssets[to].balance[cAsset].cAssetBalance += interestAndPremiumTokens;
 
         // update the owner's total balance
-        _accountAssets[owner()].cAssetBalance[cAsset] += protocolPremiumTokens;
+        _accountAssets[owner()].balance[cAsset].cAssetBalance += protocolPremiumTokens;
     }
 
     // ---------- Helper Functions ---------- //
