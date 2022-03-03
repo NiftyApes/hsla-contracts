@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.11;
 
-import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
+import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
 
 interface InterestRateModel {
     function getBorrowRate(
@@ -25,9 +25,7 @@ interface ComptrollerInterface {
 
     /*** Assets You Are In ***/
 
-    function enterMarkets(address[] calldata cTokens)
-        external
-        returns (uint256[] memory);
+    function enterMarkets(address[] calldata cTokens) external returns (uint256[] memory);
 
     function exitMarket(address cToken) external returns (uint256);
 
@@ -299,10 +297,7 @@ interface ICToken is IERC20 {
 
     function borrowBalanceCurrent(address account) external returns (uint256);
 
-    function borrowBalanceStored(address account)
-        external
-        view
-        returns (uint256);
+    function borrowBalanceStored(address account) external view returns (uint256);
 
     function exchangeRateCurrent() external returns (uint256);
 

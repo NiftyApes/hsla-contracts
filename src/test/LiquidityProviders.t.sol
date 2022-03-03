@@ -31,14 +31,12 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
         DAI = IERC20(0x6B175474E89094C44Da98b954EedeAC495271d0F);
 
         // Setup SushiSwapRouter
-        SushiSwapRouter = IUniswapV2Router(
-            0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F
-        );
+        SushiSwapRouter = IUniswapV2Router(0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F);
 
         // Setup cETH and balances
         cETH = ICEther(0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5);
         // Mint 10k ether in cETH
-        cETH.mint{value: 10000 ether}();
+        cETH.mint{ value: 10000 ether }();
 
         // Setup DAI balances
 
@@ -54,7 +52,7 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
         path[0] = address(WETH);
         path[1] = address(DAI);
         // Let's trade for 100k dai
-        SushiSwapRouter.swapExactETHForTokens{value: 100000 ether}(
+        SushiSwapRouter.swapExactETHForTokens{ value: 100000 ether }(
             100 ether,
             path,
             address(this),
@@ -89,7 +87,7 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
         // Supply to 10k DAI to contract
         liquidityProviders.supplyErc20(address(DAI), 10000 ether);
         // Supply 10k ether to contract
-        liquidityProviders.supplyEth{value: 10000 ether}();
+        liquidityProviders.supplyEth{ value: 10000 ether }();
     }
 
     // Test cases
@@ -103,9 +101,8 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
 
     function testAssetToCAsset() public {
         assert(
-            liquidityProviders.assetToCAsset(
-                address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
-            ) == address(cETH)
+            liquidityProviders.assetToCAsset(address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)) ==
+                address(cETH)
         );
     }
 
@@ -127,9 +124,7 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
     }
 
     function testGetAssetsIn() public {
-        address[] memory assetsIn = liquidityProviders.getAssetsIn(
-            address(this)
-        );
+        address[] memory assetsIn = liquidityProviders.getAssetsIn(address(this));
     }
 
     // TODO(Add assertions around expected event emissions)
@@ -150,7 +145,7 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
 
         (, uint256 mintTokens) = divScalarByExpTruncate(
             deposit,
-            Exp({mantissa: cToken.exchangeRateCurrent()})
+            Exp({ mantissa: cToken.exchangeRateCurrent() })
         );
 
         uint256 assetBalance = underlying.balanceOf(address(this));
@@ -186,10 +181,7 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
         );
 
         assert(cAssetBalance == (cAssetBalanceInit + deposit));
-        assert(
-            cAssetBalance ==
-                ICERC20(cDAI).balanceOf(address(liquidityProviders))
-        );
+        assert(cAssetBalance == ICERC20(cDAI).balanceOf(address(liquidityProviders)));
     }
 
     function testWithdrawErc20(uint256 amount) public {
@@ -215,7 +207,7 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
 
         (, uint256 redeemTokens) = divScalarByExpTruncate(
             amount,
-            Exp({mantissa: cToken.exchangeRateCurrent()})
+            Exp({ mantissa: cToken.exchangeRateCurrent() })
         );
 
         uint256 assetBalance = underlying.balanceOf(address(this));
@@ -250,10 +242,7 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
         );
 
         assert(cAssetBalance == (cAssetBalanceInit - amount));
-        assert(
-            cAssetBalance ==
-                ICERC20(cDAI).balanceOf(address(liquidityProviders))
-        );
+        assert(cAssetBalance == ICERC20(cDAI).balanceOf(address(liquidityProviders)));
     }
 
     function testSupplyEth(uint64 deposit) public {
@@ -267,11 +256,11 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
         );
 
         // TODO(Calculate cAsset conversion rate here)
-        liquidityProviders.supplyEth{value: deposit}();
+        liquidityProviders.supplyEth{ value: deposit }();
 
         (, uint256 mintTokens) = divScalarByExpTruncate(
             deposit,
-            Exp({mantissa: cToken.exchangeRateCurrent()})
+            Exp({ mantissa: cToken.exchangeRateCurrent() })
         );
 
         uint256 assetBalance = address(this).balance;
@@ -304,17 +293,14 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
         );
 
         assert(cAssetBalance == (cAssetBalanceInit + deposit));
-        assert(
-            cAssetBalance ==
-                ICEther(cETH).balanceOf(address(liquidityProviders))
-        );
+        assert(cAssetBalance == ICEther(cETH).balanceOf(address(liquidityProviders)));
     }
 
     function testWithdrawEth(uint256 amount) public {
         ICEther cToken = ICEther(cETH);
 
         uint256 assetBalanceInit = address(this).balance;
-        
+
         // we have an initial balance of 10000, so we prevent the fuzzer from testing higher values.
         // the proper solution would be to provide a bounded fuzz via foundry
         if (amount > 10000 ether) {
@@ -332,7 +318,7 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
 
         (, uint256 redeemTokens) = divScalarByExpTruncate(
             amount,
-            Exp({mantissa: cToken.exchangeRateCurrent()})
+            Exp({ mantissa: cToken.exchangeRateCurrent() })
         );
 
         uint256 assetBalance = address(this).balance;
@@ -344,10 +330,7 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
 
         assert(assetBalance == (assetBalanceInit + amount));
         assert(cAssetBalance == (cAssetBalanceInit - redeemTokens));
-        assert(
-            cAssetBalance ==
-                ICEther(cETH).balanceOf(address(liquidityProviders))
-        );
+        assert(cAssetBalance == ICEther(cETH).balanceOf(address(liquidityProviders)));
     }
 
     function testWithdrawCEth(uint256 amount) public {
@@ -368,9 +351,6 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
             address(cETH)
         );
         assert(cAssetBalance == (cAssetBalanceInit - amount));
-        assert(
-            cAssetBalance ==
-                ICEther(cETH).balanceOf(address(liquidityProviders))
-        );
+        assert(cAssetBalance == ICEther(cETH).balanceOf(address(liquidityProviders)));
     }
 }
