@@ -247,37 +247,29 @@ contract LiquidityProviders is
         // Create a reference to the corresponding cToken contract, like cDAI
         ICERC20 cToken = ICERC20(cAsset);
 
-        uint256 exchangeRateMantissa;
-        uint256 redeemTokens;
-        uint256 redeemAmount;
+        uint256 cTokenBalanceBefore = cToken.balanceOf(address(this));
+        // Retrieve your asset based on an amountToWithdraw of the asset
+        require(cToken.redeemUnderlying(amountToWithdraw) == 0, "cToken.redeemUnderlying() failed");
 
-        exchangeRateMantissa = cToken.exchangeRateCurrent();
+        uint256 cTokenBalanceAfter = cToken.balanceOf(address(this));
 
-        (, redeemTokens) = divScalarByExpTruncate(
-            amountToWithdraw,
-            Exp({ mantissa: exchangeRateMantissa })
-        );
-
-        redeemAmount = amountToWithdraw;
+        uint256 cTokensWithDrawn = cTokenBalanceBefore - cTokenBalanceAfter;
 
         // require msg.sender has sufficient available balance of cErc20
         require(
-            getAvailableCAssetBalance(msg.sender, cAsset) >= redeemTokens,
+            getAvailableCAssetBalance(msg.sender, cAsset) >= cTokensWithDrawn,
             "Must have sufficient balance"
         );
 
-        _accountAssets[msg.sender].balance[cAsset].cAssetBalance -= redeemTokens;
+        _accountAssets[msg.sender].balance[cAsset].cAssetBalance -= cTokensWithDrawn;
 
         maybeRemoveAssetFromAccount(msg.sender, cAsset);
 
-        // Retrieve your asset based on an amountToWithdraw of the asset
-        require(cToken.redeemUnderlying(redeemAmount) == 0, "cToken.redeemUnderlying() failed");
-
-        require(underlying.transfer(msg.sender, redeemAmount), "underlying.transfer() failed");
+        require(underlying.transfer(msg.sender, amountToWithdraw), "underlying.transfer() failed");
 
         emit Erc20Withdrawn(msg.sender, asset, amountToWithdraw);
 
-        return redeemAmount;
+        return cTokensWithDrawn;
     }
 
     function withdrawCErc20(address cAsset, uint256 amountToWithdraw)
