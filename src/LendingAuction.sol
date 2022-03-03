@@ -134,30 +134,8 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     function getOfferSigner(
         bytes32 eip712EncodedOffer, // hash of offer
         bytes memory signature //proof the actor signed the offer
-    ) public pure returns (address signer) {
-        // Just doing this directly is more gas efficient than all the checks/overrides in the openzeppelin ECDSA
-        // implementation.
-        require(signature.length == 65, "Invalid signature");
-
-        bytes32 r;
-        bytes32 s;
-        uint8 v;
-        // ecrecover takes the signature parameters, and the only way to get them
-        // currently is to use assembly.
-        assembly {
-            r := mload(add(signature, 0x20))
-            s := mload(add(signature, 0x40))
-            v := byte(0, mload(add(signature, 0x60)))
-        }
-
-        require(
-            uint256(s) < 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0,
-            "Invalid Signature s"
-        );
-
-        require(v == 27 || v == 28, "Invalid signature");
-
-        signer = ecrecover(eip712EncodedOffer, v, r, s);
+    ) public pure returns (address) {
+        return ECDSA.recover(eip712EncodedOffer, signature);
     }
 
     /**
