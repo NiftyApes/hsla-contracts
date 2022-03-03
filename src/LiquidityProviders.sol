@@ -38,6 +38,8 @@ contract LiquidityProviders is
 
     mapping(address => AccountAssets) internal _accountAssets;
 
+    address constant ETH_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
+
     // ---------- FUNCTIONS -------------- //
 
     // This is needed to receive ETH when calling `withdrawEth`
@@ -313,16 +315,14 @@ contract LiquidityProviders is
     }
 
     function supplyEth() external payable returns (uint256) {
-        address eth = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
-
         // set cEth address
         // utilize reference to allow update of cEth address by compound in future versions
-        address cEth = assetToCAsset[eth];
+        address cEth = assetToCAsset[ETH_ADDRESS];
 
         // Create a reference to the corresponding cToken contract
         ICEther cToken = ICEther(cEth);
 
-        ensureAssetInAccount(msg.sender, eth);
+        ensureAssetInAccount(msg.sender, ETH_ADDRESS);
 
         uint256 exchangeRateMantissa = cToken.exchangeRateCurrent();
 
@@ -348,16 +348,14 @@ contract LiquidityProviders is
     }
 
     function supplyCEth(uint256 numTokensToSupply) external returns (uint256) {
-        address eth = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
-
         // set cEth address
         // utilize reference to allow update of cEth address by compound in future versions
-        address cEth = assetToCAsset[eth];
+        address cEth = assetToCAsset[ETH_ADDRESS];
 
         // Create a reference to the corresponding cToken contract
         ICEther cToken = ICEther(cEth);
 
-        ensureAssetInAccount(msg.sender, eth);
+        ensureAssetInAccount(msg.sender, ETH_ADDRESS);
 
         // transferFrom ERC20 from supplyers address
         require(
@@ -382,11 +380,9 @@ contract LiquidityProviders is
         nonReentrant
         returns (uint256)
     {
-        address eth = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
-
         // set cEth address
         // utilize reference to allow update of cEth address by compound in future versions
-        address cEth = assetToCAsset[eth];
+        address cEth = assetToCAsset[ETH_ADDRESS];
 
         // Create a reference to the corresponding cToken contract, like cDAI
         ICEther cToken = ICEther(cEth);
@@ -411,7 +407,7 @@ contract LiquidityProviders is
 
         _accountAssets[msg.sender].cAssetBalance[cEth] -= redeemTokens;
 
-        maybeRemoveAssetFromAccount(msg.sender, eth);
+        maybeRemoveAssetFromAccount(msg.sender, ETH_ADDRESS);
 
         // Retrieve your asset based on an amountToWithdraw of the asset
         require(cToken.redeemUnderlying(redeemAmount) == 0, "cToken.redeemUnderlying() failed");
@@ -431,11 +427,9 @@ contract LiquidityProviders is
         nonReentrant
         returns (uint256)
     {
-        address eth = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
-
         // set cEth address
         // utilize reference to allow update of cEth address by compound in future versions
-        address cEth = assetToCAsset[eth];
+        address cEth = assetToCAsset[ETH_ADDRESS];
 
         // Create a reference to the corresponding cToken contract, like cDAI
         ICEther cToken = ICEther(cEth);
@@ -449,7 +443,7 @@ contract LiquidityProviders is
         // updating the depositors cErc20 balance
         _accountAssets[msg.sender].cAssetBalance[cEth] -= amountToWithdraw;
 
-        maybeRemoveAssetFromAccount(msg.sender, eth);
+        maybeRemoveAssetFromAccount(msg.sender, ETH_ADDRESS);
 
         // transfer cErc20 tokens to depositor
         require(
