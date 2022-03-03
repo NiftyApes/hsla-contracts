@@ -176,28 +176,25 @@ contract LiquidityProviders is
 
         require(underlying.approve(cAsset, numTokensToSupply), "underlying.approve() failed");
 
-        uint256 exchangeRateMantissa = cToken.exchangeRateCurrent();
-
-        uint256 mintAmount = numTokensToSupply;
-
-        (, uint256 mintTokens) = divScalarByExpTruncate(
-            mintAmount,
-            Exp({ mantissa: exchangeRateMantissa })
-        );
+        uint256 cTokenBalanceBefore = cToken.balanceOf(address(this));
 
         // Mint cTokens
         // Require a successful mint to proceed
         require(cToken.mint(numTokensToSupply) == 0, "cToken.mint() failed");
 
+        uint256 cTokenBalanceAfter = cToken.balanceOf(address(this));
+
+        uint256 cTokensMinted = cTokenBalanceAfter - cTokenBalanceBefore;
+
         // This state variable is written after external calls because external calls
         // add value or assets to this contract and this state variable could be re-entered to
         // increase balance, then withdrawing more funds than have been supplied.
         // updating the depositors cErc20 balance
-        _accountAssets[msg.sender].balance[cAsset].cAssetBalance += mintTokens;
+        _accountAssets[msg.sender].balance[cAsset].cAssetBalance += cTokensMinted;
 
         emit Erc20Supplied(msg.sender, asset, numTokensToSupply);
 
-        return mintTokens;
+        return cTokensMinted;
     }
 
     // @notice returns the number of CERC20 tokens added to balance
