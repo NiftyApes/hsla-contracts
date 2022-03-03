@@ -149,7 +149,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         bytes calldata signature
     ) external {
         // require signature is still valid. This also ensures the signature is not utilized in an active loan
-        require(_cancelledOrFinalized[signature] == false, "Already cancelled or finalized.");
+        require(!_cancelledOrFinalized[signature], "Already cancelled or finalized.");
 
         // recover signer
         address signer = getOfferSigner(eip712EncodedOffer, signature);
@@ -348,7 +348,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     ) external payable whenNotPaused nonReentrant {
         // require signature has not been cancelled/bid withdrawn
         require(
-            _cancelledOrFinalized[signature] == false,
+            !_cancelledOrFinalized[signature],
             "Cannot execute bid or ask. Signature has been cancelled or previously finalized."
         );
 
@@ -417,7 +417,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     {
         // require signature has not been cancelled/bid withdrawn
         require(
-            _cancelledOrFinalized[signature] == false,
+            !_cancelledOrFinalized[signature],
             "Cannot execute bid or ask. Signature has been cancelled or previously finalized."
         );
 
@@ -431,7 +431,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         _executeLoanInternal(offer, msg.sender, borrower, offer.nftId);
 
         // finalize signature
-        _cancelledOrFinalized[signature] == true;
+        _cancelledOrFinalized[signature] = true;
 
         emit SigOfferFinalized(offer.nftContractAddress, offer.nftId, signature);
     }
@@ -588,7 +588,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         // ensure all sig functions finalize signatures
 
         // finalize signature
-        _cancelledOrFinalized[signature] == true;
+        _cancelledOrFinalized[signature] = true;
 
         emit SigOfferFinalized(offer.nftContractAddress, offer.nftId, signature);
     }
