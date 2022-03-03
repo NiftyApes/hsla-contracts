@@ -324,27 +324,24 @@ contract LiquidityProviders is
 
         ensureAssetInAccount(msg.sender, ETH_ADDRESS);
 
-        uint256 exchangeRateMantissa = cToken.exchangeRateCurrent();
-
-        (, uint256 mintTokens) = divScalarByExpTruncate(
-            msg.value,
-            Exp({ mantissa: exchangeRateMantissa })
-        );
-
+        uint256 cTokenBalanceBefore = cToken.balanceOf(address(this));
         // mint CEth tokens to this contract address
         // cEth mint() reverts on failure so do not need a require statement
-        cToken.mint{ value: msg.value, gas: 250000 }();
+        cToken.mint{ value: msg.value }();
+        uint256 cTokenBalanceAfter = cToken.balanceOf(address(this));
+
+        uint256 cTokensMinted = cTokenBalanceAfter - cTokenBalanceBefore;
 
         // This state variable is written after external calls because external calls
         // add value or assets to this contract and this state variable could be re-entered to
         // increase balance, then withdrawing more funds than have been supplied.
         // updating the depositors cErc20 balance
         // cAssetBalances[cEth][msg.sender] += mintTokens;
-        _accountAssets[msg.sender].balance[cEth].cAssetBalance += mintTokens;
+        _accountAssets[msg.sender].balance[cEth].cAssetBalance += cTokensMinted;
 
         emit EthSupplied(msg.sender, msg.value);
 
-        return mintTokens;
+        return cTokensMinted;
     }
 
     function supplyCEth(uint256 numTokensToSupply) external returns (uint256) {
