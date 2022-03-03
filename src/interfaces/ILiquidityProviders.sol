@@ -8,10 +8,14 @@ import "../CarefulMath.sol";
 interface ILiquidityProviders {
     // Structs
 
+    struct Balance {
+        uint256 cAssetBalance;
+        uint256 utilizedCAssetBalance;
+    }
+
     struct AccountAssets {
         address[] keys;
-        mapping(address => uint256) cAssetBalance;
-        mapping(address => uint256) utilizedCAssetBalance;
+        mapping(address => Balance) balance;
         mapping(address => uint256) indexOf;
         mapping(address => bool) inserted;
     }
