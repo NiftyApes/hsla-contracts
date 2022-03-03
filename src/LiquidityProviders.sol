@@ -427,32 +427,9 @@ contract LiquidityProviders is
         nonReentrant
         returns (uint256)
     {
-        // set cEth address
-        // utilize reference to allow update of cEth address by compound in future versions
         address cEth = assetToCAsset[ETH_ADDRESS];
 
-        // Create a reference to the corresponding cToken contract, like cDAI
-        ICEther cToken = ICEther(cEth);
-
-        // require msg.sender has sufficient available balance of cEth
-        require(
-            getAvailableCAssetBalance(msg.sender, cEth) >= amountToWithdraw,
-            "Must have an available balance greater than or equal to amountToWithdraw"
-        );
-
-        // updating the depositors cErc20 balance
-        _accountAssets[msg.sender].balance[cEth].cAssetBalance -= amountToWithdraw;
-
-        maybeRemoveAssetFromAccount(msg.sender, ETH_ADDRESS);
-
-        // transfer cErc20 tokens to depositor
-        require(
-            cToken.transfer(msg.sender, amountToWithdraw),
-            "cToken.transfer failed. Have you approved the correct amount of Tokens"
-        );
-
-        emit CEthWithdrawn(msg.sender, amountToWithdraw);
-
-        return amountToWithdraw;
+        // TODO(dankurka): Discuss but we can probably delete the entire method
+        return withdrawCErc20(cEth, amountToWithdraw);
     }
 }

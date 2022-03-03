@@ -38,8 +38,6 @@ interface ILiquidityProviders {
 
     event EthWithdrawn(address depositor, uint256 amount);
 
-    event CEthWithdrawn(address depositor, uint256 amount);
-
     // Functions
 
     function assetToCAsset(address asset) external view returns (address cAsset);
