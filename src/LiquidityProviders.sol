@@ -50,10 +50,7 @@ contract LiquidityProviders is
     }
 
     // @notice Sets an asset as allowed on the platform and creates asset => cAsset mapping
-    function setCAssetAddress(address asset, address cAsset)
-        external
-        onlyOwner
-    {
+    function setCAssetAddress(address asset, address cAsset) external onlyOwner {
         assetToCAsset[asset] = cAsset;
         _cAssetToAsset[cAsset] = asset;
 
@@ -62,11 +59,7 @@ contract LiquidityProviders is
 
     // @notice returns the assets a depositor has deposited on NiftyApes.
     // @dev combined with cAssetBalances and/or utilizedCAssetBalances to calculate depositors total balance and total available balance.
-    function getAssetsIn(address depositor)
-        external
-        view
-        returns (address[] memory assetsIn)
-    {
+    function getAssetsIn(address depositor) external view returns (address[] memory assetsIn) {
         assetsIn = _accountAssets[depositor].keys;
     }
 
@@ -80,9 +73,7 @@ contract LiquidityProviders is
         )
     {
         cAssetBalance = _accountAssets[account].cAssetBalance[cAsset];
-        utilizedCAssetBalance = _accountAssets[account].utilizedCAssetBalance[
-            cAsset
-        ];
+        utilizedCAssetBalance = _accountAssets[account].utilizedCAssetBalance[cAsset];
         availableCAssetBalance = cAssetBalance - utilizedCAssetBalance;
     }
 
@@ -109,9 +100,7 @@ contract LiquidityProviders is
         address cAsset = assetToCAsset[asset];
 
         cAssetBalance = _accountAssets[account].cAssetBalance[cAsset];
-        utilizedCAssetBalance = _accountAssets[account].utilizedCAssetBalance[
-            cAsset
-        ];
+        utilizedCAssetBalance = _accountAssets[account].utilizedCAssetBalance[cAsset];
         availableCAssetBalance = cAssetBalance - utilizedCAssetBalance;
     }
 
@@ -125,9 +114,7 @@ contract LiquidityProviders is
 
     function addAssetToAccount(address account, address asset) internal {
         _accountAssets[account].inserted[asset] = true;
-        _accountAssets[account].indexOf[asset] = _accountAssets[account]
-            .keys
-            .length;
+        _accountAssets[account].indexOf[asset] = _accountAssets[account].keys.length;
         _accountAssets[account].keys.push(asset);
     }
 
@@ -148,14 +135,8 @@ contract LiquidityProviders is
     // implement 10M limit for MVP
 
     // @notice returns number of cErc20 tokens added to balance
-    function supplyErc20(address asset, uint256 numTokensToSupply)
-        external
-        returns (uint256)
-    {
-        require(
-            assetToCAsset[asset] != address(0),
-            "Asset not whitelisted on NiftyApes"
-        );
+    function supplyErc20(address asset, uint256 numTokensToSupply) external returns (uint256) {
+        require(assetToCAsset[asset] != address(0), "Asset not whitelisted on NiftyApes");
 
         address cAsset = assetToCAsset[asset];
 
@@ -172,18 +153,11 @@ contract LiquidityProviders is
         // transferFrom ERC20 from depositors address
         // review for safeTransferFrom
         require(
-            underlying.transferFrom(
-                msg.sender,
-                address(this),
-                numTokensToSupply
-            ),
+            underlying.transferFrom(msg.sender, address(this), numTokensToSupply),
             "underlying.transferFrom() failed"
         );
 
-        require(
-            underlying.approve(cAsset, numTokensToSupply),
-            "underlying.approve() failed"
-        );
+        require(underlying.approve(cAsset, numTokensToSupply), "underlying.approve() failed");
 
         uint256 exchangeRateMantissa = cToken.exchangeRateCurrent();
 
@@ -191,7 +165,7 @@ contract LiquidityProviders is
 
         (, uint256 mintTokens) = divScalarByExpTruncate(
             mintAmount,
-            Exp({mantissa: exchangeRateMantissa})
+            Exp({ mantissa: exchangeRateMantissa })
         );
 
         // Mint cTokens
@@ -212,14 +186,8 @@ contract LiquidityProviders is
     // @notice returns the number of CERC20 tokens added to balance
     // @dev takes the underlying asset address, not cAsset address
     //
-    function supplyCErc20(address cAsset, uint256 numTokensToSupply)
-        external
-        returns (uint256)
-    {
-        require(
-            _cAssetToAsset[cAsset] != address(0),
-            "Asset not whitelisted on NiftyApes"
-        );
+    function supplyCErc20(address cAsset, uint256 numTokensToSupply) external returns (uint256) {
+        require(_cAssetToAsset[cAsset] != address(0), "Asset not whitelisted on NiftyApes");
 
         address asset = _cAssetToAsset[cAsset];
 
@@ -254,10 +222,7 @@ contract LiquidityProviders is
         nonReentrant
         returns (uint256)
     {
-        require(
-            assetToCAsset[asset] != address(0),
-            "Asset not whitelisted on NiftyApes"
-        );
+        require(assetToCAsset[asset] != address(0), "Asset not whitelisted on NiftyApes");
 
         address cAsset = assetToCAsset[asset];
 
@@ -275,7 +240,7 @@ contract LiquidityProviders is
 
         (, redeemTokens) = divScalarByExpTruncate(
             amountToWithdraw,
-            Exp({mantissa: exchangeRateMantissa})
+            Exp({ mantissa: exchangeRateMantissa })
         );
 
         redeemAmount = amountToWithdraw;
@@ -296,15 +261,9 @@ contract LiquidityProviders is
         }
 
         // Retrieve your asset based on an amountToWithdraw of the asset
-        require(
-            cToken.redeemUnderlying(redeemAmount) == 0,
-            "cToken.redeemUnderlying() failed"
-        );
+        require(cToken.redeemUnderlying(redeemAmount) == 0, "cToken.redeemUnderlying() failed");
 
-        require(
-            underlying.transfer(msg.sender, redeemAmount),
-            "underlying.transfer() failed"
-        );
+        require(underlying.transfer(msg.sender, redeemAmount), "underlying.transfer() failed");
 
         emit Erc20Withdrawn(msg.sender, asset, amountToWithdraw);
 
@@ -368,12 +327,12 @@ contract LiquidityProviders is
 
         (, uint256 mintTokens) = divScalarByExpTruncate(
             msg.value,
-            Exp({mantissa: exchangeRateMantissa})
+            Exp({ mantissa: exchangeRateMantissa })
         );
 
         // mint CEth tokens to this contract address
         // cEth mint() reverts on failure so do not need a require statement
-        cToken.mint{value: msg.value, gas: 250000}();
+        cToken.mint{ value: msg.value, gas: 250000 }();
 
         // This state variable is written after external calls because external calls
         // add value or assets to this contract and this state variable could be re-entered to
@@ -440,7 +399,7 @@ contract LiquidityProviders is
 
         (, redeemTokens) = divScalarByExpTruncate(
             amountToWithdraw,
-            Exp({mantissa: exchangeRateMantissa})
+            Exp({ mantissa: exchangeRateMantissa })
         );
 
         redeemAmount = amountToWithdraw;
@@ -461,13 +420,10 @@ contract LiquidityProviders is
         }
 
         // Retrieve your asset based on an amountToWithdraw of the asset
-        require(
-            cToken.redeemUnderlying(redeemAmount) == 0,
-            "cToken.redeemUnderlying() failed"
-        );
+        require(cToken.redeemUnderlying(redeemAmount) == 0, "cToken.redeemUnderlying() failed");
 
         // Repay eth to depositor
-        (bool success, ) = (msg.sender).call{value: redeemAmount}("");
+        (bool success, ) = (msg.sender).call{ value: redeemAmount }("");
         require(success, "Send eth to depositor failed");
 
         emit EthWithdrawn(msg.sender, amountToWithdraw);

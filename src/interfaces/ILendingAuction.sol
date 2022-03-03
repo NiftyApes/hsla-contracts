@@ -116,10 +116,7 @@ interface ILendingAuction is ILiquidityProviders {
         uint256 totalDrawn
     );
 
-    event LoanRepaid(
-        address indexed nftContractAddress,
-        uint256 indexed nftId
-    );
+    event LoanRepaid(address indexed nftContractAddress, uint256 indexed nftId);
 
     event PartialRepayment(
         address indexed nftContractAddress,
@@ -128,10 +125,7 @@ interface ILendingAuction is ILiquidityProviders {
         uint256 amount
     );
 
-    event AssetSeized(
-        address indexed nftContractAddress,
-        uint256 indexed nftId
-    );
+    event AssetSeized(address indexed nftContractAddress, uint256 indexed nftId);
 
     // Functions
     function loanDrawFeeProtocolBps() external view returns (uint64);
@@ -145,10 +139,7 @@ interface ILendingAuction is ILiquidityProviders {
         view
         returns (LoanAuction memory auction);
 
-    function getOfferSignatureStatus(bytes calldata signature)
-        external
-        view
-        returns (bool status);
+    function getOfferSignatureStatus(bytes calldata signature) external view returns (bool status);
 
     function withdrawOfferSignature(
         address nftContractAddress,
@@ -206,10 +197,9 @@ interface ILendingAuction is ILiquidityProviders {
         bytes32 offerHash
     ) external payable;
 
-    function executeLoanByLenderSignature(
-        Offer calldata offer,
-        bytes calldata signature
-    ) external payable;
+    function executeLoanByLenderSignature(Offer calldata offer, bytes calldata signature)
+        external
+        payable;
 
     function refinanceByBorrower(
         address nftContractAddress,
@@ -238,9 +228,7 @@ interface ILendingAuction is ILiquidityProviders {
         uint256 drawAmount
     ) external;
 
-    function repayRemainingLoan(address nftContractAddress, uint256 nftId)
-        external
-        payable;
+    function repayRemainingLoan(address nftContractAddress, uint256 nftId) external payable;
 
     function partialPayment(
         address nftContractAddress,
@@ -261,17 +249,14 @@ interface ILendingAuction is ILiquidityProviders {
         returns (uint256);
 
     // TODO(Test)
-    function calculateFullRefinanceByLender(
-        address nftContractAddress,
-        uint256 nftId
-    ) external view returns (uint256);
+    function calculateFullRefinanceByLender(address nftContractAddress, uint256 nftId)
+        external
+        view
+        returns (uint256);
 
-    function updateLoanDrawProtocolFee(uint64 newLoanDrawProtocolFeeBps)
-        external;
+    function updateLoanDrawProtocolFee(uint64 newLoanDrawProtocolFeeBps) external;
 
-    function updateRefinancePremiumLenderFee(uint64 newPremiumLenderBps)
-        external;
+    function updateRefinancePremiumLenderFee(uint64 newPremiumLenderBps) external;
 
-    function updateRefinancePremiumProtocolFee(uint64 newPremiumProtocolBps)
-        external;
+    function updateRefinancePremiumProtocolFee(uint64 newPremiumProtocolBps) external;
 }

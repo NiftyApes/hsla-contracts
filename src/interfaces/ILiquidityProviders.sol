@@ -24,11 +24,7 @@ interface ILiquidityProviders {
 
     event CErc20Supplied(address depositor, address asset, uint256 amount);
 
-    event Erc20Withdrawn(
-        address depositor,
-        address asset,
-        uint256 amount
-    );
+    event Erc20Withdrawn(address depositor, address asset, uint256 amount);
 
     event CErc20Withdrawn(address depositor, address asset, uint256 amount);
 
@@ -42,17 +38,11 @@ interface ILiquidityProviders {
 
     // Functions
 
-    function assetToCAsset(address asset)
-        external
-        view
-        returns (address cAsset);
+    function assetToCAsset(address asset) external view returns (address cAsset);
 
     function setCAssetAddress(address asset, address cAsset) external;
 
-    function getAssetsIn(address depositor)
-        external
-        view
-        returns (address[] memory assetsIn);
+    function getAssetsIn(address depositor) external view returns (address[] memory assetsIn);
 
     function getCAssetBalances(address account, address cAsset)
         external
@@ -82,21 +72,13 @@ interface ILiquidityProviders {
         view
         returns (uint256 numberOfAccountAssets);
 
-    function supplyErc20(address asset, uint256 numTokensToSupply)
-        external
-        returns (uint256);
+    function supplyErc20(address asset, uint256 numTokensToSupply) external returns (uint256);
 
-    function supplyCErc20(address asset, uint256 numTokensToSupply)
-        external
-        returns (uint256);
+    function supplyCErc20(address asset, uint256 numTokensToSupply) external returns (uint256);
 
-    function withdrawErc20(address asset, uint256 amountToWithdraw)
-        external
-        returns (uint256);
+    function withdrawErc20(address asset, uint256 amountToWithdraw) external returns (uint256);
 
-    function withdrawCErc20(address asset, uint256 amountToWithdraw)
-        external
-        returns (uint256);
+    function withdrawCErc20(address asset, uint256 amountToWithdraw) external returns (uint256);
 
     function supplyEth() external payable returns (uint256);
 

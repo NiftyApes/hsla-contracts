@@ -48,9 +48,7 @@ interface ICERC20 is ICToken {
      * @param repayAmount The amount to repay
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function repayBorrowBehalf(address borrower, uint256 repayAmount)
-        external
-        returns (uint256);
+    function repayBorrowBehalf(address borrower, uint256 repayAmount) external returns (uint256);
 
     /**
      * @notice The sender liquidates the borrowers collateral.
