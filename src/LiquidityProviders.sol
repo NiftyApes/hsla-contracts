@@ -118,6 +118,14 @@ contract LiquidityProviders is
         _accountAssets[account].keys.push(asset);
     }
 
+    function ensureAssetInAccount(address account, address asset) internal {
+        if (_accountAssets[account].inserted[asset]) {
+            return;
+        }
+
+        addAssetToAccount(account, asset);
+    }
+
     function removeAssetFromAccount(address account, address asset) internal {
         delete _accountAssets[account].inserted[asset];
 
@@ -130,6 +138,15 @@ contract LiquidityProviders is
 
         _accountAssets[account].keys[index] = lastAsset;
         _accountAssets[account].keys.pop();
+    }
+
+    function maybeRemoveAssetFromAccount(address account, address asset) internal {
+        if (
+            _accountAssets[account].cAssetBalance[asset] == 0 &&
+            _accountAssets[account].utilizedCAssetBalance[asset] == 0
+        ) {
+            removeAssetFromAccount(account, asset);
+        }
     }
 
     // implement 10M limit for MVP
@@ -146,9 +163,7 @@ contract LiquidityProviders is
         // Create a reference to the corresponding cToken contract, like cDAI
         ICERC20 cToken = ICERC20(cAsset);
 
-        if (!_accountAssets[msg.sender].inserted[asset]) {
-            addAssetToAccount(msg.sender, asset);
-        }
+        ensureAssetInAccount(msg.sender, asset);
 
         // transferFrom ERC20 from depositors address
         // review for safeTransferFrom
@@ -194,9 +209,7 @@ contract LiquidityProviders is
         // Create a reference to the corresponding cToken contract, like cDAI
         ICERC20 cToken = ICERC20(cAsset);
 
-        if (!_accountAssets[msg.sender].inserted[asset]) {
-            addAssetToAccount(msg.sender, asset);
-        }
+        ensureAssetInAccount(msg.sender, asset);
 
         // transferFrom ERC20 from depositors address
         require(
@@ -253,12 +266,7 @@ contract LiquidityProviders is
 
         _accountAssets[msg.sender].cAssetBalance[cAsset] -= redeemTokens;
 
-        if (
-            _accountAssets[msg.sender].cAssetBalance[cAsset] == 0 &&
-            _accountAssets[msg.sender].utilizedCAssetBalance[cAsset] == 0
-        ) {
-            removeAssetFromAccount(msg.sender, asset);
-        }
+        maybeRemoveAssetFromAccount(msg.sender, cAsset);
 
         // Retrieve your asset based on an amountToWithdraw of the asset
         require(cToken.redeemUnderlying(redeemAmount) == 0, "cToken.redeemUnderlying() failed");
@@ -291,12 +299,7 @@ contract LiquidityProviders is
         // updating the depositors cErc20 balance
         _accountAssets[msg.sender].cAssetBalance[cAsset] -= amountToWithdraw;
 
-        if (
-            _accountAssets[msg.sender].cAssetBalance[cAsset] == 0 &&
-            _accountAssets[msg.sender].utilizedCAssetBalance[cAsset] == 0
-        ) {
-            removeAssetFromAccount(msg.sender, asset);
-        }
+        maybeRemoveAssetFromAccount(msg.sender, asset);
 
         // transfer cErc20 tokens to depositor
         require(
@@ -319,9 +322,7 @@ contract LiquidityProviders is
         // Create a reference to the corresponding cToken contract
         ICEther cToken = ICEther(cEth);
 
-        if (!_accountAssets[msg.sender].inserted[eth]) {
-            addAssetToAccount(msg.sender, eth);
-        }
+        ensureAssetInAccount(msg.sender, eth);
 
         uint256 exchangeRateMantissa = cToken.exchangeRateCurrent();
 
@@ -356,9 +357,7 @@ contract LiquidityProviders is
         // Create a reference to the corresponding cToken contract
         ICEther cToken = ICEther(cEth);
 
-        if (!_accountAssets[msg.sender].inserted[eth]) {
-            addAssetToAccount(msg.sender, eth);
-        }
+        ensureAssetInAccount(msg.sender, eth);
 
         // transferFrom ERC20 from supplyers address
         require(
@@ -412,12 +411,7 @@ contract LiquidityProviders is
 
         _accountAssets[msg.sender].cAssetBalance[cEth] -= redeemTokens;
 
-        if (
-            _accountAssets[msg.sender].cAssetBalance[cEth] == 0 &&
-            _accountAssets[msg.sender].utilizedCAssetBalance[cEth] == 0
-        ) {
-            removeAssetFromAccount(msg.sender, eth);
-        }
+        maybeRemoveAssetFromAccount(msg.sender, eth);
 
         // Retrieve your asset based on an amountToWithdraw of the asset
         require(cToken.redeemUnderlying(redeemAmount) == 0, "cToken.redeemUnderlying() failed");
@@ -455,12 +449,7 @@ contract LiquidityProviders is
         // updating the depositors cErc20 balance
         _accountAssets[msg.sender].cAssetBalance[cEth] -= amountToWithdraw;
 
-        if (
-            _accountAssets[msg.sender].cAssetBalance[cEth] == 0 &&
-            _accountAssets[msg.sender].utilizedCAssetBalance[cEth] == 0
-        ) {
-            removeAssetFromAccount(msg.sender, eth);
-        }
+        maybeRemoveAssetFromAccount(msg.sender, eth);
 
         // transfer cErc20 tokens to depositor
         require(
