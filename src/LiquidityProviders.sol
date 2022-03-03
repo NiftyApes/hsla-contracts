@@ -118,12 +118,12 @@ contract LiquidityProviders is
         _accountAssets[account].keys.push(asset);
     }
 
-    function ensureAssetInAccount(address account, address asset) internal{
+    function ensureAssetInAccount(address account, address asset) internal {
         if (_accountAssets[account].inserted[asset]) {
-           return;
+            return;
         }
 
-        addAssetToAccount( account,  asset);
+        addAssetToAccount(account, asset);
     }
 
     function removeAssetFromAccount(address account, address asset) internal {
