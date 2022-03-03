@@ -74,8 +74,8 @@ contract LiquidityProviders is
             uint256 availableCAssetBalance
         )
     {
-        cAssetBalance = _accountAssets[account].cAssetBalance[cAsset];
-        utilizedCAssetBalance = _accountAssets[account].utilizedCAssetBalance[cAsset];
+        cAssetBalance = _accountAssets[account].balance[cAsset].cAssetBalance;
+        utilizedCAssetBalance = _accountAssets[account].balance[cAsset].utilizedCAssetBalance;
         availableCAssetBalance = cAssetBalance - utilizedCAssetBalance;
     }
 
@@ -85,8 +85,8 @@ contract LiquidityProviders is
         returns (uint256 availableCAssetBalance)
     {
         availableCAssetBalance =
-            _accountAssets[account].cAssetBalance[cAsset] -
-            _accountAssets[account].utilizedCAssetBalance[cAsset];
+            _accountAssets[account].balance[cAsset].cAssetBalance -
+            _accountAssets[account].balance[cAsset].utilizedCAssetBalance;
     }
 
     function getCAssetBalancesAtIndex(address account, uint256 index)
@@ -101,8 +101,8 @@ contract LiquidityProviders is
         address asset = _accountAssets[account].keys[index];
         address cAsset = assetToCAsset[asset];
 
-        cAssetBalance = _accountAssets[account].cAssetBalance[cAsset];
-        utilizedCAssetBalance = _accountAssets[account].utilizedCAssetBalance[cAsset];
+        cAssetBalance = _accountAssets[account].balance[cAsset].cAssetBalance;
+        utilizedCAssetBalance = _accountAssets[account].balance[cAsset].utilizedCAssetBalance;
         availableCAssetBalance = cAssetBalance - utilizedCAssetBalance;
     }
 
@@ -144,8 +144,8 @@ contract LiquidityProviders is
 
     function maybeRemoveAssetFromAccount(address account, address asset) internal {
         if (
-            _accountAssets[account].cAssetBalance[asset] == 0 &&
-            _accountAssets[account].utilizedCAssetBalance[asset] == 0
+            _accountAssets[account].balance[asset].cAssetBalance == 0 &&
+            _accountAssets[account].balance[asset].utilizedCAssetBalance == 0
         ) {
             removeAssetFromAccount(account, asset);
         }
@@ -193,7 +193,7 @@ contract LiquidityProviders is
         // add value or assets to this contract and this state variable could be re-entered to
         // increase balance, then withdrawing more funds than have been supplied.
         // updating the depositors cErc20 balance
-        _accountAssets[msg.sender].cAssetBalance[cAsset] += mintTokens;
+        _accountAssets[msg.sender].balance[cAsset].cAssetBalance += mintTokens;
 
         emit Erc20Supplied(msg.sender, asset, numTokensToSupply);
 
@@ -223,7 +223,7 @@ contract LiquidityProviders is
         // add value or assets to this contract and this state variable could be re-entered to
         // increase balance, then withdrawing more funds than have been supplied.
         // updating the depositors cErc20 balance
-        _accountAssets[msg.sender].cAssetBalance[cAsset] += numTokensToSupply;
+        _accountAssets[msg.sender].balance[cAsset].cAssetBalance += numTokensToSupply;
 
         emit CErc20Supplied(msg.sender, cAsset, numTokensToSupply);
 
@@ -266,7 +266,7 @@ contract LiquidityProviders is
             "Must have sufficient balance"
         );
 
-        _accountAssets[msg.sender].cAssetBalance[cAsset] -= redeemTokens;
+        _accountAssets[msg.sender].balance[cAsset].cAssetBalance -= redeemTokens;
 
         maybeRemoveAssetFromAccount(msg.sender, cAsset);
 
@@ -299,7 +299,7 @@ contract LiquidityProviders is
             "Must have an available balance greater than or equal to amountToWithdraw"
         );
         // updating the depositors cErc20 balance
-        _accountAssets[msg.sender].cAssetBalance[cAsset] -= amountToWithdraw;
+        _accountAssets[msg.sender].balance[cAsset].cAssetBalance -= amountToWithdraw;
 
         maybeRemoveAssetFromAccount(msg.sender, asset);
 
@@ -340,7 +340,7 @@ contract LiquidityProviders is
         // increase balance, then withdrawing more funds than have been supplied.
         // updating the depositors cErc20 balance
         // cAssetBalances[cEth][msg.sender] += mintTokens;
-        _accountAssets[msg.sender].cAssetBalance[cEth] += mintTokens;
+        _accountAssets[msg.sender].balance[cEth].cAssetBalance += mintTokens;
 
         emit EthSupplied(msg.sender, msg.value);
 
@@ -367,7 +367,7 @@ contract LiquidityProviders is
         // add value or assets to this contract and this state variable could be re-entered to
         // increase balance, then withdrawing more funds than have been supplied.
         // cAssetBalances[cEth][msg.sender] += numTokensToSupply;
-        _accountAssets[msg.sender].cAssetBalance[cEth] += numTokensToSupply;
+        _accountAssets[msg.sender].balance[cEth].cAssetBalance += numTokensToSupply;
 
         emit CEthSupplied(msg.sender, numTokensToSupply);
 
@@ -405,7 +405,7 @@ contract LiquidityProviders is
             "Must have sufficient balance"
         );
 
-        _accountAssets[msg.sender].cAssetBalance[cEth] -= redeemTokens;
+        _accountAssets[msg.sender].balance[cEth].cAssetBalance -= redeemTokens;
 
         maybeRemoveAssetFromAccount(msg.sender, ETH_ADDRESS);
 
@@ -441,7 +441,7 @@ contract LiquidityProviders is
         );
 
         // updating the depositors cErc20 balance
-        _accountAssets[msg.sender].cAssetBalance[cEth] -= amountToWithdraw;
+        _accountAssets[msg.sender].balance[cEth].cAssetBalance -= amountToWithdraw;
 
         maybeRemoveAssetFromAccount(msg.sender, ETH_ADDRESS);
 

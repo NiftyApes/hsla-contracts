@@ -1146,10 +1146,11 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         loanAuction.fixedTerms = false;
 
         // update lenders utilized balance
-        _accountAssets[loanAuction.lender].utilizedCAssetBalance[cAsset] -= loanAuction.amountDrawn;
+        _accountAssets[loanAuction.lender].balance[cAsset].utilizedCAssetBalance -= loanAuction
+            .amountDrawn;
 
         // update lenders total balance
-        _accountAssets[loanAuction.lender].cAssetBalance[cAsset] -= loanAuction.amountDrawn;
+        _accountAssets[loanAuction.lender].balance[cAsset].cAssetBalance -= loanAuction.amountDrawn;
 
         // transferFrom NFT from contract to lender
         IERC721(nftContractAddress).transferFrom(address(this), currentlender, nftId);
@@ -1185,7 +1186,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         );
 
         // update the lenders utilized balance
-        _accountAssets[lender].utilizedCAssetBalance[cAsset] += redeemTokens;
+        _accountAssets[lender].balance[cAsset].utilizedCAssetBalance += redeemTokens;
     }
 
     // this internal functions handles transfer of erc20 tokens and updating lender balances for refinanceLoan, repayRemainingLoan, and partialRepayment functions
@@ -1237,13 +1238,13 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         require(cToken.mint(fullAmount) == 0, "cToken.mint() failed");
 
         // update the tos utilized balance
-        _accountAssets[to].utilizedCAssetBalance[cAsset] -= paymentTokens;
+        _accountAssets[to].balance[cAsset].utilizedCAssetBalance -= paymentTokens;
 
         // update the tos total balance
-        _accountAssets[to].cAssetBalance[cAsset] += lenderInterestAndPremiumTokens;
+        _accountAssets[to].balance[cAsset].cAssetBalance += lenderInterestAndPremiumTokens;
 
         // update the owner total balance
-        _accountAssets[owner()].cAssetBalance[cAsset] += protocolInterestAndPremiumTokens;
+        _accountAssets[owner()].balance[cAsset].cAssetBalance += protocolInterestAndPremiumTokens;
     }
 
     // this internal functions handles transfer of Eth and updating lender balances for refinanceLoan, repayRemainingLoan, and partialRepayment functions
@@ -1293,10 +1294,10 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         cToken.mint{ value: msgValue, gas: 250000 }();
 
         // update the to's utilized balance
-        _accountAssets[to].utilizedCAssetBalance[cAsset] -= paymentTokens;
+        _accountAssets[to].balance[cAsset].utilizedCAssetBalance -= paymentTokens;
 
         // update the to's total balance + the delta of msgValueTokens minus all other tokens
-        _accountAssets[to].cAssetBalance[cAsset] +=
+        _accountAssets[to].balance[cAsset].cAssetBalance +=
             lenderInterestAndPremiumTokens +
             (msgValueTokens -
                 (lenderInterestAndPremiumTokens +
@@ -1304,7 +1305,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                     paymentTokens));
 
         // update the owner's total balance
-        _accountAssets[owner()].cAssetBalance[cAsset] += protocolInterestAndPremiumTokens;
+        _accountAssets[owner()].balance[cAsset].cAssetBalance += protocolInterestAndPremiumTokens;
     }
 
     // This function has a slither warning for sending eth to an abritrary address, but the
@@ -1379,19 +1380,19 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         // check calling functions require from has a sufficient total balance to buy out loan
 
         // update from's utilized balance
-        _accountAssets[from].utilizedCAssetBalance[cAsset] += paymentTokens;
+        _accountAssets[from].balance[cAsset].utilizedCAssetBalance += paymentTokens;
 
         // update from's total balance
-        _accountAssets[from].cAssetBalance[cAsset] -= protocolPremiumTokens;
+        _accountAssets[from].balance[cAsset].cAssetBalance -= protocolPremiumTokens;
 
         // update the to's utilized balance
-        _accountAssets[to].utilizedCAssetBalance[cAsset] -= paymentTokens;
+        _accountAssets[to].balance[cAsset].utilizedCAssetBalance -= paymentTokens;
 
         // update the to's total balance
-        _accountAssets[to].cAssetBalance[cAsset] += interestAndPremiumTokens;
+        _accountAssets[to].balance[cAsset].cAssetBalance += interestAndPremiumTokens;
 
         // update the owner's total balance
-        _accountAssets[owner()].cAssetBalance[cAsset] += protocolPremiumTokens;
+        _accountAssets[owner()].balance[cAsset].cAssetBalance += protocolPremiumTokens;
     }
 
     // ---------- Helper Functions ---------- //
