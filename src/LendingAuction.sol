@@ -187,6 +187,17 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
     // ---------- On-chain Offer Functions ---------- //
 
+    function getOfferBook(
+        address nftContractAddress,
+        uint256 nftId,
+        bool floorTerm
+    ) internal view returns (OfferBook storage) {
+        return
+            floorTerm
+                ? _floorOfferBooks[nftContractAddress]
+                : _nftOfferBooks[nftContractAddress][nftId];
+    }
+
     /**
      * @notice Retrieve an offer from the on-chain floor or individual NFT offer books by offerHash identifier
      * @param nftContractAddress The address of the NFT collection
@@ -199,16 +210,8 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         uint256 nftId,
         bytes32 offerHash,
         bool floorTerm
-    ) external view returns (Offer memory offer) {
-        // Offer storage offer;
-        OfferBook storage offerBook;
-
-        if (floorTerm == true) {
-            offerBook = _floorOfferBooks[nftContractAddress];
-        } else {
-            offerBook = _nftOfferBooks[nftContractAddress][nftId];
-        }
-        offer = offerBook.offers[offerHash];
+    ) external view returns (Offer memory) {
+        return getOfferBook(nftContractAddress, nftId, floorTerm).offers[offerHash];
     }
 
     /**
@@ -223,18 +226,9 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         uint256 nftId,
         uint256 index,
         bool floorTerm
-    ) external view returns (Offer memory offer) {
-        OfferBook storage offerBook;
-
-        bytes32 offerHash;
-
-        if (floorTerm) {
-            offerBook = _floorOfferBooks[nftContractAddress];
-        } else {
-            offerBook = _nftOfferBooks[nftContractAddress][nftId];
-        }
-        offerHash = offerBook.keys[index];
-        offer = offerBook.offers[offerHash];
+    ) external view returns (Offer memory) {
+        OfferBook storage offerBook = getOfferBook(nftContractAddress, nftId, floorTerm);
+        return offerBook.offers[offerBook.keys[index]];
     }
 
     /**
@@ -247,24 +241,14 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         address nftContractAddress,
         uint256 nftId,
         bool floorTerm
-    ) external view returns (uint256 offerBookSize) {
-        OfferBook storage offerBook;
-
-        if (floorTerm == true) {
-            offerBook = _floorOfferBooks[nftContractAddress];
-            offerBookSize = offerBook.keys.length;
-        } else {
-            offerBook = _nftOfferBooks[nftContractAddress][nftId];
-            offerBookSize = offerBook.keys.length;
-        }
+    ) external view returns (uint256) {
+        return getOfferBook(nftContractAddress, nftId, floorTerm).keys.length;
     }
 
     /**
      * @param offer The details of the loan auction individual NFT offer
      */
     function createOffer(Offer calldata offer) external {
-        OfferBook storage offerBook;
-
         address cAsset = assetToCAsset[offer.asset];
 
         // Create a reference to the corresponding cToken contract, like cDAI
@@ -289,11 +273,11 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             "Must have an available balance greater than or equal to amountToWithdraw"
         );
 
-        if (offer.floorTerm) {
-            offerBook = _floorOfferBooks[offer.nftContractAddress];
-        } else {
-            offerBook = _nftOfferBooks[offer.nftContractAddress][offer.nftId];
-        }
+        OfferBook storage offerBook = getOfferBook(
+            offer.nftContractAddress,
+            offer.nftId,
+            offer.floorTerm
+        );
 
         bytes32 offerHash = getOfferHash(offer);
 
@@ -321,9 +305,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         bool floorTerm
     ) external {
         // Get pointer to offer book
-        OfferBook storage offerBook = floorTerm
-            ? _floorOfferBooks[nftContractAddress]
-            : _nftOfferBooks[nftContractAddress][nftId];
+        OfferBook storage offerBook = getOfferBook(nftContractAddress, nftId, floorTerm);
 
         // Get memory pointer to offer
         Offer memory offer = offerBook.offers[offerHash];
