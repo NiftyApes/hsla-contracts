@@ -63,11 +63,9 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     function getLoanAuction(address nftContractAddress, uint256 nftId)
         external
         view
-        returns (LoanAuction memory auction)
+        returns (LoanAuction memory)
     {
-        auction = _loanAuctions[nftContractAddress][nftId];
-
-        require(auction.loanExecutedTime != 0, "Loan not active");
+        return _loanAuctions[nftContractAddress][nftId];
     }
 
     //This function is in addition to getEIP712EncodedOffer in order to save gas in createOffer()
