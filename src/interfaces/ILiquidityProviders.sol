@@ -34,11 +34,7 @@ interface ILiquidityProviders {
 
     event EthSupplied(address depositor, uint256 amount);
 
-    event CEthSupplied(address depositor, uint256 amount);
-
     event EthWithdrawn(address depositor, uint256 amount);
-
-    event CEthWithdrawn(address depositor, uint256 amount);
 
     // Functions
 
@@ -86,9 +82,5 @@ interface ILiquidityProviders {
 
     function supplyEth() external payable returns (uint256);
 
-    function supplyCEth(uint256 numTokensToSupply) external returns (uint256);
-
     function withdrawEth(uint256 amountToWithdraw) external returns (uint256);
-
-    function withdrawCEth(uint256 amountToWithdraw) external returns (uint256);
 }

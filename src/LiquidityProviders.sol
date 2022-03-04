@@ -333,33 +333,6 @@ contract LiquidityProviders is
         return cTokensMinted;
     }
 
-    function supplyCEth(uint256 numTokensToSupply) external returns (uint256) {
-        // set cEth address
-        // utilize reference to allow update of cEth address by compound in future versions
-        address cEth = assetToCAsset[ETH_ADDRESS];
-
-        // Create a reference to the corresponding cToken contract
-        ICEther cToken = ICEther(cEth);
-
-        ensureAssetInAccount(msg.sender, ETH_ADDRESS);
-
-        // transferFrom ERC20 from supplyers address
-        require(
-            cToken.transferFrom(msg.sender, address(this), numTokensToSupply),
-            "cToken.transferFrom failed"
-        );
-
-        // This state variable is written after external calls because external calls
-        // add value or assets to this contract and this state variable could be re-entered to
-        // increase balance, then withdrawing more funds than have been supplied.
-        // cAssetBalances[cEth][msg.sender] += numTokensToSupply;
-        _accountAssets[msg.sender].balance[cEth].cAssetBalance += numTokensToSupply;
-
-        emit CEthSupplied(msg.sender, numTokensToSupply);
-
-        return numTokensToSupply;
-    }
-
     function withdrawEth(uint256 amountToWithdraw)
         external
         whenNotPaused
@@ -405,40 +378,5 @@ contract LiquidityProviders is
         emit EthWithdrawn(msg.sender, amountToWithdraw);
 
         return redeemAmount;
-    }
-
-    function withdrawCEth(uint256 amountToWithdraw)
-        external
-        whenNotPaused
-        nonReentrant
-        returns (uint256)
-    {
-        // set cEth address
-        // utilize reference to allow update of cEth address by compound in future versions
-        address cEth = assetToCAsset[ETH_ADDRESS];
-
-        // Create a reference to the corresponding cToken contract, like cDAI
-        ICEther cToken = ICEther(cEth);
-
-        // require msg.sender has sufficient available balance of cEth
-        require(
-            getAvailableCAssetBalance(msg.sender, cEth) >= amountToWithdraw,
-            "Must have an available balance greater than or equal to amountToWithdraw"
-        );
-
-        // updating the depositors cErc20 balance
-        _accountAssets[msg.sender].balance[cEth].cAssetBalance -= amountToWithdraw;
-
-        maybeRemoveAssetFromAccount(msg.sender, ETH_ADDRESS);
-
-        // transfer cErc20 tokens to depositor
-        require(
-            cToken.transfer(msg.sender, amountToWithdraw),
-            "cToken.transfer failed. Have you approved the correct amount of Tokens"
-        );
-
-        emit CEthWithdrawn(msg.sender, amountToWithdraw);
-
-        return amountToWithdraw;
     }
 }

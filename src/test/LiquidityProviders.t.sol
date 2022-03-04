@@ -275,27 +275,6 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
         assert(cAssetBalance == cToken.balanceOf(address(liquidityProviders)));
     }
 
-    function testSupplyCEth(uint256 deposit) public {
-        (uint256 cAssetBalanceInit, , ) = liquidityProviders.getCAssetBalances(
-            address(this),
-            address(cETH)
-        );
-
-        if (deposit > cAssetBalanceInit) {
-            deposit = cAssetBalanceInit;
-        }
-
-        liquidityProviders.supplyCEth(deposit);
-
-        (uint256 cAssetBalance, , ) = liquidityProviders.getCAssetBalances(
-            address(this),
-            address(cETH)
-        );
-
-        assert(cAssetBalance == (cAssetBalanceInit + deposit));
-        assert(cAssetBalance == ICEther(cETH).balanceOf(address(liquidityProviders)));
-    }
-
     function testWithdrawEth(uint256 amount) public {
         ICEther cToken = ICEther(cETH);
 
@@ -330,27 +309,6 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
 
         assert(assetBalance == (assetBalanceInit + amount));
         assert(cAssetBalance == (cAssetBalanceInit - redeemTokens));
-        assert(cAssetBalance == ICEther(cETH).balanceOf(address(liquidityProviders)));
-    }
-
-    function testWithdrawCEth(uint256 amount) public {
-        (uint256 cAssetBalanceInit, , ) = liquidityProviders.getCAssetBalances(
-            address(this),
-            address(cETH)
-        );
-
-        // this enables us to test all values up to the deposited amount in setUp.
-        if (amount > cAssetBalanceInit) {
-            amount = cAssetBalanceInit;
-        }
-
-        liquidityProviders.withdrawCEth(amount);
-
-        (uint256 cAssetBalance, , ) = liquidityProviders.getCAssetBalances(
-            address(this),
-            address(cETH)
-        );
-        assert(cAssetBalance == (cAssetBalanceInit - amount));
         assert(cAssetBalance == ICEther(cETH).balanceOf(address(liquidityProviders)));
     }
 }
