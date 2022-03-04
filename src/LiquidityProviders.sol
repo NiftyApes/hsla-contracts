@@ -200,7 +200,7 @@ contract LiquidityProviders is
     // @notice returns the number of CERC20 tokens added to balance
     // @dev takes the underlying asset address, not cAsset address
     //
-    function supplyCErc20(address cAsset, uint256 numTokensToSupply) public returns (uint256) {
+    function supplyCErc20(address cAsset, uint256 numTokensToSupply) external returns (uint256) {
         require(_cAssetToAsset[cAsset] != address(0), "Asset not whitelisted on NiftyApes");
 
         address asset = _cAssetToAsset[cAsset];
@@ -270,7 +270,7 @@ contract LiquidityProviders is
     }
 
     function withdrawCErc20(address cAsset, uint256 amountToWithdraw)
-        public
+        external
         whenNotPaused
         nonReentrant
         returns (uint256)
@@ -333,10 +333,6 @@ contract LiquidityProviders is
         return cTokensMinted;
     }
 
-    function supplyCEth(uint256 numTokensToSupply) external returns (uint256) {
-        return supplyCErc20(assetToCAsset[ETH_ADDRESS], numTokensToSupply);
-    }
-
     function withdrawEth(uint256 amountToWithdraw)
         external
         whenNotPaused
@@ -382,12 +378,5 @@ contract LiquidityProviders is
         emit EthWithdrawn(msg.sender, amountToWithdraw);
 
         return redeemAmount;
-    }
-
-    function withdrawCEth(uint256 amountToWithdraw) external returns (uint256) {
-        address cEth = assetToCAsset[ETH_ADDRESS];
-
-        // TODO(dankurka): Discuss but we can probably delete the entire method
-        return withdrawCErc20(cEth, amountToWithdraw);
     }
 }

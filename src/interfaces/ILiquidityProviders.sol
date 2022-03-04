@@ -82,9 +82,5 @@ interface ILiquidityProviders {
 
     function supplyEth() external payable returns (uint256);
 
-    function supplyCEth(uint256 numTokensToSupply) external returns (uint256);
-
     function withdrawEth(uint256 amountToWithdraw) external returns (uint256);
-
-    function withdrawCEth(uint256 amountToWithdraw) external returns (uint256);
 }
