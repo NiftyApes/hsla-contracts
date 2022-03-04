@@ -989,7 +989,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         delete _loanAuctions[nftContractAddress][nftId];
 
         // if asset is not 0x0 process as Erc20
-        if (currentAsset != address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)) {
+        if (currentAsset != ETH_ADDRESS) {
             // protocolPremiumFee is taken here. Full amount is minted to this contract address' balance in Compound and amount owed to lender is updated in their balance. The delta is the protocol premium fee.
             _payErc20AndUpdateBalancesInternal(
                 currentAsset,
@@ -1001,9 +1001,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                 interestOwedToProtocol,
                 currentAmountDrawn
             );
-        }
-        // else process as ETH
-        else if (currentAsset == address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)) {
+        } else {
             // check that transaction covers the full value of the loan
             require(
                 msg.value >= fullRepayment,
@@ -1210,30 +1208,22 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         );
 
         require(underlying.approve(cAsset, fullAmount) == true, "underlying.approve() failed");
+        uint256 cTokensMinted;
+        // TODO(dankurka): Stack too deep refactor this
+        {
+            uint256 cTokenBalanceBefore = cToken.balanceOf(address(this));
+            // mint cTokens
+            require(cToken.mint(fullAmount) == 0, "cToken.mint() failed");
+            uint256 cTokenBalanceAfter = cToken.balanceOf(address(this));
+            cTokensMinted = cTokenBalanceAfter - cTokenBalanceBefore;
+        }
 
-        // set exchange rate from erc20 to ICERC20
-        uint256 exchangeRateMantissa = ICERC20(cAsset).exchangeRateCurrent();
+        uint256 lenderInterestAndPremiumTokens = (lenderInterestAndPremiumAmount * cTokensMinted) /
+            fullAmount;
+        uint256 protocolInterestAndPremiumTokens = (protocolInterestAndPremiumAmount *
+            cTokensMinted) / fullAmount;
 
-        // convert lenderInterestAndPremiumAmount to ICERC20
-        (, uint256 lenderInterestAndPremiumTokens) = divScalarByExpTruncate(
-            lenderInterestAndPremiumAmount,
-            Exp({ mantissa: exchangeRateMantissa })
-        );
-
-        // convert protocolInterestAndPremiumAmount to ICERC20
-        (, uint256 protocolInterestAndPremiumTokens) = divScalarByExpTruncate(
-            protocolInterestAndPremiumAmount,
-            Exp({ mantissa: exchangeRateMantissa })
-        );
-
-        // convert paymentAmount to ICERC20
-        (, uint256 paymentTokens) = divScalarByExpTruncate(
-            paymentAmount,
-            Exp({ mantissa: exchangeRateMantissa })
-        );
-
-        // mint cTokens
-        require(cToken.mint(fullAmount) == 0, "cToken.mint() failed");
+        uint256 paymentTokens = (paymentAmount * cTokensMinted) / fullAmount;
 
         // update the tos utilized balance
         _accountAssets[to].balance[cAsset].utilizedCAssetBalance -= paymentTokens;
