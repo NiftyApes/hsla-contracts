@@ -1089,22 +1089,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
         uint256 cTokensMinted;
 
-        // if asset is not 0x0 process as Erc20
-        if (currentAsset != ETH_ADDRESS) {
-            cTokensMinted = transferERC20(msg.sender, address(this), currentAsset, fullRepayment);
-        } else {
-            // check that transaction covers the full value of the loan
-            require(
-                msg.value >= fullRepayment,
-                "Must repay full amount of loan drawn plus interest and fee. Account for additional time for interest."
-            );
-
-            cTokensMinted = transferEth(fullRepayment);
-
-            if (fullRepayment < msg.value) {
-                Address.sendValue(payable(msg.sender), msg.value - fullRepayment);
-            }
-        }
+       
 
         // if asset is not 0x0 process as Erc20
         if (loanAuction.asset != ETH_ADDRESS) {
@@ -1116,7 +1101,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                 partialAmount
             );
         } else {
-            // check that transaction covers the full value of the loan
             require(msg.value < currentAmountDrawn, "Msg.value must be less than amountDrawn");
 
             cTokensMinted = transferEth(msg.value);
