@@ -1115,9 +1115,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                 loanAuction.asset,
                 partialAmount
             );
-        }
-        // else process as ETH
-        else if (loanAuction.asset == address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)) {
+        } else {
             // check that transaction covers the full value of the loan
             require(msg.value < currentAmountDrawn, "Msg.value must be less than amountDrawn");
 
