@@ -346,37 +346,29 @@ contract LiquidityProviders is
         // Create a reference to the corresponding cToken contract, like cDAI
         ICEther cToken = ICEther(cEth);
 
-        uint256 exchangeRateMantissa;
-        uint256 redeemTokens;
-        uint256 redeemAmount;
-        exchangeRateMantissa = cToken.exchangeRateCurrent();
+        // Retrieve your asset based on an amountToWithdraw of the asset
+        uint256 cTokenBalanceBefore = cToken.balanceOf(address(this));
+        require(cToken.redeemUnderlying(amountToWithdraw) == 0, "cToken.redeemUnderlying() failed");
+        uint256 cTokenBalanceAfter = cToken.balanceOf(address(this));
 
-        (, redeemTokens) = divScalarByExpTruncate(
-            amountToWithdraw,
-            Exp({ mantissa: exchangeRateMantissa })
-        );
+        uint256 cTokensWithdrawn = cTokenBalanceBefore - cTokenBalanceAfter;
 
-        redeemAmount = amountToWithdraw;
-
-        // require msg.sender has sufficient available balance of cEth
+         // require msg.sender has sufficient available balance of cEth
         require(
-            getAvailableCAssetBalance(msg.sender, cEth) >= redeemTokens,
+            getAvailableCAssetBalance(msg.sender, cEth) >= cTokensWithdrawn,
             "Must have sufficient balance"
         );
 
-        _accountAssets[msg.sender].balance[cEth].cAssetBalance -= redeemTokens;
+        _accountAssets[msg.sender].balance[cEth].cAssetBalance -= cTokensWithdrawn;
 
         maybeRemoveAssetFromAccount(msg.sender, ETH_ADDRESS);
 
-        // Retrieve your asset based on an amountToWithdraw of the asset
-        require(cToken.redeemUnderlying(redeemAmount) == 0, "cToken.redeemUnderlying() failed");
-
         // Repay eth to depositor
-        (bool success, ) = (msg.sender).call{ value: redeemAmount }("");
+        (bool success, ) = (msg.sender).call{ value: amountToWithdraw }("");
         require(success, "Send eth to depositor failed");
 
         emit EthWithdrawn(msg.sender, amountToWithdraw);
 
-        return redeemAmount;
+        return amountToWithdraw;
     }
 }
