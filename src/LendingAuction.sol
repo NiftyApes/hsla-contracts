@@ -435,6 +435,33 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         emit SigOfferFinalized(offer.nftContractAddress, offer.nftId, signature);
     }
 
+    struct LoanRepayment {
+        uint256 lenderInterest;
+        uint256 protocolInterest;
+        uint256 principal;
+    }
+
+    function calculateRepayment(address nftContractAddress, uint256 nftId)
+        internal
+        view
+        returns (LoanRepayment memory)
+    {
+        // calculate the amount of interest accrued by the lender
+        (uint256 lenderInterest, uint256 protocolInterest) = calculateInterestAccrued(
+            nftContractAddress,
+            nftId
+        );
+
+        LoanAuction storage loanAuction = _loanAuctions[nftContractAddress][nftId];
+
+        return
+            LoanRepayment({
+                lenderInterest: lenderInterest,
+                protocolInterest: protocolInterest,
+                principal: loanAuction.amountDrawn
+            });
+    }
+
     /**
      * @notice Handles checks, state transitions, and value/asset transfers for executeLoanbyLender
      * @param offer The details of a loan auction offer
@@ -455,18 +482,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
         // *------------ Checks ------------* //
 
-        if (loanAuction.loanExecutedTime != 0) {
-            // having an active loan, we need to undo the loan
-
-            // check if terms are better on the new offer
-
-            // undo old loan an repay borrow
-
-            // special case if old lender == newLender
-
-            // TODO(dankurka): For now we just revert
-            revert("foo");
-        }
+        require(loanAuction.loanExecutedTime == 0, "Loan already open");
 
         // require offer has not expired
         require(offer.expiration > block.timestamp, "Cannot execute bid, offer has expired");
@@ -496,23 +512,44 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         loanAuction.amountDrawn = offer.amount;
         loanAuction.fixedTerms = offer.fixedTerms;
 
-        // check if lender has sufficient available balance and update utilizedBalance
-        _checkAndUpdateLenderUtilizedBalanceInternal(cAsset, offer.amount, lender);
-
         // *------- Value and asset transfers -------* //
 
         // transferFrom NFT from borrower to contract
         IERC721(offer.nftContractAddress).transferFrom(borrower, address(this), offer.nftId);
 
+        uint256 cTokensBurned;
+
         // Process as ETH
-        if (offer.asset == address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)) {
-            // redeem cTokens and transfer underlying to borrower
-            _redeemAndTransferEthInternal(cAsset, offer.amount, borrower);
+        if (offer.asset == ETH_ADDRESS) {
+            ICEther cToken = ICEther(cAsset);
+
+            uint256 cTokenBalanceBefore = cToken.balanceOf(address(this));
+            // redeem underlying from cToken to this contract
+            require(cToken.redeemUnderlying(offer.amount) == 0, "cToken.redeemUnderlying() failed");
+            uint256 cTokenBalanceAfter = cToken.balanceOf(address(this));
+            cTokensBurned = cTokenBalanceBefore - cTokenBalanceAfter;
+
+            Address.sendValue(payable(borrower), offer.amount);
         }
         // Process as ERC20
         else {
-            _redeemAndTransferErc20Internal(offer.asset, cAsset, offer.amount, borrower);
+            IERC20 underlying = IERC20(offer.asset);
+            ICERC20 cToken = ICERC20(cAsset);
+            uint256 cTokenBalanceBefore = cToken.balanceOf(address(this));
+            // redeem underlying from cToken to this contract
+            require(cToken.redeemUnderlying(offer.amount) == 0, "cToken.redeemUnderlying() failed");
+            uint256 cTokenBalanceAfter = cToken.balanceOf(address(this));
+            cTokensBurned = cTokenBalanceBefore - cTokenBalanceAfter;
+
+            // transfer underlying from this contract to borrower
+            require(underlying.transfer(borrower, offer.amount), "underlying.transfer() failed");
         }
+
+        require(
+            // calculate lenders available ICERC20 balance and require it to be greater than or equal to redeemTokens
+            getCAssetBalance(lender, cAsset) >= cTokensBurned,
+            "Lender does not have a sufficient balance to serve this loan"
+        );
 
         emit LoanExecuted(lender, borrower, offer.nftContractAddress, offer.nftId, offer);
     }
@@ -1017,7 +1054,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                 "Must repay full amount of loan drawn plus interest and fee. Account for additional time for interest."
             );
 
-            cTokensMinted = transferEth(msg.sender, address(this), fullRepayment);
+            cTokensMinted = transferEth(fullRepayment);
 
             if (fullRepayment < msg.value) {
                 Address.sendValue(payable(msg.sender), msg.value - fullRepayment);
@@ -1042,76 +1079,76 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         return cTokensToLender;
     }
 
-    /**
-     * @notice Allows borrowers to make a partial payment toward the principle of their loan
-     * @dev This function does not charge any interest or fees. It does change the calculation for future interest and fees accrual, so we track historicLenderInterest and historicProtocolInterest
-     * @param nftContractAddress The address of the NFT collection
-     * @param nftId The id of the specified NFT
-     * @param partialAmount The amount of value to pay down on the principle of the loan
-     */
-    function partialPayment(
-        address nftContractAddress,
-        uint256 nftId,
-        uint256 partialAmount
-    ) external payable whenNotPaused nonReentrant {
-        // Instantiate LoanAuction Struct
-        LoanAuction storage loanAuction = _loanAuctions[nftContractAddress][nftId];
+    // /**
+    //  * @notice Allows borrowers to make a partial payment toward the principle of their loan
+    //  * @dev This function does not charge any interest or fees. It does change the calculation for future interest and fees accrual, so we track historicLenderInterest and historicProtocolInterest
+    //  * @param nftContractAddress The address of the NFT collection
+    //  * @param nftId The id of the specified NFT
+    //  * @param partialAmount The amount of value to pay down on the principle of the loan
+    //  */
+    // function partialPayment(
+    //     address nftContractAddress,
+    //     uint256 nftId,
+    //     uint256 partialAmount
+    // ) external payable whenNotPaused nonReentrant {
+    //     // Instantiate LoanAuction Struct
+    //     LoanAuction storage loanAuction = _loanAuctions[nftContractAddress][nftId];
 
-        address cAsset = assetToCAsset[loanAuction.asset];
+    //     address cAsset = assetToCAsset[loanAuction.asset];
 
-        // Require that loan has been executed
-        require(loanAuction.loanExecutedTime != 0, "Cannot repay loan that has not been executed");
+    //     // Require that loan has been executed
+    //     require(loanAuction.loanExecutedTime != 0, "Cannot repay loan that has not been executed");
 
-        // Require msg.sender is the borrower
-        require(msg.sender == loanAuction.nftOwner, "Msg.sender is not the NFT owner");
+    //     // Require msg.sender is the borrower
+    //     require(msg.sender == loanAuction.nftOwner, "Msg.sender is not the NFT owner");
 
-        // calculate the amount of interest accrued by the lender
-        (uint256 lenderInterest, uint256 protocolInterest) = calculateInterestAccrued(
-            nftContractAddress,
-            nftId
-        );
+    //     // calculate the amount of interest accrued by the lender
+    //     (uint256 lenderInterest, uint256 protocolInterest) = calculateInterestAccrued(
+    //         nftContractAddress,
+    //         nftId
+    //     );
 
-        loanAuction.historicLenderInterest += lenderInterest;
-        loanAuction.historicProtocolInterest += protocolInterest;
-        loanAuction.timeOfInterestStart = block.timestamp;
+    //     loanAuction.historicLenderInterest += lenderInterest;
+    //     loanAuction.historicProtocolInterest += protocolInterest;
+    //     loanAuction.timeOfInterestStart = block.timestamp;
 
-        uint256 currentAmountDrawn = loanAuction.amountDrawn;
-        // update amountDrawn
-        loanAuction.amountDrawn -= partialAmount;
+    //     uint256 currentAmountDrawn = loanAuction.amountDrawn;
+    //     // update amountDrawn
+    //     loanAuction.amountDrawn -= partialAmount;
 
-        // if asset is not 0x0 process as Erc20
-        if (loanAuction.asset != address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)) {
-            require(partialAmount < currentAmountDrawn, "Msg.value must be less than amountDrawn");
+    //     // if asset is not 0x0 process as Erc20
+    //     if (loanAuction.asset != address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)) {
+    //         require(partialAmount < currentAmountDrawn, "Msg.value must be less than amountDrawn");
 
-            _payErc20AndUpdateBalancesInternal(
-                loanAuction.asset,
-                cAsset,
-                loanAuction.lender,
-                msg.sender,
-                partialAmount,
-                0,
-                0,
-                partialAmount
-            );
-        }
-        // else process as ETH
-        else if (loanAuction.asset == address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)) {
-            // check that transaction covers the full value of the loan
-            require(msg.value < currentAmountDrawn, "Msg.value must be less than amountDrawn");
+    //         _payErc20AndUpdateBalancesInternal(
+    //             loanAuction.asset,
+    //             cAsset,
+    //             loanAuction.lender,
+    //             msg.sender,
+    //             partialAmount,
+    //             0,
+    //             0,
+    //             partialAmount
+    //         );
+    //     }
+    //     // else process as ETH
+    //     else if (loanAuction.asset == address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)) {
+    //         // check that transaction covers the full value of the loan
+    //         require(msg.value < currentAmountDrawn, "Msg.value must be less than amountDrawn");
 
-            _payEthAndUpdateBalancesInternal(
-                cAsset,
-                loanAuction.lender,
-                msg.value,
-                msg.value,
-                0,
-                0,
-                partialAmount
-            );
-        }
+    //         _payEthAndUpdateBalancesInternal(
+    //             cAsset,
+    //             loanAuction.lender,
+    //             msg.value,
+    //             msg.value,
+    //             0,
+    //             0,
+    //             partialAmount
+    //         );
+    //     }
 
-        emit PartialRepayment(nftContractAddress, nftId, loanAuction.asset, partialAmount);
-    }
+    //     emit PartialRepayment(nftContractAddress, nftId, loanAuction.asset, partialAmount);
+    // }
 
     /**
      * @notice Allows anyone to seize an asset of a past due loan on behalf on the lender
@@ -1200,210 +1237,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
         // update the lenders utilized balance
         //_accountAssets[lender].balance[cAsset].utilizedCAssetBalance += redeemTokens;
-    }
-
-    // this internal functions handles transfer of erc20 tokens and updating lender balances for refinanceLoan, repayRemainingLoan, and partialRepayment functions
-    function _payErc20AndUpdateBalancesInternal(
-        address asset,
-        address cAsset,
-        address to,
-        address from,
-        uint256 fullAmount,
-        uint256 lenderInterestAndPremiumAmount,
-        uint256 protocolInterestAndPremiumAmount,
-        uint256 paymentAmount
-    ) internal {
-        // Create a reference to the underlying asset contract, like DAI.
-        IERC20 underlying = IERC20(asset);
-        // Create a reference to the corresponding cToken contract, like cDAI
-        ICERC20 cToken = ICERC20(cAsset);
-
-        // transferFrom ERC20 from depositors address
-        require(
-            underlying.transferFrom(from, address(this), fullAmount) == true,
-            "underlying.transferFrom() failed"
-        );
-
-        require(underlying.approve(cAsset, fullAmount) == true, "underlying.approve() failed");
-
-        // set exchange rate from erc20 to ICERC20
-        uint256 exchangeRateMantissa = ICERC20(cAsset).exchangeRateCurrent();
-
-        // convert lenderInterestAndPremiumAmount to ICERC20
-        (, uint256 lenderInterestAndPremiumTokens) = divScalarByExpTruncate(
-            lenderInterestAndPremiumAmount,
-            Exp({ mantissa: exchangeRateMantissa })
-        );
-
-        // convert protocolInterestAndPremiumAmount to ICERC20
-        (, uint256 protocolInterestAndPremiumTokens) = divScalarByExpTruncate(
-            protocolInterestAndPremiumAmount,
-            Exp({ mantissa: exchangeRateMantissa })
-        );
-
-        // convert paymentAmount to ICERC20
-        (, uint256 paymentTokens) = divScalarByExpTruncate(
-            paymentAmount,
-            Exp({ mantissa: exchangeRateMantissa })
-        );
-
-        // mint cTokens
-        require(cToken.mint(fullAmount) == 0, "cToken.mint() failed");
-
-        // update the tos utilized balance
-        // _accountAssets[to].balance[cAsset].utilizedCAssetBalance -= paymentTokens;
-
-        // update the tos total balance
-        _accountAssets[to].balance[cAsset].cAssetBalance += lenderInterestAndPremiumTokens;
-
-        // update the owner total balance
-        _accountAssets[owner()].balance[cAsset].cAssetBalance += protocolInterestAndPremiumTokens;
-    }
-
-    // this internal functions handles transfer of Eth and updating lender balances for refinanceLoan, repayRemainingLoan, and partialRepayment functions
-    function _payEthAndUpdateBalancesInternal(
-        address cAsset,
-        address to,
-        uint256 msgValue,
-        uint256 msgValueMinusFee,
-        uint256 lenderInterestAndPremiumAmount,
-        uint256 protocolInterestAndPremiumAmount,
-        uint256 paymentAmount
-    ) internal {
-        // Create a reference to the corresponding cToken contract, like cDAI
-        ICEther cToken = ICEther(cAsset);
-
-        // set exchange rate from eth to ICERC20
-        uint256 exchangeRateMantissa = cToken.exchangeRateCurrent();
-
-        // convert msgValueMinusFee to ICERC20
-        // This accounts for any extra Eth sent to function, since cant use transferFrom for exact amount
-        // Any extra value is given to to
-        (, uint256 msgValueTokens) = divScalarByExpTruncate(
-            msgValueMinusFee,
-            Exp({ mantissa: exchangeRateMantissa })
-        );
-
-        // convert interestAndPremiumAmount to ICERC20
-        (, uint256 lenderInterestAndPremiumTokens) = divScalarByExpTruncate(
-            lenderInterestAndPremiumAmount,
-            Exp({ mantissa: exchangeRateMantissa })
-        );
-
-        // convert interestAndPremiumAmount to ICERC20
-        (, uint256 protocolInterestAndPremiumTokens) = divScalarByExpTruncate(
-            protocolInterestAndPremiumAmount,
-            Exp({ mantissa: exchangeRateMantissa })
-        );
-
-        // convert paymentAmount to ICERC20
-        (, uint256 paymentTokens) = divScalarByExpTruncate(
-            paymentAmount,
-            Exp({ mantissa: exchangeRateMantissa })
-        );
-
-        // mint CEth tokens to this contract address
-        // cEth mint() reverts on failure so do not need a require statement
-        cToken.mint{ value: msgValue, gas: 250000 }();
-
-        // update the to's utilized balance
-        //_accountAssets[to].balance[cAsset].utilizedCAssetBalance -= paymentTokens;
-
-        // update the to's total balance + the delta of msgValueTokens minus all other tokens
-        _accountAssets[to].balance[cAsset].cAssetBalance +=
-            lenderInterestAndPremiumTokens +
-            (msgValueTokens -
-                (lenderInterestAndPremiumTokens +
-                    protocolInterestAndPremiumTokens +
-                    paymentTokens));
-
-        // update the owner's total balance
-        _accountAssets[owner()].balance[cAsset].cAssetBalance += protocolInterestAndPremiumTokens;
-    }
-
-    // This function has a slither warning for sending eth to an abritrary address, but the
-    // function is internal and value of function are checked and supplied in parent functions
-    // this internal functions handles transfer of erc20 tokens for executeLoan functions
-    function _redeemAndTransferErc20Internal(
-        address asset,
-        address cAsset,
-        uint256 amount,
-        address nftOwner
-    ) internal {
-        // Create a reference to the underlying asset contract, like DAI.
-        IERC20 underlying = IERC20(asset);
-        // Create a reference to the corresponding cToken contract, like cDAI
-        ICERC20 cToken = ICERC20(cAsset);
-
-        // redeem underlying from cToken to this contract
-        require(cToken.redeemUnderlying(amount) == 0, "cToken.redeemUnderlying() failed");
-
-        // transfer underlying from this contract to borrower
-        require(underlying.transfer(nftOwner, amount), "underlying.transfer() failed");
-    }
-
-    // this internal functions handles transfer of eth for executeLoan functions
-    function _redeemAndTransferEthInternal(
-        address cAsset,
-        uint256 amount,
-        address nftOwner
-    ) internal {
-        ICEther cToken = ICEther(cAsset);
-
-        // redeem underlying from cToken to this contract
-        require(cToken.redeemUnderlying(amount) == 0, "cToken.redeemUnderlying() failed");
-
-        Address.sendValue(payable(nftOwner), amount);
-    }
-
-    function _transferCERC20BalancesInternal(
-        address cAsset,
-        address to,
-        address from,
-        uint256 protocolPremiumAmount,
-        uint256 lenderInterestAndPremiumAmount,
-        uint256 paymentAmount
-    ) internal {
-        // Create a reference to the corresponding cToken contract, like cDAI
-        ICERC20 cToken = ICERC20(cAsset);
-
-        // set exchange rate from erc20 to ICERC20
-        uint256 exchangeRateMantissa = cToken.exchangeRateCurrent();
-
-        // convert protocolPremiumAmount to ICERC20
-        (, uint256 protocolPremiumTokens) = divScalarByExpTruncate(
-            protocolPremiumAmount,
-            Exp({ mantissa: exchangeRateMantissa })
-        );
-
-        // convert lenderInterestAndPremiumAmount to ICERC20
-        (, uint256 interestAndPremiumTokens) = divScalarByExpTruncate(
-            lenderInterestAndPremiumAmount,
-            Exp({ mantissa: exchangeRateMantissa })
-        );
-
-        // convert paymentAmount to ICERC20
-        (, uint256 paymentTokens) = divScalarByExpTruncate(
-            paymentAmount,
-            Exp({ mantissa: exchangeRateMantissa })
-        );
-
-        // check calling functions require from has a sufficient total balance to buy out loan
-
-        // update from's utilized balance
-        //_accountAssets[from].balance[cAsset].utilizedCAssetBalance += paymentTokens;
-
-        // update from's total balance
-        _accountAssets[from].balance[cAsset].cAssetBalance -= protocolPremiumTokens;
-
-        // update the to's utilized balance
-        //_accountAssets[to].balance[cAsset].utilizedCAssetBalance -= paymentTokens;
-
-        // update the to's total balance
-        _accountAssets[to].balance[cAsset].cAssetBalance += interestAndPremiumTokens;
-
-        // update the owner's total balance
-        _accountAssets[owner()].balance[cAsset].cAssetBalance += protocolPremiumTokens;
     }
 
     // ---------- Helper Functions ---------- //

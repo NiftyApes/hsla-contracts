@@ -519,31 +519,31 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721Holder {
         LA.repayRemainingLoan(address(mockNFT), 0);
     }
 
-    function testPartialPayment(bool floorTerm) public {
-        // Create a floor offer
-        LendingAuction.Offer memory offer;
-        offer.creator = address(this);
-        offer.nftContractAddress = address(mockNFT);
-        offer.nftId = 0;
-        offer.asset = address(DAI);
-        offer.amount = 25000 ether;
-        offer.interestRateBps = 1000;
-        offer.duration = 172800;
-        offer.expiration = block.timestamp + 1000000;
-        offer.fixedTerms = false;
-        offer.floorTerm = floorTerm;
+    // function testPartialPayment(bool floorTerm) public {
+    //     // Create a floor offer
+    //     LendingAuction.Offer memory offer;
+    //     offer.creator = address(this);
+    //     offer.nftContractAddress = address(mockNFT);
+    //     offer.nftId = 0;
+    //     offer.asset = address(DAI);
+    //     offer.amount = 25000 ether;
+    //     offer.interestRateBps = 1000;
+    //     offer.duration = 172800;
+    //     offer.expiration = block.timestamp + 1000000;
+    //     offer.fixedTerms = false;
+    //     offer.floorTerm = floorTerm;
 
-        bytes32 create_hash = LA.getOfferHash(offer);
+    //     bytes32 create_hash = LA.getOfferHash(offer);
 
-        // TODO(Success assertions)
-        LA.createOffer(offer);
+    //     // TODO(Success assertions)
+    //     LA.createOffer(offer);
 
-        mockNFT.approve(address(LA), 0);
+    //     mockNFT.approve(address(LA), 0);
 
-        LA.executeLoanByLender(address(mockNFT), floorTerm, 0, create_hash);
+    //     LA.executeLoanByLender(address(mockNFT), floorTerm, 0, create_hash);
 
-        LA.partialPayment(address(mockNFT), 0, 10000 ether);
-    }
+    //     LA.partialPayment(address(mockNFT), 0, 10000 ether);
+    // }
 
     function testSeizeAsset() public {
         LendingAuction.Offer memory offer;

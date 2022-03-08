@@ -230,11 +230,11 @@ interface ILendingAuction is ILiquidityProviders {
 
     function repayRemainingLoan(address nftContractAddress, uint256 nftId) external payable;
 
-    function partialPayment(
-        address nftContractAddress,
-        uint256 nftId,
-        uint256 partialAmount
-    ) external payable;
+    // function partialPayment(
+    //     address nftContractAddress,
+    //     uint256 nftId,
+    //     uint256 partialAmount
+    // ) external payable;
 
     function seizeAsset(address nftContractAddress, uint256 nftId) external;
 

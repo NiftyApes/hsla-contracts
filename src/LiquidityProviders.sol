@@ -270,15 +270,9 @@ contract LiquidityProviders is
         // Create a reference to the corresponding cToken contract
         ICEther cToken = ICEther(cEth);
 
+        uint256 cTokensMinted = transferEth(msg.value);
+
         ensureAssetInAccount(msg.sender, ETH_ADDRESS);
-
-        uint256 cTokenBalanceBefore = cToken.balanceOf(address(this));
-        // mint CEth tokens to this contract address
-        // cEth mint() reverts on failure so do not need a require statement
-        cToken.mint{ value: msg.value }();
-        uint256 cTokenBalanceAfter = cToken.balanceOf(address(this));
-
-        uint256 cTokensMinted = cTokenBalanceAfter - cTokenBalanceBefore;
 
         // This state variable is written after external calls because external calls
         // add value or assets to this contract and this state variable could be re-entered to
@@ -358,11 +352,7 @@ contract LiquidityProviders is
         return cTokenBalanceAfter - cTokenBalanceBefore;
     }
 
-    function transferEth(
-        address from,
-        address to,
-        uint256 amount
-    ) internal returns (uint256) {
+    function transferEth(uint256 amount) internal returns (uint256) {
         address cAsset = assetToCAsset[ETH_ADDRESS];
         ICEther cToken = ICEther(cAsset);
         uint256 cTokenBalanceBefore = cToken.balanceOf(address(this));
