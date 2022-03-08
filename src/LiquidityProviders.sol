@@ -65,45 +65,23 @@ contract LiquidityProviders is
         assetsIn = _accountAssets[depositor].keys;
     }
 
-    function getCAssetBalances(address account, address cAsset)
-        external
-        view
-        returns (
-            uint256 cAssetBalance,
-            uint256 utilizedCAssetBalance,
-            uint256 availableCAssetBalance
-        )
-    {
-        cAssetBalance = _accountAssets[account].balance[cAsset].cAssetBalance;
-        utilizedCAssetBalance = _accountAssets[account].balance[cAsset].utilizedCAssetBalance;
-        availableCAssetBalance = cAssetBalance - utilizedCAssetBalance;
-    }
-
-    function getAvailableCAssetBalance(address account, address cAsset)
+    function getCAssetBalance(address account, address cAsset)
         public
         view
-        returns (uint256 availableCAssetBalance)
+        returns (uint256 cAssetBalance)
     {
-        availableCAssetBalance =
-            _accountAssets[account].balance[cAsset].cAssetBalance -
-            _accountAssets[account].balance[cAsset].utilizedCAssetBalance;
+        return _accountAssets[account].balance[cAsset].cAssetBalance;
     }
 
     function getCAssetBalancesAtIndex(address account, uint256 index)
         external
         view
-        returns (
-            uint256 cAssetBalance,
-            uint256 utilizedCAssetBalance,
-            uint256 availableCAssetBalance
-        )
+        returns (uint256)
     {
         address asset = _accountAssets[account].keys[index];
         address cAsset = assetToCAsset[asset];
 
-        cAssetBalance = _accountAssets[account].balance[cAsset].cAssetBalance;
-        utilizedCAssetBalance = _accountAssets[account].balance[cAsset].utilizedCAssetBalance;
-        availableCAssetBalance = cAssetBalance - utilizedCAssetBalance;
+        return _accountAssets[account].balance[cAsset].cAssetBalance;
     }
 
     function accountAssetsSize(address account)
@@ -143,10 +121,7 @@ contract LiquidityProviders is
     }
 
     function maybeRemoveAssetFromAccount(address account, address asset) internal {
-        if (
-            _accountAssets[account].balance[asset].cAssetBalance == 0 &&
-            _accountAssets[account].balance[asset].utilizedCAssetBalance == 0
-        ) {
+        if (_accountAssets[account].balance[asset].cAssetBalance == 0) {
             removeAssetFromAccount(account, asset);
         }
     }
@@ -165,26 +140,9 @@ contract LiquidityProviders is
         // Create a reference to the corresponding cToken contract, like cDAI
         ICERC20 cToken = ICERC20(cAsset);
 
+        uint256 cTokensMinted = transferERC20(msg.sender, address(this), asset, numTokensToSupply);
+
         ensureAssetInAccount(msg.sender, asset);
-
-        // transferFrom ERC20 from depositors address
-        // review for safeTransferFrom
-        require(
-            underlying.transferFrom(msg.sender, address(this), numTokensToSupply),
-            "underlying.transferFrom() failed"
-        );
-
-        require(underlying.approve(cAsset, numTokensToSupply), "underlying.approve() failed");
-
-        uint256 cTokenBalanceBefore = cToken.balanceOf(address(this));
-
-        // Mint cTokens
-        // Require a successful mint to proceed
-        require(cToken.mint(numTokensToSupply) == 0, "cToken.mint() failed");
-
-        uint256 cTokenBalanceAfter = cToken.balanceOf(address(this));
-
-        uint256 cTokensMinted = cTokenBalanceAfter - cTokenBalanceBefore;
 
         // This state variable is written after external calls because external calls
         // add value or assets to this contract and this state variable could be re-entered to
@@ -254,7 +212,7 @@ contract LiquidityProviders is
 
         // require msg.sender has sufficient available balance of cErc20
         require(
-            getAvailableCAssetBalance(msg.sender, cAsset) >= cTokensWithDrawn,
+            getCAssetBalance(msg.sender, cAsset) >= cTokensWithDrawn,
             "Must have sufficient balance"
         );
 
@@ -284,7 +242,7 @@ contract LiquidityProviders is
 
         // require msg.sender has sufficient available balance of cErc20
         require(
-            getAvailableCAssetBalance(msg.sender, cAsset) >= amountToWithdraw,
+            getCAssetBalance(msg.sender, cAsset) >= amountToWithdraw,
             "Must have an available balance greater than or equal to amountToWithdraw"
         );
         // updating the depositors cErc20 balance
@@ -359,10 +317,7 @@ contract LiquidityProviders is
         redeemAmount = amountToWithdraw;
 
         // require msg.sender has sufficient available balance of cEth
-        require(
-            getAvailableCAssetBalance(msg.sender, cEth) >= redeemTokens,
-            "Must have sufficient balance"
-        );
+        require(getCAssetBalance(msg.sender, cEth) >= redeemTokens, "Must have sufficient balance");
 
         _accountAssets[msg.sender].balance[cEth].cAssetBalance -= redeemTokens;
 
@@ -378,5 +333,42 @@ contract LiquidityProviders is
         emit EthWithdrawn(msg.sender, amountToWithdraw);
 
         return redeemAmount;
+    }
+
+    function transferERC20(
+        address from,
+        address to,
+        address asset,
+        uint256 amount
+    ) internal returns (uint256) {
+        address cAsset = assetToCAsset[asset];
+        // TODO(dankurka): Maybe check?
+        IERC20 underlying = IERC20(asset);
+        ICERC20 cToken = ICERC20(cAsset);
+
+        require(
+            underlying.transferFrom(from, to, amount) == true,
+            "underlying.transferFrom() failed"
+        );
+
+        require(underlying.approve(cAsset, amount) == true, "underlying.approve() failed");
+
+        uint256 cTokenBalanceBefore = cToken.balanceOf(address(this));
+        require(cToken.mint(amount) == 0, "cToken.mint() failed");
+        uint256 cTokenBalanceAfter = cToken.balanceOf(address(this));
+        return cTokenBalanceAfter - cTokenBalanceBefore;
+    }
+
+    function transferEth(
+        address from,
+        address to,
+        uint256 amount
+    ) internal returns (uint256) {
+        address cAsset = assetToCAsset[ETH_ADDRESS];
+        ICEther cToken = ICEther(cAsset);
+        uint256 cTokenBalanceBefore = cToken.balanceOf(address(this));
+        cToken.mint{ value: amount }();
+        uint256 cTokenBalanceAfter = cToken.balanceOf(address(this));
+        return cTokenBalanceAfter - cTokenBalanceBefore;
     }
 }

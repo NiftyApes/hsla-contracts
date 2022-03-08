@@ -10,7 +10,6 @@ interface ILiquidityProviders {
 
     struct Balance {
         uint256 cAssetBalance;
-        uint256 utilizedCAssetBalance;
     }
 
     struct AccountAssets {
@@ -44,28 +43,12 @@ interface ILiquidityProviders {
 
     function getAssetsIn(address depositor) external view returns (address[] memory assetsIn);
 
-    function getCAssetBalances(address account, address cAsset)
-        external
-        view
-        returns (
-            uint256 cAssetBalance,
-            uint256 utilizedCAssetBalance,
-            uint256 availableCAssetBalance
-        );
-
-    function getAvailableCAssetBalance(address account, address cAsset)
-        external
-        view
-        returns (uint256 availableCAssetBalance);
+    function getCAssetBalance(address account, address cAsset) external view returns (uint256);
 
     function getCAssetBalancesAtIndex(address account, uint256 index)
         external
         view
-        returns (
-            uint256 cAssetBalance,
-            uint256 utilizedCAssetBalance,
-            uint256 availableCAssetBalance
-        );
+        returns (uint256);
 
     function accountAssetsSize(address account)
         external

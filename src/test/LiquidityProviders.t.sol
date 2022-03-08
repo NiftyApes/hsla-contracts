@@ -112,15 +112,9 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
     }
 
     function testGetCAssetBalances() public {
-        (
-            uint256 cAssetBalance,
-            uint256 utilizedAssetBalance,
-            uint256 availableCAssetBalance
-        ) = liquidityProviders.getCAssetBalances(address(this), address(cDAI));
+        uint256 cAssetBalance = liquidityProviders.getCAssetBalance(address(this), address(cDAI));
 
         assert(cAssetBalance > 0 ether);
-        assert(utilizedAssetBalance == 0 ether);
-        assert(availableCAssetBalance > 0 ether);
     }
 
     function testGetAssetsIn() public {
@@ -136,7 +130,7 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
 
         uint256 assetBalanceInit = underlying.balanceOf(address(this));
 
-        (uint256 cAssetBalanceInit, , ) = liquidityProviders.getCAssetBalances(
+        uint256 cAssetBalanceInit = liquidityProviders.getCAssetBalance(
             address(this),
             address(cDAI)
         );
@@ -150,21 +144,15 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
 
         uint256 assetBalance = underlying.balanceOf(address(this));
 
-        (
-            uint256 cAssetBalance,
-            uint256 utilizedCAssetBalance,
-            uint256 availableCAssetBalance
-        ) = liquidityProviders.getCAssetBalances(address(this), address(cDAI));
+        uint256 cAssetBalance = liquidityProviders.getCAssetBalance(address(this), address(cDAI));
 
         assert(assetBalance == (assetBalanceInit - deposit));
         assert(cAssetBalance == (cAssetBalanceInit + mintTokens));
-        assert(utilizedCAssetBalance == 0 ether);
-        assert(availableCAssetBalance == cAssetBalance);
         assert(cAssetBalance == cToken.balanceOf(address(liquidityProviders)));
     }
 
     function testSupplyCErc20(uint256 deposit) public {
-        (uint256 cAssetBalanceInit, , ) = liquidityProviders.getCAssetBalances(
+        uint256 cAssetBalanceInit = liquidityProviders.getCAssetBalance(
             address(this),
             address(cDAI)
         );
@@ -175,10 +163,7 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
 
         liquidityProviders.supplyCErc20(address(cDAI), deposit);
 
-        (uint256 cAssetBalance, , ) = liquidityProviders.getCAssetBalances(
-            address(this),
-            address(cDAI)
-        );
+        uint256 cAssetBalance = liquidityProviders.getCAssetBalance(address(this), address(cDAI));
 
         assert(cAssetBalance == (cAssetBalanceInit + deposit));
         assert(cAssetBalance == ICERC20(cDAI).balanceOf(address(liquidityProviders)));
@@ -198,7 +183,7 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
             amount = 0.000000001 ether;
         }
 
-        (uint256 cAssetBalanceInit, , ) = liquidityProviders.getCAssetBalances(
+        uint256 cAssetBalanceInit = liquidityProviders.getCAssetBalance(
             address(this),
             address(cDAI)
         );
@@ -212,10 +197,7 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
 
         uint256 assetBalance = underlying.balanceOf(address(this));
 
-        (uint256 cAssetBalance, , ) = liquidityProviders.getCAssetBalances(
-            address(this),
-            address(cDAI)
-        );
+        uint256 cAssetBalance = liquidityProviders.getCAssetBalance(address(this), address(cDAI));
 
         assert(assetBalance == (assetBalanceInit + amount));
         assert(cAssetBalance == (cAssetBalanceInit - redeemTokens));
@@ -223,7 +205,7 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
     }
 
     function testWithdrawCErc20(uint256 amount) public {
-        (uint256 cAssetBalanceInit, , ) = liquidityProviders.getCAssetBalances(
+        uint256 cAssetBalanceInit = liquidityProviders.getCAssetBalance(
             address(this),
             address(cDAI)
         );
@@ -236,10 +218,7 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
 
         liquidityProviders.withdrawCErc20(address(cDAI), amount);
 
-        (uint256 cAssetBalance, , ) = liquidityProviders.getCAssetBalances(
-            address(this),
-            address(cDAI)
-        );
+        uint256 cAssetBalance = liquidityProviders.getCAssetBalance(address(this), address(cDAI));
 
         assert(cAssetBalance == (cAssetBalanceInit - amount));
         assert(cAssetBalance == ICERC20(cDAI).balanceOf(address(liquidityProviders)));
@@ -250,7 +229,7 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
 
         uint256 assetBalanceInit = address(this).balance;
 
-        (uint256 cAssetBalanceInit, , ) = liquidityProviders.getCAssetBalances(
+        uint256 cAssetBalanceInit = liquidityProviders.getCAssetBalance(
             address(this),
             address(cETH)
         );
@@ -265,10 +244,7 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
 
         uint256 assetBalance = address(this).balance;
 
-        (uint256 cAssetBalance, , ) = liquidityProviders.getCAssetBalances(
-            address(this),
-            address(cETH)
-        );
+        uint256 cAssetBalance = liquidityProviders.getCAssetBalance(address(this), address(cETH));
 
         assert(assetBalance == (assetBalanceInit - deposit));
         assert(cAssetBalance == (cAssetBalanceInit + mintTokens));
@@ -288,7 +264,7 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
             amount = 0.000000001 ether;
         }
 
-        (uint256 cAssetBalanceInit, , ) = liquidityProviders.getCAssetBalances(
+        uint256 cAssetBalanceInit = liquidityProviders.getCAssetBalance(
             address(this),
             address(cETH)
         );
@@ -302,10 +278,7 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
 
         uint256 assetBalance = address(this).balance;
 
-        (uint256 cAssetBalance, , ) = liquidityProviders.getCAssetBalances(
-            address(this),
-            address(cETH)
-        );
+        uint256 cAssetBalance = liquidityProviders.getCAssetBalance(address(this), address(cETH));
 
         assert(assetBalance == (assetBalanceInit + amount));
         assert(cAssetBalance == (cAssetBalanceInit - redeemTokens));

@@ -201,32 +201,32 @@ interface ILendingAuction is ILiquidityProviders {
         external
         payable;
 
-    function refinanceByBorrower(
-        address nftContractAddress,
-        bool floorTerm,
-        uint256 nftId,
-        bytes32 offerHash
-    ) external payable;
+    // function refinanceByBorrower(
+    //     address nftContractAddress,
+    //     bool floorTerm,
+    //     uint256 nftId,
+    //     bytes32 offerHash
+    // ) external payable;
 
-    function refinanceByBorrowerSignature(
-        Offer calldata offer,
-        bytes memory signature,
-        uint256 nftId
-    ) external payable;
+    // function refinanceByBorrowerSignature(
+    //     Offer calldata offer,
+    //     bytes memory signature,
+    //     uint256 nftId
+    // ) external payable;
 
-    function refinanceByLender(Offer calldata offer) external payable;
+    // function refinanceByLender(Offer calldata offer) external payable;
 
-    function drawLoanTime(
-        address nftContractAddress,
-        uint256 nftId,
-        uint256 drawTime
-    ) external;
+    // function drawLoanTime(
+    //     address nftContractAddress,
+    //     uint256 nftId,
+    //     uint256 drawTime
+    // ) external;
 
-    function drawLoanAmount(
-        address nftContractAddress,
-        uint256 nftId,
-        uint256 drawAmount
-    ) external;
+    // function drawLoanAmount(
+    //     address nftContractAddress,
+    //     uint256 nftId,
+    //     uint256 drawAmount
+    // ) external;
 
     function repayRemainingLoan(address nftContractAddress, uint256 nftId) external payable;
 
