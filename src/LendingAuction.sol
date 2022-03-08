@@ -517,19 +517,13 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         // transferFrom NFT from borrower to contract
         IERC721(offer.nftContractAddress).transferFrom(borrower, address(this), offer.nftId);
 
-        uint256 cTokensBurned;
+        uint256 cTokensBurned = burnCErc20(offer.asset, offer.amount);
+
 
         // Process as ETH
         if (offer.asset == ETH_ADDRESS) {
-
-            cTokensBurned = burnCErc20(offer.asset, offer.amount);
             Address.sendValue(payable(borrower), offer.amount);
-        }
-        // Process as ERC20
-        else {
-
-            cTokensBurned = burnCErc20(offer.asset, offer.amount);
-
+        } else {
             IERC20 underlying = IERC20(offer.asset);
             // transfer underlying from this contract to borrower
             require(underlying.transfer(borrower, offer.amount), "underlying.transfer() failed");
