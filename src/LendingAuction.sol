@@ -1353,9 +1353,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         // redeem underlying from cToken to this contract
         require(cToken.redeemUnderlying(amount) == 0, "cToken.redeemUnderlying() failed");
 
-        // Send Eth to borrower
-        (bool success, ) = (nftOwner).call{ value: amount }("");
-        require(success, "Send eth to depositor failed");
+        Address.sendValue(payable(nftOwner), amount);
     }
 
     function _transferCERC20BalancesInternal(
