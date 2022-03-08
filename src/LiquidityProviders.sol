@@ -361,7 +361,7 @@ contract LiquidityProviders is
         return cTokenBalanceAfter - cTokenBalanceBefore;
     }
 
-    function burnCErc20(address asset, uint amount) internal returns (uint256) {
+    function burnCErc20(address asset, uint256 amount) internal returns (uint256) {
         address cAsset = assetToCAsset[asset];
         // TODO(dankurka): Maybe check?
         ICERC20 cToken = ICERC20(cAsset);

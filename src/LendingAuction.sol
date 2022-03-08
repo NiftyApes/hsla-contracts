@@ -519,7 +519,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
         uint256 cTokensBurned = burnCErc20(offer.asset, offer.amount);
 
-
         // Process as ETH
         if (offer.asset == ETH_ADDRESS) {
             Address.sendValue(payable(borrower), offer.amount);
@@ -534,6 +533,8 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             getCAssetBalance(lender, cAsset) >= cTokensBurned,
             "Lender does not have a sufficient balance to serve this loan"
         );
+
+        _accountAssets[lender].balance[cAsset].cAssetBalance -= cTokensBurned;
 
         emit LoanExecuted(lender, borrower, offer.nftContractAddress, offer.nftId, offer);
     }
@@ -973,18 +974,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
      * @param nftContractAddress The address of the NFT collection
      * @param nftId The id of the specified NFT
      */
-    function repayRemainingLoan(address nftContractAddress, uint256 nftId)
-        external
-        payable
-        whenNotPaused
-        nonReentrant
-    {}
-
-    /**
-     * @notice Enables a borrower to repay the remaining value of their loan plus interest and protocol fee, and regain full ownership of their NFT
-     * @param nftContractAddress The address of the NFT collection
-     * @param nftId The id of the specified NFT
-     */
     function _repayLoanInternal(
         address nftContractAddress,
         uint256 nftId,
@@ -1029,9 +1018,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         // if asset is not 0x0 process as Erc20
         if (currentAsset != ETH_ADDRESS) {
             cTokensMinted = transferERC20(msg.sender, address(this), currentAsset, fullRepayment);
-        }
-        // else process as ETH
-        else {
+        } else {
             // check that transaction covers the full value of the loan
             require(
                 msg.value >= fullRepayment,
@@ -1063,76 +1050,84 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         return cTokensToLender;
     }
 
-    // /**
-    //  * @notice Allows borrowers to make a partial payment toward the principle of their loan
-    //  * @dev This function does not charge any interest or fees. It does change the calculation for future interest and fees accrual, so we track historicLenderInterest and historicProtocolInterest
-    //  * @param nftContractAddress The address of the NFT collection
-    //  * @param nftId The id of the specified NFT
-    //  * @param partialAmount The amount of value to pay down on the principle of the loan
-    //  */
-    // function partialPayment(
-    //     address nftContractAddress,
-    //     uint256 nftId,
-    //     uint256 partialAmount
-    // ) external payable whenNotPaused nonReentrant {
-    //     // Instantiate LoanAuction Struct
-    //     LoanAuction storage loanAuction = _loanAuctions[nftContractAddress][nftId];
+    /**
+     * @notice Allows borrowers to make a partial payment toward the principle of their loan
+     * @dev This function does not charge any interest or fees. It does change the calculation for future interest and fees accrual, so we track historicLenderInterest and historicProtocolInterest
+     * @param nftContractAddress The address of the NFT collection
+     * @param nftId The id of the specified NFT
+     * @param partialAmount The amount of value to pay down on the principle of the loan
+     */
+    function partialPayment(
+        address nftContractAddress,
+        uint256 nftId,
+        uint256 partialAmount
+    ) external payable whenNotPaused nonReentrant {
+        // Instantiate LoanAuction Struct
+        LoanAuction storage loanAuction = _loanAuctions[nftContractAddress][nftId];
 
-    //     address cAsset = assetToCAsset[loanAuction.asset];
+        address cAsset = assetToCAsset[loanAuction.asset];
 
-    //     // Require that loan has been executed
-    //     require(loanAuction.loanExecutedTime != 0, "Cannot repay loan that has not been executed");
+        // Require that loan has been executed
+        require(loanAuction.loanExecutedTime != 0, "Cannot repay loan that has not been executed");
 
-    //     // Require msg.sender is the borrower
-    //     require(msg.sender == loanAuction.nftOwner, "Msg.sender is not the NFT owner");
+        // Require msg.sender is the borrower
+        require(msg.sender == loanAuction.nftOwner, "Msg.sender is not the NFT owner");
 
-    //     // calculate the amount of interest accrued by the lender
-    //     (uint256 lenderInterest, uint256 protocolInterest) = calculateInterestAccrued(
-    //         nftContractAddress,
-    //         nftId
-    //     );
+        // calculate the amount of interest accrued by the lender
+        (uint256 lenderInterest, uint256 protocolInterest) = calculateInterestAccrued(
+            nftContractAddress,
+            nftId
+        );
 
-    //     loanAuction.historicLenderInterest += lenderInterest;
-    //     loanAuction.historicProtocolInterest += protocolInterest;
-    //     loanAuction.timeOfInterestStart = block.timestamp;
+        loanAuction.historicLenderInterest += lenderInterest;
+        loanAuction.historicProtocolInterest += protocolInterest;
+        loanAuction.timeOfInterestStart = block.timestamp;
 
-    //     uint256 currentAmountDrawn = loanAuction.amountDrawn;
-    //     // update amountDrawn
-    //     loanAuction.amountDrawn -= partialAmount;
+        uint256 currentAmountDrawn = loanAuction.amountDrawn;
+        // update amountDrawn
+        loanAuction.amountDrawn -= partialAmount;
 
-    //     // if asset is not 0x0 process as Erc20
-    //     if (loanAuction.asset != address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)) {
-    //         require(partialAmount < currentAmountDrawn, "Msg.value must be less than amountDrawn");
+        uint256 cTokensMinted;
 
-    //         _payErc20AndUpdateBalancesInternal(
-    //             loanAuction.asset,
-    //             cAsset,
-    //             loanAuction.lender,
-    //             msg.sender,
-    //             partialAmount,
-    //             0,
-    //             0,
-    //             partialAmount
-    //         );
-    //     }
-    //     // else process as ETH
-    //     else if (loanAuction.asset == address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)) {
-    //         // check that transaction covers the full value of the loan
-    //         require(msg.value < currentAmountDrawn, "Msg.value must be less than amountDrawn");
+        // if asset is not 0x0 process as Erc20
+        if (currentAsset != ETH_ADDRESS) {
+            cTokensMinted = transferERC20(msg.sender, address(this), currentAsset, fullRepayment);
+        } else {
+            // check that transaction covers the full value of the loan
+            require(
+                msg.value >= fullRepayment,
+                "Must repay full amount of loan drawn plus interest and fee. Account for additional time for interest."
+            );
 
-    //         _payEthAndUpdateBalancesInternal(
-    //             cAsset,
-    //             loanAuction.lender,
-    //             msg.value,
-    //             msg.value,
-    //             0,
-    //             0,
-    //             partialAmount
-    //         );
-    //     }
+            cTokensMinted = transferEth(fullRepayment);
 
-    //     emit PartialRepayment(nftContractAddress, nftId, loanAuction.asset, partialAmount);
-    // }
+            if (fullRepayment < msg.value) {
+                Address.sendValue(payable(msg.sender), msg.value - fullRepayment);
+            }
+        }
+
+        // if asset is not 0x0 process as Erc20
+        if (loanAuction.asset != ETH_ADDRESS) {
+            require(partialAmount < currentAmountDrawn, "Msg.value must be less than amountDrawn");
+            cTokensMinted = transferERC20(
+                msg.sender,
+                address(this),
+                loanAuction.asset,
+                partialAmount
+            );
+        }
+        // else process as ETH
+        else if (loanAuction.asset == address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)) {
+            // check that transaction covers the full value of the loan
+            require(msg.value < currentAmountDrawn, "Msg.value must be less than amountDrawn");
+
+            cTokensMinted = transferEth(msg.value);
+        }
+
+        _accountAssets[loanAuction.lender].balance[cAsset].cAssetBalance += cTokensMinted;
+
+        emit PartialRepayment(nftContractAddress, nftId, loanAuction.asset, partialAmount);
+    }
 
     /**
      * @notice Allows anyone to seize an asset of a past due loan on behalf on the lender
