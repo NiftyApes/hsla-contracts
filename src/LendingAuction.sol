@@ -521,26 +521,16 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
         // Process as ETH
         if (offer.asset == ETH_ADDRESS) {
-            ICEther cToken = ICEther(cAsset);
 
-            uint256 cTokenBalanceBefore = cToken.balanceOf(address(this));
-            // redeem underlying from cToken to this contract
-            require(cToken.redeemUnderlying(offer.amount) == 0, "cToken.redeemUnderlying() failed");
-            uint256 cTokenBalanceAfter = cToken.balanceOf(address(this));
-            cTokensBurned = cTokenBalanceBefore - cTokenBalanceAfter;
-
+            cTokensBurned = burnCErc20(offer.asset, offer.amount);
             Address.sendValue(payable(borrower), offer.amount);
         }
         // Process as ERC20
         else {
-            IERC20 underlying = IERC20(offer.asset);
-            ICERC20 cToken = ICERC20(cAsset);
-            uint256 cTokenBalanceBefore = cToken.balanceOf(address(this));
-            // redeem underlying from cToken to this contract
-            require(cToken.redeemUnderlying(offer.amount) == 0, "cToken.redeemUnderlying() failed");
-            uint256 cTokenBalanceAfter = cToken.balanceOf(address(this));
-            cTokensBurned = cTokenBalanceBefore - cTokenBalanceAfter;
 
+            cTokensBurned = burnCErc20(offer.asset, offer.amount);
+
+            IERC20 underlying = IERC20(offer.asset);
             // transfer underlying from this contract to borrower
             require(underlying.transfer(borrower, offer.amount), "underlying.transfer() failed");
         }

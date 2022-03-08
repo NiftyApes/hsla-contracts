@@ -360,4 +360,15 @@ contract LiquidityProviders is
         uint256 cTokenBalanceAfter = cToken.balanceOf(address(this));
         return cTokenBalanceAfter - cTokenBalanceBefore;
     }
+
+    function burnCErc20(address asset, uint amount) internal returns (uint256) {
+        address cAsset = assetToCAsset[asset];
+        // TODO(dankurka): Maybe check?
+        ICERC20 cToken = ICERC20(cAsset);
+
+        uint256 cTokenBalanceBefore = cToken.balanceOf(address(this));
+        require(cToken.redeemUnderlying(amountToWithdraw) == 0, "cToken.redeemUnderlying() failed");
+        uint256 cTokenBalanceAfter = cToken.balanceOf(address(this));
+        return cTokenBalanceBefore - cTokenBalanceAfter;
+    }
 }
