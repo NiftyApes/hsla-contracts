@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 import "./interfaces/compound/ICERC20.sol";
 import "./interfaces/compound/ICEther.sol";
 import "./ErrorReporter.sol";
@@ -363,9 +364,7 @@ contract LiquidityProviders is
 
         maybeRemoveAssetFromAccount(msg.sender, ETH_ADDRESS);
 
-        // Repay eth to depositor
-        (bool success, ) = (msg.sender).call{ value: amountToWithdraw }("");
-        require(success, "Send eth to depositor failed");
+        Address.sendValue(payable(msg.sender), amountToWithdraw);
 
         emit EthWithdrawn(msg.sender, amountToWithdraw);
 
