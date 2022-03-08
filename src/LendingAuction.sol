@@ -498,7 +498,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         IERC721(offer.nftContractAddress).transferFrom(borrower, address(this), offer.nftId);
 
         // Process as ETH
-        if (offer.asset == address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)) {
+        if (offer.asset == ETH_ADDRESS) {
             // redeem cTokens and transfer underlying to borrower
             _redeemAndTransferEthInternal(cAsset, offer.amount, borrower);
         }
@@ -920,7 +920,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         _checkAndUpdateLenderUtilizedBalanceInternal(cAsset, drawAmount, loanAuction.lender);
 
         // if asset is not 0x0 process as Erc20
-        if (loanAuction.asset != address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)) {
+        if (loanAuction.asset != ETH_ADDRESS) {
             // redeem cTokens and transfer underlying to borrower
             _redeemAndTransferErc20Internal(
                 loanAuction.asset,
@@ -930,7 +930,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             );
         }
         // else process as ETH
-        else if (loanAuction.asset == address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)) {
+        else {
             // redeem cTokens and transfer underlying to borrower
             _redeemAndTransferEthInternal(cAsset, drawAmount, loanAuction.nftOwner);
         }
@@ -1063,7 +1063,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         loanAuction.amountDrawn -= partialAmount;
 
         // if asset is not 0x0 process as Erc20
-        if (loanAuction.asset != address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)) {
+        if (loanAuction.asset != ETH_ADDRESS) {
             require(partialAmount < currentAmountDrawn, "Msg.value must be less than amountDrawn");
 
             _payErc20AndUpdateBalancesInternal(
@@ -1078,7 +1078,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             );
         }
         // else process as ETH
-        else if (loanAuction.asset == address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)) {
+        else {
             // check that transaction covers the full value of the loan
             require(msg.value < currentAmountDrawn, "Msg.value must be less than amountDrawn");
 
