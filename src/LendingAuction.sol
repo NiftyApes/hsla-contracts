@@ -435,33 +435,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         emit SigOfferFinalized(offer.nftContractAddress, offer.nftId, signature);
     }
 
-    struct LoanRepayment {
-        uint256 lenderInterest;
-        uint256 protocolInterest;
-        uint256 principal;
-    }
-
-    function calculateRepayment(address nftContractAddress, uint256 nftId)
-        internal
-        view
-        returns (LoanRepayment memory)
-    {
-        // calculate the amount of interest accrued by the lender
-        (uint256 lenderInterest, uint256 protocolInterest) = calculateInterestAccrued(
-            nftContractAddress,
-            nftId
-        );
-
-        LoanAuction storage loanAuction = _loanAuctions[nftContractAddress][nftId];
-
-        return
-            LoanRepayment({
-                lenderInterest: lenderInterest,
-                protocolInterest: protocolInterest,
-                principal: loanAuction.amountDrawn
-            });
-    }
-
     /**
      * @notice Handles checks, state transitions, and value/asset transfers for executeLoanbyLender
      * @param offer The details of a loan auction offer
@@ -1146,10 +1119,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         loanAuction.timeDrawn = 0;
         loanAuction.fixedTerms = false;
 
-        // update lenders utilized balance
-        //_accountAssets[loanAuction.lender].balance[cAsset].utilizedCAssetBalance -= loanAuction
-        //    .amountDrawn;
-
         // update lenders total balance
         _accountAssets[loanAuction.lender].balance[cAsset].cAssetBalance -= loanAuction.amountDrawn;
 
@@ -1160,35 +1129,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     }
 
     // ---------- Internal Payment, Balance, and Transfer Functions ---------- //
-
-    // need to verify that it is impossible to have a negative interest in Compound
-
-    // does this functino need an eth version?
-    function _checkAndUpdateLenderUtilizedBalanceInternal(
-        address cAsset,
-        uint256 amount,
-        address lender
-    ) internal {
-        // Create a reference to the corresponding cToken contract, like cDAI
-        ICERC20 cToken = ICERC20(cAsset);
-
-        // set exchangeRate of erc20 to ICERC20
-        uint256 exchangeRateMantissa = cToken.exchangeRateCurrent();
-        uint256 redeemTokens;
-
-        // convert amount to ICERC20
-        (, redeemTokens) = divScalarByExpTruncate(amount, Exp({ mantissa: exchangeRateMantissa }));
-
-        // require that the lenders available balance is sufficent to serve the loan
-        require(
-            // calculate lenders available ICERC20 balance and require it to be greater than or equal to redeemTokens
-            getCAssetBalance(msg.sender, cAsset) >= redeemTokens,
-            "Lender does not have a sufficient balance to serve this loan"
-        );
-
-        // update the lenders utilized balance
-        //_accountAssets[lender].balance[cAsset].utilizedCAssetBalance += redeemTokens;
-    }
 
     // ---------- Helper Functions ---------- //
 
