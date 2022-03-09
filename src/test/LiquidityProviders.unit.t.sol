@@ -7,34 +7,14 @@ import "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "../interfaces/compound/ICERC20.sol";
 import "../interfaces/compound/ICEther.sol";
 import "../LiquidityProviders.sol";
+import "../interfaces/ILiquidityProviderEvents.sol";
 import "../Exponential.sol";
 import "./Utilities.sol";
 
 import "./mock/CERC20Mock.sol";
 import "./mock/ERC20Mock.sol";
 
-// @dev These tests are intended to be run against a forked mainnet.
-
-contract LiquidityProvidersUnitTest is DSTest, TestUtility, Exponential {
-    // TODO(dankurka): Remove
-    event NewAssetWhitelisted(address asset, address cAsset);
-    event Erc20Supplied(
-        address indexed depositor,
-        address indexed asset,
-        uint256 tokenAmount,
-        uint256 cTokenAmount
-    );
-    event CErc20Supplied(address indexed depositor, address indexed cAsset, uint256 amount);
-
-    event Erc20Withdrawn(
-        address indexed depositor,
-        address indexed asset,
-        uint256 tokenAmount,
-        uint256 cTokenAmount
-    );
-
-    event CErc20Withdrawn(address indexed depositor, address indexed cAsset, uint256 cTokenAmount);
-
+contract LiquidityProvidersUnitTest is DSTest, TestUtility, Exponential, ILiquidityProviderEvents {
     LiquidityProviders liquidityProviders;
     ERC20Mock usdcToken;
     CERC20Mock cUSDCToken;

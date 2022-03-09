@@ -3,41 +3,15 @@ pragma solidity ^0.8.11;
 
 import "../ErrorReporter.sol";
 import "../CarefulMath.sol";
+import "./ILiquidityProviderEvents.sol";
 
 // @dev public interface for LiquidityProviders.sol
-interface ILiquidityProviders {
+interface ILiquidityProviders is ILiquidityProviderEvents {
     // Structs
 
     struct Balance {
         uint256 cAssetBalance;
     }
-
-    // Events
-
-    event NewAssetWhitelisted(address asset, address cAsset);
-
-    event Erc20Supplied(
-        address indexed depositor,
-        address indexed asset,
-        uint256 tokenAmount,
-        uint256 cTokenAmount
-    );
-
-    // TODO(dankurka): This does not have tokenAmount in here
-    event CErc20Supplied(address indexed depositor, address indexed cAsset, uint256 cTokenAmount);
-
-    event Erc20Withdrawn(
-        address indexed depositor,
-        address indexed asset,
-        uint256 tokenAmount,
-        uint256 cTokenAmount
-    );
-
-    event CErc20Withdrawn(address indexed depositor, address indexed cAsset, uint256 cTokenAmount);
-
-    event EthSupplied(address indexed depositor, uint256 amount, uint256 cTokenAmount);
-
-    event EthWithdrawn(address indexed depositor, uint256 amount, uint256 cTokenAmount);
 
     // Functions
 
