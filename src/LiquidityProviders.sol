@@ -62,7 +62,12 @@ contract LiquidityProviders is
 
     // implement 10M limit for MVP
 
-    function supplyErc20(address asset, uint256 numTokensToSupply) external returns (uint256) {
+    function supplyErc20(address asset, uint256 numTokensToSupply)
+        external
+        whenNotPaused
+        nonReentrant
+        returns (uint256)
+    {
         address cAsset = getCAsset(asset);
 
         uint256 cTokensMinted = mintCErc20(msg.sender, address(this), asset, numTokensToSupply);
@@ -74,7 +79,11 @@ contract LiquidityProviders is
         return cTokensMinted;
     }
 
-    function supplyCErc20(address cAsset, uint256 cTokenAmount) external {
+    function supplyCErc20(address cAsset, uint256 cTokenAmount)
+        external
+        whenNotPaused
+        nonReentrant
+    {
         getAsset(cAsset); // Ensures asset / cAsset is in the allow list
         ICERC20 cToken = ICERC20(cAsset);
 
@@ -123,7 +132,7 @@ contract LiquidityProviders is
         emit CErc20Withdrawn(msg.sender, cAsset, amountToWithdraw);
     }
 
-    function supplyEth() external payable returns (uint256) {
+    function supplyEth() external payable whenNotPaused nonReentrant returns (uint256) {
         address cAsset = getCAsset(ETH_ADDRESS);
 
         uint256 cTokensMinted = mintCEth(msg.value);
