@@ -289,7 +289,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
         require(msg.sender == offer.creator, "msg.sender is not the offer creator");
 
-        require((offerBook.inserted[offerHash]), "Offer not found");
+        require(offerBook.inserted[offerHash], "Offer not found");
 
         delete offerBook.inserted[offerHash];
         delete offerBook.offers[offerHash];
