@@ -371,4 +371,21 @@ contract LiquidityProviders is
         uint256 cTokenBalanceAfter = cToken.balanceOf(address(this));
         return cTokenBalanceBefore - cTokenBalanceAfter;
     }
+
+    function assetAmountToCAssetAmount(address asset, uint256 amount) internal returns (uint256) {
+        address cAsset = assetToCAsset[asset];
+        ICERC20 cToken = ICERC20(cAsset);
+
+  
+        uint256 exchangeRateMantissa = cToken.exchangeRateCurrent();
+
+        (MathError mathError, uint256 amountCTokens) = divScalarByExpTruncate(
+            amount,
+            Exp({ mantissa: exchangeRateMantissa })
+        );
+
+        require(mathError == MathError.NO_ERROR, "Math failed");
+
+        return amountCTokens;
+    }
 }
