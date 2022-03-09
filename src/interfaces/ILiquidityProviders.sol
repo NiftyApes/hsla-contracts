@@ -35,9 +35,9 @@ interface ILiquidityProviders {
 
     event CErc20Withdrawn(address indexed depositor, address indexed cAsset, uint256 cTokenAmount);
 
-    event EthSupplied(address depositor, uint256 amount);
+    event EthSupplied(address indexed depositor, uint256 amount, uint256 cTokenAmount);
 
-    event EthWithdrawn(address depositor, uint256 amount);
+    event EthWithdrawn(address indexed depositor, uint256 amount, uint256 cTokenAmount);
 
     // Functions
 

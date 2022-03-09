@@ -373,4 +373,8 @@ contract LiquidityProvidersUnitTest is DSTest, TestUtility, Exponential {
 
         liquidityProviders.withdrawCErc20(address(cUSDCToken), 1 ether);
     }
+
+    // TODO(dankurka): Missing tests for supplyEth
+    // TODO(dankurka): Missing tests for withdrawEth
+    // TODO(dankurka): All tests missing assertions for cTokens returned
 }

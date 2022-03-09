@@ -139,11 +139,13 @@ contract LiquidityProviders is
     }
 
     function supplyEth() external payable returns (uint256) {
+        address cAsset = getCAsset(ETH_ADDRESS);
+
         uint256 cTokensMinted = mintCEth(msg.value);
 
-        _accountAssets[msg.sender][assetToCAsset[ETH_ADDRESS]].cAssetBalance += cTokensMinted;
+        _accountAssets[msg.sender][cAsset].cAssetBalance += cTokensMinted;
 
-        emit EthSupplied(msg.sender, msg.value);
+        emit EthSupplied(msg.sender, msg.value, cTokensMinted);
 
         return cTokensMinted;
     }
@@ -154,16 +156,14 @@ contract LiquidityProviders is
         nonReentrant
         returns (uint256)
     {
-        address cEth = assetToCAsset[ETH_ADDRESS];
-        uint256 cTokensBurnt = burnCErc20(ETH_ADDRESS, amountToWithdraw);
+        address cAsset = getCAsset(ETH_ADDRESS);
+        uint256 cTokensBurnt = burnCErc20(cAsset, amountToWithdraw);
 
-        // require msg.sender has sufficient available balance of cEth
-        require(getCAssetBalance(msg.sender, cEth) >= cTokensBurnt, "Must have sufficient balance");
-        _accountAssets[msg.sender][cEth].cAssetBalance -= cTokensBurnt;
+        withdrawCBalance(msg.sender, cAsset, cTokensBurnt);
 
         Address.sendValue(payable(msg.sender), amountToWithdraw);
 
-        emit EthWithdrawn(msg.sender, amountToWithdraw);
+        emit EthWithdrawn(msg.sender, amountToWithdraw, cTokensBurnt);
 
         return cTokensBurnt;
     }

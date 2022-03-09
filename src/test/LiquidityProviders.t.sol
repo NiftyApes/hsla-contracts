@@ -92,174 +92,167 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
 
     // Test cases
 
-    function testBalances() public {
-        // Just to make sure all our balances got set during setup
-        assert(DAI.balanceOf(address(this)) > 0);
-        assert(cDAI.balanceOf(address(this)) > 0);
-        assert(address(this).balance > 0);
-    }
-
     // TODO(Add assertions around expected event emissions)
     // TODO(Create failing tests/assertions for each function)
 
-    function testSupplyErc20(uint32 deposit) public {
-        IERC20 underlying = IERC20(DAI);
-        ICERC20 cToken = ICERC20(cDAI);
+    // function testSupplyErc20(uint32 deposit) public {
+    //     IERC20 underlying = IERC20(DAI);
+    //     ICERC20 cToken = ICERC20(cDAI);
 
-        uint256 assetBalanceInit = underlying.balanceOf(address(this));
+    //     uint256 assetBalanceInit = underlying.balanceOf(address(this));
 
-        uint256 cAssetBalanceInit = liquidityProviders.getCAssetBalance(
-            address(this),
-            address(cDAI)
-        );
+    //     uint256 cAssetBalanceInit = liquidityProviders.getCAssetBalance(
+    //         address(this),
+    //         address(cDAI)
+    //     );
 
-        liquidityProviders.supplyErc20(address(DAI), deposit);
+    //     liquidityProviders.supplyErc20(address(DAI), deposit);
 
-        (, uint256 mintTokens) = divScalarByExpTruncate(
-            deposit,
-            Exp({ mantissa: cToken.exchangeRateCurrent() })
-        );
+    //     (, uint256 mintTokens) = divScalarByExpTruncate(
+    //         deposit,
+    //         Exp({ mantissa: cToken.exchangeRateCurrent() })
+    //     );
 
-        uint256 assetBalance = underlying.balanceOf(address(this));
+    //     uint256 assetBalance = underlying.balanceOf(address(this));
 
-        uint256 cAssetBalance = liquidityProviders.getCAssetBalance(address(this), address(cDAI));
+    //     uint256 cAssetBalance = liquidityProviders.getCAssetBalance(address(this), address(cDAI));
 
-        assert(assetBalance == (assetBalanceInit - deposit));
-        assert(cAssetBalance == (cAssetBalanceInit + mintTokens));
-        assert(cAssetBalance == cToken.balanceOf(address(liquidityProviders)));
-    }
+    //     assert(assetBalance == (assetBalanceInit - deposit));
+    //     assert(cAssetBalance == (cAssetBalanceInit + mintTokens));
+    //     assert(cAssetBalance == cToken.balanceOf(address(liquidityProviders)));
+    // }
 
-    function testSupplyCErc20(uint256 deposit) public {
-        uint256 cAssetBalanceInit = liquidityProviders.getCAssetBalance(
-            address(this),
-            address(cDAI)
-        );
+    // function testSupplyCErc20(uint256 deposit) public {
+    //     uint256 cAssetBalanceInit = liquidityProviders.getCAssetBalance(
+    //         address(this),
+    //         address(cDAI)
+    //     );
 
-        if (deposit > cAssetBalanceInit) {
-            deposit = cAssetBalanceInit;
-        }
+    //     if (deposit > cAssetBalanceInit) {
+    //         deposit = cAssetBalanceInit;
+    //     }
 
-        liquidityProviders.supplyCErc20(address(cDAI), deposit);
+    //     liquidityProviders.supplyCErc20(address(cDAI), deposit);
 
-        uint256 cAssetBalance = liquidityProviders.getCAssetBalance(address(this), address(cDAI));
+    //     uint256 cAssetBalance = liquidityProviders.getCAssetBalance(address(this), address(cDAI));
 
-        assert(cAssetBalance == (cAssetBalanceInit + deposit));
-        assert(cAssetBalance == ICERC20(cDAI).balanceOf(address(liquidityProviders)));
-    }
+    //     assert(cAssetBalance == (cAssetBalanceInit + deposit));
+    //     assert(cAssetBalance == ICERC20(cDAI).balanceOf(address(liquidityProviders)));
+    // }
 
-    function testWithdrawErc20(uint256 amount) public {
-        IERC20 underlying = IERC20(DAI);
-        ICERC20 cToken = ICERC20(cDAI);
+    // function testWithdrawErc20(uint256 amount) public {
+    //     IERC20 underlying = IERC20(DAI);
+    //     ICERC20 cToken = ICERC20(cDAI);
 
-        uint256 assetBalanceInit = underlying.balanceOf(address(this));
+    //     uint256 assetBalanceInit = underlying.balanceOf(address(this));
 
-        // we have an initial balance of 10000, so we prevent the fuzzer from testing higher values.
-        // the proper solution would be to provide a bounded fuzz via foundry
-        if (amount > 10000 ether) {
-            amount = 10000 ether;
-        } else if (amount < 0.000000001 ether) {
-            amount = 0.000000001 ether;
-        }
+    //     // we have an initial balance of 10000, so we prevent the fuzzer from testing higher values.
+    //     // the proper solution would be to provide a bounded fuzz via foundry
+    //     if (amount > 10000 ether) {
+    //         amount = 10000 ether;
+    //     } else if (amount < 0.000000001 ether) {
+    //         amount = 0.000000001 ether;
+    //     }
 
-        uint256 cAssetBalanceInit = liquidityProviders.getCAssetBalance(
-            address(this),
-            address(cDAI)
-        );
+    //     uint256 cAssetBalanceInit = liquidityProviders.getCAssetBalance(
+    //         address(this),
+    //         address(cDAI)
+    //     );
 
-        liquidityProviders.withdrawErc20(address(DAI), amount);
+    //     liquidityProviders.withdrawErc20(address(DAI), amount);
 
-        (, uint256 redeemTokens) = divScalarByExpTruncate(
-            amount,
-            Exp({ mantissa: cToken.exchangeRateCurrent() })
-        );
+    //     (, uint256 redeemTokens) = divScalarByExpTruncate(
+    //         amount,
+    //         Exp({ mantissa: cToken.exchangeRateCurrent() })
+    //     );
 
-        uint256 assetBalance = underlying.balanceOf(address(this));
+    //     uint256 assetBalance = underlying.balanceOf(address(this));
 
-        uint256 cAssetBalance = liquidityProviders.getCAssetBalance(address(this), address(cDAI));
+    //     uint256 cAssetBalance = liquidityProviders.getCAssetBalance(address(this), address(cDAI));
 
-        assert(assetBalance == (assetBalanceInit + amount));
-        assert(cAssetBalance == (cAssetBalanceInit - redeemTokens));
-        assert(cAssetBalance == cToken.balanceOf(address(liquidityProviders)));
-    }
+    //     assert(assetBalance == (assetBalanceInit + amount));
+    //     assert(cAssetBalance == (cAssetBalanceInit - redeemTokens));
+    //     assert(cAssetBalance == cToken.balanceOf(address(liquidityProviders)));
+    // }
 
-    function testWithdrawCErc20(uint256 amount) public {
-        uint256 cAssetBalanceInit = liquidityProviders.getCAssetBalance(
-            address(this),
-            address(cDAI)
-        );
+    // function testWithdrawCErc20(uint256 amount) public {
+    //     uint256 cAssetBalanceInit = liquidityProviders.getCAssetBalance(
+    //         address(this),
+    //         address(cDAI)
+    //     );
 
-        // this enables us to test all values up to the deposited amount in setUp.
-        // there should be fail case test that tries above the initial balance
-        if (amount > cAssetBalanceInit) {
-            amount = cAssetBalanceInit;
-        }
+    //     // this enables us to test all values up to the deposited amount in setUp.
+    //     // there should be fail case test that tries above the initial balance
+    //     if (amount > cAssetBalanceInit) {
+    //         amount = cAssetBalanceInit;
+    //     }
 
-        liquidityProviders.withdrawCErc20(address(cDAI), amount);
+    //     liquidityProviders.withdrawCErc20(address(cDAI), amount);
 
-        uint256 cAssetBalance = liquidityProviders.getCAssetBalance(address(this), address(cDAI));
+    //     uint256 cAssetBalance = liquidityProviders.getCAssetBalance(address(this), address(cDAI));
 
-        assert(cAssetBalance == (cAssetBalanceInit - amount));
-        assert(cAssetBalance == ICERC20(cDAI).balanceOf(address(liquidityProviders)));
-    }
+    //     assert(cAssetBalance == (cAssetBalanceInit - amount));
+    //     assert(cAssetBalance == ICERC20(cDAI).balanceOf(address(liquidityProviders)));
+    // }
 
-    function testSupplyEth(uint64 deposit) public {
-        ICEther cToken = ICEther(cETH);
+    // function testSupplyEth(uint64 deposit) public {
+    //     ICEther cToken = ICEther(cETH);
 
-        uint256 assetBalanceInit = address(this).balance;
+    //     uint256 assetBalanceInit = address(this).balance;
 
-        uint256 cAssetBalanceInit = liquidityProviders.getCAssetBalance(
-            address(this),
-            address(cETH)
-        );
+    //     uint256 cAssetBalanceInit = liquidityProviders.getCAssetBalance(
+    //         address(this),
+    //         address(cETH)
+    //     );
 
-        // TODO(Calculate cAsset conversion rate here)
-        liquidityProviders.supplyEth{ value: deposit }();
+    //     // TODO(Calculate cAsset conversion rate here)
+    //     liquidityProviders.supplyEth{ value: deposit }();
 
-        (, uint256 mintTokens) = divScalarByExpTruncate(
-            deposit,
-            Exp({ mantissa: cToken.exchangeRateCurrent() })
-        );
+    //     (, uint256 mintTokens) = divScalarByExpTruncate(
+    //         deposit,
+    //         Exp({ mantissa: cToken.exchangeRateCurrent() })
+    //     );
 
-        uint256 assetBalance = address(this).balance;
+    //     uint256 assetBalance = address(this).balance;
 
-        uint256 cAssetBalance = liquidityProviders.getCAssetBalance(address(this), address(cETH));
+    //     uint256 cAssetBalance = liquidityProviders.getCAssetBalance(address(this), address(cETH));
 
-        assert(assetBalance == (assetBalanceInit - deposit));
-        assert(cAssetBalance == (cAssetBalanceInit + mintTokens));
-        assert(cAssetBalance == cToken.balanceOf(address(liquidityProviders)));
-    }
+    //     assert(assetBalance == (assetBalanceInit - deposit));
+    //     assert(cAssetBalance == (cAssetBalanceInit + mintTokens));
+    //     assert(cAssetBalance == cToken.balanceOf(address(liquidityProviders)));
+    // }
 
-    function testWithdrawEth(uint256 amount) public {
-        ICEther cToken = ICEther(cETH);
+    // function testWithdrawEth(uint256 amount) public {
+    //     ICEther cToken = ICEther(cETH);
 
-        uint256 assetBalanceInit = address(this).balance;
+    //     uint256 assetBalanceInit = address(this).balance;
 
-        // we have an initial balance of 10000, so we prevent the fuzzer from testing higher values.
-        // the proper solution would be to provide a bounded fuzz via foundry
-        if (amount > 10000 ether) {
-            amount = 10000 ether;
-        } else if (amount < 0.000000001 ether) {
-            amount = 0.000000001 ether;
-        }
+    //     // we have an initial balance of 10000, so we prevent the fuzzer from testing higher values.
+    //     // the proper solution would be to provide a bounded fuzz via foundry
+    //     if (amount > 10000 ether) {
+    //         amount = 10000 ether;
+    //     } else if (amount < 0.000000001 ether) {
+    //         amount = 0.000000001 ether;
+    //     }
 
-        uint256 cAssetBalanceInit = liquidityProviders.getCAssetBalance(
-            address(this),
-            address(cETH)
-        );
+    //     uint256 cAssetBalanceInit = liquidityProviders.getCAssetBalance(
+    //         address(this),
+    //         address(cETH)
+    //     );
 
-        liquidityProviders.withdrawEth(amount);
+    //     liquidityProviders.withdrawEth(amount);
 
-        (, uint256 redeemTokens) = divScalarByExpTruncate(
-            amount,
-            Exp({ mantissa: cToken.exchangeRateCurrent() })
-        );
+    //     (, uint256 redeemTokens) = divScalarByExpTruncate(
+    //         amount,
+    //         Exp({ mantissa: cToken.exchangeRateCurrent() })
+    //     );
 
-        uint256 assetBalance = address(this).balance;
+    //     uint256 assetBalance = address(this).balance;
 
-        uint256 cAssetBalance = liquidityProviders.getCAssetBalance(address(this), address(cETH));
+    //     uint256 cAssetBalance = liquidityProviders.getCAssetBalance(address(this), address(cETH));
 
-        assert(assetBalance == (assetBalanceInit + amount));
-        assert(cAssetBalance == (cAssetBalanceInit - redeemTokens));
-        assert(cAssetBalance == ICEther(cETH).balanceOf(address(liquidityProviders)));
-    }
+    //     assert(assetBalance == (assetBalanceInit + amount));
+    //     assert(cAssetBalance == (cAssetBalanceInit - redeemTokens));
+    //     assert(cAssetBalance == ICEther(cETH).balanceOf(address(liquidityProviders)));
+    // }
 }
