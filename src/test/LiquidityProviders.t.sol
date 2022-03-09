@@ -99,24 +99,6 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
         assert(address(this).balance > 0);
     }
 
-    function testAssetToCAsset() public {
-        assert(
-            liquidityProviders.assetToCAsset(address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)) ==
-                address(cETH)
-        );
-    }
-
-    function testSetCAssetAddress() public {
-        liquidityProviders.setCAssetAddress(address(DAI), address(cDAI));
-        assert(liquidityProviders.assetToCAsset(address(DAI)) == address(cDAI));
-    }
-
-    function testGetCAssetBalances() public {
-        uint256 cAssetBalance = liquidityProviders.getCAssetBalance(address(this), address(cDAI));
-
-        assert(cAssetBalance > 0 ether);
-    }
-
     // TODO(Add assertions around expected event emissions)
     // TODO(Create failing tests/assertions for each function)
 

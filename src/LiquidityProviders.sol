@@ -62,11 +62,7 @@ contract LiquidityProviders is
         emit NewAssetWhitelisted(asset, cAsset);
     }
 
-    function getCAssetBalance(address account, address cAsset)
-        public
-        view
-        returns (uint256 cAssetBalance)
-    {
+    function getCAssetBalance(address account, address cAsset) public view returns (uint256) {
         return _accountAssets[account][cAsset].cAssetBalance;
     }
 

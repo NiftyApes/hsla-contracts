@@ -28,6 +28,8 @@ contract LiquidityProvidersUnitTest is DSTest, TestUtility, Exponential {
 
         usdcToken = new ERC20Mock("USD Coin", "USDC");
         cUSDCToken = new CERC20Mock(usdcToken);
+
+        liquidityProviders.setCAssetAddress(address(usdcToken), address(cUSDCToken));
     }
 
     function testSetCAddressMapping_returns_null_address() public {
@@ -87,5 +89,55 @@ contract LiquidityProvidersUnitTest is DSTest, TestUtility, Exponential {
             address(0x0000000000000000000000000000000000000003),
             address(0x0000000000000000000000000000000000000002)
         );
+    }
+
+    function testCAssetBalance_starts_at_zero() public {
+        assertEq(
+            liquidityProviders.getCAssetBalance(
+                address(0x0000000000000000000000000000000000000001),
+                address(0x0000000000000000000000000000000000000002)
+            ),
+            0
+        );
+    }
+
+    function testFailSupplyErc20_asset_not_whitelisted() public {
+        liquidityProviders.supplyErc20(address(0x0000000000000000000000000000000000000001), 1);
+    }
+
+    function testSupplyErc20_supply_erc20() public {
+        assertEq(usdcToken.balanceOf(address(this)), 0);
+        assertEq(cUSDCToken.balanceOf(address(this)), 0);
+
+        usdcToken.mint(address(this), 1);
+        usdcToken.approve(address(liquidityProviders), 1);
+
+        assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
+        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 0);
+
+        liquidityProviders.supplyErc20(address(usdcToken), 1);
+
+        assertEq(liquidityProviders.getCAssetBalance(address(this), address(cUSDCToken)), 1 ether);
+        assertEq(usdcToken.balanceOf(address(this)), 0);
+        assertEq(cUSDCToken.balanceOf(address(this)), 0);
+
+        assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
+        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 1 ether);
+    }
+
+    function testSupplyErc20_supply_erc20_different_exchange_rate() public {
+        usdcToken.mint(address(this), 1);
+        usdcToken.approve(address(liquidityProviders), 1);
+
+        cUSDCToken.setExchangeRateCurrent(2);
+
+        liquidityProviders.supplyErc20(address(usdcToken), 1);
+
+        assertEq(
+            liquidityProviders.getCAssetBalance(address(this), address(cUSDCToken)),
+            0.5 ether
+        );
+
+        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 0.5 ether);
     }
 }
