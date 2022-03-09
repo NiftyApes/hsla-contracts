@@ -973,12 +973,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
         // if asset is not 0x0 process as Erc20
         if (loanAuction.asset != ETH_ADDRESS) {
-            cTokensMinted = mintCErc20(
-                msg.sender,
-                address(this),
-                loanAuction.asset,
-                fullRepayment
-            );
+            cTokensMinted = mintCErc20(msg.sender, address(this), loanAuction.asset, fullRepayment);
         } else {
             // check that transaction covers the full value of the loan
             require(
@@ -1051,12 +1046,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         // if asset is not 0x0 process as Erc20
         if (loanAuction.asset != ETH_ADDRESS) {
             require(partialAmount < currentAmountDrawn, "Msg.value must be less than amountDrawn");
-            cTokensMinted = mintCErc20(
-                msg.sender,
-                address(this),
-                loanAuction.asset,
-                partialAmount
-            );
+            cTokensMinted = mintCErc20(msg.sender, address(this), loanAuction.asset, partialAmount);
         } else {
             require(msg.value < currentAmountDrawn, "Msg.value must be less than amountDrawn");
 

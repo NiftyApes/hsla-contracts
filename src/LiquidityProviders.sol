@@ -197,27 +197,17 @@ contract LiquidityProviders is
 
         address cAsset = assetToCAsset[asset];
 
-        // Create a reference to the underlying asset contract, like DAI.
         IERC20 underlying = IERC20(asset);
 
-        // Create a reference to the corresponding cToken contract, like cDAI
-        ICERC20 cToken = ICERC20(cAsset);
-
-        uint256 cTokenBalanceBefore = cToken.balanceOf(address(this));
-        // Retrieve your asset based on an amountToWithdraw of the asset
-        require(cToken.redeemUnderlying(amountToWithdraw) == 0, "cToken.redeemUnderlying() failed");
-
-        uint256 cTokenBalanceAfter = cToken.balanceOf(address(this));
-
-        uint256 cTokensWithDrawn = cTokenBalanceBefore - cTokenBalanceAfter;
+        uint256 cTokensBurnt = burnCErc20(asset, amountToWithdraw);
 
         // require msg.sender has sufficient available balance of cErc20
         require(
-            getCAssetBalance(msg.sender, cAsset) >= cTokensWithDrawn,
+            getCAssetBalance(msg.sender, cAsset) >= cTokensBurnt,
             "Must have sufficient balance"
         );
 
-        _accountAssets[msg.sender].balance[cAsset].cAssetBalance -= cTokensWithDrawn;
+        _accountAssets[msg.sender].balance[cAsset].cAssetBalance -= cTokensBurnt;
 
         maybeRemoveAssetFromAccount(msg.sender, cAsset);
 
@@ -225,7 +215,7 @@ contract LiquidityProviders is
 
         emit Erc20Withdrawn(msg.sender, asset, amountToWithdraw);
 
-        return cTokensWithDrawn;
+        return cTokensBurnt;
     }
 
     function withdrawCErc20(address cAsset, uint256 amountToWithdraw)
@@ -267,7 +257,9 @@ contract LiquidityProviders is
 
         ensureAssetInAccount(msg.sender, ETH_ADDRESS);
 
-        _accountAssets[msg.sender].balance[assetToCAsset[ETH_ADDRESS]].cAssetBalance += cTokensMinted;
+        _accountAssets[msg.sender]
+            .balance[assetToCAsset[ETH_ADDRESS]]
+            .cAssetBalance += cTokensMinted;
 
         emit EthSupplied(msg.sender, msg.value);
 
