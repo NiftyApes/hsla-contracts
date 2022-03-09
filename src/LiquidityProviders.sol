@@ -263,23 +263,11 @@ contract LiquidityProviders is
     }
 
     function supplyEth() external payable returns (uint256) {
-        // set cEth address
-        // utilize reference to allow update of cEth address by compound in future versions
-        address cEth = assetToCAsset[ETH_ADDRESS];
-
-        // Create a reference to the corresponding cToken contract
-        ICEther cToken = ICEther(cEth);
-
         uint256 cTokensMinted = mintCEth(msg.value);
 
         ensureAssetInAccount(msg.sender, ETH_ADDRESS);
 
-        // This state variable is written after external calls because external calls
-        // add value or assets to this contract and this state variable could be re-entered to
-        // increase balance, then withdrawing more funds than have been supplied.
-        // updating the depositors cErc20 balance
-        // cAssetBalances[cEth][msg.sender] += mintTokens;
-        _accountAssets[msg.sender].balance[cEth].cAssetBalance += cTokensMinted;
+        _accountAssets[msg.sender].balance[assetToCAsset[ETH_ADDRESS]].cAssetBalance += cTokensMinted;
 
         emit EthSupplied(msg.sender, msg.value);
 
@@ -292,36 +280,16 @@ contract LiquidityProviders is
         nonReentrant
         returns (uint256)
     {
-        // set cEth address
-        // utilize reference to allow update of cEth address by compound in future versions
         address cEth = assetToCAsset[ETH_ADDRESS];
-
-        // Create a reference to the corresponding cToken contract, like cDAI
-        ICEther cToken = ICEther(cEth);
-
-        uint256 exchangeRateMantissa;
-        uint256 redeemTokens;
-        uint256 redeemAmount;
-        exchangeRateMantissa = cToken.exchangeRateCurrent();
-
-        (, redeemTokens) = divScalarByExpTruncate(
-            amountToWithdraw,
-            Exp({ mantissa: exchangeRateMantissa })
-        );
-
-        redeemAmount = amountToWithdraw;
+        uint256 cTokensBurnt = burnCErc20(ETH_ADDRESS, amountToWithdraw);
 
         // require msg.sender has sufficient available balance of cEth
-        require(getCAssetBalance(msg.sender, cEth) >= redeemTokens, "Must have sufficient balance");
-
+        require(getCAssetBalance(msg.sender, cEth) >= cTokensBurnt, "Must have sufficient balance");
         _accountAssets[msg.sender].balance[cEth].cAssetBalance -= redeemTokens;
 
         maybeRemoveAssetFromAccount(msg.sender, ETH_ADDRESS);
 
-        // Retrieve your asset based on an amountToWithdraw of the asset
-        require(cToken.redeemUnderlying(redeemAmount) == 0, "cToken.redeemUnderlying() failed");
-
-        Address.sendValue(payable(msg.sender), redeemAmount);
+        Address.sendValue(payable(msg.sender), amountToWithdraw);
 
         emit EthWithdrawn(msg.sender, amountToWithdraw);
 
