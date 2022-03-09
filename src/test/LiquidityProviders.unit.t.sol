@@ -24,6 +24,14 @@ contract LiquidityProvidersUnitTest is DSTest, TestUtility, Exponential {
         uint256 tokenAmount,
         uint256 cTokenAmount
     );
+    event CErc20Supplied(address indexed depositor, address indexed cAsset, uint256 amount);
+
+    event Erc20Withdrawn(
+        address indexed depositor,
+        address indexed asset,
+        uint256 tokenAmount,
+        uint256 cTokenAmount
+    );
 
     LiquidityProviders liquidityProviders;
     ERC20Mock usdcToken;
@@ -64,20 +72,23 @@ contract LiquidityProvidersUnitTest is DSTest, TestUtility, Exponential {
         );
     }
 
-    function testFailSetCAddressMapping_can_not_be_set_by_non_owner() public {
+    function testCannotSetCAddressMapping_can_not_be_set_by_non_owner() public {
         liquidityProviders.renounceOwnership();
 
+        hevm.expectRevert("Ownable: caller is not the owner");
         liquidityProviders.setCAssetAddress(
             address(0x0000000000000000000000000000000000000001),
             address(0x0000000000000000000000000000000000000002)
         );
     }
 
-    function testFailSetCAddressMapping_can_not_overwrite_mapping_asset() public {
+    function testCannotSetCAddressMapping_can_not_overwrite_mapping_asset() public {
         liquidityProviders.setCAssetAddress(
             address(0x0000000000000000000000000000000000000001),
             address(0x0000000000000000000000000000000000000002)
         );
+
+        hevm.expectRevert("asset already set");
 
         liquidityProviders.setCAssetAddress(
             address(0x0000000000000000000000000000000000000001),
@@ -85,11 +96,13 @@ contract LiquidityProvidersUnitTest is DSTest, TestUtility, Exponential {
         );
     }
 
-    function testFailSetCAddressMapping_can_not_overwrite_mapping_casset() public {
+    function testCannotSetCAddressMapping_can_not_overwrite_mapping_casset() public {
         liquidityProviders.setCAssetAddress(
             address(0x0000000000000000000000000000000000000001),
             address(0x0000000000000000000000000000000000000002)
         );
+
+        hevm.expectRevert("casset already set");
 
         liquidityProviders.setCAssetAddress(
             address(0x0000000000000000000000000000000000000003),
@@ -107,7 +120,8 @@ contract LiquidityProvidersUnitTest is DSTest, TestUtility, Exponential {
         );
     }
 
-    function testFailSupplyErc20_asset_not_whitelisted() public {
+    function testCannotSupplyErc20_asset_not_whitelisted() public {
+        hevm.expectRevert("asset allow list");
         liquidityProviders.supplyErc20(address(0x0000000000000000000000000000000000000001), 1);
     }
 
@@ -158,16 +172,19 @@ contract LiquidityProvidersUnitTest is DSTest, TestUtility, Exponential {
         assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 0.5 ether);
     }
 
-    function testFailSupplyErc20_mint_fails() public {
+    function testCannotSupplyErc20_mint_fails() public {
         usdcToken.mint(address(this), 1);
         usdcToken.approve(address(liquidityProviders), 1);
 
         cUSDCToken.setMintFail(true);
 
+        hevm.expectRevert("cToken mint");
+
         liquidityProviders.supplyErc20(address(usdcToken), 1);
     }
 
-    function testFailSupplyCErc20_asset_not_whitelisted() public {
+    function testCannotSupplyCErc20_asset_not_whitelisted() public {
+        hevm.expectRevert("cAsset allow list");
         liquidityProviders.supplyCErc20(address(0x0000000000000000000000000000000000000001), 1);
     }
 
@@ -183,5 +200,97 @@ contract LiquidityProvidersUnitTest is DSTest, TestUtility, Exponential {
 
         assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
         assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 1);
+    }
+
+    function testSupplyCErc20_supply_cerc20_with_event() public {
+        usdcToken.mint(address(this), 1);
+
+        cUSDCToken.mint(1);
+        cUSDCToken.approve(address(liquidityProviders), 1);
+
+        hevm.expectEmit(true, false, false, true);
+
+        emit CErc20Supplied(address(this), address(cUSDCToken), 1);
+
+        liquidityProviders.supplyCErc20(address(cUSDCToken), 1);
+    }
+
+    function testCannotSupplyCErc20_transfer_from_fails() public {
+        usdcToken.mint(address(this), 1);
+
+        cUSDCToken.mint(1);
+        cUSDCToken.approve(address(liquidityProviders), 1);
+
+        cUSDCToken.setTransferFromFail(true);
+
+        hevm.expectRevert("cToken transferFrom failed");
+
+        liquidityProviders.supplyCErc20(address(cUSDCToken), 1);
+    }
+
+    function testCannotWithdrawErc20_asset_not_whitelisted() public {
+        hevm.expectRevert("asset allow list");
+        liquidityProviders.withdrawErc20(address(0x0000000000000000000000000000000000000001), 1);
+    }
+
+    function testWithdrawErc20_works() public {
+        usdcToken.mint(address(this), 1);
+        usdcToken.approve(address(liquidityProviders), 1);
+        liquidityProviders.supplyErc20(address(usdcToken), 1);
+
+        liquidityProviders.withdrawErc20(address(usdcToken), 1);
+
+        assertEq(liquidityProviders.getCAssetBalance(address(this), address(cUSDCToken)), 0);
+
+        assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
+        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 0);
+
+        assertEq(usdcToken.balanceOf(address(this)), 1);
+    }
+
+    function testWithdrawErc20_works_event() public {
+        usdcToken.mint(address(this), 1);
+        usdcToken.approve(address(liquidityProviders), 1);
+        liquidityProviders.supplyErc20(address(usdcToken), 1);
+
+        hevm.expectEmit(true, false, false, true);
+
+        emit Erc20Withdrawn(address(this), address(usdcToken), 1, 1 ether);
+
+        liquidityProviders.withdrawErc20(address(usdcToken), 1);
+    }
+
+    function testCannotWithdrawErc20_redeemUnderlyingFails() public {
+        usdcToken.mint(address(this), 1);
+        usdcToken.approve(address(liquidityProviders), 1);
+        liquidityProviders.supplyErc20(address(usdcToken), 1);
+
+        cUSDCToken.setRedeemUnderlyingFail(true);
+
+        hevm.expectRevert("redeemUnderlying failed");
+
+        liquidityProviders.withdrawErc20(address(usdcToken), 1);
+    }
+
+    function testCannotWithdrawErc20_withdraw_more_than_account_has() public {
+        usdcToken.mint(address(this), 1);
+        usdcToken.approve(address(liquidityProviders), 1);
+        liquidityProviders.supplyErc20(address(usdcToken), 1);
+
+        // deposit some funds from a different address
+        hevm.startPrank(
+            address(0x0000000000000000000000000000000000000001),
+            address(0x0000000000000000000000000000000000000001)
+        );
+
+        usdcToken.mint(address(0x0000000000000000000000000000000000000001), 1);
+        usdcToken.approve(address(liquidityProviders), 1);
+        liquidityProviders.supplyErc20(address(usdcToken), 1);
+
+        hevm.stopPrank();
+
+        hevm.expectRevert("Insuffient ctoken balance");
+
+        liquidityProviders.withdrawErc20(address(usdcToken), 2);
     }
 }

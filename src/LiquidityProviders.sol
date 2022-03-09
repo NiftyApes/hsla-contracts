@@ -84,57 +84,38 @@ contract LiquidityProviders is
     // @notice returns the number of CERC20 tokens added to balance
     // @dev takes the underlying asset address, not cAsset address
     //
-    function supplyCErc20(address cAsset, uint256 numTokensToSupply) external returns (uint256) {
-        require(_cAssetToAsset[cAsset] != address(0), "Asset not whitelisted on NiftyApes");
-
-        address asset = _cAssetToAsset[cAsset];
-
-        // Create a reference to the corresponding cToken contract, like cDAI
+    function supplyCErc20(address cAsset, uint256 cTokenAmount) external returns (uint256) {
+        getAsset(cAsset); // Ensures asset / cAsset is in the allow list
         ICERC20 cToken = ICERC20(cAsset);
 
-        // transferFrom ERC20 from depositors address
         require(
-            cToken.transferFrom(msg.sender, address(this), numTokensToSupply),
+            cToken.transferFrom(msg.sender, address(this), cTokenAmount),
             "cToken transferFrom failed"
         );
 
-        // This state variable is written after external calls because external calls
-        // add value or assets to this contract and this state variable could be re-entered to
-        // increase balance, then withdrawing more funds than have been supplied.
-        // updating the depositors cErc20 balance
-        _accountAssets[msg.sender][cAsset].cAssetBalance += numTokensToSupply;
+        _accountAssets[msg.sender][cAsset].cAssetBalance += cTokenAmount;
 
-        emit CErc20Supplied(msg.sender, cAsset, numTokensToSupply);
+        emit CErc20Supplied(msg.sender, cAsset, cTokenAmount);
 
-        return numTokensToSupply;
+        return cTokenAmount;
     }
 
-    // True to withdraw based on cErc20 amount. False to withdraw based on amount of underlying erc20
     function withdrawErc20(address asset, uint256 amountToWithdraw)
         public
         whenNotPaused
         nonReentrant
         returns (uint256)
     {
-        require(assetToCAsset[asset] != address(0), "Asset not whitelisted on NiftyApes");
-
-        address cAsset = assetToCAsset[asset];
-
+        address cAsset = getCAsset(asset);
         IERC20 underlying = IERC20(asset);
 
         uint256 cTokensBurnt = burnCErc20(asset, amountToWithdraw);
 
-        // require msg.sender has sufficient available balance of cErc20
-        require(
-            getCAssetBalance(msg.sender, cAsset) >= cTokensBurnt,
-            "Must have sufficient balance"
-        );
-
-        _accountAssets[msg.sender][cAsset].cAssetBalance -= cTokensBurnt;
+        withdrawCBalance(msg.sender, cAsset, cTokensBurnt);
 
         require(underlying.transfer(msg.sender, amountToWithdraw), "underlying.transfer() failed");
 
-        emit Erc20Withdrawn(msg.sender, asset, amountToWithdraw);
+        emit Erc20Withdrawn(msg.sender, asset, amountToWithdraw, cTokensBurnt);
 
         return cTokensBurnt;
     }
@@ -220,7 +201,7 @@ contract LiquidityProviders is
         require(underlying.approve(cAsset, amount) == true, "underlying.approve() failed");
 
         uint256 cTokenBalanceBefore = cToken.balanceOf(address(this));
-        require(cToken.mint(amount) == 0, "cToken.mint() failed");
+        require(cToken.mint(amount) == 0, "cToken mint");
         uint256 cTokenBalanceAfter = cToken.balanceOf(address(this));
         return cTokenBalanceAfter - cTokenBalanceBefore;
     }
@@ -240,7 +221,7 @@ contract LiquidityProviders is
         ICERC20 cToken = ICERC20(cAsset);
 
         uint256 cTokenBalanceBefore = cToken.balanceOf(address(this));
-        require(cToken.redeemUnderlying(amount) == 0, "cToken.redeemUnderlying() failed");
+        require(cToken.redeemUnderlying(amount) == 0, "redeemUnderlying failed");
         uint256 cTokenBalanceAfter = cToken.balanceOf(address(this));
         return cTokenBalanceBefore - cTokenBalanceAfter;
     }
@@ -264,6 +245,23 @@ contract LiquidityProviders is
     function getCAsset(address asset) internal view returns (address) {
         address cAsset = assetToCAsset[asset];
         require(cAsset != address(0), "asset allow list");
+        require(asset == _cAssetToAsset[cAsset], "non matching allow list");
         return cAsset;
+    }
+
+    function getAsset(address cAsset) internal view returns (address) {
+        address asset = _cAssetToAsset[cAsset];
+        require(asset != address(0), "cAsset allow list");
+        require(cAsset == assetToCAsset[asset], "non matching allow list");
+        return asset;
+    }
+
+    function withdrawCBalance(
+        address account,
+        address cAsset,
+        uint256 cTokenAmount
+    ) internal {
+        require(getCAssetBalance(account, cAsset) >= cTokenAmount, "Insuffient ctoken balance");
+        _accountAssets[account][cAsset].cAssetBalance -= cTokenAmount;
     }
 }

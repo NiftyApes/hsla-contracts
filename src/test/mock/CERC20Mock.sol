@@ -2,13 +2,15 @@
 pragma solidity 0.8.11;
 
 import { ICERC20 } from "../../interfaces/compound/ICERC20.sol";
-import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { ERC20, IERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../../ErrorReporter.sol";
 import "../../Exponential.sol";
 import "./ERC20Mock.sol";
 
 contract CERC20Mock is ERC20, ICERC20, Exponential {
     ERC20Mock public underlying;
+
+    bool public transferFromFail;
 
     bool public mintFail;
     bool public redeemUnderlyingFail;
@@ -67,5 +69,21 @@ contract CERC20Mock is ERC20, ICERC20, Exponential {
 
     function setExchangeRateCurrent(uint256 _exchangeRateCurrent) external {
         exchangeRateCurrentValue = _exchangeRateCurrent;
+    }
+
+    function transferFrom(
+        address from,
+        address to,
+        uint256 amount
+    ) public virtual override(ERC20, IERC20) returns (bool) {
+        if (transferFromFail) {
+            return false;
+        }
+
+        return ERC20.transferFrom(from, to, amount);
+    }
+
+    function setTransferFromFail(bool fail) external {
+        transferFromFail = fail;
     }
 }
