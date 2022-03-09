@@ -46,12 +46,6 @@ contract LiquidityProviders is
     // This is needed to receive ETH when calling `withdrawEth`
     receive() external payable {}
 
-    // @notice By calling 'revert' in the fallback function, we prevent anyone
-    //         from accidentally sending ether directly to this contract.
-    fallback() external payable {
-        revert();
-    }
-
     // @notice Sets an asset as allowed on the platform and creates asset => cAsset mapping
     function setCAssetAddress(address asset, address cAsset) external onlyOwner {
         require(assetToCAsset[asset] == address(0), "asset already set");
@@ -68,7 +62,6 @@ contract LiquidityProviders is
 
     // implement 10M limit for MVP
 
-    // @notice returns number of cErc20 tokens added to balance
     function supplyErc20(address asset, uint256 numTokensToSupply) external returns (uint256) {
         address cAsset = getCAsset(asset);
 
@@ -81,9 +74,6 @@ contract LiquidityProviders is
         return cTokensMinted;
     }
 
-    // @notice returns the number of CERC20 tokens added to balance
-    // @dev takes the underlying asset address, not cAsset address
-    //
     function supplyCErc20(address cAsset, uint256 cTokenAmount) external {
         getAsset(cAsset); // Ensures asset / cAsset is in the allow list
         ICERC20 cToken = ICERC20(cAsset);
@@ -170,7 +160,6 @@ contract LiquidityProviders is
         uint256 amount
     ) internal returns (uint256) {
         address cAsset = assetToCAsset[asset];
-        // TODO(dankurka): Maybe check?
         IERC20 underlying = IERC20(asset);
         ICERC20 cToken = ICERC20(cAsset);
 
@@ -198,7 +187,6 @@ contract LiquidityProviders is
 
     function burnCErc20(address asset, uint256 amount) internal returns (uint256) {
         address cAsset = assetToCAsset[asset];
-        // TODO(dankurka): Maybe check?
         ICERC20 cToken = ICERC20(cAsset);
 
         uint256 cTokenBalanceBefore = cToken.balanceOf(address(this));
