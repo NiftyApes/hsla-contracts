@@ -84,7 +84,7 @@ contract LiquidityProviders is
     // @notice returns the number of CERC20 tokens added to balance
     // @dev takes the underlying asset address, not cAsset address
     //
-    function supplyCErc20(address cAsset, uint256 cTokenAmount) external returns (uint256) {
+    function supplyCErc20(address cAsset, uint256 cTokenAmount) external {
         getAsset(cAsset); // Ensures asset / cAsset is in the allow list
         ICERC20 cToken = ICERC20(cAsset);
 
@@ -96,8 +96,6 @@ contract LiquidityProviders is
         _accountAssets[msg.sender][cAsset].cAssetBalance += cTokenAmount;
 
         emit CErc20Supplied(msg.sender, cAsset, cTokenAmount);
-
-        return cTokenAmount;
     }
 
     function withdrawErc20(address asset, uint256 amountToWithdraw)
@@ -124,7 +122,6 @@ contract LiquidityProviders is
         external
         whenNotPaused
         nonReentrant
-        returns (uint256)
     {
         address asset = getAsset(cAsset);
         ICERC20 cToken = ICERC20(cAsset);
@@ -134,8 +131,6 @@ contract LiquidityProviders is
         require(cToken.transfer(msg.sender, amountToWithdraw), "cToken transfer");
 
         emit CErc20Withdrawn(msg.sender, cAsset, amountToWithdraw);
-
-        return amountToWithdraw;
     }
 
     function supplyEth() external payable returns (uint256) {
@@ -157,7 +152,7 @@ contract LiquidityProviders is
         returns (uint256)
     {
         address cAsset = getCAsset(ETH_ADDRESS);
-        uint256 cTokensBurnt = burnCErc20(cAsset, amountToWithdraw);
+        uint256 cTokensBurnt = burnCErc20(ETH_ADDRESS, amountToWithdraw);
 
         withdrawCBalance(msg.sender, cAsset, cTokensBurnt);
 

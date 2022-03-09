@@ -23,11 +23,11 @@ interface ILiquidityProviders is ILiquidityProviderEvents {
 
     function supplyErc20(address asset, uint256 numTokensToSupply) external returns (uint256);
 
-    function supplyCErc20(address asset, uint256 numTokensToSupply) external returns (uint256);
+    function supplyCErc20(address asset, uint256 numTokensToSupply) external;
 
     function withdrawErc20(address asset, uint256 amountToWithdraw) external returns (uint256);
 
-    function withdrawCErc20(address asset, uint256 amountToWithdraw) external returns (uint256);
+    function withdrawCErc20(address asset, uint256 amountToWithdraw) external;
 
     function supplyEth() external payable returns (uint256);
 

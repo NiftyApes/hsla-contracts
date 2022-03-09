@@ -12,6 +12,7 @@ import "../Exponential.sol";
 import "./Utilities.sol";
 
 import "./mock/CERC20Mock.sol";
+import "./mock/CEtherMock.sol";
 import "./mock/ERC20Mock.sol";
 
 contract LiquidityProvidersUnitTest is DSTest, TestUtility, Exponential, ILiquidityProviderEvents {
@@ -19,13 +20,24 @@ contract LiquidityProvidersUnitTest is DSTest, TestUtility, Exponential, ILiquid
     ERC20Mock usdcToken;
     CERC20Mock cUSDCToken;
 
+    CEtherMock cEtherToken;
+
+    bool acceptEth;
+
+    receive() external payable {
+        require(acceptEth, "acceptEth");
+    }
+
     function setUp() public {
         liquidityProviders = new LiquidityProviders();
 
         usdcToken = new ERC20Mock("USD Coin", "USDC");
         cUSDCToken = new CERC20Mock(usdcToken);
-
         liquidityProviders.setCAssetAddress(address(usdcToken), address(cUSDCToken));
+
+        cEtherToken = new CEtherMock();
+
+        acceptEth = true;
     }
 
     function testSetCAddressMapping_returns_null_address() public {
@@ -117,7 +129,8 @@ contract LiquidityProvidersUnitTest is DSTest, TestUtility, Exponential, ILiquid
         assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
         assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 0);
 
-        liquidityProviders.supplyErc20(address(usdcToken), 1);
+        uint256 cTokensMinted = liquidityProviders.supplyErc20(address(usdcToken), 1);
+        assertEq(cTokensMinted, 1 ether);
 
         assertEq(liquidityProviders.getCAssetBalance(address(this), address(cUSDCToken)), 1 ether);
         assertEq(usdcToken.balanceOf(address(this)), 0);
@@ -144,7 +157,8 @@ contract LiquidityProvidersUnitTest is DSTest, TestUtility, Exponential, ILiquid
 
         cUSDCToken.setExchangeRateCurrent(2);
 
-        liquidityProviders.supplyErc20(address(usdcToken), 1);
+        uint256 cTokensMinted = liquidityProviders.supplyErc20(address(usdcToken), 1);
+        assertEq(cTokensMinted, 0.5 ether);
 
         assertEq(
             liquidityProviders.getCAssetBalance(address(this), address(cUSDCToken)),
@@ -220,7 +234,8 @@ contract LiquidityProvidersUnitTest is DSTest, TestUtility, Exponential, ILiquid
         usdcToken.approve(address(liquidityProviders), 1);
         liquidityProviders.supplyErc20(address(usdcToken), 1);
 
-        liquidityProviders.withdrawErc20(address(usdcToken), 1);
+        uint256 cTokensBurnt = liquidityProviders.withdrawErc20(address(usdcToken), 1);
+        assertEq(cTokensBurnt, 1 ether);
 
         assertEq(liquidityProviders.getCAssetBalance(address(this), address(cUSDCToken)), 0);
 
@@ -355,6 +370,167 @@ contract LiquidityProvidersUnitTest is DSTest, TestUtility, Exponential, ILiquid
     }
 
     // TODO(dankurka): Missing tests for supplyEth
-    // TODO(dankurka): Missing tests for withdrawEth
-    // TODO(dankurka): All tests missing assertions for cTokens returned
+
+    function testCannotSupplyEth_asset_not_whitelisted() public {
+        hevm.expectRevert("asset allow list");
+        liquidityProviders.supplyEth{ value: 1 }();
+    }
+
+    function testSupplyEth20_supply_eth() public {
+        liquidityProviders.setCAssetAddress(
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
+            address(cEtherToken)
+        );
+
+        uint256 startingBalance = address(this).balance;
+        assertEq(cEtherToken.balanceOf(address(this)), 0);
+
+        assertEq(cEtherToken.balanceOf(address(liquidityProviders)), 0);
+        assertEq(address(liquidityProviders).balance, 0);
+
+        uint256 cTokensMinted = liquidityProviders.supplyEth{ value: 1 }();
+        assertEq(cTokensMinted, 1 ether);
+
+        assertEq(liquidityProviders.getCAssetBalance(address(this), address(cEtherToken)), 1 ether);
+        assertEq(address(this).balance, startingBalance - 1);
+        assertEq(cEtherToken.balanceOf(address(this)), 0);
+
+        assertEq(address(cEtherToken).balance, 1);
+        assertEq(cEtherToken.balanceOf(address(liquidityProviders)), 1 ether);
+    }
+
+    function testSupplyEth20_with_event() public {
+        liquidityProviders.setCAssetAddress(
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
+            address(cEtherToken)
+        );
+
+        hevm.expectEmit(true, false, false, true);
+
+        emit EthSupplied(address(this), 1, 1 ether);
+
+        liquidityProviders.supplyEth{ value: 1 }();
+    }
+
+    function testSupplyEth20_different_exchange_rate() public {
+        liquidityProviders.setCAssetAddress(
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
+            address(cEtherToken)
+        );
+        cEtherToken.setExchangeRateCurrent(2);
+
+        uint256 cTokensMinted = liquidityProviders.supplyEth{ value: 1 }();
+        assertEq(cTokensMinted, 0.5 ether);
+
+        assertEq(
+            liquidityProviders.getCAssetBalance(address(this), address(cEtherToken)),
+            0.5 ether
+        );
+
+        assertEq(cEtherToken.balanceOf(address(liquidityProviders)), 0.5 ether);
+    }
+
+    function testCannotSupplyEth_mint_fails() public {
+        liquidityProviders.setCAssetAddress(
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
+            address(cEtherToken)
+        );
+        cEtherToken.setMintFail(true);
+
+        hevm.expectRevert("cToken mint");
+
+        liquidityProviders.supplyEth{ value: 1 }();
+    }
+
+    function testCannotWithdrawEth_asset_not_whitelisted() public {
+        hevm.expectRevert("asset allow list");
+        liquidityProviders.withdrawEth(1);
+    }
+
+    function testWithdrawEth_works() public {
+        liquidityProviders.setCAssetAddress(
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
+            address(cEtherToken)
+        );
+
+        uint256 startingBalance = address(this).balance;
+
+        liquidityProviders.supplyEth{ value: 1 }();
+
+        uint256 cTokensBurnt = liquidityProviders.withdrawEth(1);
+        assertEq(cTokensBurnt, 1 ether);
+
+        assertEq(liquidityProviders.getCAssetBalance(address(this), address(cEtherToken)), 0);
+
+        assertEq(address(liquidityProviders).balance, 0);
+        assertEq(cEtherToken.balanceOf(address(liquidityProviders)), 0);
+
+        assertEq(address(this).balance, startingBalance);
+    }
+
+    function testWithdrawEth_works_event() public {
+        liquidityProviders.setCAssetAddress(
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
+            address(cEtherToken)
+        );
+        liquidityProviders.supplyEth{ value: 1 }();
+
+        hevm.expectEmit(true, false, false, true);
+
+        emit EthWithdrawn(address(this), 1, 1 ether);
+
+        liquidityProviders.withdrawEth(1);
+    }
+
+    function testCannotWithdrawEth_redeemUnderlyingFails() public {
+        liquidityProviders.setCAssetAddress(
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
+            address(cEtherToken)
+        );
+        liquidityProviders.supplyEth{ value: 1 }();
+
+        cEtherToken.setRedeemUnderlyingFail(true);
+
+        hevm.expectRevert("redeemUnderlying failed");
+
+        liquidityProviders.withdrawEth(1);
+    }
+
+    function testCannotWithdrawEth_withdraw_more_than_account_has() public {
+        liquidityProviders.setCAssetAddress(
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
+            address(cEtherToken)
+        );
+
+        liquidityProviders.supplyEth{ value: 1 }();
+
+        // deposit some funds from a different address
+        hevm.startPrank(
+            address(0x0000000000000000000000000000000000000001),
+            address(0x0000000000000000000000000000000000000001)
+        );
+
+        liquidityProviders.supplyEth{ value: 1 }();
+
+        hevm.stopPrank();
+
+        hevm.expectRevert("Insuffient ctoken balance");
+
+        liquidityProviders.withdrawEth(2);
+    }
+
+    function testCannotWithdrawEth_underlying_transfer_fails() public {
+        liquidityProviders.setCAssetAddress(
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
+            address(cEtherToken)
+        );
+
+        liquidityProviders.supplyEth{ value: 1 }();
+
+        acceptEth = false;
+
+        hevm.expectRevert("Address: unable to send value, recipient may have reverted");
+
+        liquidityProviders.withdrawEth(1);
+    }
 }
