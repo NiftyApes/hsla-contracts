@@ -69,28 +69,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         return _loanAuctions[nftContractAddress][nftId];
     }
 
-    //This function is in addition to getEIP712EncodedOffer in order to save gas in createOffer()
-    /**
-     * @notice Generate a hash of an offer
-     * @param offer The details of a loan auction offer
-     */
-    function getOfferHash(Offer memory offer) public pure returns (bytes32 offerHash) {
-        offerHash = keccak256(
-            abi.encode(
-                offer.creator,
-                offer.nftContractAddress,
-                offer.nftId,
-                offer.asset,
-                offer.amount,
-                offer.interestRateBps,
-                offer.duration,
-                offer.expiration,
-                offer.fixedTerms,
-                offer.floorTerm
-            )
-        );
-    }
-
     /**
      * @notice Generate a hash of an offer and sign with the EIP712 standard
      * @param offer The details of a loan auction offer
@@ -195,29 +173,17 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
      * @param offer The details of the loan auction individual NFT offer
      */
     function createOffer(Offer calldata offer) external {
-        address cAsset = assetToCAsset[offer.asset];
+        address cAsset = getCAsset(offer.asset);
 
         // Create a reference to the corresponding cToken contract, like cDAI
         ICERC20 cToken = ICERC20(cAsset);
 
-        require(offer.creator == msg.sender, "The creator must match msg.sender");
+        require(offer.creator == msg.sender, "creator != sender");
 
-        require(assetToCAsset[offer.asset] != address(0), "Asset not whitelisted on NiftyApes");
-
-        // if statement for lender or borrower, borrower should not have to have balance
-
-        uint256 exchangeRateMantissa = cToken.exchangeRateCurrent();
-
-        (, uint256 offerTokens) = divScalarByExpTruncate(
-            offer.amount,
-            Exp({ mantissa: exchangeRateMantissa })
-        );
+        uint256 offerTokens = assetAmountToCAssetAmount(offer.asset, offer.amount);
 
         // require msg.sender has sufficient available balance of cErc20
-        require(
-            getCAssetBalance(msg.sender, cAsset) >= offerTokens,
-            "Must have an available balance greater than or equal to amountToWithdraw"
-        );
+        require(getCAssetBalance(msg.sender, cAsset) >= offerTokens, "Insufficient lender balance");
 
         mapping(bytes32 => Offer) storage offerBook = getOfferBook(
             offer.nftContractAddress,
@@ -225,20 +191,18 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             offer.floorTerm
         );
 
-        bytes32 offerHash = getOfferHash(offer);
+        bytes32 offerHash = getEIP712EncodedOffer(offer);
 
         offerBook[offerHash] = offer;
 
-        // if (offerBook.inserted[offerHash]) {
-        //     offerBook.offers[offerHash] = offer;
-        // } else {
-        //     offerBook.inserted[offerHash] = true;
-        //     offerBook.offers[offerHash] = offer;
-        //     offerBook.indexOf[offerHash] = offerBook.keys.length;
-        //     offerBook.keys.push(offerHash);
-        // }
-
-        emit NewOffer(offer, offerHash);
+        emit NewOffer(
+            msg.sender,
+            offer.asset,
+            offer.nftContractAddress,
+            offer.nftId,
+            offer,
+            offerHash
+        );
     }
 
     /**
@@ -259,8 +223,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             floorTerm
         );
 
-        // Get memory pointer to offer
-        Offer memory offer = offerBook[offerHash];
+        Offer storage offer = offerBook[offerHash];
 
         require(msg.sender == offer.creator, "msg.sender is not the offer creator");
 

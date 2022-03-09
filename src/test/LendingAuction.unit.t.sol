@@ -52,6 +52,151 @@ contract LendingAuctionUnitTest is
         acceptEth = true;
     }
 
+    function testGetOffer_returns_empty_offer() public {
+        Offer memory offer = lendingAction.getOffer(
+            address(0x0000000000000000000000000000000000000001),
+            2,
+            "",
+            false
+        );
+
+        assertEq(offer.creator, ZERO_ADDRESS);
+        assertEq(offer.nftContractAddress, ZERO_ADDRESS);
+        assertEq(offer.interestRateBps, 0);
+        assertTrue(!offer.fixedTerms);
+        assertTrue(!offer.floorTerm);
+        assertEq(offer.nftId, 0);
+        assertEq(offer.asset, ZERO_ADDRESS);
+        assertEq(offer.amount, 0);
+        assertEq(offer.duration, 0);
+        assertEq(offer.expiration, 0);
+    }
+
+    function testCannotCreateOffer_asset_not_whitelisted() public {
+        Offer memory offer = Offer({
+            creator: address(0x0000000000000000000000000000000000000001),
+            nftContractAddress: address(0x0000000000000000000000000000000000000002),
+            interestRateBps: 3,
+            fixedTerms: false,
+            floorTerm: false,
+            nftId: 4,
+            asset: address(0x0000000000000000000000000000000000000005),
+            amount: 6,
+            duration: 7,
+            expiration: 8
+        });
+
+        hevm.expectRevert("asset allow list");
+
+        lendingAction.createOffer(offer);
+    }
+
+    function testCannotCreateOffer_offer_does_not_match_sender() public {
+        Offer memory offer = Offer({
+            creator: address(0x0000000000000000000000000000000000000001),
+            nftContractAddress: address(0x0000000000000000000000000000000000000002),
+            interestRateBps: 3,
+            fixedTerms: false,
+            floorTerm: false,
+            nftId: 4,
+            asset: address(usdcToken),
+            amount: 6,
+            duration: 7,
+            expiration: 8
+        });
+
+        hevm.expectRevert("creator != sender");
+
+        lendingAction.createOffer(offer);
+    }
+
+    function testCannotCreateOffer_not_enough_balance() public {
+        Offer memory offer = Offer({
+            creator: address(this),
+            nftContractAddress: address(0x0000000000000000000000000000000000000002),
+            interestRateBps: 3,
+            fixedTerms: false,
+            floorTerm: false,
+            nftId: 4,
+            asset: address(usdcToken),
+            amount: 6,
+            duration: 7,
+            expiration: 8
+        });
+
+        hevm.expectRevert("Insufficient lender balance");
+
+        lendingAction.createOffer(offer);
+    }
+
+    function testCreateOffer_works() public {
+        usdcToken.mint(address(this), 6);
+        usdcToken.approve(address(lendingAction), 6);
+
+        lendingAction.supplyErc20(address(usdcToken), 6);
+
+        Offer memory offer = Offer({
+            creator: address(this),
+            nftContractAddress: address(0x0000000000000000000000000000000000000002),
+            interestRateBps: 3,
+            fixedTerms: true,
+            floorTerm: true,
+            nftId: 4,
+            asset: address(usdcToken),
+            amount: 6,
+            duration: 7,
+            expiration: 8
+        });
+
+        lendingAction.createOffer(offer);
+
+        assertEq(offer.creator, address(this));
+        assertEq(offer.nftContractAddress, address(0x0000000000000000000000000000000000000002));
+        assertEq(offer.interestRateBps, 3);
+        assertTrue(offer.fixedTerms);
+        assertTrue(offer.floorTerm);
+        assertEq(offer.nftId, 4);
+        assertEq(offer.asset, address(usdcToken));
+        assertEq(offer.amount, 6);
+        assertEq(offer.duration, 7);
+        assertEq(offer.expiration, 8);
+    }
+
+    function testCreateOffer_works_event() public {
+        usdcToken.mint(address(this), 6);
+        usdcToken.approve(address(lendingAction), 6);
+
+        lendingAction.supplyErc20(address(usdcToken), 6);
+
+        Offer memory offer = Offer({
+            creator: address(this),
+            nftContractAddress: address(0x0000000000000000000000000000000000000002),
+            interestRateBps: 3,
+            fixedTerms: true,
+            floorTerm: true,
+            nftId: 4,
+            asset: address(usdcToken),
+            amount: 6,
+            duration: 7,
+            expiration: 8
+        });
+
+        bytes32 offerHash = lendingAction.getEIP712EncodedOffer(offer);
+
+        hevm.expectEmit(true, false, false, true);
+
+        emit NewOffer(
+            address(this),
+            address(usdcToken),
+            address(0x0000000000000000000000000000000000000002),
+            4,
+            offer,
+            offerHash
+        );
+
+        lendingAction.createOffer(offer);
+    }
+
     function testGetLoanAction_returns_empty_loan_auction() public {
         LoanAuction memory loanAuction = lendingAction.getLoanAuction(
             address(0x0000000000000000000000000000000000000001),

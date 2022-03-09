@@ -4,7 +4,14 @@ pragma solidity ^0.8.11;
 import "./ILendingAuctionStructs.sol";
 
 interface ILendingAuctionEvents {
-    event NewOffer(ILendingAuctionStructs.Offer offer, bytes32 offerHash);
+    event NewOffer(
+        address indexed lender,
+        address indexed asset,
+        address indexed nftContractAddress,
+        uint256 nftId,
+        ILendingAuctionStructs.Offer offer,
+        bytes32 offerHash
+    );
 
     event OfferRemoved(ILendingAuctionStructs.Offer offer, bytes32 offerHash);
 
