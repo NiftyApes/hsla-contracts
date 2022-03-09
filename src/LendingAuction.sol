@@ -33,8 +33,8 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     // Mapping of nftId to nftContractAddress to LoanAuction struct
     mapping(address => mapping(uint256 => LoanAuction)) _loanAuctions;
 
-    mapping(address => mapping(uint256 => OfferBook)) _nftOfferBooks;
-    mapping(address => OfferBook) _floorOfferBooks;
+    mapping(address => mapping(uint256 => mapping(bytes32 => Offer))) _nftOfferBooks;
+    mapping(address => mapping(bytes32 => Offer)) _floorOfferBooks;
 
     // Cancelled / finalized orders, by signature
     mapping(bytes => bool) _cancelledOrFinalized;
@@ -168,7 +168,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         address nftContractAddress,
         uint256 nftId,
         bool floorTerm
-    ) internal view returns (OfferBook storage) {
+    ) internal view returns (mapping(bytes32 => Offer) storage) {
         return
             floorTerm
                 ? _floorOfferBooks[nftContractAddress]
@@ -188,38 +188,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         bytes32 offerHash,
         bool floorTerm
     ) external view returns (Offer memory) {
-        return getOfferBook(nftContractAddress, nftId, floorTerm).offers[offerHash];
-    }
-
-    /**
-     * @notice Retreive an offer from the on-chain floor or individual NFT offer books at a given index
-     * @param nftContractAddress The address of the NFT collection
-     * @param nftId The id of the specified NFT
-     * @param index The index at which to retrieve an offer from the OfferBook iterable mapping
-     * @param floorTerm Indicates whether this is a floor or individual NFT offer. true = floor offer. false = individual NFT offer
-     */
-    function getOfferAtIndex(
-        address nftContractAddress,
-        uint256 nftId,
-        uint256 index,
-        bool floorTerm
-    ) external view returns (Offer memory) {
-        OfferBook storage offerBook = getOfferBook(nftContractAddress, nftId, floorTerm);
-        return offerBook.offers[offerBook.keys[index]];
-    }
-
-    /**
-     * @notice Retrieve the size of the on-chain floor or individual NFT offer book
-     * @param nftContractAddress The address of the NFT collection
-     * @param nftId The id of the specified NFT
-     * @param floorTerm Indicates whether to return the floor or individual NFT offer book size. true = floor offer book. false = individual NFT offer book
-     */
-    function size(
-        address nftContractAddress,
-        uint256 nftId,
-        bool floorTerm
-    ) external view returns (uint256) {
-        return getOfferBook(nftContractAddress, nftId, floorTerm).keys.length;
+        return getOfferBook(nftContractAddress, nftId, floorTerm)[offerHash];
     }
 
     /**
@@ -250,7 +219,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             "Must have an available balance greater than or equal to amountToWithdraw"
         );
 
-        OfferBook storage offerBook = getOfferBook(
+        mapping(bytes32 => Offer) storage offerBook = getOfferBook(
             offer.nftContractAddress,
             offer.nftId,
             offer.floorTerm
@@ -258,14 +227,16 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
         bytes32 offerHash = getOfferHash(offer);
 
-        if (offerBook.inserted[offerHash]) {
-            offerBook.offers[offerHash] = offer;
-        } else {
-            offerBook.inserted[offerHash] = true;
-            offerBook.offers[offerHash] = offer;
-            offerBook.indexOf[offerHash] = offerBook.keys.length;
-            offerBook.keys.push(offerHash);
-        }
+        offerBook[offerHash] = offer;
+
+        // if (offerBook.inserted[offerHash]) {
+        //     offerBook.offers[offerHash] = offer;
+        // } else {
+        //     offerBook.inserted[offerHash] = true;
+        //     offerBook.offers[offerHash] = offer;
+        //     offerBook.indexOf[offerHash] = offerBook.keys.length;
+        //     offerBook.keys.push(offerHash);
+        // }
 
         emit NewOffer(offer, offerHash);
     }
@@ -282,27 +253,18 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         bool floorTerm
     ) external {
         // Get pointer to offer book
-        OfferBook storage offerBook = getOfferBook(nftContractAddress, nftId, floorTerm);
+        mapping(bytes32 => Offer) storage offerBook = getOfferBook(
+            nftContractAddress,
+            nftId,
+            floorTerm
+        );
 
         // Get memory pointer to offer
-        Offer memory offer = offerBook.offers[offerHash];
+        Offer memory offer = offerBook[offerHash];
 
         require(msg.sender == offer.creator, "msg.sender is not the offer creator");
 
-        require(offerBook.inserted[offerHash], "Offer not found");
-
-        delete offerBook.inserted[offerHash];
-        delete offerBook.offers[offerHash];
-
-        uint256 index = offerBook.indexOf[offerHash];
-        uint256 lastIndex = offerBook.keys.length - 1;
-        bytes32 lastOfferHash = offerBook.keys[lastIndex];
-
-        offerBook.indexOf[lastOfferHash] = index;
-        delete offerBook.indexOf[offerHash];
-
-        offerBook.keys[index] = lastOfferHash;
-        offerBook.keys.pop();
+        delete offerBook[offerHash];
 
         emit OfferRemoved(offer, offerHash);
     }
@@ -322,8 +284,12 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         bytes32 offerHash,
         bool floorTerm
     ) external payable whenNotPaused nonReentrant {
-        OfferBook storage offerBook = getOfferBook(nftContractAddress, nftId, floorTerm);
-        Offer memory offer = offerBook.offers[offerHash];
+        mapping(bytes32 => Offer) storage offerBook = getOfferBook(
+            nftContractAddress,
+            nftId,
+            floorTerm
+        );
+        Offer memory offer = offerBook[offerHash];
 
         _executeLoanInternal(offer, offer.creator, msg.sender, nftId);
     }
@@ -388,9 +354,9 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         Offer memory offer;
 
         if (floorTerm) {
-            offer = _floorOfferBooks[nftContractAddress].offers[offerHash];
+            offer = _floorOfferBooks[nftContractAddress][offerHash];
         } else {
-            offer = _nftOfferBooks[nftContractAddress][nftId].offers[offerHash];
+            offer = _nftOfferBooks[nftContractAddress][nftId][offerHash];
         }
 
         // execute state changes for executeLoanByAsk
@@ -524,9 +490,9 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         Offer memory offer;
 
         if (floorTerm) {
-            offer = _floorOfferBooks[nftContractAddress].offers[offerHash];
+            offer = _floorOfferBooks[nftContractAddress][offerHash];
         } else {
-            offer = _nftOfferBooks[nftContractAddress][nftId].offers[offerHash];
+            offer = _nftOfferBooks[nftContractAddress][nftId][offerHash];
             require(
                 nftId == offer.nftId,
                 "Function submitted nftId must match the signed offer nftId"
