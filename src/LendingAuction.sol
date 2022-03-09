@@ -973,7 +973,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
         // if asset is not 0x0 process as Erc20
         if (loanAuction.asset != ETH_ADDRESS) {
-            cTokensMinted = transferERC20(
+            cTokensMinted = mintCErc20(
                 msg.sender,
                 address(this),
                 loanAuction.asset,
@@ -986,7 +986,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                 "Must repay full amount of loan drawn plus interest and fee. Account for additional time for interest."
             );
 
-            cTokensMinted = transferEth(fullRepayment);
+            cTokensMinted = mintCEth(fullRepayment);
 
             if (fullRepayment < msg.value) {
                 Address.sendValue(payable(msg.sender), msg.value - fullRepayment);
@@ -1051,7 +1051,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         // if asset is not 0x0 process as Erc20
         if (loanAuction.asset != ETH_ADDRESS) {
             require(partialAmount < currentAmountDrawn, "Msg.value must be less than amountDrawn");
-            cTokensMinted = transferERC20(
+            cTokensMinted = mintCErc20(
                 msg.sender,
                 address(this),
                 loanAuction.asset,
@@ -1060,7 +1060,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         } else {
             require(msg.value < currentAmountDrawn, "Msg.value must be less than amountDrawn");
 
-            cTokensMinted = transferEth(msg.value);
+            cTokensMinted = mintCEth(msg.value);
         }
 
         _accountAssets[loanAuction.lender].balance[cAsset].cAssetBalance += cTokensMinted;

@@ -141,7 +141,7 @@ contract LiquidityProviders is
         // Create a reference to the corresponding cToken contract, like cDAI
         ICERC20 cToken = ICERC20(cAsset);
 
-        uint256 cTokensMinted = transferERC20(msg.sender, address(this), asset, numTokensToSupply);
+        uint256 cTokensMinted = mintCErc20(msg.sender, address(this), asset, numTokensToSupply);
 
         ensureAssetInAccount(msg.sender, asset);
 
@@ -270,7 +270,7 @@ contract LiquidityProviders is
         // Create a reference to the corresponding cToken contract
         ICEther cToken = ICEther(cEth);
 
-        uint256 cTokensMinted = transferEth(msg.value);
+        uint256 cTokensMinted = mintCEth(msg.value);
 
         ensureAssetInAccount(msg.sender, ETH_ADDRESS);
 
@@ -328,7 +328,7 @@ contract LiquidityProviders is
         return redeemAmount;
     }
 
-    function transferERC20(
+    function mintCErc20(
         address from,
         address to,
         address asset,
@@ -352,7 +352,7 @@ contract LiquidityProviders is
         return cTokenBalanceAfter - cTokenBalanceBefore;
     }
 
-    function transferEth(uint256 amount) internal returns (uint256) {
+    function mintCEth(uint256 amount) internal returns (uint256) {
         address cAsset = assetToCAsset[ETH_ADDRESS];
         ICEther cToken = ICEther(cAsset);
         uint256 cTokenBalanceBefore = cToken.balanceOf(address(this));
