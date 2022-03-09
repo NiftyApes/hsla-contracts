@@ -113,7 +113,7 @@ contract LiquidityProviders is
 
         withdrawCBalance(msg.sender, cAsset, cTokensBurnt);
 
-        require(underlying.transfer(msg.sender, amountToWithdraw), "underlying.transfer() failed");
+        require(underlying.transfer(msg.sender, amountToWithdraw), "underlying transfer");
 
         emit Erc20Withdrawn(msg.sender, asset, amountToWithdraw, cTokensBurnt);
 
@@ -126,26 +126,12 @@ contract LiquidityProviders is
         nonReentrant
         returns (uint256)
     {
-        require(_cAssetToAsset[cAsset] != address(0), "Asset not whitelisted");
-
-        address asset = _cAssetToAsset[cAsset];
-
-        // Create a reference to the corresponding cToken contract, like cDAI
+        address asset = getAsset(cAsset);
         ICERC20 cToken = ICERC20(cAsset);
 
-        // require msg.sender has sufficient available balance of cErc20
-        require(
-            getCAssetBalance(msg.sender, cAsset) >= amountToWithdraw,
-            "Must have an available balance greater than or equal to amountToWithdraw"
-        );
-        // updating the depositors cErc20 balance
-        _accountAssets[msg.sender][cAsset].cAssetBalance -= amountToWithdraw;
+        withdrawCBalance(msg.sender, cAsset, amountToWithdraw);
 
-        // transfer cErc20 tokens to depositor
-        require(
-            cToken.transfer(msg.sender, amountToWithdraw),
-            "cToken.transfer failed. Have you approved the correct amount of Tokens"
-        );
+        require(cToken.transfer(msg.sender, amountToWithdraw), "cToken transfer");
 
         emit CErc20Withdrawn(msg.sender, cAsset, amountToWithdraw);
 

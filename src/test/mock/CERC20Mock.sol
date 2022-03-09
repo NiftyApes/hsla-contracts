@@ -11,6 +11,7 @@ contract CERC20Mock is ERC20, ICERC20, Exponential {
     ERC20Mock public underlying;
 
     bool public transferFromFail;
+    bool public transferFail;
 
     bool public mintFail;
     bool public redeemUnderlyingFail;
@@ -85,5 +86,22 @@ contract CERC20Mock is ERC20, ICERC20, Exponential {
 
     function setTransferFromFail(bool fail) external {
         transferFromFail = fail;
+    }
+
+    function transfer(address to, uint256 amount)
+        public
+        virtual
+        override(ERC20, IERC20)
+        returns (bool)
+    {
+        if (transferFail) {
+            return false;
+        }
+
+        return ERC20.transfer(to, amount);
+    }
+
+    function setTransferFail(bool fail) external {
+        transferFail = fail;
     }
 }

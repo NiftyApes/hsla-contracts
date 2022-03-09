@@ -24,7 +24,7 @@ interface ILiquidityProviders {
     );
 
     // TODO(dankurka): This does not have tokenAmount in here
-    event CErc20Supplied(address indexed depositor, address indexed cAsset, uint256 amount);
+    event CErc20Supplied(address indexed depositor, address indexed cAsset, uint256 cTokenAmount);
 
     event Erc20Withdrawn(
         address indexed depositor,
@@ -33,7 +33,7 @@ interface ILiquidityProviders {
         uint256 cTokenAmount
     );
 
-    event CErc20Withdrawn(address depositor, address asset, uint256 amount);
+    event CErc20Withdrawn(address indexed depositor, address indexed cAsset, uint256 cTokenAmount);
 
     event EthSupplied(address depositor, uint256 amount);
 

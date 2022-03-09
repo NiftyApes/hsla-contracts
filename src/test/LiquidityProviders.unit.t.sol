@@ -33,6 +33,8 @@ contract LiquidityProvidersUnitTest is DSTest, TestUtility, Exponential {
         uint256 cTokenAmount
     );
 
+    event CErc20Withdrawn(address indexed depositor, address indexed cAsset, uint256 cTokenAmount);
+
     LiquidityProviders liquidityProviders;
     ERC20Mock usdcToken;
     CERC20Mock cUSDCToken;
@@ -292,5 +294,83 @@ contract LiquidityProvidersUnitTest is DSTest, TestUtility, Exponential {
         hevm.expectRevert("Insuffient ctoken balance");
 
         liquidityProviders.withdrawErc20(address(usdcToken), 2);
+    }
+
+    function testCannotWithdrawErc20_underlying_transfer_fails() public {
+        usdcToken.mint(address(this), 1);
+        usdcToken.approve(address(liquidityProviders), 1);
+        liquidityProviders.supplyErc20(address(usdcToken), 1);
+
+        usdcToken.setTransferFail(true);
+
+        hevm.expectRevert("underlying transfer");
+
+        liquidityProviders.withdrawErc20(address(usdcToken), 1);
+    }
+
+    function testCannotWithdrawCErc20_asset_not_whitelisted() public {
+        hevm.expectRevert("cAsset allow list");
+        liquidityProviders.withdrawCErc20(address(0x0000000000000000000000000000000000000001), 1);
+    }
+
+    function testWithdrawCErc20_works() public {
+        usdcToken.mint(address(this), 1);
+        usdcToken.approve(address(liquidityProviders), 1);
+        liquidityProviders.supplyErc20(address(usdcToken), 1);
+
+        liquidityProviders.withdrawCErc20(address(cUSDCToken), 1 ether);
+
+        assertEq(liquidityProviders.getCAssetBalance(address(this), address(cUSDCToken)), 0);
+
+        assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
+        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 0);
+
+        assertEq(cUSDCToken.balanceOf(address(this)), 1 ether);
+    }
+
+    function testWithdrawCErc20_works_event() public {
+        usdcToken.mint(address(this), 1);
+        usdcToken.approve(address(liquidityProviders), 1);
+        liquidityProviders.supplyErc20(address(usdcToken), 1);
+
+        hevm.expectEmit(true, false, false, true);
+
+        emit CErc20Withdrawn(address(this), address(cUSDCToken), 1 ether);
+
+        liquidityProviders.withdrawCErc20(address(cUSDCToken), 1 ether);
+    }
+
+    function testCannotWithdrawCErc20_withdraw_more_than_account_has() public {
+        usdcToken.mint(address(this), 1);
+        usdcToken.approve(address(liquidityProviders), 1);
+        liquidityProviders.supplyErc20(address(usdcToken), 1);
+
+        // deposit some funds from a different address
+        hevm.startPrank(
+            address(0x0000000000000000000000000000000000000001),
+            address(0x0000000000000000000000000000000000000001)
+        );
+
+        usdcToken.mint(address(0x0000000000000000000000000000000000000001), 1);
+        usdcToken.approve(address(liquidityProviders), 1);
+        liquidityProviders.supplyErc20(address(usdcToken), 1);
+
+        hevm.stopPrank();
+
+        hevm.expectRevert("Insuffient ctoken balance");
+
+        liquidityProviders.withdrawCErc20(address(cUSDCToken), 2 ether);
+    }
+
+    function testCannotWithdrawCErc20_transfer_fails() public {
+        usdcToken.mint(address(this), 1);
+        usdcToken.approve(address(liquidityProviders), 1);
+        liquidityProviders.supplyErc20(address(usdcToken), 1);
+
+        cUSDCToken.setTransferFail(true);
+
+        hevm.expectRevert("cToken transfer");
+
+        liquidityProviders.withdrawCErc20(address(cUSDCToken), 1 ether);
     }
 }
