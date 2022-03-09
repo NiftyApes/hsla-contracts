@@ -135,12 +135,6 @@ contract LiquidityProviders is
 
         address cAsset = assetToCAsset[asset];
 
-        // Create a reference to the underlying asset contract, like DAI.
-        IERC20 underlying = IERC20(asset);
-
-        // Create a reference to the corresponding cToken contract, like cDAI
-        ICERC20 cToken = ICERC20(cAsset);
-
         uint256 cTokensMinted = mintCErc20(msg.sender, address(this), asset, numTokensToSupply);
 
         ensureAssetInAccount(msg.sender, asset);
