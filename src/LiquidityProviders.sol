@@ -285,7 +285,7 @@ contract LiquidityProviders is
 
         // require msg.sender has sufficient available balance of cEth
         require(getCAssetBalance(msg.sender, cEth) >= cTokensBurnt, "Must have sufficient balance");
-        _accountAssets[msg.sender].balance[cEth].cAssetBalance -= redeemTokens;
+        _accountAssets[msg.sender].balance[cEth].cAssetBalance -= cTokensBurnt;
 
         maybeRemoveAssetFromAccount(msg.sender, ETH_ADDRESS);
 
@@ -293,7 +293,7 @@ contract LiquidityProviders is
 
         emit EthWithdrawn(msg.sender, amountToWithdraw);
 
-        return redeemAmount;
+        return cTokensBurnt;
     }
 
     function mintCErc20(
