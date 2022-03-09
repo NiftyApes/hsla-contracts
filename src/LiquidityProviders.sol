@@ -70,19 +70,13 @@ contract LiquidityProviders is
 
     // @notice returns number of cErc20 tokens added to balance
     function supplyErc20(address asset, uint256 numTokensToSupply) external returns (uint256) {
-        require(assetToCAsset[asset] != address(0), "Asset not whitelisted on NiftyApes");
-
-        address cAsset = assetToCAsset[asset];
+        address cAsset = getCAsset(asset);
 
         uint256 cTokensMinted = mintCErc20(msg.sender, address(this), asset, numTokensToSupply);
 
-        // This state variable is written after external calls because external calls
-        // add value or assets to this contract and this state variable could be re-entered to
-        // increase balance, then withdrawing more funds than have been supplied.
-        // updating the depositors cErc20 balance
         _accountAssets[msg.sender][cAsset].cAssetBalance += cTokensMinted;
 
-        emit Erc20Supplied(msg.sender, asset, numTokensToSupply);
+        emit Erc20Supplied(msg.sender, asset, numTokensToSupply, cTokensMinted);
 
         return cTokensMinted;
     }
@@ -265,5 +259,11 @@ contract LiquidityProviders is
         require(mathError == MathError.NO_ERROR, "Math failed");
 
         return amountCTokens;
+    }
+
+    function getCAsset(address asset) internal view returns (address) {
+        address cAsset = assetToCAsset[asset];
+        require(cAsset != address(0), "asset allow list");
+        return cAsset;
     }
 }

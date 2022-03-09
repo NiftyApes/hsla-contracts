@@ -18,6 +18,12 @@ import "./mock/ERC20Mock.sol";
 contract LiquidityProvidersUnitTest is DSTest, TestUtility, Exponential {
     // TODO(dankurka): Remove
     event NewAssetWhitelisted(address asset, address cAsset);
+    event Erc20Supplied(
+        address indexed depositor,
+        address indexed asset,
+        uint256 tokenAmount,
+        uint256 cTokenAmount
+    );
 
     LiquidityProviders liquidityProviders;
     ERC20Mock usdcToken;
@@ -40,7 +46,7 @@ contract LiquidityProvidersUnitTest is DSTest, TestUtility, Exponential {
     }
 
     function testSetCAddressMapping_can_be_set_by_owner() public {
-        hevm.expectEmit(true, false, false, false);
+        hevm.expectEmit(true, false, false, true);
 
         emit NewAssetWhitelisted(
             address(0x0000000000000000000000000000000000000001),
@@ -125,6 +131,17 @@ contract LiquidityProvidersUnitTest is DSTest, TestUtility, Exponential {
         assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 1 ether);
     }
 
+    function testSupplyErc20_supply_erc20_with_event() public {
+        usdcToken.mint(address(this), 1);
+        usdcToken.approve(address(liquidityProviders), 1);
+
+        hevm.expectEmit(true, false, false, true);
+
+        emit Erc20Supplied(address(this), address(usdcToken), 1, 1 ether);
+
+        liquidityProviders.supplyErc20(address(usdcToken), 1);
+    }
+
     function testSupplyErc20_supply_erc20_different_exchange_rate() public {
         usdcToken.mint(address(this), 1);
         usdcToken.approve(address(liquidityProviders), 1);
@@ -139,5 +156,32 @@ contract LiquidityProvidersUnitTest is DSTest, TestUtility, Exponential {
         );
 
         assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 0.5 ether);
+    }
+
+    function testFailSupplyErc20_mint_fails() public {
+        usdcToken.mint(address(this), 1);
+        usdcToken.approve(address(liquidityProviders), 1);
+
+        cUSDCToken.setMintFail(true);
+
+        liquidityProviders.supplyErc20(address(usdcToken), 1);
+    }
+
+    function testFailSupplyCErc20_asset_not_whitelisted() public {
+        liquidityProviders.supplyCErc20(address(0x0000000000000000000000000000000000000001), 1);
+    }
+
+    function testSupplyCErc20_supply_cerc20() public {
+        usdcToken.mint(address(this), 1);
+
+        cUSDCToken.mint(1);
+        cUSDCToken.approve(address(liquidityProviders), 1);
+
+        liquidityProviders.supplyCErc20(address(cUSDCToken), 1);
+
+        assertEq(liquidityProviders.getCAssetBalance(address(this), address(cUSDCToken)), 1);
+
+        assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
+        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 1);
     }
 }
