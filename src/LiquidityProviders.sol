@@ -376,7 +376,6 @@ contract LiquidityProviders is
         address cAsset = assetToCAsset[asset];
         ICERC20 cToken = ICERC20(cAsset);
 
-  
         uint256 exchangeRateMantissa = cToken.exchangeRateCurrent();
 
         (MathError mathError, uint256 amountCTokens) = divScalarByExpTruncate(

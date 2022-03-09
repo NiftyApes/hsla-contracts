@@ -740,10 +740,8 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                 "Must have an available balance greater than or equal to amountToWithdraw"
             );
 
-
             _accountAssets[loanAuction.lender].balance[cAsset].cAssetBalance += fullCTokenAmount;
             _accountAssets[prospectiveLender].balance[cAsset].cAssetBalance -= fullCTokenAmount;
-
 
             // update Loan state
             loanAuction.lender = prospectiveLender;
@@ -780,9 +778,8 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
             // If refinancing is not done by current lender they must buy out the loan and pay fees
             if (loanAuction.lender != prospectiveLender) {
-               uint256 fullCTokenAmount = assetAmountToCAssetAmount(offer.asset, fullAmount);
+                uint256 fullCTokenAmount = assetAmountToCAssetAmount(offer.asset, fullAmount);
 
-              
                 // require prospective lender has sufficient available balance to refinance loan
                 require(
                     getCAssetBalance(prospectiveLender, cAsset) >= fullCTokenAmount,
@@ -813,8 +810,11 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                 // If current lender is refinancing the loan they do not need to pay any fees or buy themselves out.
                 // require prospective lender has sufficient available balance to refinance loan
 
-               uint256 cTokenAmountDrawn = assetAmountToCAssetAmount(offer.asset, loanAuction.amountDrawn);
-               uint256 cTokenOfferAmount = assetAmountToCAssetAmount(offer.asset, offer.amount);
+                uint256 cTokenAmountDrawn = assetAmountToCAssetAmount(
+                    offer.asset,
+                    loanAuction.amountDrawn
+                );
+                uint256 cTokenOfferAmount = assetAmountToCAssetAmount(offer.asset, offer.amount);
 
                 require(
                     getCAssetBalance(prospectiveLender, cAsset) >=
@@ -883,77 +883,80 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         emit TimeDrawn(nftContractAddress, nftId, drawTime, loanAuction.timeDrawn);
     }
 
-    // /**
-    //  * @notice If a loan has been refinanced with a higher amount this function allows a borrower to draw down additional value for their loan.
-    //  * @dev Drawing down value increases the maximum loan pay back amount and so is not automatically imposed on a refinance by lender, hence this function.
-    //  * @param nftContractAddress The address of the NFT collection
-    //  * @param nftId The id of the specified NFT
-    //  * @param drawAmount The amount of value to draw and add to the loan amountDrawn
-    //  */
-    // function drawLoanAmount(
-    //     address nftContractAddress,
-    //     uint256 nftId,
-    //     uint256 drawAmount
-    // ) external whenNotPaused nonReentrant {
-    //     // Instantiate LoanAuction Struct
-    //     LoanAuction storage loanAuction = _loanAuctions[nftContractAddress][nftId];
+    /**
+     * @notice If a loan has been refinanced with a higher amount this function allows a borrower to draw down additional value for their loan.
+     * @dev Drawing down value increases the maximum loan pay back amount and so is not automatically imposed on a refinance by lender, hence this function.
+     * @param nftContractAddress The address of the NFT collection
+     * @param nftId The id of the specified NFT
+     * @param drawAmount The amount of value to draw and add to the loan amountDrawn
+     */
+    function drawLoanAmount(
+        address nftContractAddress,
+        uint256 nftId,
+        uint256 drawAmount
+    ) external whenNotPaused nonReentrant {
+        // Instantiate LoanAuction Struct
+        LoanAuction storage loanAuction = _loanAuctions[nftContractAddress][nftId];
 
-    //     address cAsset = assetToCAsset[loanAuction.asset];
+        address cAsset = assetToCAsset[loanAuction.asset];
 
-    //     // Require that loan is active
-    //     require(loanAuction.loanExecutedTime != 0, "Loan is not active. No funds to withdraw.");
+        // Require that loan is active
+        require(loanAuction.loanExecutedTime != 0, "Loan is not active. No funds to withdraw.");
 
-    //     // Require msg.sender is the borrower
-    //     require(msg.sender == loanAuction.nftOwner, "Msg.sender is not the NFT owner");
+        // Require msg.sender is the borrower
+        require(msg.sender == loanAuction.nftOwner, "Msg.sender is not the NFT owner");
 
-    //     // Require amountDrawn is less than the bestOfferAmount
-    //     require(loanAuction.amountDrawn < loanAuction.amount, "Draw down amount not available");
+        // Require amountDrawn is less than the bestOfferAmount
+        require(loanAuction.amountDrawn < loanAuction.amount, "Draw down amount not available");
 
-    //     // Require that drawAmount does not exceed amount
-    //     require(
-    //         (drawAmount + loanAuction.amountDrawn) <= loanAuction.amount,
-    //         "Total amount withdrawn must not exceed best bid loan amount"
-    //     );
+        // Require that drawAmount does not exceed amount
+        require(
+            (drawAmount + loanAuction.amountDrawn) <= loanAuction.amount,
+            "Total amount withdrawn must not exceed best bid loan amount"
+        );
 
-    //     // Require that loan has not expired
-    //     require(
-    //         block.timestamp < loanAuction.loanExecutedTime + loanAuction.timeDrawn,
-    //         "Cannot draw more value after a loan has expired"
-    //     );
+        // Require that loan has not expired
+        require(
+            block.timestamp < loanAuction.loanExecutedTime + loanAuction.timeDrawn,
+            "Cannot draw more value after a loan has expired"
+        );
 
-    //     (uint256 lenderInterest, uint256 protocolInterest) = calculateInterestAccrued(
-    //         nftContractAddress,
-    //         nftId
-    //     );
+        (uint256 lenderInterest, uint256 protocolInterest) = calculateInterestAccrued(
+            nftContractAddress,
+            nftId
+        );
 
-    //     // reset timeOfinterestStart and update historic interest due to parameters of loan changing
-    //     loanAuction.historicLenderInterest += lenderInterest;
-    //     loanAuction.historicProtocolInterest += protocolInterest;
-    //     loanAuction.timeOfInterestStart = block.timestamp;
+        // reset timeOfinterestStart and update historic interest due to parameters of loan changing
+        loanAuction.historicLenderInterest += lenderInterest;
+        loanAuction.historicProtocolInterest += protocolInterest;
+        loanAuction.timeOfInterestStart = block.timestamp;
 
-    //     // set amountDrawn
-    //     loanAuction.amountDrawn += drawAmount;
+        // set amountDrawn
+        loanAuction.amountDrawn += drawAmount;
 
-    //     _checkAndUpdateLenderUtilizedBalanceInternal(cAsset, drawAmount, loanAuction.lender);
+        uint256 cTokensBurnt = burnCErc20(loanAuction.asset, drawAmount);
 
-    //     // if asset is not 0x0 process as Erc20
-    //     if (loanAuction.asset != address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)) {
-    //         // redeem cTokens and transfer underlying to borrower
-    //         _redeemAndTransferErc20Internal(
-    //             loanAuction.asset,
-    //             cAsset,
-    //             drawAmount,
-    //             loanAuction.nftOwner
-    //         );
-    //     }
-    //     // else process as ETH
-    //     else if (loanAuction.asset == address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)) {
-    //         // redeem cTokens and transfer underlying to borrower
-    //         _redeemAndTransferEthInternal(cAsset, drawAmount, loanAuction.nftOwner);
-    //     }
+        require(
+            // calculate lenders available ICERC20 balance and require it to be greater than or equal to redeemTokens
+            getCAssetBalance(loanAuction.lender, cAsset) >= cTokensBurnt,
+            "Lender does not have a sufficient balance to serve this loan"
+        );
 
-    //     emit AmountDrawn(nftContractAddress, nftId, drawAmount, loanAuction.amountDrawn);
-    // }
+        _accountAssets[loanAuction.lender].balance[cAsset].cAssetBalance -= cTokensBurnt;
+
+        if (loanAuction.asset == ETH_ADDRESS) {
+            Address.sendValue(payable(loanAuction.nftOwner), drawAmount);
+        } else {
+            IERC20 underlying = IERC20(loanAuction.asset);
+            // transfer underlying from this contract to borrower
+            require(
+                underlying.transfer(loanAuction.nftOwner, drawAmount),
+                "underlying.transfer() failed"
+            );
+        }
+
+        emit AmountDrawn(nftContractAddress, nftId, drawAmount, loanAuction.amountDrawn);
+    }
 
     // ---------- Repayment and Asset Seizure Functions ---------- //
 
@@ -962,10 +965,11 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
      * @param nftContractAddress The address of the NFT collection
      * @param nftId The id of the specified NFT
      */
-    function repayRemainingLoan(
-        address nftContractAddress,
-        uint256 nftId
-    ) external payable override {
+    function repayRemainingLoan(address nftContractAddress, uint256 nftId)
+        external
+        payable
+        override
+    {
         // Instantiate LoanAuction Struct
         LoanAuction storage loanAuction = _loanAuctions[nftContractAddress][nftId];
 
@@ -996,15 +1000,18 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             interestOwedToProtocol +
             loanAuction.amountDrawn;
 
-    
-
         uint256 currentAmountDrawn = loanAuction.amountDrawn;
 
         uint256 cTokensMinted;
 
         // if asset is not 0x0 process as Erc20
         if (loanAuction.asset != ETH_ADDRESS) {
-            cTokensMinted = transferERC20(msg.sender, address(this), loanAuction.asset, fullRepayment);
+            cTokensMinted = transferERC20(
+                msg.sender,
+                address(this),
+                loanAuction.asset,
+                fullRepayment
+            );
         } else {
             // check that transaction covers the full value of the loan
             require(
@@ -1073,8 +1080,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         loanAuction.amountDrawn -= partialAmount;
 
         uint256 cTokensMinted;
-
-       
 
         // if asset is not 0x0 process as Erc20
         if (loanAuction.asset != ETH_ADDRESS) {
