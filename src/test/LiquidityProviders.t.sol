@@ -117,10 +117,6 @@ contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
         assert(cAssetBalance > 0 ether);
     }
 
-    function testGetAssetsIn() public {
-        address[] memory assetsIn = liquidityProviders.getAssetsIn(address(this));
-    }
-
     // TODO(Add assertions around expected event emissions)
     // TODO(Create failing tests/assertions for each function)
 

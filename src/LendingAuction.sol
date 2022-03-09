@@ -501,7 +501,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             "Lender does not have a sufficient balance to serve this loan"
         );
 
-        _accountAssets[lender].balance[cAsset].cAssetBalance -= cTokensBurned;
+        _accountAssets[lender][cAsset].cAssetBalance -= cTokensBurned;
 
         emit LoanExecuted(lender, borrower, offer.nftContractAddress, offer.nftId, offer);
     }
@@ -707,8 +707,8 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                 "Must have an available balance greater than or equal to amountToWithdraw"
             );
 
-            _accountAssets[loanAuction.lender].balance[cAsset].cAssetBalance += fullCTokenAmount;
-            _accountAssets[prospectiveLender].balance[cAsset].cAssetBalance -= fullCTokenAmount;
+            _accountAssets[loanAuction.lender][cAsset].cAssetBalance += fullCTokenAmount;
+            _accountAssets[prospectiveLender][cAsset].cAssetBalance -= fullCTokenAmount;
 
             // update Loan state
             loanAuction.lender = prospectiveLender;
@@ -759,9 +759,9 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                 loanAuction.lender = prospectiveLender;
 
                 // TODO(dankurka): numbers are not matching
-                _accountAssets[currentlender].balance[cAsset].cAssetBalance += fullCTokenAmount;
-                _accountAssets[prospectiveLender].balance[cAsset].cAssetBalance -= fullCTokenAmount;
-                _accountAssets[owner()].balance[cAsset].cAssetBalance += protocolPremium;
+                _accountAssets[currentlender][cAsset].cAssetBalance += fullCTokenAmount;
+                _accountAssets[prospectiveLender][cAsset].cAssetBalance -= fullCTokenAmount;
+                _accountAssets[owner()][cAsset].cAssetBalance += protocolPremium;
 
                 // processes cEth and ICERC20 transactions
                 // TODO
@@ -909,7 +909,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             "Lender does not have a sufficient balance to serve this loan"
         );
 
-        _accountAssets[loanAuction.lender].balance[cAsset].cAssetBalance -= cTokensBurnt;
+        _accountAssets[loanAuction.lender][cAsset].cAssetBalance -= cTokensBurnt;
 
         if (loanAuction.asset == ETH_ADDRESS) {
             Address.sendValue(payable(loanAuction.nftOwner), drawAmount);
@@ -992,8 +992,8 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             (loanAuction.amountDrawn + interestOwedToLender)) / fullRepayment;
         uint256 cTokensToProtocol = (cTokensMinted * interestOwedToProtocol) / fullRepayment;
 
-        _accountAssets[loanAuction.lender].balance[cAsset].cAssetBalance += cTokensToLender;
-        _accountAssets[owner()].balance[cAsset].cAssetBalance += cTokensToProtocol;
+        _accountAssets[loanAuction.lender][cAsset].cAssetBalance += cTokensToLender;
+        _accountAssets[owner()][cAsset].cAssetBalance += cTokensToProtocol;
 
         // reset loanAuction
         delete _loanAuctions[nftContractAddress][nftId];
@@ -1053,7 +1053,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             cTokensMinted = mintCEth(msg.value);
         }
 
-        _accountAssets[loanAuction.lender].balance[cAsset].cAssetBalance += cTokensMinted;
+        _accountAssets[loanAuction.lender][cAsset].cAssetBalance += cTokensMinted;
 
         emit PartialRepayment(nftContractAddress, nftId, loanAuction.asset, partialAmount);
     }
@@ -1104,7 +1104,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         loanAuction.fixedTerms = false;
 
         // update lenders total balance
-        _accountAssets[loanAuction.lender].balance[cAsset].cAssetBalance -= loanAuction.amountDrawn;
+        _accountAssets[loanAuction.lender][cAsset].cAssetBalance -= loanAuction.amountDrawn;
 
         // transferFrom NFT from contract to lender
         IERC721(nftContractAddress).transferFrom(address(this), currentlender, nftId);

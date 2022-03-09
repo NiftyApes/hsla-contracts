@@ -37,7 +37,7 @@ contract LiquidityProviders is
     // Reverse mapping of assetAddress to cAssetAddress
     mapping(address => address) internal _cAssetToAsset;
 
-    mapping(address => AccountAssets) internal _accountAssets;
+    mapping(address => mapping(address => Balance)) internal _accountAssets;
 
     address constant ETH_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
 
@@ -54,16 +54,12 @@ contract LiquidityProviders is
 
     // @notice Sets an asset as allowed on the platform and creates asset => cAsset mapping
     function setCAssetAddress(address asset, address cAsset) external onlyOwner {
+        require(assetToCAsset[asset] == address(0), "asset already set");
+        require(_cAssetToAsset[cAsset] == address(0), "casset already set");
         assetToCAsset[asset] = cAsset;
         _cAssetToAsset[cAsset] = asset;
 
         emit NewAssetWhitelisted(asset, cAsset);
-    }
-
-    // @notice returns the assets a depositor has deposited on NiftyApes.
-    // @dev combined with cAssetBalances and/or utilizedCAssetBalances to calculate depositors total balance and total available balance.
-    function getAssetsIn(address depositor) external view returns (address[] memory assetsIn) {
-        assetsIn = _accountAssets[depositor].keys;
     }
 
     function getCAssetBalance(address account, address cAsset)
@@ -71,60 +67,7 @@ contract LiquidityProviders is
         view
         returns (uint256 cAssetBalance)
     {
-        return _accountAssets[account].balance[cAsset].cAssetBalance;
-    }
-
-    function getCAssetBalancesAtIndex(address account, uint256 index)
-        external
-        view
-        returns (uint256)
-    {
-        address asset = _accountAssets[account].keys[index];
-        address cAsset = assetToCAsset[asset];
-
-        return _accountAssets[account].balance[cAsset].cAssetBalance;
-    }
-
-    function accountAssetsSize(address account)
-        external
-        view
-        returns (uint256 numberOfAccountAssets)
-    {
-        numberOfAccountAssets = _accountAssets[account].keys.length;
-    }
-
-    function addAssetToAccount(address account, address asset) internal {
-        _accountAssets[account].inserted[asset] = true;
-        _accountAssets[account].indexOf[asset] = _accountAssets[account].keys.length;
-        _accountAssets[account].keys.push(asset);
-    }
-
-    function ensureAssetInAccount(address account, address asset) internal {
-        if (_accountAssets[account].inserted[asset]) {
-            return;
-        }
-
-        addAssetToAccount(account, asset);
-    }
-
-    function removeAssetFromAccount(address account, address asset) internal {
-        delete _accountAssets[account].inserted[asset];
-
-        uint256 index = _accountAssets[account].indexOf[asset];
-        uint256 lastIndex = _accountAssets[account].keys.length - 1;
-        address lastAsset = _accountAssets[account].keys[lastIndex];
-
-        _accountAssets[account].indexOf[lastAsset] = index;
-        delete _accountAssets[account].indexOf[asset];
-
-        _accountAssets[account].keys[index] = lastAsset;
-        _accountAssets[account].keys.pop();
-    }
-
-    function maybeRemoveAssetFromAccount(address account, address asset) internal {
-        if (_accountAssets[account].balance[asset].cAssetBalance == 0) {
-            removeAssetFromAccount(account, asset);
-        }
+        return _accountAssets[account][cAsset].cAssetBalance;
     }
 
     // implement 10M limit for MVP
@@ -137,13 +80,11 @@ contract LiquidityProviders is
 
         uint256 cTokensMinted = mintCErc20(msg.sender, address(this), asset, numTokensToSupply);
 
-        ensureAssetInAccount(msg.sender, asset);
-
         // This state variable is written after external calls because external calls
         // add value or assets to this contract and this state variable could be re-entered to
         // increase balance, then withdrawing more funds than have been supplied.
         // updating the depositors cErc20 balance
-        _accountAssets[msg.sender].balance[cAsset].cAssetBalance += cTokensMinted;
+        _accountAssets[msg.sender][cAsset].cAssetBalance += cTokensMinted;
 
         emit Erc20Supplied(msg.sender, asset, numTokensToSupply);
 
@@ -161,8 +102,6 @@ contract LiquidityProviders is
         // Create a reference to the corresponding cToken contract, like cDAI
         ICERC20 cToken = ICERC20(cAsset);
 
-        ensureAssetInAccount(msg.sender, asset);
-
         // transferFrom ERC20 from depositors address
         require(
             cToken.transferFrom(msg.sender, address(this), numTokensToSupply),
@@ -173,7 +112,7 @@ contract LiquidityProviders is
         // add value or assets to this contract and this state variable could be re-entered to
         // increase balance, then withdrawing more funds than have been supplied.
         // updating the depositors cErc20 balance
-        _accountAssets[msg.sender].balance[cAsset].cAssetBalance += numTokensToSupply;
+        _accountAssets[msg.sender][cAsset].cAssetBalance += numTokensToSupply;
 
         emit CErc20Supplied(msg.sender, cAsset, numTokensToSupply);
 
@@ -201,9 +140,7 @@ contract LiquidityProviders is
             "Must have sufficient balance"
         );
 
-        _accountAssets[msg.sender].balance[cAsset].cAssetBalance -= cTokensBurnt;
-
-        maybeRemoveAssetFromAccount(msg.sender, cAsset);
+        _accountAssets[msg.sender][cAsset].cAssetBalance -= cTokensBurnt;
 
         require(underlying.transfer(msg.sender, amountToWithdraw), "underlying.transfer() failed");
 
@@ -231,9 +168,7 @@ contract LiquidityProviders is
             "Must have an available balance greater than or equal to amountToWithdraw"
         );
         // updating the depositors cErc20 balance
-        _accountAssets[msg.sender].balance[cAsset].cAssetBalance -= amountToWithdraw;
-
-        maybeRemoveAssetFromAccount(msg.sender, asset);
+        _accountAssets[msg.sender][cAsset].cAssetBalance -= amountToWithdraw;
 
         // transfer cErc20 tokens to depositor
         require(
@@ -249,11 +184,7 @@ contract LiquidityProviders is
     function supplyEth() external payable returns (uint256) {
         uint256 cTokensMinted = mintCEth(msg.value);
 
-        ensureAssetInAccount(msg.sender, ETH_ADDRESS);
-
-        _accountAssets[msg.sender]
-            .balance[assetToCAsset[ETH_ADDRESS]]
-            .cAssetBalance += cTokensMinted;
+        _accountAssets[msg.sender][assetToCAsset[ETH_ADDRESS]].cAssetBalance += cTokensMinted;
 
         emit EthSupplied(msg.sender, msg.value);
 
@@ -271,9 +202,7 @@ contract LiquidityProviders is
 
         // require msg.sender has sufficient available balance of cEth
         require(getCAssetBalance(msg.sender, cEth) >= cTokensBurnt, "Must have sufficient balance");
-        _accountAssets[msg.sender].balance[cEth].cAssetBalance -= cTokensBurnt;
-
-        maybeRemoveAssetFromAccount(msg.sender, ETH_ADDRESS);
+        _accountAssets[msg.sender][cEth].cAssetBalance -= cTokensBurnt;
 
         Address.sendValue(payable(msg.sender), amountToWithdraw);
 

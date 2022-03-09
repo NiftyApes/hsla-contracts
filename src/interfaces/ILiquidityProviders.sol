@@ -12,13 +12,6 @@ interface ILiquidityProviders {
         uint256 cAssetBalance;
     }
 
-    struct AccountAssets {
-        address[] keys;
-        mapping(address => Balance) balance;
-        mapping(address => uint256) indexOf;
-        mapping(address => bool) inserted;
-    }
-
     // Events
 
     event NewAssetWhitelisted(address asset, address cAsset);
@@ -41,19 +34,7 @@ interface ILiquidityProviders {
 
     function setCAssetAddress(address asset, address cAsset) external;
 
-    function getAssetsIn(address depositor) external view returns (address[] memory assetsIn);
-
     function getCAssetBalance(address account, address cAsset) external view returns (uint256);
-
-    function getCAssetBalancesAtIndex(address account, uint256 index)
-        external
-        view
-        returns (uint256);
-
-    function accountAssetsSize(address account)
-        external
-        view
-        returns (uint256 numberOfAccountAssets);
 
     function supplyErc20(address asset, uint256 numTokensToSupply) external returns (uint256);
 
