@@ -908,25 +908,16 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         whenNotPaused
         nonReentrant
     {
-        // instantiate LoanAuction Struct
         LoanAuction storage loanAuction = _loanAuctions[nftContractAddress][nftId];
-
         address cAsset = getCAsset(loanAuction.asset);
-
         requireOpenLoan(loanAuction);
 
-        // require that loan has expired
-        require(
-            block.timestamp >= loanAuction.loanExecutedTime + loanAuction.timeDrawn,
-            "Cannot seize asset before the end of the loan"
-        );
+        requireLoanExpired(loanAuction);
 
-        // temporarily save current lender
         address currentlender = loanAuction.lender;
 
         delete _loanAuctions[nftContractAddress][nftId];
 
-        // transferFrom NFT from contract to lender
         IERC721(nftContractAddress).transferFrom(address(this), currentlender, nftId);
 
         emit AssetSeized(nftContractAddress, nftId);
@@ -995,6 +986,13 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
     function requireOpenLoan(LoanAuction storage loanAuction) internal view {
         require(loanAuction.loanExecutedTime != 0, "loan not active");
+    }
+
+    function requireLoanExpired(LoanAuction storage loanAuction) internal view {
+        require(
+            block.timestamp >= loanAuction.loanExecutedTime + loanAuction.timeDrawn,
+            "loan not expired"
+        );
     }
 
     function requireOfferNotExpired(Offer memory offer) internal view {
