@@ -923,7 +923,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
         // temporarily save current lender
         address currentlender = loanAuction.lender;
-        address asset = loanAuction.asset;
 
         delete _loanAuctions[nftContractAddress][nftId];
 
