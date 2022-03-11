@@ -94,13 +94,13 @@ interface ILendingAuction is ILiquidityProviders, ILendingAuctionEvents, ILendin
     //     uint256 drawAmount
     // ) external;
 
-    function repayRemainingLoan(address nftContractAddress, uint256 nftId) external payable;
+    function repayLoan(address nftContractAddress, uint256 nftId) external payable;
 
-    // function partialPayment(
-    //     address nftContractAddress,
-    //     uint256 nftId,
-    //     uint256 partialAmount
-    // ) external payable;
+    function partialRepayLoan(
+        address nftContractAddress,
+        uint256 nftId,
+        uint256 amount
+    ) external payable;
 
     function seizeAsset(address nftContractAddress, uint256 nftId) external;
 
@@ -108,17 +108,6 @@ interface ILendingAuction is ILiquidityProviders, ILendingAuctionEvents, ILendin
         external
         view
         returns (uint256, uint256);
-
-    function calculateFullRepayment(address nftContractAddress, uint256 nftId)
-        external
-        view
-        returns (uint256);
-
-    // TODO(Test)
-    function calculateFullRefinanceByLender(address nftContractAddress, uint256 nftId)
-        external
-        view
-        returns (uint256);
 
     function updateLoanDrawProtocolFee(uint64 newLoanDrawProtocolFeeBps) external;
 

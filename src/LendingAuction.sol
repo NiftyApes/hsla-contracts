@@ -809,7 +809,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
      * @dev This function does not charge any interest or fees. It does change the calculation for future interest and fees accrual, so we track historicLenderInterest and historicProtocolInterest
      * @param nftContractAddress The address of the NFT collection
      * @param nftId The id of the specified NFT
-     * @param partialAmount The amount of value to pay down on the principle of the loan
+     * @param amount The amount of value to pay down on the principle of the loan
      */
     function partialRepayLoan(
         address nftContractAddress,
@@ -855,7 +855,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             ? interestOwedToLender + interestOwedToProtocol + loanAuction.amountDrawn
             : paymentAmount;
 
-        uint256 currentAmountDrawn = loanAuction.amountDrawn;
         uint256 cTokensMinted;
 
         // if asset is not 0x0 process as Erc20
@@ -876,12 +875,14 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             }
         }
 
-        uint256 cTokensToLender = (cTokensMinted *
-            (loanAuction.amountDrawn + interestOwedToLender)) / fullRepayment;
-        uint256 cTokensToProtocol = (cTokensMinted * interestOwedToProtocol) / fullRepayment;
+        {
+            uint256 cTokensToLender = (cTokensMinted *
+                (loanAuction.amountDrawn + interestOwedToLender)) / payment;
+            uint256 cTokensToProtocol = (cTokensMinted * interestOwedToProtocol) / payment;
 
-        _accountAssets[loanAuction.lender][cAsset].cAssetBalance += cTokensToLender;
-        _accountAssets[owner()][cAsset].cAssetBalance += cTokensToProtocol;
+            _accountAssets[loanAuction.lender][cAsset].cAssetBalance += cTokensToLender;
+            _accountAssets[owner()][cAsset].cAssetBalance += cTokensToProtocol;
+        }
 
         if (repayFull) {
             // reset loanAuction
@@ -892,7 +893,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
             emit LoanRepaid(nftContractAddress, nftId);
         } else {
-            emit PartialRepayment(nftContractAddress, nftId, loanAuction.asset, partialAmount);
+            emit PartialRepayment(nftContractAddress, nftId, loanAuction.asset, paymentAmount);
         }
     }
 
@@ -922,21 +923,9 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
         // temporarily save current lender
         address currentlender = loanAuction.lender;
-        address asset = loanAction.asset;
+        address asset = loanAuction.asset;
 
-        // reset loanAuction
-        loanAuction.nftOwner = address(0);
-        loanAuction.lender = address(0);
-        loanAuction.asset = address(0);
-        loanAuction.amount = 0;
-        loanAuction.interestRateBps = 0;
-        loanAuction.duration = 0;
-        loanAuction.timeOfInterestStart = 0;
-        loanAuction.loanExecutedTime = 0;
-        loanAuction.historicLenderInterest = 0;
-        loanAuction.amountDrawn = 0;
-        loanAuction.timeDrawn = 0;
-        loanAuction.fixedTerms = false;
+        delete _loanAuctions[nftContractAddress][nftId];
 
         // update lenders total balance
         _accountAssets[loanAuction.lender][cAsset].cAssetBalance -= assetAmountToCAssetAmount(
