@@ -510,6 +510,73 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         emit LoanExecuted(lender, borrower, offer.nftContractAddress, offer.nftId, offer);
     }
 
+    /**
+     * @notice Handles checks, state transitions, and value/asset transfers for executeLoanbyLender
+     * @param offer The details of a loan auction offer
+     * @param lender The prospective lender
+     * @param borrower The prospective borrower and owner of the NFT
+     */
+    function executeLoanWithPurchaseFinancing(
+        Offer memory offer,
+        address lender,
+        address borrower
+    ) external {
+        // instantiate LoanAuction Struct
+        LoanAuction storage loanAuction = _loanAuctions[offer.nftContractAddress][offer.nftId];
+
+        address cAsset = assetToCAsset[offer.asset];
+
+        // *------------ Checks ------------* //
+
+        // require loan is not active
+        require(
+            loanAuction.loanExecutedTime == 0,
+            "Loan is already active. Please use refinanceByLender()"
+        );
+
+        require(assetToCAsset[offer.asset] != address(0), "Asset not whitelisted on NiftyApes");
+
+        // require offer has not expired
+        require(offer.expiration > block.timestamp, "Cannot execute bid, offer has expired");
+
+        // TODO update other 1 day values to 1 day in contract
+        // This prevents a malicous actor from providing a 1 second loan offer and duping a naive borrower into losing their asset.
+        // It ensures a borrower always has at least 24 hours to repay their loan
+        require(offer.duration >= 1 days, "Offers must have 24 hours minimum duration");
+
+        // *------------ State Transitions ------------* //
+
+        // update LoanAuction struct
+        loanAuction.nftOwner = borrower;
+        loanAuction.lender = lender;
+        loanAuction.asset = offer.asset;
+        loanAuction.amount = offer.amount;
+        loanAuction.interestRateBps = offer.interestRateBps;
+        loanAuction.duration = offer.duration;
+        loanAuction.timeOfInterestStart = block.timestamp;
+        loanAuction.loanExecutedTime = block.timestamp;
+        loanAuction.timeDrawn = offer.duration;
+        loanAuction.amountDrawn = offer.amount;
+        loanAuction.fixedTerms = offer.fixedTerms;
+
+        // check if lender has sufficient available balance and update utilizedBalance
+        _checkAndUpdateLenderUtilizedBalanceInternal(cAsset, offer.amount, lender);
+
+        // *------- Value and asset transfers -------* //
+
+        // Process as ETH
+        if (offer.asset == address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)) {
+            // redeem cTokens and transfer underlying to borrower
+            _redeemAndTransferEthInternal(cAsset, offer.amount, msg.sender); // msg.sender will be PurchaseWithFinancing contract
+        }
+        // Process as ERC20
+        else {
+            _redeemAndTransferErc20Internal(offer.asset, cAsset, offer.amount, msg.sender);
+        }
+
+        emit LoanExecuted(lender, borrower, offer.nftContractAddress, offer.nftId, offer);
+    }
+
     // ---------- Refinance Loan Functions ---------- //
 
     /**

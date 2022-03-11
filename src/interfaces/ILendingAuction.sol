@@ -141,6 +141,8 @@ interface ILendingAuction is ILiquidityProviders {
 
     function getOfferSignatureStatus(bytes calldata signature) external view returns (bool status);
 
+    function getOfferHash(Offer memory offer) external pure returns (bytes32 offerHash);
+
     function withdrawOfferSignature(
         address nftContractAddress,
         uint256 nftId,
@@ -200,6 +202,12 @@ interface ILendingAuction is ILiquidityProviders {
     function executeLoanByLenderSignature(Offer calldata offer, bytes calldata signature)
         external
         payable;
+
+    function executeLoanWithPurchaseFinancing(
+        Offer memory offer,
+        address lender,
+        address borrower
+    ) external;
 
     function refinanceByBorrower(
         address nftContractAddress,
