@@ -219,7 +219,7 @@ contract LiquidityProvidersUnitTest is DSTest, TestUtility, Exponential, ILiquid
 
         cUSDCToken.setTransferFromFail(true);
 
-        hevm.expectRevert("cToken transferFrom failed");
+        hevm.expectRevert("SafeERC20: ERC20 operation did not succeed");
 
         liquidityProviders.supplyCErc20(address(cUSDCToken), 1);
     }
@@ -298,7 +298,7 @@ contract LiquidityProvidersUnitTest is DSTest, TestUtility, Exponential, ILiquid
 
         usdcToken.setTransferFail(true);
 
-        hevm.expectRevert("underlying transfer");
+        hevm.expectRevert("SafeERC20: ERC20 operation did not succeed");
 
         liquidityProviders.withdrawErc20(address(usdcToken), 1);
     }
@@ -364,7 +364,7 @@ contract LiquidityProvidersUnitTest is DSTest, TestUtility, Exponential, ILiquid
 
         cUSDCToken.setTransferFail(true);
 
-        hevm.expectRevert("cToken transfer");
+        hevm.expectRevert("SafeERC20: ERC20 operation did not succeed");
 
         liquidityProviders.withdrawCErc20(address(cUSDCToken), 1 ether);
     }

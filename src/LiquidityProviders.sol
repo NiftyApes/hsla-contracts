@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "./interfaces/compound/ICERC20.sol";
 import "./interfaces/compound/ICEther.sol";
@@ -29,6 +30,7 @@ contract LiquidityProviders is
     ReentrancyGuard,
     TokenErrorReporter
 {
+    using SafeERC20 for IERC20;
     // ---------- STATE VARIABLES --------------- //
 
     // Mapping of assetAddress to cAssetAddress
@@ -85,12 +87,9 @@ contract LiquidityProviders is
         nonReentrant
     {
         getAsset(cAsset); // Ensures asset / cAsset is in the allow list
-        ICERC20 cToken = ICERC20(cAsset);
+        IERC20 cToken = IERC20(cAsset);
 
-        require(
-            cToken.transferFrom(msg.sender, address(this), cTokenAmount),
-            "cToken transferFrom failed"
-        );
+        cToken.safeTransferFrom(msg.sender, address(this), cTokenAmount);
 
         _accountAssets[msg.sender][cAsset].cAssetBalance += cTokenAmount;
 
@@ -110,7 +109,7 @@ contract LiquidityProviders is
 
         withdrawCBalance(msg.sender, cAsset, cTokensBurnt);
 
-        require(underlying.transfer(msg.sender, amountToWithdraw), "underlying transfer");
+        underlying.safeTransfer(msg.sender, amountToWithdraw);
 
         emit Erc20Withdrawn(msg.sender, asset, amountToWithdraw, cTokensBurnt);
 
@@ -123,11 +122,11 @@ contract LiquidityProviders is
         nonReentrant
     {
         address asset = getAsset(cAsset);
-        ICERC20 cToken = ICERC20(cAsset);
+        IERC20 cToken = IERC20(cAsset);
 
         withdrawCBalance(msg.sender, cAsset, amountToWithdraw);
 
-        require(cToken.transfer(msg.sender, amountToWithdraw), "cToken transfer");
+        cToken.safeTransfer(msg.sender, amountToWithdraw);
 
         emit CErc20Withdrawn(msg.sender, cAsset, amountToWithdraw);
     }
@@ -172,12 +171,8 @@ contract LiquidityProviders is
         IERC20 underlying = IERC20(asset);
         ICERC20 cToken = ICERC20(cAsset);
 
-        require(
-            underlying.transferFrom(from, to, amount) == true,
-            "underlying.transferFrom() failed"
-        );
-
-        require(underlying.approve(cAsset, amount) == true, "underlying.approve() failed");
+        underlying.safeTransferFrom(from, to, amount);
+        underlying.safeIncreaseAllowance(cAsset, amount);
 
         uint256 cTokenBalanceBefore = cToken.balanceOf(address(this));
         require(cToken.mint(amount) == 0, "cToken mint");
