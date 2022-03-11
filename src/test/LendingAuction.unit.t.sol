@@ -672,6 +672,23 @@ contract LendingAuctionUnitTest is
         assertEq(lendingAction.ownerOf(address(mockNft), 1), address(this));
 
         assertEq(lendingAction.getCAssetBalance(address(this), address(cUSDCToken)), 0);
+
+        LoanAuction memory loanAuction = lendingAction.getLoanAuction(address(mockNft), 1);
+
+        assertEq(loanAuction.nftOwner, address(this));
+        assertEq(loanAuction.lender, LENDER_1);
+        assertEq(loanAuction.asset, address(usdcToken));
+        assertEq(loanAuction.interestRateBps, 3);
+        assertTrue(loanAuction.fixedTerms);
+
+        assertEq(loanAuction.amount, 6);
+        assertEq(loanAuction.duration, 1 days);
+        assertEq(loanAuction.loanExecutedTime, block.timestamp);
+        assertEq(loanAuction.timeOfInterestStart, block.timestamp);
+        assertEq(loanAuction.historicLenderInterest, 0);
+        assertEq(loanAuction.historicProtocolInterest, 0);
+        assertEq(loanAuction.amountDrawn, 6);
+        assertEq(loanAuction.timeDrawn, 1 days);
     }
 
     function testExecuteLoanByBorrower_works_in_eth() public {

@@ -317,13 +317,9 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         uint256 nftId,
         bytes32 offerHash
     ) public payable whenNotPaused nonReentrant {
-        Offer memory offer;
-
-        if (floorTerm) {
-            offer = _floorOfferBooks[nftContractAddress][offerHash];
-        } else {
-            offer = _nftOfferBooks[nftContractAddress][nftId][offerHash];
-        }
+        Offer memory offer = floorTerm
+            ? _floorOfferBooks[nftContractAddress][offerHash]
+            : _nftOfferBooks[nftContractAddress][nftId][offerHash];
 
         // execute state changes for executeLoanByAsk
         _executeLoanInternal(offer, msg.sender, offer.creator, nftId);
