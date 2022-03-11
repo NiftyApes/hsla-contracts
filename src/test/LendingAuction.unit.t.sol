@@ -776,25 +776,7 @@ contract LendingAuctionUnitTest is
         );
     }
 
-    function testGetLoanAction_returns_empty_loan_auction() public {
-        LoanAuction memory loanAuction = lendingAction.getLoanAuction(
-            address(0x0000000000000000000000000000000000000001),
-            2
-        );
-
-        assertEq(loanAuction.nftOwner, ZERO_ADDRESS);
-        assertEq(loanAuction.lender, ZERO_ADDRESS);
-        assertEq(loanAuction.asset, ZERO_ADDRESS);
-        assertEq(loanAuction.interestRateBps, 0);
-        assertTrue(!loanAuction.fixedTerms);
-
-        assertEq(loanAuction.amount, 0);
-        assertEq(loanAuction.duration, 0);
-        assertEq(loanAuction.loanExecutedTime, 0);
-        assertEq(loanAuction.timeOfInterestStart, 0);
-        assertEq(loanAuction.historicLenderInterest, 0);
-        assertEq(loanAuction.historicProtocolInterest, 0);
-        assertEq(loanAuction.amountDrawn, 0);
-        assertEq(loanAuction.timeDrawn, 0);
-    }
+    // TODO(dankurka): Tests missing for executeLoanByBorrowerSignature
+    // TODO(dankurka): Tests missing for executeLoanByLender
+    // TODO(dankurka): Tests missing for executeLoanByLenderSignature
 }

@@ -408,7 +408,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
         // *------- Value and asset transfers -------* //
 
-        // TODO(dankurka): Safe transfer here?
         IERC721(offer.nftContractAddress).transferFrom(borrower, address(this), offer.nftId);
 
         uint256 cTokensBurned = burnCErc20(offer.asset, offer.amount);
