@@ -5,6 +5,7 @@ import "./LiquidityProviders.sol";
 import "./interfaces/compound/ICEther.sol";
 import "./interfaces/ILendingAuction.sol";
 import "./interfaces/compound/ICERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
@@ -27,6 +28,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
 
 contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     using ECDSA for bytes32;
+    using SafeERC20 for IERC20;
 
     // ---------- STATE VARIABLES --------------- //
 
@@ -371,6 +373,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         address borrower,
         uint256 nftId
     ) internal {
+        require(offer.asset != address(0), "no offer");
         address cAsset = getCAsset(offer.asset);
 
         LoanAuction storage loanAuction = _loanAuctions[offer.nftContractAddress][offer.nftId];
@@ -409,27 +412,18 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
         // *------- Value and asset transfers -------* //
 
-        // transferFrom NFT from borrower to contract
+        // TODO(dankurka): Safe transfer here?
         IERC721(offer.nftContractAddress).transferFrom(borrower, address(this), offer.nftId);
 
         uint256 cTokensBurned = burnCErc20(offer.asset, offer.amount);
 
-        // Process as ETH
+        withdrawCBalance(lender, cAsset, cTokensBurned);
+
         if (offer.asset == ETH_ADDRESS) {
             Address.sendValue(payable(borrower), offer.amount);
         } else {
-            IERC20 underlying = IERC20(offer.asset);
-            // transfer underlying from this contract to borrower
-            require(underlying.transfer(borrower, offer.amount), "underlying.transfer() failed");
+            IERC20(offer.asset).safeTransfer(borrower, offer.amount);
         }
-
-        require(
-            // calculate lenders available ICERC20 balance and require it to be greater than or equal to redeemTokens
-            getCAssetBalance(lender, cAsset) >= cTokensBurned,
-            "Lender does not have a sufficient balance to serve this loan"
-        );
-
-        _accountAssets[lender][cAsset].cAssetBalance -= cTokensBurned;
 
         emit LoanExecuted(lender, borrower, offer.nftContractAddress, offer.nftId, offer);
     }
