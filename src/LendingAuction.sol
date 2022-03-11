@@ -369,49 +369,22 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         address borrower,
         uint256 nftId
     ) internal {
-        require(offer.asset != address(0), "no offer");
+        requireOfferPresent(offer);
+
         address cAsset = getCAsset(offer.asset);
 
         LoanAuction storage loanAuction = _loanAuctions[offer.nftContractAddress][offer.nftId];
 
-        // *------------ Checks ------------* //
+        requireNoLoanOpen(loanAuction);
+        requireOfferNotExpired(offer);
+        requireMinDurationForOffer(offer);
+        requireNftOwner(offer.nftContractAddress, nftId, borrower);
 
-        require(loanAuction.loanExecutedTime == 0, "Loan already open");
-
-        // require offer has not expired
-        require(offer.expiration > block.timestamp, "offer expired");
-
-        // TODO update other 1 day values to 1 day in contract
-        // This prevents a malicous actor from providing a 1 second loan offer and duping a naive borrower into losing their asset.
-        // It ensures a borrower always has at least 24 hours to repay their loan
-        require(offer.duration >= 1 days, "offer duration");
-
-        // get nft owner
-        address nftOwner = IERC721(offer.nftContractAddress).ownerOf(nftId);
-
-        require(borrower == nftOwner, "nft owner");
-
-        // *------------ State Transitions ------------* //
-
-        // update LoanAuction struct
-        loanAuction.nftOwner = borrower;
-        loanAuction.lender = lender;
-        loanAuction.asset = offer.asset;
-        loanAuction.amount = offer.amount;
-        loanAuction.interestRateBps = offer.interestRateBps;
-        loanAuction.duration = offer.duration;
-        loanAuction.timeOfInterestStart = block.timestamp;
-        loanAuction.loanExecutedTime = block.timestamp;
-        loanAuction.timeDrawn = offer.duration;
-        loanAuction.amountDrawn = offer.amount;
-        loanAuction.fixedTerms = offer.fixedTerms;
-
-        // *------- Value and asset transfers -------* //
+        createLoan(loanAuction, offer, lender, borrower);
 
         IERC721(offer.nftContractAddress).transferFrom(borrower, address(this), offer.nftId);
 
         uint256 cTokensBurned = burnCErc20(offer.asset, offer.amount);
-
         withdrawCBalance(lender, cAsset, cTokensBurned);
 
         if (offer.asset == ETH_ADDRESS) {
@@ -1126,5 +1099,48 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
     function updateRefinancePremiumProtocolFee(uint64 newPremiumProtocolBps) external onlyOwner {
         refinancePremiumProtocolBps = newPremiumProtocolBps;
+    }
+
+    function requireOfferPresent(Offer memory offer) internal pure {
+        require(offer.asset != address(0), "no offer");
+    }
+
+    function requireNoLoanOpen(LoanAuction storage loanAuction) internal view {
+        require(loanAuction.loanExecutedTime == 0, "Loan already open");
+    }
+
+    function requireOfferNotExpired(Offer memory offer) internal view {
+        require(offer.expiration > block.timestamp, "offer expired");
+    }
+
+    function requireMinDurationForOffer(Offer memory offer) internal view {
+        require(offer.duration >= 1 days, "offer duration");
+    }
+
+    function requireNftOwner(
+        address nftContractAddress,
+        uint256 nftId,
+        address owner
+    ) internal view {
+        require(IERC721(nftContractAddress).ownerOf(nftId) == owner, "nft owner");
+    }
+
+    function createLoan(
+        LoanAuction storage loanAuction,
+        Offer memory offer,
+        address lender,
+        address borrower
+    ) internal {
+        loanAuction.nftOwner = borrower;
+        loanAuction.lender = lender;
+        loanAuction.asset = offer.asset;
+        loanAuction.amount = offer.amount;
+        loanAuction.interestRateBps = offer.interestRateBps;
+        loanAuction.duration = offer.duration;
+        loanAuction.timeOfInterestStart = block.timestamp;
+        loanAuction.loanExecutedTime = block.timestamp;
+        loanAuction.timeDrawn = offer.duration;
+        loanAuction.amountDrawn = offer.amount;
+        loanAuction.fixedTerms = offer.fixedTerms;
     }
 }
