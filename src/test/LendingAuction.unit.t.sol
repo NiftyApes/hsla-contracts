@@ -590,6 +590,42 @@ contract LendingAuctionUnitTest is
         );
     }
 
+    function testCannotExecuteLoanByBorrower_eth_payment_fails() public {
+        hevm.startPrank(LENDER_1);
+
+        lendingAction.supplyEth{ value: 6 }();
+
+        Offer memory offer = Offer({
+            creator: LENDER_1,
+            nftContractAddress: address(mockNft),
+            interestRateBps: 3,
+            fixedTerms: true,
+            floorTerm: true,
+            nftId: 1,
+            asset: ETH_ADDRESS,
+            amount: 6,
+            duration: 1 days,
+            expiration: block.timestamp + 1
+        });
+
+        lendingAction.createOffer(offer);
+
+        hevm.stopPrank();
+
+        bytes32 offerHash = lendingAction.getEIP712EncodedOffer(offer);
+
+        acceptEth = false;
+
+        hevm.expectRevert("Address: unable to send value, recipient may have reverted");
+
+        lendingAction.executeLoanByBorrower(
+            offer.nftContractAddress,
+            offer.nftId,
+            offerHash,
+            offer.floorTerm
+        );
+    }
+
     function testExecuteLoanByBorrower_works() public {
         hevm.startPrank(LENDER_1);
         usdcToken.mint(address(LENDER_1), 6);
