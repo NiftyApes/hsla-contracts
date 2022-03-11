@@ -927,12 +927,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
         delete _loanAuctions[nftContractAddress][nftId];
 
-        // update lenders total balance
-        _accountAssets[loanAuction.lender][cAsset].cAssetBalance -= assetAmountToCAssetAmount(
-            asset,
-            loanAuction.amountDrawn
-        );
-
         // transferFrom NFT from contract to lender
         IERC721(nftContractAddress).transferFrom(address(this), currentlender, nftId);
 
