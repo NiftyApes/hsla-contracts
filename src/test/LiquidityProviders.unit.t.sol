@@ -369,8 +369,6 @@ contract LiquidityProvidersUnitTest is DSTest, TestUtility, Exponential, ILiquid
         liquidityProviders.withdrawCErc20(address(cUSDCToken), 1 ether);
     }
 
-    // TODO(dankurka): Missing tests for supplyEth
-
     function testCannotSupplyEth_asset_not_whitelisted() public {
         hevm.expectRevert("asset allow list");
         liquidityProviders.supplyEth{ value: 1 }();
