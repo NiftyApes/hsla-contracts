@@ -13,7 +13,13 @@ interface ILendingAuctionEvents {
         bytes32 offerHash
     );
 
-    event OfferRemoved(ILendingAuctionStructs.Offer offer, bytes32 offerHash);
+    event OfferRemoved(
+        address indexed lender,
+        address indexed asset,
+        address indexed nftContractAddress,
+        ILendingAuctionStructs.Offer offer,
+        bytes32 offerHash
+    );
 
     event LoanExecuted(
         address lender,
@@ -21,6 +27,7 @@ interface ILendingAuctionEvents {
         address indexed nftContractAddress,
         uint256 indexed nftId,
         ILendingAuctionStructs.Offer offer
+        // TODO(dankurka): Inconsistent missing offer hash
     );
 
     event Refinance(

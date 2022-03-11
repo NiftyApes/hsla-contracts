@@ -196,7 +196,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         offerBook[offerHash] = offer;
 
         emit NewOffer(
-            msg.sender,
+            offer.creator,
             offer.asset,
             offer.nftContractAddress,
             offer.nftId,
@@ -223,13 +223,14 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             floorTerm
         );
 
-        Offer storage offer = offerBook[offerHash];
+        // Create a copy here so that we can log out the event below
+        Offer memory offer = offerBook[offerHash];
 
-        require(msg.sender == offer.creator, "msg.sender is not the offer creator");
+        require(msg.sender == offer.creator, "wrong offer creator");
 
         delete offerBook[offerHash];
 
-        emit OfferRemoved(offer, offerHash);
+        emit OfferRemoved(offer.creator, offer.asset, offer.nftContractAddress, offer, offerHash);
     }
 
     // ---------- Execute Loan Functions ---------- //
@@ -370,28 +371,26 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         address borrower,
         uint256 nftId
     ) internal {
-        require(assetToCAsset[offer.asset] != address(0), "Asset not whitelisted on NiftyApes");
+        address cAsset = getCAsset(offer.asset);
 
         LoanAuction storage loanAuction = _loanAuctions[offer.nftContractAddress][offer.nftId];
-
-        address cAsset = assetToCAsset[offer.asset];
 
         // *------------ Checks ------------* //
 
         require(loanAuction.loanExecutedTime == 0, "Loan already open");
 
         // require offer has not expired
-        require(offer.expiration > block.timestamp, "Cannot execute bid, offer has expired");
+        require(offer.expiration > block.timestamp, "offer expired");
 
         // TODO update other 1 day values to 1 day in contract
         // This prevents a malicous actor from providing a 1 second loan offer and duping a naive borrower into losing their asset.
         // It ensures a borrower always has at least 24 hours to repay their loan
-        require(offer.duration >= 1 days, "Offers must have 24 hours minimum duration");
+        require(offer.duration >= 1 days, "offer duration");
 
         // get nft owner
         address nftOwner = IERC721(offer.nftContractAddress).ownerOf(nftId);
 
-        require(borrower == nftOwner, "Borrower must be the owner of nftId to executeLoanByLender");
+        require(borrower == nftOwner, "nft owner");
 
         // *------------ State Transitions ------------* //
 
