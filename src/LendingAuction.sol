@@ -371,7 +371,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             requireMatchingNftId(offer, nftId);
         }
 
-        requireNftOwner(_loanAuctions[nftContractAddress][nftId], msg.sender);
+        requireNftOwner(_loanAuctions[offer.nftContractAddress][offer.nftId], msg.sender);
 
         markSignatureUsed(signature);
 
@@ -382,51 +382,27 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
     /// @inheritdoc ILendingAuction
     function refinanceByLender(Offer calldata offer) external payable whenNotPaused nonReentrant {
-        uint256 timeDrawn = _loanAuctions[offer.nftContractAddress][offer.nftId].timeDrawn;
-        uint256 loanExecutedTime = _loanAuctions[offer.nftContractAddress][offer.nftId]
-            .loanExecutedTime;
-        uint256 amount = _loanAuctions[offer.nftContractAddress][offer.nftId].amount;
-        uint256 interestRateBps = _loanAuctions[offer.nftContractAddress][offer.nftId]
-            .interestRateBps;
-        uint256 duration = _loanAuctions[offer.nftContractAddress][offer.nftId].duration;
+        LoanAuction storage loanAuction = _loanAuctions[offer.nftContractAddress][offer.nftId];
 
-        // Require that loan has not expired. This prevents another lender from refinancing
-        require(
-            block.timestamp < loanExecutedTime + timeDrawn,
-            "Cannot refinance loan that has expired"
-        );
+        requireOpenLoan(loanAuction);
 
-        // require that terms are parity + 1
-        require(
-            // Require bidAmount is greater than previous bid
-            (offer.amount > amount &&
-                offer.interestRateBps <= interestRateBps &&
-                offer.duration >= duration) ||
-                // OR
-                // Require interestRate is lower than previous bid
-                (offer.amount >= amount &&
-                    offer.interestRateBps < interestRateBps &&
-                    offer.duration >= duration) ||
-                // OR
-                // Require duration to be greater than previous bid
-                (offer.amount >= amount &&
-                    offer.interestRateBps <= interestRateBps &&
-                    offer.duration > duration),
-            "Bid must have better terms than current loan"
-        );
+        requireLoanNotExpired(loanAuction);
 
+        requireOfferParity(loanAuction, offer);
+
+        // TODO(dankurka): Fix this
         // if duration is the only term updated
-        if (
-            offer.amount >= amount &&
-            offer.interestRateBps >= interestRateBps &&
-            offer.duration > duration
-        ) {
-            // require offer has at least 24 hour additional duration
-            require(
-                offer.duration >= (duration + 1 days),
-                "Cannot refinanceBestOffer. Offer duration must be at least 24 hours greater than current loan. "
-            );
-        }
+        // if (
+        //     offer.amount >= amount &&
+        //     offer.interestRateBps >= interestRateBps &&
+        //     offer.duration > duration
+        // ) {
+        //     // require offer has at least 24 hour additional duration
+        //     require(
+        //         offer.duration >= (duration + 1 days),
+        //         "Cannot refinanceBestOffer. Offer duration must be at least 24 hours greater than current loan. "
+        //     );
+        // }
 
         _refinanceByLender(offer, offer.creator, offer.nftId);
     }
@@ -835,7 +811,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         refinancePremiumProtocolBps = newPremiumProtocolBps;
     }
 
-    function markSignatureUsed(bytes signature) internal {
+    function markSignatureUsed(bytes memory signature) internal {
         _cancelledOrFinalized[signature] = true;
     }
 
@@ -905,12 +881,32 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         require(nftId == offer.nftId, "offer nftId mismatch");
     }
 
-    function requireMsgValue(uint256 amount) internal pure {
+    function requireMsgValue(uint256 amount) internal view {
         require(amount == msg.value, "msg value");
     }
 
     function requireOfferCreator(Offer memory offer, address creator) internal pure {
         require(creator == offer.creator, "offer creator mismatch");
+    }
+
+    function requireOfferParity(LoanAuction storage loanAuction, Offer memory offer) internal view {
+        require(
+            // Require bidAmount is greater than previous bid
+            (offer.amount > loanAuction.amount &&
+                offer.interestRateBps <= loanAuction.interestRateBps &&
+                offer.duration >= loanAuction.duration) ||
+                // OR
+                // Require interestRate is lower than previous bid
+                (offer.amount >= loanAuction.amount &&
+                    offer.interestRateBps < loanAuction.interestRateBps &&
+                    offer.duration >= loanAuction.duration) ||
+                // OR
+                // Require duration to be greater than previous bid
+                (offer.amount >= loanAuction.amount &&
+                    offer.interestRateBps <= loanAuction.interestRateBps &&
+                    offer.duration > loanAuction.duration),
+            "Bid must have better terms than current loan"
+        );
     }
 
     function createLoan(
