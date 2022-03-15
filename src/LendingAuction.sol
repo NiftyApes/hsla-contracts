@@ -649,12 +649,10 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
                 // update LoanAuction lender
                 loanAuction.lender = prospectiveLender;
 
-                // TODO(dankurka): numbers are not matching
                 _accountAssets[currentlender][cAsset].cAssetBalance +=
                     fullCTokenAmount -
                     protocolPremimuimInCtokens;
                 _accountAssets[prospectiveLender][cAsset].cAssetBalance -= fullCTokenAmount;
-                // TODO(dankurka): This is still sus since it we are also adding to the historic part?!
                 _accountAssets[owner()][cAsset].cAssetBalance += protocolPremimuimInCtokens;
             }
         }
@@ -783,11 +781,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             Address.sendValue(payable(loanAuction.nftOwner), drawAmount);
         } else {
             IERC20 underlying = IERC20(loanAuction.asset);
-            // transfer underlying from this contract to borrower
-            require(
-                underlying.transfer(loanAuction.nftOwner, drawAmount),
-                "underlying.transfer() failed"
-            );
+            underlying.safeTransfer(loanAuction.nftOwner, drawAmount);
         }
 
         emit AmountDrawn(nftContractAddress, nftId, drawAmount, loanAuction.amountDrawn);
