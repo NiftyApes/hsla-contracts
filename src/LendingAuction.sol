@@ -34,6 +34,8 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     ///         Fees on the protocol are denomimated in parts of 10_000.
     uint16 constant MAX_FEE = 1000;
 
+    uint16 constant MAX_BPS = 10000;
+
     /// @dev A mapping for a NFT to a loan auction.
     ///      The mapping has to be broken into two parts since an NFT is denomiated by its address (first part)
     ///      and its nftId (second part) in our code base.
@@ -286,8 +288,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         requireAvailableSignature(signature);
 
         address borrower = getOfferSigner(getEIP712EncodedOffer(offer), signature);
-
-        // TODO(dankurka): This check was missing
         requireOfferCreator(offer, borrower);
 
         markSignatureUsed(signature);
@@ -349,7 +349,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             ? _floorOfferBooks[nftContractAddress][offerHash]
             : _nftOfferBooks[nftContractAddress][nftId][offerHash];
 
-        if (!floorTerm) {
+        if (!offer.floorTerm) {
             requireMatchingNftId(offer, nftId);
         }
 
@@ -390,19 +390,19 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
         requireOfferParity(loanAuction, offer);
 
-        // TODO(dankurka): Fix this
+        // TODO(dankurka): Look at duration
         // if duration is the only term updated
-        // if (
-        //     offer.amount >= amount &&
-        //     offer.interestRateBps >= interestRateBps &&
-        //     offer.duration > duration
-        // ) {
-        //     // require offer has at least 24 hour additional duration
-        //     require(
-        //         offer.duration >= (duration + 1 days),
-        //         "Cannot refinanceBestOffer. Offer duration must be at least 24 hours greater than current loan. "
-        //     );
-        // }
+        if (
+            offer.amount >= loanAuction.amount &&
+            offer.interestRateBps >= loanAuction.interestRateBps &&
+            offer.duration > loanAuction.duration
+        ) {
+            // require offer has at least 24 hour additional duration
+            require(
+                offer.duration >= (loanAuction.duration + 1 days),
+                "Cannot refinanceBestOffer. Offer duration must be at least 24 hours greater than current loan. "
+            );
+        }
 
         _refinanceByLender(offer, offer.creator, offer.nftId);
     }
@@ -412,11 +412,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         address prospectiveLender,
         uint256 nftId
     ) internal {
-        (LoanAuction storage loanAuction, address cAsset) = _refinanceCheckState(
-            offer,
-            prospectiveLender,
-            nftId
-        );
+        (LoanAuction storage loanAuction, address cAsset) = _refinanceCheckState(offer);
 
         (uint256 currentLenderInterest, uint256 currentProtocolInterest) = calculateInterestAccrued(
             offer.nftContractAddress,
@@ -455,11 +451,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         address prospectiveLender,
         uint256 nftId
     ) internal {
-        (LoanAuction storage loanAuction, address cAsset) = _refinanceCheckState(
-            offer,
-            prospectiveLender,
-            nftId
-        );
+        (LoanAuction storage loanAuction, address cAsset) = _refinanceCheckState(offer);
 
         // calculate the interest earned by current lender
         (uint256 currentLenderInterest, uint256 currentProtocolInterest) = calculateInterestAccrued(
@@ -470,9 +462,9 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         // calculate interest earned
         uint256 interestAndPremiumOwedToCurrentLender = currentLenderInterest +
             loanAuction.historicLenderInterest +
-            ((loanAuction.amountDrawn * refinancePremiumLenderBps) / 10000);
+            ((loanAuction.amountDrawn * refinancePremiumLenderBps) / MAX_BPS);
 
-        uint256 protocolPremium = (loanAuction.amountDrawn * refinancePremiumProtocolBps) / 10000;
+        uint256 protocolPremium = (loanAuction.amountDrawn * refinancePremiumProtocolBps) / MAX_BPS;
 
         // calculate fullRefinanceAmount
         uint256 fullAmount = interestAndPremiumOwedToCurrentLender +
@@ -534,21 +526,16 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         emit Refinance(prospectiveLender, offer.nftContractAddress, offer.nftId, offer);
     }
 
-    function _refinanceCheckState(
-        Offer memory offer,
-        address prospectiveLender,
-        uint256 nftId
-    ) internal returns (LoanAuction storage loanAuction, address) {
-        // Get information about present loan from storage
-        // Can't accessing members directly in this function without triggering a 'stack too deep' error
+    function _refinanceCheckState(Offer memory offer)
+        internal
+        returns (LoanAuction storage loanAuction, address)
+    {
         LoanAuction storage loanAuction = _loanAuctions[offer.nftContractAddress][offer.nftId];
 
-        // Require that loan does not have fixedTerms
-        require(!loanAuction.fixedTerms, "fixed term loan");
-
+        requireNoFixedTerm(loanAuction);
         requireOpenLoan(loanAuction);
         requireOfferNotExpired(offer);
-        requireMinDurationForOffer(offer);
+        requireMinDurationForOffer(loanAuction, offer);
 
         requireMatchingAsset(offer.asset, loanAuction.asset);
 
@@ -747,6 +734,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         address cAsset = getCAsset(loanAuction.asset);
         requireOpenLoan(loanAuction);
 
+        // TODO(dankurka): Does not take into account that there might be more time available due to a refianance
         requireLoanExpired(loanAuction);
 
         address currentLender = loanAuction.lender;
@@ -787,9 +775,9 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
             uint256 fractionOfDrawn = maxDrawn / timeOutstanding;
 
-            lenderInterest = (interestRateBps * fractionOfDrawn) / 10000;
+            lenderInterest = (interestRateBps * fractionOfDrawn) / MAX_BPS;
 
-            protocolInterest = (loanDrawFeeProtocolBps * fractionOfDrawn) / 10000;
+            protocolInterest = (loanDrawFeeProtocolBps * fractionOfDrawn) / MAX_BPS;
         }
     }
 
@@ -847,6 +835,17 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
     function requireMinDurationForOffer(Offer memory offer) internal view {
         require(offer.duration >= 1 days, "offer duration");
+    }
+
+    function requireMinDurationForOffer(LoanAuction storage loanAuction, Offer memory offer)
+        internal
+        view
+    {
+        require(offer.duration >= loanAuction.duration + 1 days, "offer duration");
+    }
+
+    function requireNoFixedTerm(LoanAuction storage loanAuction) internal view {
+        require(!loanAuction.fixedTerms, "fixed term loan");
     }
 
     function requireNftOwner(

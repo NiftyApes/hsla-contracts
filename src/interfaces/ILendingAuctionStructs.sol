@@ -4,18 +4,20 @@ pragma solidity ^0.8.11;
 interface ILendingAuctionStructs {
     //timestamps are uint32, will expire in 2048
     struct LoanAuction {
-        // NFT owner
+        // The original owner of the nft.
+        // If there is an active loan on an nft, nifty apes contracts become the holder (original owner)
+        // of the underlying nft. This field tracks who to return the nft to if the loan gets repaid.
         address nftOwner;
-        // Current lender
+        // The current lender of a loan
         address lender;
-        // loan asset
+        // TODO(dankurka): replace this field with an enum rather than storing addresses over and over
+        // The asset in which the loan has been denominated
         address asset; // 0x0 in active loan denotes ETH
-        // loan interest rate in basis points for the loan duration
-        uint64 interestRateBps;
-        // boolean of whether fixedTerms has been accepted by a borrower
-        // if fixedTerms == true could mint an NFT that represents that loan to enable packaging and reselling.
+        // The interest rate on the loan in base points (parts of 10_000)
+        uint16 interestRateBps;
+        // Whether or not the loan can be refinanced
         bool fixedTerms;
-        // loan amount
+        // The maximum amount of tokens that can be drawn from this loan
         uint256 amount;
         // loan duration of loan in number of seconds
         uint256 duration;
@@ -39,7 +41,7 @@ interface ILendingAuctionStructs {
         // offer NFT contract address
         address nftContractAddress;
         // offer interest rate in basis points for the loan duration
-        uint64 interestRateBps;
+        uint16 interestRateBps;
         // is loan offer fixed terms or open for perpetual auction
         bool fixedTerms;
         // is offer for single NFT or for every NFT in a collection
@@ -52,7 +54,7 @@ interface ILendingAuctionStructs {
         uint256 amount;
         // offer loan duration
         uint256 duration;
-        // offer expiration
+        // The expiration timestamp of the offer in a unix timestamp in seconds
         uint256 expiration;
     }
 }
