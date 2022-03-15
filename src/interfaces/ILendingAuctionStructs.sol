@@ -21,8 +21,6 @@ interface ILendingAuctionStructs {
         uint256 amount;
         // loan duration of loan in number of seconds
         uint256 duration;
-        // timestamp of loan execution
-        uint256 loanExecutedTime;
         // timestamp of start of interest acummulation. Is reset when a new lender takes over the loan or the borrower makes a partial repayment.
         uint256 timeOfInterestStart;
         // cumulative interest of varying rates paid by new lenders to buy out the loan auction

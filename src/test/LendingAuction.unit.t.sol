@@ -683,7 +683,6 @@ contract LendingAuctionUnitTest is
 
         assertEq(loanAuction.amount, 6);
         assertEq(loanAuction.duration, 1 days);
-        assertEq(loanAuction.loanExecutedTime, block.timestamp);
         assertEq(loanAuction.timeOfInterestStart, block.timestamp);
         assertEq(loanAuction.historicLenderInterest, 0);
         assertEq(loanAuction.historicProtocolInterest, 0);
@@ -1254,7 +1253,6 @@ contract LendingAuctionUnitTest is
 
         assertEq(loanAuction.amount, 6);
         assertEq(loanAuction.duration, 3 days);
-        assertEq(loanAuction.loanExecutedTime, block.timestamp);
         assertEq(loanAuction.timeOfInterestStart, block.timestamp);
         assertEq(loanAuction.historicLenderInterest, 0);
         assertEq(loanAuction.historicProtocolInterest, 0);
@@ -1409,7 +1407,6 @@ contract LendingAuctionUnitTest is
 
         assertEq(loanAuction.amount, 0);
         assertEq(loanAuction.duration, 0);
-        assertEq(loanAuction.loanExecutedTime, 0);
         assertEq(loanAuction.timeOfInterestStart, 0);
         assertEq(loanAuction.historicLenderInterest, 0);
         assertEq(loanAuction.historicProtocolInterest, 0);

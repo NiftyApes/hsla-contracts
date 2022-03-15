@@ -759,23 +759,21 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         view
         returns (uint256 lenderInterest, uint256 protocolInterest)
     {
-        uint256 timeDrawn = _loanAuctions[nftContractAddress][nftId].timeDrawn;
-        uint256 amountDrawn = _loanAuctions[nftContractAddress][nftId].amountDrawn;
-        uint256 loanExecutedTime = _loanAuctions[nftContractAddress][nftId].loanExecutedTime;
-        uint256 timeOfInterestStart = _loanAuctions[nftContractAddress][nftId].timeOfInterestStart;
-        uint64 interestRateBps = _loanAuctions[nftContractAddress][nftId].interestRateBps;
+        LoanAuction storage loanAuction = _loanAuctions[nftContractAddress][nftId];
 
-        if (block.timestamp <= timeOfInterestStart || loanExecutedTime == 0) {
+        uint256 timeOfInterestStart = loanAuction.timeOfInterestStart;
+
+        if (block.timestamp <= timeOfInterestStart) {
             protocolInterest = 0;
             lenderInterest = 0;
         } else {
             uint256 timeOutstanding = block.timestamp - timeOfInterestStart;
 
-            uint256 maxDrawn = amountDrawn * timeDrawn;
+            uint256 maxDrawn = loanAuction.amountDrawn * loanAuction.timeDrawn;
 
             uint256 fractionOfDrawn = maxDrawn / timeOutstanding;
 
-            lenderInterest = (interestRateBps * fractionOfDrawn) / MAX_BPS;
+            lenderInterest = (loanAuction.interestRateBps * fractionOfDrawn) / MAX_BPS;
 
             protocolInterest = (loanDrawFeeProtocolBps * fractionOfDrawn) / MAX_BPS;
         }
@@ -808,23 +806,23 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     }
 
     function requireNoOpenLoan(LoanAuction storage loanAuction) internal view {
-        require(loanAuction.loanExecutedTime == 0, "Loan already open");
+        require(loanAuction.timeOfInterestStart == 0, "Loan already open");
     }
 
     function requireOpenLoan(LoanAuction storage loanAuction) internal view {
-        require(loanAuction.loanExecutedTime != 0, "loan not active");
+        require(loanAuction.timeOfInterestStart != 0, "loan not active");
     }
 
     function requireLoanExpired(LoanAuction storage loanAuction) internal view {
         require(
-            block.timestamp >= loanAuction.loanExecutedTime + loanAuction.timeDrawn,
+            block.timestamp >= loanAuction.timeOfInterestStart + loanAuction.timeDrawn,
             "loan not expired"
         );
     }
 
     function requireLoanNotExpired(LoanAuction storage loanAuction) internal view {
         require(
-            block.timestamp < loanAuction.loanExecutedTime + loanAuction.timeDrawn,
+            block.timestamp < loanAuction.timeOfInterestStart + loanAuction.timeDrawn,
             "loan expired"
         );
     }
@@ -921,7 +919,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         loanAuction.interestRateBps = offer.interestRateBps;
         loanAuction.duration = offer.duration;
         loanAuction.timeOfInterestStart = block.timestamp;
-        loanAuction.loanExecutedTime = block.timestamp;
         loanAuction.timeDrawn = offer.duration;
         loanAuction.amountDrawn = offer.amount;
         loanAuction.fixedTerms = offer.fixedTerms;
