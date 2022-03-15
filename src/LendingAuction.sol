@@ -246,15 +246,8 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     ) external payable whenNotPaused nonReentrant {
         requireAvailableSignature(signature);
 
-        // ideally calculated, stored, and provided as parameter to save computation
-        // generate hash of offer parameters
-        bytes32 encodedOffer = getEIP712EncodedOffer(offer);
-
-        // recover singer and confirm signed offer terms with function submitted offer terms
-        // we know the signer must be the lender because msg.sender must be the nftOwner/borrower
-        address lender = getOfferSigner(encodedOffer, signature);
-
-        require(lender == offer.creator, "Offer.creator must be offer signer to executeLoanByBid");
+        address lender = getOfferSigner(getEIP712EncodedOffer(offer), signature);
+        requireOfferCreator(offer, lender);
 
         if (!offer.floorTerm) {
             requireMatchingNftId(offer, nftId);
@@ -292,15 +285,13 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     {
         requireAvailableSignature(signature);
 
-        bytes32 encodedOffer = getEIP712EncodedOffer(offer);
+        address borrower = getOfferSigner(getEIP712EncodedOffer(offer), signature);
 
-        // recover singer and confirm signed offer terms with function submitted offer terms
-        // We assume the signer is the borrower and check in the following require statement
-        address borrower = getOfferSigner(encodedOffer, signature);
+        // TODO(dankurka): This check was missing
+        requireOfferCreator(offer, borrower);
 
         markSignatureUsed(signature);
 
-        // execute state changes for executeLoanByAsk
         _executeLoanInternal(offer, msg.sender, borrower, offer.nftId);
 
         emit SigOfferFinalized(offer.nftContractAddress, offer.nftId, signature);
@@ -374,7 +365,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     ) external payable whenNotPaused nonReentrant {
         address prospectiveLender = getOfferSigner(getEIP712EncodedOffer(offer), signature);
 
-        require(offer.creator == prospectiveLender, "Signer must be the offer.creator");
+        requireOfferCreator(offer, prospectiveLender);
 
         if (!offer.floorTerm) {
             requireMatchingNftId(offer, nftId);
@@ -916,6 +907,10 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
     function requireMsgValue(uint256 amount) internal pure {
         require(amount == msg.value, "msg value");
+    }
+
+    function requireOfferCreator(Offer memory offer, address creator) internal pure {
+        require(creator == offer.creator, "offer creator mismatch");
     }
 
     function createLoan(
