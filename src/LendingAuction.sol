@@ -120,6 +120,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
     /// @inheritdoc ILendingAuction
     function withdrawOfferSignature(
+        // TODO(dankurka): These params have not been validated (but we output them in the event)
         address nftContractAddress,
         uint256 nftId,
         bytes32 eip712EncodedOffer,
@@ -127,7 +128,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     ) external {
         requireAvailableSignature(signature);
 
-        // recover signer
         address signer = getOfferSigner(eip712EncodedOffer, signature);
 
         // Require that msg.sender is signer of the signature
@@ -256,13 +256,8 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
         require(lender == offer.creator, "Offer.creator must be offer signer to executeLoanByBid");
 
-        // // if floorTerm is false
         if (!offer.floorTerm) {
-            // require nftId == sigNftId
-            require(
-                nftId == offer.nftId,
-                "Function submitted nftId must match the signed offer nftId"
-            );
+            requireMatchingNftId(offer, nftId);
         }
 
         markSignatureUsed(signature);
@@ -714,13 +709,13 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         address cAsset = getCAsset(loanAuction.asset);
 
         if (!repayFull && loanAuction.asset == ETH_ADDRESS) {
-            require(paymentAmount == msg.value, "wrong data");
+            requireMsgValue(paymentAmount);
         }
 
         requireOpenLoan(loanAuction);
 
-        // TODO(dankurka): Maybe we should allow others to repay your loan
-        require(msg.sender == loanAuction.nftOwner, "Msg.sender is not the NFT owner");
+        // TODO(dankurka): Discuss Maybe we should allow others to repay your loan
+        // require(msg.sender == loanAuction.nftOwner, "Msg.sender is not the NFT owner");
 
         // calculate the amount of interest accrued by the lender
         (uint256 lenderInterest, uint256 protocolInterest) = calculateInterestAccrued(
@@ -917,6 +912,10 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
     function requireMatchingNftId(Offer memory offer, uint256 nftId) internal pure {
         require(nftId == offer.nftId, "offer nftId mismatch");
+    }
+
+    function requireMsgValue(uint256 amount) internal pure {
+        require(amount == msg.value, "msg value");
     }
 
     function createLoan(
