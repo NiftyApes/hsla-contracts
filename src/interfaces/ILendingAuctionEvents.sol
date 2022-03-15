@@ -22,7 +22,7 @@ interface ILendingAuctionEvents {
     );
 
     event LoanExecuted(
-        address lender,
+        address indexed lender,
         address nftOwner,
         address indexed nftContractAddress,
         uint256 indexed nftId,
@@ -74,5 +74,10 @@ interface ILendingAuctionEvents {
         uint256 amount
     );
 
-    event AssetSeized(address indexed nftContractAddress, uint256 indexed nftId);
+    event AssetSeized(
+        address indexed lender,
+        address borrower,
+        address indexed nftContractAddress,
+        uint256 indexed nftId
+    );
 }

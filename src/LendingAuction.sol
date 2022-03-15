@@ -914,13 +914,14 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
         requireLoanExpired(loanAuction);
 
-        address currentlender = loanAuction.lender;
+        address currentLender = loanAuction.lender;
+        address currentBorrower = loanAuction.nftOwner;
 
         delete _loanAuctions[nftContractAddress][nftId];
 
-        IERC721(nftContractAddress).transferFrom(address(this), currentlender, nftId);
+        IERC721(nftContractAddress).transferFrom(address(this), currentLender, nftId);
 
-        emit AssetSeized(nftContractAddress, nftId);
+        emit AssetSeized(currentLender, currentBorrower, nftContractAddress, nftId);
     }
 
     // ---------- Helper Functions ---------- //
