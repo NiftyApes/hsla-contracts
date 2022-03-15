@@ -30,26 +30,36 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     using ECDSA for bytes32;
     using SafeERC20 for IERC20;
 
-    // ---------- STATE VARIABLES --------------- //
-
-    // Mapping of nftId to nftContractAddress to LoanAuction struct
-    mapping(address => mapping(uint256 => LoanAuction)) _loanAuctions;
-
-    mapping(address => mapping(uint256 => mapping(bytes32 => Offer))) _nftOfferBooks;
-    mapping(address => mapping(bytes32 => Offer)) _floorOfferBooks;
-
-    // Cancelled / finalized orders, by signature
-    mapping(bytes => bool) _cancelledOrFinalized;
-
+    /// @notice The maximum value that any fee on the protocol can be set to.
+    ///         Fees on the protocol are denomimated in parts of 10_000.
     uint16 constant MAX_FEE = 1000;
 
-    // fee in basis points paid to protocol by borrower for drawing down loan
+    /// @dev A mapping for a NFT to a loan auction.
+    ///      The mapping has to be broken into two parts since an NFT is denomiated by its address (first part)
+    ///      and its nftId (second part) in our code base.
+    mapping(address => mapping(uint256 => LoanAuction)) _loanAuctions;
+
+    /// @dev A mapping for a NFT to an Offer
+    ///      The mapping has to be broken into three parts since an NFT is denomiated by its address (first part)
+    ///      and its nftId (second part), offers are reffered to by their hash (see #getEIP712EncodedOffer for details) (third part).
+    mapping(address => mapping(uint256 => mapping(bytes32 => Offer))) _nftOfferBooks;
+
+    /// @dev A mapping for a NFT to a floor offer
+    ///      Floor offers are different from offers on a specific NFT since they are valid on any NFT fro the same address.
+    ///      Thus this mapping skips the nftId, see _nftOfferBooks above.
+    mapping(address => mapping(bytes32 => Offer)) _floorOfferBooks;
+
+    /// @dev A mapping to mark a signature as used.
+    ///      The mapping allows users to withdraw offers that they made by signature.
+    mapping(bytes => bool) _cancelledOrFinalized;
+
+    /// @inheritdoc ILendingAuction
     uint16 public loanDrawFeeProtocolBps = 50;
 
-    // premium in basis points paid to current lender by new lender for buying out the loan
+    /// @inheritdoc ILendingAuction
     uint16 public refinancePremiumLenderBps = 50;
 
-    // premium in basis points paid to protocol by new lender for buying out the loan
+    /// @inheritdoc ILendingAuction
     uint16 public refinancePremiumProtocolBps = 50;
 
     // ---------- FUNCTIONS -------------- //
