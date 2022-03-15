@@ -1138,4 +1138,59 @@ contract LendingAuctionUnitTest is
 
         lendingAction.seizeAsset(address(mockNft), 1);
     }
+
+    // TODO(dankurka): Tests missing for drawAmount
+
+    // TODO(dankurka): Tests missing for drawTime
+
+    function testCannotUpdateLoanDrawProtocolFee_not_owner() public {
+        hevm.startPrank(LENDER_1);
+        hevm.expectRevert("Ownable: caller is not the owner");
+        lendingAction.updateLoanDrawProtocolFee(1);
+    }
+
+    function testCannotUpdateLoanDrawProtocolFee_max_fee() public {
+        hevm.expectRevert("max fee");
+        lendingAction.updateLoanDrawProtocolFee(1001);
+    }
+
+    function testUpdateLoanDrawProtocolFee_owner() public {
+        assertEq(lendingAction.loanDrawFeeProtocolBps(), 50);
+        lendingAction.updateLoanDrawProtocolFee(1);
+        assertEq(lendingAction.loanDrawFeeProtocolBps(), 1);
+    }
+
+    function testCannotUpdateRefinancePremiumLenderFee_not_owner() public {
+        hevm.startPrank(LENDER_1);
+        hevm.expectRevert("Ownable: caller is not the owner");
+        lendingAction.updateRefinancePremiumLenderFee(1);
+    }
+
+    function testCannotUpdateRefinancePremiumLenderFee_max_fee() public {
+        hevm.expectRevert("max fee");
+        lendingAction.updateRefinancePremiumLenderFee(1001);
+    }
+
+    function testPpdateRefinancePremiumLenderFee_owner() public {
+        assertEq(lendingAction.refinancePremiumLenderBps(), 50);
+        lendingAction.updateRefinancePremiumLenderFee(1);
+        assertEq(lendingAction.refinancePremiumLenderBps(), 1);
+    }
+
+    function testCannotUpdateRefinancePremiumProtocolFee_not_owner() public {
+        hevm.startPrank(LENDER_1);
+        hevm.expectRevert("Ownable: caller is not the owner");
+        lendingAction.updateRefinancePremiumProtocolFee(1);
+    }
+
+    function testCannotUpdateRefinancePremiumProtocolFee_max_fee() public {
+        hevm.expectRevert("max fee");
+        lendingAction.updateRefinancePremiumProtocolFee(1001);
+    }
+
+    function testUpdateRefinancePremiumProtocolFee_owner() public {
+        assertEq(lendingAction.refinancePremiumProtocolBps(), 50);
+        lendingAction.updateRefinancePremiumProtocolFee(1);
+        assertEq(lendingAction.refinancePremiumProtocolBps(), 1);
+    }
 }
