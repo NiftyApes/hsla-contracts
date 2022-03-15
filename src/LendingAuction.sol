@@ -102,8 +102,8 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     // ---------- Signature Offer Functions ---------- //
 
     /// @inheritdoc ILendingAuction
-    function getOfferSignatureStatus(bytes calldata signature) external view returns (bool status) {
-        status = _cancelledOrFinalized[signature];
+    function getOfferSignatureStatus(bytes calldata signature) external view returns (bool) {
+        return _cancelledOrFinalized[signature];
     }
 
     /**
@@ -133,8 +133,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         // Require that msg.sender is signer of the signature
         require(signer == msg.sender, "Msg.sender is not the signer of the submitted signature");
 
-        // cancel signature
-        _cancelledOrFinalized[signature] = true;
+        markSignatureUsed(signature);
 
         emit SigOfferCancelled(nftContractAddress, nftId, signature);
     }
@@ -266,11 +265,10 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             );
         }
 
+        markSignatureUsed(signature);
+
         // execute state changes for executeLoanByBid
         _executeLoanInternal(offer, lender, msg.sender, nftId);
-
-        // finalize signature
-        _cancelledOrFinalized[signature] = true;
 
         emit SigOfferFinalized(offer.nftContractAddress, offer.nftId, signature);
     }
@@ -305,11 +303,10 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         // We assume the signer is the borrower and check in the following require statement
         address borrower = getOfferSigner(encodedOffer, signature);
 
+        markSignatureUsed(signature);
+
         // execute state changes for executeLoanByAsk
         _executeLoanInternal(offer, msg.sender, borrower, offer.nftId);
-
-        // finalize signature
-        _cancelledOrFinalized[signature] = true;
 
         emit SigOfferFinalized(offer.nftContractAddress, offer.nftId, signature);
     }
@@ -367,18 +364,10 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             : _nftOfferBooks[nftContractAddress][nftId][offerHash];
 
         if (!floorTerm) {
-            require(
-                nftId == offer.nftId,
-                "Function submitted nftId must match the signed offer nftId"
-            );
+            requireMatchingNftId(offer, nftId);
         }
 
-        // check if nftOwner and require msg.sender is the nftOwner/borrower in the protocol
-        require(
-            msg.sender == ownerOf(nftContractAddress, nftId),
-            "Msg.sender must be the owner of nftId to refinanceByBorrower"
-        );
-
+        requireNftOwner(_loanAuctions[nftContractAddress][nftId], msg.sender);
         _refinanceByBorrower(offer, offer.creator, nftId);
     }
 
@@ -388,35 +377,19 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         bytes calldata signature,
         uint256 nftId
     ) external payable whenNotPaused nonReentrant {
-        // ideally calculated, stored, and provided as parameter to save computation
-        bytes32 encodedOffer = getEIP712EncodedOffer(offer);
-
-        // recover singer and confirm signed offer terms with function submitted offer terms
-        // We assume the signer is the lender because msg.sender must the the nftOwner
-        address prospectiveLender = getOfferSigner(encodedOffer, signature);
+        address prospectiveLender = getOfferSigner(getEIP712EncodedOffer(offer), signature);
 
         require(offer.creator == prospectiveLender, "Signer must be the offer.creator");
 
         if (!offer.floorTerm) {
-            // require nftId == sigNftId
-            require(
-                nftId == offer.nftId,
-                "Function submitted nftId must match the signed offer nftId"
-            );
+            requireMatchingNftId(offer, nftId);
         }
 
-        // check if nftOwner and require msg.sender is the nftOwner/borrower in the protocol
-        require(
-            msg.sender == ownerOf(offer.nftContractAddress, nftId),
-            "Msg.sender must be the owner of nftId to refinanceByBorrower"
-        );
+        requireNftOwner(_loanAuctions[nftContractAddress][nftId], msg.sender);
+
+        markSignatureUsed(signature);
 
         _refinanceByBorrower(offer, offer.creator, nftId);
-
-        // ensure all sig functions finalize signatures
-
-        // finalize signature
-        _cancelledOrFinalized[signature] = true;
 
         emit SigOfferFinalized(offer.nftContractAddress, offer.nftId, signature);
     }
@@ -876,6 +849,10 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         refinancePremiumProtocolBps = newPremiumProtocolBps;
     }
 
+    function markSignatureUsed(bytes signature) internal {
+        _cancelledOrFinalized[signature] = true;
+    }
+
     function requireOfferPresent(Offer memory offer) internal pure {
         require(offer.asset != address(0), "no offer");
     }
@@ -936,6 +913,10 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
     function requireNftOwner(LoanAuction storage loanAuction, address nftOwner) internal view {
         require(nftOwner == loanAuction.nftOwner, "nft owner");
+    }
+
+    function requireMatchingNftId(Offer memory offer, uint256 nftId) internal pure {
+        require(nftId == offer.nftId, "offer nftId mismatch");
     }
 
     function createLoan(
