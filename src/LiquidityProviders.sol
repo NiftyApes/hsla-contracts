@@ -1,4 +1,4 @@
-//SPDX-License-Identifier: MIT
+//SPDX-License-Identifier: Unlicensed
 
 pragma solidity ^0.8.11;
 
@@ -6,11 +6,11 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "./Math.sol";
 import "./interfaces/compound/ICERC20.sol";
 import "./interfaces/compound/ICEther.sol";
-import "./ErrorReporter.sol";
-import "./Exponential.sol";
 import "./interfaces/ILiquidityProviders.sol";
 
 // @title An interface for liquidity providers to supply and withdraw tokens
@@ -20,15 +20,11 @@ import "./interfaces/ILiquidityProviders.sol";
 
 // TODO document reentrancy bugs for auditors
 // TODO Implement a proxy
+// TODO(dankurka): Missing pause only owner methods
 
-contract LiquidityProviders is
-    ILiquidityProviders,
-    Exponential,
-    Ownable,
-    Pausable,
-    ReentrancyGuard,
-    TokenErrorReporter
-{
+contract LiquidityProviders is ILiquidityProviders, Ownable, Pausable, ReentrancyGuard {
+    using SafeERC20 for IERC20;
+    using Address for address payable;
     // ---------- STATE VARIABLES --------------- //
 
     // Mapping of assetAddress to cAssetAddress
@@ -37,345 +33,221 @@ contract LiquidityProviders is
     // Reverse mapping of assetAddress to cAssetAddress
     mapping(address => address) internal _cAssetToAsset;
 
-    mapping(address => AccountAssets) internal _accountAssets;
+    mapping(address => mapping(address => Balance)) internal _accountAssets;
+
+    mapping(address => uint256) public maxBalanceByCAsset;
 
     address constant ETH_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
 
-    // ---------- FUNCTIONS -------------- //
-
-    // This is needed to receive ETH when calling `withdrawEth`
+    // This is needed to receive ETH when calling withdrawing ETH from compund
     receive() external payable {}
-
-    // @notice By calling 'revert' in the fallback function, we prevent anyone
-    //         from accidentally sending ether directly to this contract.
-    fallback() external payable {
-        revert();
-    }
 
     // @notice Sets an asset as allowed on the platform and creates asset => cAsset mapping
     function setCAssetAddress(address asset, address cAsset) external onlyOwner {
+        require(assetToCAsset[asset] == address(0), "asset already set");
+        require(_cAssetToAsset[cAsset] == address(0), "casset already set");
         assetToCAsset[asset] = cAsset;
         _cAssetToAsset[cAsset] = asset;
 
         emit NewAssetWhitelisted(asset, cAsset);
     }
 
-    // @notice returns the assets a depositor has deposited on NiftyApes.
-    // @dev combined with cAssetBalances and/or utilizedCAssetBalances to calculate depositors total balance and total available balance.
-    function getAssetsIn(address depositor) external view returns (address[] memory assetsIn) {
-        assetsIn = _accountAssets[depositor].keys;
+    function setMaxCAssetBalance(address asset, uint256 maxBalance) external onlyOwner {
+        maxBalanceByCAsset[getCAsset(asset)] = maxBalance;
     }
 
-    function getCAssetBalances(address account, address cAsset)
+    function getCAssetBalance(address account, address cAsset) public view returns (uint256) {
+        return _accountAssets[account][cAsset].cAssetBalance;
+    }
+
+    /// @inheritdoc ILiquidityProviders
+    function supplyErc20(address asset, uint256 numTokensToSupply)
         external
-        view
-        returns (
-            uint256 cAssetBalance,
-            uint256 utilizedCAssetBalance,
-            uint256 availableCAssetBalance
-        )
+        whenNotPaused
+        nonReentrant
+        returns (uint256)
     {
-        cAssetBalance = _accountAssets[account].balance[cAsset].cAssetBalance;
-        utilizedCAssetBalance = _accountAssets[account].balance[cAsset].utilizedCAssetBalance;
-        availableCAssetBalance = cAssetBalance - utilizedCAssetBalance;
-    }
+        address cAsset = getCAsset(asset);
 
-    function getAvailableCAssetBalance(address account, address cAsset)
-        public
-        view
-        returns (uint256 availableCAssetBalance)
-    {
-        availableCAssetBalance =
-            _accountAssets[account].balance[cAsset].cAssetBalance -
-            _accountAssets[account].balance[cAsset].utilizedCAssetBalance;
-    }
+        uint256 cTokensMinted = mintCErc20(msg.sender, address(this), asset, numTokensToSupply);
 
-    function getCAssetBalancesAtIndex(address account, uint256 index)
-        external
-        view
-        returns (
-            uint256 cAssetBalance,
-            uint256 utilizedCAssetBalance,
-            uint256 availableCAssetBalance
-        )
-    {
-        address asset = _accountAssets[account].keys[index];
-        address cAsset = assetToCAsset[asset];
+        _accountAssets[msg.sender][cAsset].cAssetBalance += cTokensMinted;
 
-        cAssetBalance = _accountAssets[account].balance[cAsset].cAssetBalance;
-        utilizedCAssetBalance = _accountAssets[account].balance[cAsset].utilizedCAssetBalance;
-        availableCAssetBalance = cAssetBalance - utilizedCAssetBalance;
-    }
+        requireMaxCAssetBalance(cAsset, cTokensMinted);
 
-    function accountAssetsSize(address account)
-        external
-        view
-        returns (uint256 numberOfAccountAssets)
-    {
-        numberOfAccountAssets = _accountAssets[account].keys.length;
-    }
-
-    function addAssetToAccount(address account, address asset) internal {
-        _accountAssets[account].inserted[asset] = true;
-        _accountAssets[account].indexOf[asset] = _accountAssets[account].keys.length;
-        _accountAssets[account].keys.push(asset);
-    }
-
-    function ensureAssetInAccount(address account, address asset) internal {
-        if (_accountAssets[account].inserted[asset]) {
-            return;
-        }
-
-        addAssetToAccount(account, asset);
-    }
-
-    function removeAssetFromAccount(address account, address asset) internal {
-        delete _accountAssets[account].inserted[asset];
-
-        uint256 index = _accountAssets[account].indexOf[asset];
-        uint256 lastIndex = _accountAssets[account].keys.length - 1;
-        address lastAsset = _accountAssets[account].keys[lastIndex];
-
-        _accountAssets[account].indexOf[lastAsset] = index;
-        delete _accountAssets[account].indexOf[asset];
-
-        _accountAssets[account].keys[index] = lastAsset;
-        _accountAssets[account].keys.pop();
-    }
-
-    function maybeRemoveAssetFromAccount(address account, address asset) internal {
-        if (
-            _accountAssets[account].balance[asset].cAssetBalance == 0 &&
-            _accountAssets[account].balance[asset].utilizedCAssetBalance == 0
-        ) {
-            removeAssetFromAccount(account, asset);
-        }
-    }
-
-    // implement 10M limit for MVP
-
-    // @notice returns number of cErc20 tokens added to balance
-    function supplyErc20(address asset, uint256 numTokensToSupply) external returns (uint256) {
-        require(assetToCAsset[asset] != address(0), "Asset not whitelisted on NiftyApes");
-
-        address cAsset = assetToCAsset[asset];
-
-        // Create a reference to the underlying asset contract, like DAI.
-        IERC20 underlying = IERC20(asset);
-
-        // Create a reference to the corresponding cToken contract, like cDAI
-        ICERC20 cToken = ICERC20(cAsset);
-
-        ensureAssetInAccount(msg.sender, asset);
-
-        // transferFrom ERC20 from depositors address
-        // review for safeTransferFrom
-        require(
-            underlying.transferFrom(msg.sender, address(this), numTokensToSupply),
-            "underlying.transferFrom() failed"
-        );
-
-        require(underlying.approve(cAsset, numTokensToSupply), "underlying.approve() failed");
-
-        uint256 cTokenBalanceBefore = cToken.balanceOf(address(this));
-
-        // Mint cTokens
-        // Require a successful mint to proceed
-        require(cToken.mint(numTokensToSupply) == 0, "cToken.mint() failed");
-
-        uint256 cTokenBalanceAfter = cToken.balanceOf(address(this));
-
-        uint256 cTokensMinted = cTokenBalanceAfter - cTokenBalanceBefore;
-
-        // This state variable is written after external calls because external calls
-        // add value or assets to this contract and this state variable could be re-entered to
-        // increase balance, then withdrawing more funds than have been supplied.
-        // updating the depositors cErc20 balance
-        _accountAssets[msg.sender].balance[cAsset].cAssetBalance += cTokensMinted;
-
-        emit Erc20Supplied(msg.sender, asset, numTokensToSupply);
+        emit Erc20Supplied(msg.sender, asset, numTokensToSupply, cTokensMinted);
 
         return cTokensMinted;
     }
 
-    // @notice returns the number of CERC20 tokens added to balance
-    // @dev takes the underlying asset address, not cAsset address
-    //
-    function supplyCErc20(address cAsset, uint256 numTokensToSupply) external returns (uint256) {
-        require(_cAssetToAsset[cAsset] != address(0), "Asset not whitelisted on NiftyApes");
+    /// @inheritdoc ILiquidityProviders
+    function supplyCErc20(address cAsset, uint256 cTokenAmount)
+        external
+        whenNotPaused
+        nonReentrant
+    {
+        getAsset(cAsset); // Ensures asset / cAsset is in the allow list
+        IERC20 cToken = IERC20(cAsset);
 
-        address asset = _cAssetToAsset[cAsset];
+        cToken.safeTransferFrom(msg.sender, address(this), cTokenAmount);
 
-        // Create a reference to the corresponding cToken contract, like cDAI
-        ICERC20 cToken = ICERC20(cAsset);
+        _accountAssets[msg.sender][cAsset].cAssetBalance += cTokenAmount;
 
-        ensureAssetInAccount(msg.sender, asset);
+        requireMaxCAssetBalance(cAsset, cTokenAmount);
 
-        // transferFrom ERC20 from depositors address
-        require(
-            cToken.transferFrom(msg.sender, address(this), numTokensToSupply),
-            "cToken transferFrom failed"
-        );
-
-        // This state variable is written after external calls because external calls
-        // add value or assets to this contract and this state variable could be re-entered to
-        // increase balance, then withdrawing more funds than have been supplied.
-        // updating the depositors cErc20 balance
-        _accountAssets[msg.sender].balance[cAsset].cAssetBalance += numTokensToSupply;
-
-        emit CErc20Supplied(msg.sender, cAsset, numTokensToSupply);
-
-        return numTokensToSupply;
+        emit CErc20Supplied(msg.sender, cAsset, cTokenAmount);
     }
 
-    // True to withdraw based on cErc20 amount. False to withdraw based on amount of underlying erc20
+    /// @inheritdoc ILiquidityProviders
     function withdrawErc20(address asset, uint256 amountToWithdraw)
         public
         whenNotPaused
         nonReentrant
         returns (uint256)
     {
-        require(assetToCAsset[asset] != address(0), "Asset not whitelisted on NiftyApes");
-
-        address cAsset = assetToCAsset[asset];
-
-        // Create a reference to the underlying asset contract, like DAI.
+        address cAsset = getCAsset(asset);
         IERC20 underlying = IERC20(asset);
 
-        // Create a reference to the corresponding cToken contract, like cDAI
-        ICERC20 cToken = ICERC20(cAsset);
+        uint256 cTokensBurnt = burnCErc20(asset, amountToWithdraw);
 
-        uint256 cTokenBalanceBefore = cToken.balanceOf(address(this));
-        // Retrieve your asset based on an amountToWithdraw of the asset
-        require(cToken.redeemUnderlying(amountToWithdraw) == 0, "cToken.redeemUnderlying() failed");
+        withdrawCBalance(msg.sender, cAsset, cTokensBurnt);
 
-        uint256 cTokenBalanceAfter = cToken.balanceOf(address(this));
+        underlying.safeTransfer(msg.sender, amountToWithdraw);
 
-        uint256 cTokensWithDrawn = cTokenBalanceBefore - cTokenBalanceAfter;
+        emit Erc20Withdrawn(msg.sender, asset, amountToWithdraw, cTokensBurnt);
 
-        // require msg.sender has sufficient available balance of cErc20
-        require(
-            getAvailableCAssetBalance(msg.sender, cAsset) >= cTokensWithDrawn,
-            "Must have sufficient balance"
-        );
-
-        _accountAssets[msg.sender].balance[cAsset].cAssetBalance -= cTokensWithDrawn;
-
-        maybeRemoveAssetFromAccount(msg.sender, cAsset);
-
-        require(underlying.transfer(msg.sender, amountToWithdraw), "underlying.transfer() failed");
-
-        emit Erc20Withdrawn(msg.sender, asset, amountToWithdraw);
-
-        return cTokensWithDrawn;
+        return cTokensBurnt;
     }
 
+    /// @inheritdoc ILiquidityProviders
     function withdrawCErc20(address cAsset, uint256 amountToWithdraw)
         external
         whenNotPaused
         nonReentrant
-        returns (uint256)
     {
-        require(_cAssetToAsset[cAsset] != address(0), "Asset not whitelisted");
+        address asset = getAsset(cAsset);
+        IERC20 cToken = IERC20(cAsset);
 
-        address asset = _cAssetToAsset[cAsset];
+        withdrawCBalance(msg.sender, cAsset, amountToWithdraw);
 
-        // Create a reference to the corresponding cToken contract, like cDAI
-        ICERC20 cToken = ICERC20(cAsset);
-
-        // require msg.sender has sufficient available balance of cErc20
-        require(
-            getAvailableCAssetBalance(msg.sender, cAsset) >= amountToWithdraw,
-            "Must have an available balance greater than or equal to amountToWithdraw"
-        );
-        // updating the depositors cErc20 balance
-        _accountAssets[msg.sender].balance[cAsset].cAssetBalance -= amountToWithdraw;
-
-        maybeRemoveAssetFromAccount(msg.sender, asset);
-
-        // transfer cErc20 tokens to depositor
-        require(
-            cToken.transfer(msg.sender, amountToWithdraw),
-            "cToken.transfer failed. Have you approved the correct amount of Tokens"
-        );
+        cToken.safeTransfer(msg.sender, amountToWithdraw);
 
         emit CErc20Withdrawn(msg.sender, cAsset, amountToWithdraw);
-
-        return amountToWithdraw;
     }
 
-    function supplyEth() external payable returns (uint256) {
-        // set cEth address
-        // utilize reference to allow update of cEth address by compound in future versions
-        address cEth = assetToCAsset[ETH_ADDRESS];
+    /// @inheritdoc ILiquidityProviders
+    function supplyEth() external payable whenNotPaused nonReentrant returns (uint256) {
+        address cAsset = getCAsset(ETH_ADDRESS);
 
-        // Create a reference to the corresponding cToken contract
-        ICEther cToken = ICEther(cEth);
+        uint256 cTokensMinted = mintCEth(msg.value);
 
-        ensureAssetInAccount(msg.sender, ETH_ADDRESS);
+        _accountAssets[msg.sender][cAsset].cAssetBalance += cTokensMinted;
 
-        uint256 cTokenBalanceBefore = cToken.balanceOf(address(this));
-        // mint CEth tokens to this contract address
-        // cEth mint() reverts on failure so do not need a require statement
-        cToken.mint{ value: msg.value }();
-        uint256 cTokenBalanceAfter = cToken.balanceOf(address(this));
+        requireMaxCAssetBalance(cAsset, cTokensMinted);
 
-        uint256 cTokensMinted = cTokenBalanceAfter - cTokenBalanceBefore;
-
-        // This state variable is written after external calls because external calls
-        // add value or assets to this contract and this state variable could be re-entered to
-        // increase balance, then withdrawing more funds than have been supplied.
-        // updating the depositors cErc20 balance
-        // cAssetBalances[cEth][msg.sender] += mintTokens;
-        _accountAssets[msg.sender].balance[cEth].cAssetBalance += cTokensMinted;
-
-        emit EthSupplied(msg.sender, msg.value);
+        emit EthSupplied(msg.sender, msg.value, cTokensMinted);
 
         return cTokensMinted;
     }
 
+    /// @inheritdoc ILiquidityProviders
     function withdrawEth(uint256 amountToWithdraw)
         external
         whenNotPaused
         nonReentrant
         returns (uint256)
     {
-        // set cEth address
-        // utilize reference to allow update of cEth address by compound in future versions
-        address cEth = assetToCAsset[ETH_ADDRESS];
+        address cAsset = getCAsset(ETH_ADDRESS);
+        uint256 cTokensBurnt = burnCErc20(ETH_ADDRESS, amountToWithdraw);
 
-        // Create a reference to the corresponding cToken contract, like cDAI
-        ICEther cToken = ICEther(cEth);
+        withdrawCBalance(msg.sender, cAsset, cTokensBurnt);
 
-        uint256 exchangeRateMantissa;
-        uint256 redeemTokens;
-        uint256 redeemAmount;
-        exchangeRateMantissa = cToken.exchangeRateCurrent();
+        payable(msg.sender).sendValue(amountToWithdraw);
 
-        (, redeemTokens) = divScalarByExpTruncate(
-            amountToWithdraw,
-            Exp({ mantissa: exchangeRateMantissa })
-        );
+        emit EthWithdrawn(msg.sender, amountToWithdraw, cTokensBurnt);
 
-        redeemAmount = amountToWithdraw;
+        return cTokensBurnt;
+    }
 
-        // require msg.sender has sufficient available balance of cEth
-        require(
-            getAvailableCAssetBalance(msg.sender, cEth) >= redeemTokens,
-            "Must have sufficient balance"
-        );
+    function requireMaxCAssetBalance(address cAsset, uint256 amount) internal {
+        uint256 maxCAssetBalance = maxBalanceByCAsset[cAsset];
+        if (maxCAssetBalance != 0) {
+            require(
+                maxCAssetBalance >= ICERC20(cAsset).balanceOf(address(this)) + amount,
+                "max casset"
+            );
+        }
+    }
 
-        _accountAssets[msg.sender].balance[cEth].cAssetBalance -= redeemTokens;
+    function mintCErc20(
+        address from,
+        address to,
+        address asset,
+        uint256 amount
+    ) internal returns (uint256) {
+        address cAsset = assetToCAsset[asset];
+        IERC20 underlying = IERC20(asset);
+        ICERC20 cToken = ICERC20(cAsset);
 
-        maybeRemoveAssetFromAccount(msg.sender, ETH_ADDRESS);
+        underlying.safeTransferFrom(from, to, amount);
+        underlying.safeIncreaseAllowance(cAsset, amount);
 
-        // Retrieve your asset based on an amountToWithdraw of the asset
-        require(cToken.redeemUnderlying(redeemAmount) == 0, "cToken.redeemUnderlying() failed");
+        uint256 cTokenBalanceBefore = cToken.balanceOf(address(this));
+        require(cToken.mint(amount) == 0, "cToken mint");
+        uint256 cTokenBalanceAfter = cToken.balanceOf(address(this));
+        return cTokenBalanceAfter - cTokenBalanceBefore;
+    }
 
-        Address.sendValue(payable(msg.sender), redeemAmount);
+    function mintCEth(uint256 amount) internal returns (uint256) {
+        address cAsset = assetToCAsset[ETH_ADDRESS];
+        ICEther cToken = ICEther(cAsset);
+        uint256 cTokenBalanceBefore = cToken.balanceOf(address(this));
+        cToken.mint{ value: amount }();
+        uint256 cTokenBalanceAfter = cToken.balanceOf(address(this));
+        return cTokenBalanceAfter - cTokenBalanceBefore;
+    }
 
-        emit EthWithdrawn(msg.sender, amountToWithdraw);
+    function burnCErc20(address asset, uint256 amount) internal returns (uint256) {
+        address cAsset = assetToCAsset[asset];
+        ICERC20 cToken = ICERC20(cAsset);
 
-        return redeemAmount;
+        uint256 cTokenBalanceBefore = cToken.balanceOf(address(this));
+        require(cToken.redeemUnderlying(amount) == 0, "redeemUnderlying failed");
+        uint256 cTokenBalanceAfter = cToken.balanceOf(address(this));
+        return cTokenBalanceBefore - cTokenBalanceAfter;
+    }
+
+    function assetAmountToCAssetAmount(address asset, uint256 amount) internal returns (uint256) {
+        address cAsset = assetToCAsset[asset];
+        ICERC20 cToken = ICERC20(cAsset);
+
+        uint256 exchangeRateMantissa = cToken.exchangeRateCurrent();
+
+        uint256 amountCTokens = Math.divScalarByExpTruncate(amount, exchangeRateMantissa);
+
+        return amountCTokens;
+    }
+
+    function getCAsset(address asset) internal view returns (address) {
+        address cAsset = assetToCAsset[asset];
+        require(cAsset != address(0), "asset allow list");
+        require(asset == _cAssetToAsset[cAsset], "non matching allow list");
+        return cAsset;
+    }
+
+    function getAsset(address cAsset) internal view returns (address) {
+        address asset = _cAssetToAsset[cAsset];
+        require(asset != address(0), "cAsset allow list");
+        require(cAsset == assetToCAsset[asset], "non matching allow list");
+        return asset;
+    }
+
+    function withdrawCBalance(
+        address account,
+        address cAsset,
+        uint256 cTokenAmount
+    ) internal {
+        require(getCAssetBalance(account, cAsset) >= cTokenAmount, "Insuffient ctoken balance");
+        _accountAssets[account][cAsset].cAssetBalance -= cTokenAmount;
     }
 }

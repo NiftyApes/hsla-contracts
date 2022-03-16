@@ -1,40 +1,15 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.11;
 
-import "../ErrorReporter.sol";
-import "../CarefulMath.sol";
+import "./ILiquidityProviderEvents.sol";
 
 // @dev public interface for LiquidityProviders.sol
-interface ILiquidityProviders {
+interface ILiquidityProviders is ILiquidityProviderEvents {
     // Structs
 
     struct Balance {
         uint256 cAssetBalance;
-        uint256 utilizedCAssetBalance;
     }
-
-    struct AccountAssets {
-        address[] keys;
-        mapping(address => Balance) balance;
-        mapping(address => uint256) indexOf;
-        mapping(address => bool) inserted;
-    }
-
-    // Events
-
-    event NewAssetWhitelisted(address asset, address cAsset);
-
-    event Erc20Supplied(address depositor, address asset, uint256 amount);
-
-    event CErc20Supplied(address depositor, address asset, uint256 amount);
-
-    event Erc20Withdrawn(address depositor, address asset, uint256 amount);
-
-    event CErc20Withdrawn(address depositor, address asset, uint256 amount);
-
-    event EthSupplied(address depositor, uint256 amount);
-
-    event EthWithdrawn(address depositor, uint256 amount);
 
     // Functions
 
@@ -42,43 +17,15 @@ interface ILiquidityProviders {
 
     function setCAssetAddress(address asset, address cAsset) external;
 
-    function getAssetsIn(address depositor) external view returns (address[] memory assetsIn);
-
-    function getCAssetBalances(address account, address cAsset)
-        external
-        view
-        returns (
-            uint256 cAssetBalance,
-            uint256 utilizedCAssetBalance,
-            uint256 availableCAssetBalance
-        );
-
-    function getAvailableCAssetBalance(address account, address cAsset)
-        external
-        view
-        returns (uint256 availableCAssetBalance);
-
-    function getCAssetBalancesAtIndex(address account, uint256 index)
-        external
-        view
-        returns (
-            uint256 cAssetBalance,
-            uint256 utilizedCAssetBalance,
-            uint256 availableCAssetBalance
-        );
-
-    function accountAssetsSize(address account)
-        external
-        view
-        returns (uint256 numberOfAccountAssets);
+    function getCAssetBalance(address account, address cAsset) external view returns (uint256);
 
     function supplyErc20(address asset, uint256 numTokensToSupply) external returns (uint256);
 
-    function supplyCErc20(address asset, uint256 numTokensToSupply) external returns (uint256);
+    function supplyCErc20(address asset, uint256 numTokensToSupply) external;
 
     function withdrawErc20(address asset, uint256 amountToWithdraw) external returns (uint256);
 
-    function withdrawCErc20(address asset, uint256 amountToWithdraw) external returns (uint256);
+    function withdrawCErc20(address asset, uint256 amountToWithdraw) external;
 
     function supplyEth() external payable returns (uint256);
 
