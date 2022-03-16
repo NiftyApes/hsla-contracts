@@ -20,6 +20,7 @@ import "./interfaces/ILiquidityProviders.sol";
 
 // TODO document reentrancy bugs for auditors
 // TODO Implement a proxy
+// TODO(dankurka): Missing pause only owner methods
 
 contract LiquidityProviders is ILiquidityProviders, Ownable, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
