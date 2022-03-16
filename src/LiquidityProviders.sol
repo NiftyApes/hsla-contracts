@@ -24,6 +24,7 @@ import "./interfaces/ILiquidityProviders.sol";
 
 contract LiquidityProviders is ILiquidityProviders, Ownable, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
+    using Address for address payable;
     // ---------- STATE VARIABLES --------------- //
 
     // Mapping of assetAddress to cAssetAddress
@@ -163,7 +164,7 @@ contract LiquidityProviders is ILiquidityProviders, Ownable, Pausable, Reentranc
 
         withdrawCBalance(msg.sender, cAsset, cTokensBurnt);
 
-        Address.sendValue(payable(msg.sender), amountToWithdraw);
+        payable(msg.sender).sendValue(amountToWithdraw);
 
         emit EthWithdrawn(msg.sender, amountToWithdraw, cTokensBurnt);
 

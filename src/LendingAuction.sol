@@ -30,6 +30,7 @@ import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     using ECDSA for bytes32;
     using SafeERC20 for IERC20;
+    using Address for address payable;
 
     /// @notice The maximum value that any fee on the protocol can be set to.
     ///         Fees on the protocol are denomimated in parts of 10_000.
@@ -329,7 +330,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         withdrawCBalance(lender, cAsset, cTokensBurned);
 
         if (offer.asset == ETH_ADDRESS) {
-            Address.sendValue(payable(borrower), offer.amount);
+            payable(borrower).sendValue(offer.amount);
         } else {
             IERC20(offer.asset).safeTransfer(borrower, offer.amount);
         }
@@ -624,7 +625,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         withdrawCBalance(loanAuction.lender, cAsset, cTokensBurnt);
 
         if (loanAuction.asset == ETH_ADDRESS) {
-            Address.sendValue(payable(loanAuction.nftOwner), drawAmount);
+            payable(loanAuction.nftOwner).sendValue(drawAmount);
         } else {
             IERC20 underlying = IERC20(loanAuction.asset);
             underlying.safeTransfer(loanAuction.nftOwner, drawAmount);
@@ -701,7 +702,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
             cTokensMinted = mintCEth(payment);
 
             if (payment < msg.value) {
-                Address.sendValue(payable(msg.sender), msg.value - payment);
+                payable(msg.sender).sendValue(msg.value - payment);
             }
         }
 
