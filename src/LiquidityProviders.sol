@@ -61,8 +61,6 @@ contract LiquidityProviders is ILiquidityProviders, Ownable, Pausable, Reentranc
         return _accountAssets[account][cAsset].cAssetBalance;
     }
 
-    // implement 10M limit for MVP
-
     /// @inheritdoc ILiquidityProviders
     function supplyErc20(address asset, uint256 numTokensToSupply)
         external
