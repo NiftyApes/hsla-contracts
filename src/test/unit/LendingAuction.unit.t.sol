@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 import "../../interfaces/compound/ICERC20.sol";
 import "../../interfaces/compound/ICEther.sol";
 import "../../NiftyApes.sol";
-import "../../interfaces/ILendingAuctionEvents.sol";
+import "../../interfaces/niftyapes/lending/ILendingEvents.sol";
 
 import "../common/BaseTest.sol";
 import "../mock/CERC20Mock.sol";
@@ -16,8 +16,8 @@ import "../mock/ERC721Mock.sol";
 
 contract LendingAuctionUnitTest is
     BaseTest,
-    ILendingAuctionEvents,
-    ILendingAuctionStructs,
+    ILendingEvents,
+    ILendingStructs,
     ERC721HolderUpgradeable
 {
     NiftyApes lendingAction;

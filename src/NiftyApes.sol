@@ -12,8 +12,7 @@ import "@openzeppelin/contracts/utils/cryptography/draft-EIP712Upgradeable.sol";
 import "@openzeppelin/contracts/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts/utils/math/SafeCastUpgradeable.sol";
 import "./interfaces/compound/ICEther.sol";
-import "./interfaces/INiftyApesAdmin.sol";
-import "./interfaces/ILendingAuction.sol";
+import "./interfaces/niftyapes/INiftyApes.sol";
 import "./interfaces/compound/ICERC20.sol";
 
 import "./Math.sol";
@@ -30,12 +29,11 @@ import "./Math.sol";
 // TODO(dankurka): Missing pause only owner methods
 
 contract NiftyApes is
-    ILendingAuction,
-    INiftyApesAdmin,
     OwnableUpgradeable,
     PausableUpgradeable,
     ReentrancyGuardUpgradeable,
-    EIP712Upgradeable
+    EIP712Upgradeable,
+    INiftyApes
 {
     using ECDSAUpgradeable for bytes32;
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -81,13 +79,13 @@ contract NiftyApes is
     ///      The mapping allows users to withdraw offers that they made by signature.
     mapping(bytes => bool) _cancelledOrFinalized;
 
-    /// @inheritdoc ILendingAuction
+    /// @inheritdoc ILending
     uint16 public loanDrawFeeProtocolBps;
 
-    /// @inheritdoc ILendingAuction
+    /// @inheritdoc ILending
     uint16 public refinancePremiumLenderBps;
 
-    /// @inheritdoc ILendingAuction
+    /// @inheritdoc ILending
     uint16 public refinancePremiumProtocolBps;
 
     function initialize() public initializer {
@@ -121,7 +119,7 @@ contract NiftyApes is
         return _accountAssets[account][cAsset].cAssetBalance;
     }
 
-    /// @inheritdoc ILiquidityProviders
+    /// @inheritdoc ILiquidity
     function supplyErc20(address asset, uint256 numTokensToSupply)
         external
         whenNotPaused
@@ -141,7 +139,7 @@ contract NiftyApes is
         return cTokensMinted;
     }
 
-    /// @inheritdoc ILiquidityProviders
+    /// @inheritdoc ILiquidity
     function supplyCErc20(address cAsset, uint256 cTokenAmount)
         external
         whenNotPaused
@@ -159,7 +157,7 @@ contract NiftyApes is
         emit CErc20Supplied(msg.sender, cAsset, cTokenAmount);
     }
 
-    /// @inheritdoc ILiquidityProviders
+    /// @inheritdoc ILiquidity
     function withdrawErc20(address asset, uint256 amountToWithdraw)
         public
         whenNotPaused
@@ -180,7 +178,7 @@ contract NiftyApes is
         return cTokensBurnt;
     }
 
-    /// @inheritdoc ILiquidityProviders
+    /// @inheritdoc ILiquidity
     function withdrawCErc20(address cAsset, uint256 amountToWithdraw)
         external
         whenNotPaused
@@ -196,7 +194,7 @@ contract NiftyApes is
         emit CErc20Withdrawn(msg.sender, cAsset, amountToWithdraw);
     }
 
-    /// @inheritdoc ILiquidityProviders
+    /// @inheritdoc ILiquidity
     function supplyEth() external payable whenNotPaused nonReentrant returns (uint256) {
         address cAsset = getCAsset(ETH_ADDRESS);
 
@@ -211,7 +209,7 @@ contract NiftyApes is
         return cTokensMinted;
     }
 
-    /// @inheritdoc ILiquidityProviders
+    /// @inheritdoc ILiquidity
     function withdrawEth(uint256 amountToWithdraw)
         external
         whenNotPaused
@@ -230,7 +228,7 @@ contract NiftyApes is
         return cTokensBurnt;
     }
 
-    /// @inheritdoc ILendingAuction
+    /// @inheritdoc ILending
     function getLoanAuction(address nftContractAddress, uint256 nftId)
         external
         view
@@ -239,7 +237,7 @@ contract NiftyApes is
         return _loanAuctions[nftContractAddress][nftId];
     }
 
-    /// @inheritdoc ILendingAuction
+    /// @inheritdoc ILending
     function getEIP712EncodedOffer(Offer memory offer) public view returns (bytes32 signedOffer) {
         return
             _hashTypedDataV4(
@@ -262,7 +260,7 @@ contract NiftyApes is
 
     // ---------- Signature Offer Functions ---------- //
 
-    /// @inheritdoc ILendingAuction
+    /// @inheritdoc ILending
     function getOfferSignatureStatus(bytes calldata signature) external view returns (bool) {
         return _cancelledOrFinalized[signature];
     }
@@ -279,7 +277,7 @@ contract NiftyApes is
         return ECDSAUpgradeable.recover(eip712EncodedOffer, signature);
     }
 
-    /// @inheritdoc ILendingAuction
+    /// @inheritdoc ILending
     function withdrawOfferSignature(
         // TODO(dankurka): These params have not been validated (but we output them in the event)
         address nftContractAddress,
@@ -310,7 +308,7 @@ contract NiftyApes is
                 : _nftOfferBooks[nftContractAddress][nftId];
     }
 
-    /// @inheritdoc ILendingAuction
+    /// @inheritdoc ILending
     function getOffer(
         address nftContractAddress,
         uint256 nftId,
@@ -320,7 +318,7 @@ contract NiftyApes is
         return getOfferBook(nftContractAddress, nftId, floorTerm)[offerHash];
     }
 
-    /// @inheritdoc ILendingAuction
+    /// @inheritdoc ILending
     function createOffer(Offer calldata offer) external {
         address cAsset = getCAsset(offer.asset);
 
@@ -353,7 +351,7 @@ contract NiftyApes is
         );
     }
 
-    /// @inheritdoc ILendingAuction
+    /// @inheritdoc ILending
     function removeOffer(
         address nftContractAddress,
         uint256 nftId,
@@ -377,7 +375,7 @@ contract NiftyApes is
         emit OfferRemoved(offer.creator, offer.asset, offer.nftContractAddress, offer, offerHash);
     }
 
-    /// @inheritdoc ILendingAuction
+    /// @inheritdoc ILending
     function executeLoanByBorrower(
         address nftContractAddress,
         uint256 nftId,
@@ -394,7 +392,7 @@ contract NiftyApes is
         _executeLoanInternal(offer, offer.creator, msg.sender, nftId);
     }
 
-    /// @inheritdoc ILendingAuction
+    /// @inheritdoc ILending
     function executeLoanByBorrowerSignature(
         Offer calldata offer,
         bytes calldata signature,
@@ -418,7 +416,7 @@ contract NiftyApes is
         emit SigOfferFinalized(offer.nftContractAddress, offer.nftId, signature);
     }
 
-    /// @inheritdoc ILendingAuction
+    /// @inheritdoc ILending
     function executeLoanByLender(
         address nftContractAddress,
         bool floorTerm,
@@ -433,7 +431,7 @@ contract NiftyApes is
         _executeLoanInternal(offer, msg.sender, offer.creator, nftId);
     }
 
-    /// @inheritdoc ILendingAuction
+    /// @inheritdoc ILending
     function executeLoanByLenderSignature(Offer calldata offer, bytes calldata signature)
         external
         payable
@@ -495,7 +493,7 @@ contract NiftyApes is
         emit LoanExecuted(lender, borrower, offer.nftContractAddress, offer.nftId, offer);
     }
 
-    /// @inheritdoc ILendingAuction
+    /// @inheritdoc ILending
     function refinanceByBorrower(
         address nftContractAddress,
         bool floorTerm,
@@ -514,7 +512,7 @@ contract NiftyApes is
         _refinanceByBorrower(offer, offer.creator, nftId);
     }
 
-    /// @inheritdoc ILendingAuction
+    /// @inheritdoc ILending
     function refinanceByBorrowerSignature(
         Offer calldata offer,
         bytes calldata signature,
@@ -537,7 +535,7 @@ contract NiftyApes is
         emit SigOfferFinalized(offer.nftContractAddress, offer.nftId, signature);
     }
 
-    /// @inheritdoc ILendingAuction
+    /// @inheritdoc ILending
     function refinanceByLender(Offer calldata offer) external payable whenNotPaused nonReentrant {
         LoanAuction storage loanAuction = _loanAuctions[offer.nftContractAddress][offer.nftId];
 
@@ -703,7 +701,7 @@ contract NiftyApes is
         return (loanAuction, getCAsset(offer.asset));
     }
 
-    /// @inheritdoc ILendingAuction
+    /// @inheritdoc ILending
     function drawLoanTime(
         address nftContractAddress,
         uint256 nftId,
@@ -744,7 +742,7 @@ contract NiftyApes is
         emit TimeDrawn(nftContractAddress, nftId, drawTime, loanAuction.timeDrawn);
     }
 
-    /// @inheritdoc ILendingAuction
+    /// @inheritdoc ILending
     function drawLoanAmount(
         address nftContractAddress,
         uint256 nftId,
@@ -791,12 +789,12 @@ contract NiftyApes is
         emit AmountDrawn(nftContractAddress, nftId, drawAmount, loanAuction.amountDrawn);
     }
 
-    /// @inheritdoc ILendingAuction
+    /// @inheritdoc ILending
     function repayLoan(address nftContractAddress, uint256 nftId) external payable override {
         _repayLoanAmount(nftContractAddress, nftId, true, 0);
     }
 
-    /// @inheritdoc ILendingAuction
+    /// @inheritdoc ILending
     function partialRepayLoan(
         address nftContractAddress,
         uint256 nftId,
@@ -881,7 +879,7 @@ contract NiftyApes is
         }
     }
 
-    /// @inheritdoc ILendingAuction
+    /// @inheritdoc ILending
     function seizeAsset(address nftContractAddress, uint256 nftId)
         external
         whenNotPaused
@@ -904,7 +902,7 @@ contract NiftyApes is
         emit AssetSeized(currentLender, currentBorrower, nftContractAddress, nftId);
     }
 
-    /// @inheritdoc ILendingAuction
+    /// @inheritdoc ILending
     function ownerOf(address nftContractAddress, uint256 nftId) public view returns (address) {
         return _loanAuctions[nftContractAddress][nftId].nftOwner;
     }

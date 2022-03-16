@@ -1,11 +1,10 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.11;
 
-import "./ILiquidityProviders.sol";
-import "./ILendingAuctionEvents.sol";
-import "./ILendingAuctionStructs.sol";
+import "./ILendingEvents.sol";
+import "./ILendingStructs.sol";
 
-interface ILendingAuction is ILiquidityProviders, ILendingAuctionEvents, ILendingAuctionStructs {
+interface ILending is ILendingEvents, ILendingStructs {
     // Functions
     function loanDrawFeeProtocolBps() external view returns (uint16);
 

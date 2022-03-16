@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.11;
 
-interface ILiquidityProviderEvents {
+interface ILiquidityEvents {
     event NewAssetWhitelisted(address asset, address cAsset);
 
     event Erc20Supplied(

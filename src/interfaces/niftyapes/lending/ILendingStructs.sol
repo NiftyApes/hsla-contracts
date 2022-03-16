@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.11;
 
-interface ILendingAuctionStructs {
+interface ILendingStructs {
     //timestamps are uint32, will expire in 2048
     struct LoanAuction {
         // SLOT 0 START
