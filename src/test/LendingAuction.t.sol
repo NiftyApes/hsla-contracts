@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.11;
 
-import "./Console.sol";
 import "ds-test/test.sol";
 import "@openzeppelin/contracts/interfaces/IERC20Upgradeable.sol";
 import "../interfaces/compound/ICERC20.sol";
 import "../interfaces/compound/ICEther.sol";
 import "../LendingAuction.sol";
 import "./Utilities.sol";
+import "./mock/ERC721Mock.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 
 // @dev These tests are intended to be run against a forked mainnet.
@@ -17,7 +17,7 @@ import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 // TODO(Refactor/deduplicate with LiquidityProviders testing)
 contract TestLendingAuction is DSTest, TestUtility, ERC721HolderUpgradeable {
     IUniswapV2Router SushiSwapRouter;
-    MockERC721Token mockNFT;
+    ERC721Mock mockNFT;
     IWETH WETH;
     IERC20Upgradeable DAI;
     ICERC20 cDAI;
@@ -79,7 +79,7 @@ contract TestLendingAuction is DSTest, TestUtility, ERC721HolderUpgradeable {
         uint256 max = type(uint256).max;
 
         // Setup mock NFT
-        mockNFT = new MockERC721Token();
+        mockNFT = new ERC721Mock();
         mockNFT.initialize("BoredApe", "BAYC");
 
         // Give this contract some

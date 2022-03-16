@@ -1,20 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.11;
 
-import "./Console.sol";
-import "ds-test/test.sol";
 import "@openzeppelin/contracts/interfaces/IERC20Upgradeable.sol";
 import "../interfaces/compound/ICERC20.sol";
 import "../interfaces/compound/ICEther.sol";
 import "../LendingAuction.sol";
 import "../interfaces/ILiquidityProviderEvents.sol";
-import "./Utilities.sol";
 
+import "./common/BaseUnitTest.sol";
 import "./mock/CERC20Mock.sol";
 import "./mock/CEtherMock.sol";
 import "./mock/ERC20Mock.sol";
 
-contract LiquidityProvidersUnitTest is DSTest, TestUtility, ILiquidityProviderEvents {
+contract LiquidityProvidersUnitTest is BaseUnitTest, ILiquidityProviderEvents {
     LiquidityProviders liquidityProviders;
     ERC20Mock usdcToken;
     CERC20Mock cUSDCToken;
