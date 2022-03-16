@@ -1,23 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.11;
 
-import "./Console.sol";
-import "ds-test/test.sol";
 import "@openzeppelin/contracts/interfaces/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 import "../interfaces/compound/ICERC20.sol";
 import "../interfaces/compound/ICEther.sol";
 import "../LendingAuction.sol";
 import "../interfaces/ILendingAuctionEvents.sol";
-import "./Utilities.sol";
 
+import "./common/BaseUnitTest.sol";
 import "./mock/CERC20Mock.sol";
 import "./mock/CEtherMock.sol";
 import "./mock/ERC20Mock.sol";
+import "./mock/ERC721Mock.sol";
 
 contract LendingAuctionUnitTest is
-    DSTest,
-    TestUtility,
+    BaseUnitTest,
     ILendingAuctionEvents,
     ILendingAuctionStructs,
     ERC721HolderUpgradeable
@@ -28,7 +26,7 @@ contract LendingAuctionUnitTest is
 
     CEtherMock cEtherToken;
 
-    MockERC721Token mockNft;
+    ERC721Mock mockNft;
 
     bool acceptEth;
 
@@ -61,7 +59,7 @@ contract LendingAuctionUnitTest is
 
         acceptEth = true;
 
-        mockNft = new MockERC721Token();
+        mockNft = new ERC721Mock();
         mockNft.initialize("BoredApe", "BAYC");
 
         mockNft.safeMint(address(this), 1);
