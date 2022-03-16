@@ -64,6 +64,7 @@ contract LiquidityProviders is
 
     // implement 10M limit for MVP
 
+    /// @inheritdoc ILiquidityProviders
     function supplyErc20(address asset, uint256 numTokensToSupply)
         external
         whenNotPaused
@@ -81,6 +82,7 @@ contract LiquidityProviders is
         return cTokensMinted;
     }
 
+    /// @inheritdoc ILiquidityProviders
     function supplyCErc20(address cAsset, uint256 cTokenAmount)
         external
         whenNotPaused
@@ -96,6 +98,7 @@ contract LiquidityProviders is
         emit CErc20Supplied(msg.sender, cAsset, cTokenAmount);
     }
 
+    /// @inheritdoc ILiquidityProviders
     function withdrawErc20(address asset, uint256 amountToWithdraw)
         public
         whenNotPaused
@@ -116,6 +119,7 @@ contract LiquidityProviders is
         return cTokensBurnt;
     }
 
+    /// @inheritdoc ILiquidityProviders
     function withdrawCErc20(address cAsset, uint256 amountToWithdraw)
         external
         whenNotPaused
@@ -131,6 +135,7 @@ contract LiquidityProviders is
         emit CErc20Withdrawn(msg.sender, cAsset, amountToWithdraw);
     }
 
+    /// @inheritdoc ILiquidityProviders
     function supplyEth() external payable whenNotPaused nonReentrant returns (uint256) {
         address cAsset = getCAsset(ETH_ADDRESS);
 
@@ -143,6 +148,7 @@ contract LiquidityProviders is
         return cTokensMinted;
     }
 
+    /// @inheritdoc ILiquidityProviders
     function withdrawEth(uint256 amountToWithdraw)
         external
         whenNotPaused

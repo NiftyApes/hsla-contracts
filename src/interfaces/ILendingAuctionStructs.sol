@@ -25,7 +25,7 @@ interface ILendingAuctionStructs {
         // SLOT 2 START
         // TODO(dankurka): replace this field with an enum rather than storing addresses over and over
         // The asset in which the loan has been denominated
-        address asset; // 0x0 in active loan denotes ETH
+        address asset;
         // SLOT 3 START
         // cumulative interest of varying rates paid by new lenders to buy out the loan auction
         uint128 historicLenderInterest;
