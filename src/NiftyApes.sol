@@ -12,8 +12,10 @@ import "@openzeppelin/contracts/utils/cryptography/draft-EIP712Upgradeable.sol";
 import "@openzeppelin/contracts/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts/utils/math/SafeCastUpgradeable.sol";
 import "./interfaces/compound/ICEther.sol";
+import "./interfaces/INiftyApesAdmin.sol";
 import "./interfaces/ILendingAuction.sol";
 import "./interfaces/compound/ICERC20.sol";
+
 import "./Math.sol";
 
 //  TODO Comment each function and each line of funtionality for readability by auditors - essential
@@ -29,6 +31,7 @@ import "./Math.sol";
 
 contract NiftyApes is
     ILendingAuction,
+    INiftyApesAdmin,
     OwnableUpgradeable,
     PausableUpgradeable,
     ReentrancyGuardUpgradeable,
@@ -99,7 +102,7 @@ contract NiftyApes is
         ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
     }
 
-    // @notice Sets an asset as allowed on the platform and creates asset => cAsset mapping
+    /// @inheritdoc INiftyApesAdmin
     function setCAssetAddress(address asset, address cAsset) external onlyOwner {
         require(assetToCAsset[asset] == address(0), "asset already set");
         require(_cAssetToAsset[cAsset] == address(0), "casset already set");
@@ -109,6 +112,7 @@ contract NiftyApes is
         emit NewAssetWhitelisted(asset, cAsset);
     }
 
+    /// @inheritdoc INiftyApesAdmin
     function setMaxCAssetBalance(address asset, uint256 maxBalance) external onlyOwner {
         maxBalanceByCAsset[getCAsset(asset)] = maxBalance;
     }
@@ -931,19 +935,19 @@ contract NiftyApes is
         }
     }
 
-    /// @inheritdoc ILendingAuction
+    /// @inheritdoc INiftyApesAdmin
     function updateLoanDrawProtocolFee(uint16 newLoanDrawProtocolFeeBps) external onlyOwner {
         require(newLoanDrawProtocolFeeBps <= MAX_FEE, "max fee");
         loanDrawFeeProtocolBps = newLoanDrawProtocolFeeBps;
     }
 
-    /// @inheritdoc ILendingAuction
+    /// @inheritdoc INiftyApesAdmin
     function updateRefinancePremiumLenderFee(uint16 newPremiumLenderBps) external onlyOwner {
         require(newPremiumLenderBps <= MAX_FEE, "max fee");
         refinancePremiumLenderBps = newPremiumLenderBps;
     }
 
-    /// @inheritdoc ILendingAuction
+    /// @inheritdoc INiftyApesAdmin
     function updateRefinancePremiumProtocolFee(uint16 newPremiumProtocolBps) external onlyOwner {
         require(newPremiumProtocolBps <= MAX_FEE, "max fee");
         refinancePremiumProtocolBps = newPremiumProtocolBps;
