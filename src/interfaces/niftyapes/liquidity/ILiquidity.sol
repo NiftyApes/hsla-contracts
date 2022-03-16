@@ -53,4 +53,8 @@ interface ILiquidity is ILiquidityEvents, ILiquidityStructs {
     /// @param account The users account address
     /// @param cAsset The compound token address
     function getCAssetBalance(address account, address cAsset) external view returns (uint256);
+
+    /// @notice Returns a maximum balance of compound tokens, if there is no limit returns zero.
+    /// @param cAsset The compound token address
+    function maxBalanceByCAsset(address cAsset) external view returns (uint256);
 }

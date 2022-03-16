@@ -28,26 +28,27 @@ contract NiftyApes is
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using AddressUpgradeable for address payable;
 
-    using SafeERC20Upgradeable for IERC20Upgradeable;
-    using AddressUpgradeable for address payable;
-
-    // Mapping of assetAddress to cAssetAddress
-    // controls assets available for deposit on NiftyApes
-    mapping(address => address) public assetToCAsset;
-    // Reverse mapping of assetAddress to cAssetAddress
-    mapping(address => address) internal _cAssetToAsset;
-
-    mapping(address => mapping(address => Balance)) internal _accountAssets;
-
-    mapping(address => uint256) public maxBalanceByCAsset;
-
+    /// @dev Internal address used for for ETH in our mappings
     address constant ETH_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
 
     /// @notice The maximum value that any fee on the protocol can be set to.
     ///         Fees on the protocol are denomimated in parts of 10_000.
-    uint16 constant MAX_FEE = 1000;
+    uint16 constant MAX_FEE = 1_000;
 
-    uint16 constant MAX_BPS = 10000;
+    /// @notice The base value for fees in the protocol.
+    uint16 constant MAX_BPS = 10_000;
+
+    /// @inheritdoc ILiquidity
+    mapping(address => address) public override assetToCAsset;
+
+    /// @notice The reverse mapping for assetToCAsset
+    mapping(address => address) internal _cAssetToAsset;
+
+    /// @notice The account balance for each asset of a user
+    mapping(address => mapping(address => Balance)) internal _balanceByAccountByAsset;
+
+    /// @inheritdoc ILiquidity
+    mapping(address => uint256) public override maxBalanceByCAsset;
 
     /// @dev A mapping for a NFT to a loan auction.
     ///      The mapping has to be broken into two parts since an NFT is denomiated by its address (first part)
@@ -77,6 +78,9 @@ contract NiftyApes is
     /// @inheritdoc ILending
     uint16 public refinancePremiumProtocolBps;
 
+    /// @notice The initializer for the NiftyApes protocol.
+    ///         Nifty Apes is intended to be deployed behind a proxy amd thus needs to initialize
+    ///         its state outsize of a constructor.
     function initialize() public initializer {
         EIP712Upgradeable.__EIP712_init("NiftyApes", "0.0.1");
 
@@ -105,7 +109,7 @@ contract NiftyApes is
     }
 
     function getCAssetBalance(address account, address cAsset) public view returns (uint256) {
-        return _accountAssets[account][cAsset].cAssetBalance;
+        return _balanceByAccountByAsset[account][cAsset].cAssetBalance;
     }
 
     /// @inheritdoc ILiquidity
@@ -119,7 +123,7 @@ contract NiftyApes is
 
         uint256 cTokensMinted = mintCErc20(msg.sender, address(this), asset, numTokensToSupply);
 
-        _accountAssets[msg.sender][cAsset].cAssetBalance += cTokensMinted;
+        _balanceByAccountByAsset[msg.sender][cAsset].cAssetBalance += cTokensMinted;
 
         requireMaxCAssetBalance(cAsset);
 
@@ -139,7 +143,7 @@ contract NiftyApes is
 
         cToken.safeTransferFrom(msg.sender, address(this), cTokenAmount);
 
-        _accountAssets[msg.sender][cAsset].cAssetBalance += cTokenAmount;
+        _balanceByAccountByAsset[msg.sender][cAsset].cAssetBalance += cTokenAmount;
 
         requireMaxCAssetBalance(cAsset);
 
@@ -189,7 +193,7 @@ contract NiftyApes is
 
         uint256 cTokensMinted = mintCEth(msg.value);
 
-        _accountAssets[msg.sender][cAsset].cAssetBalance += cTokensMinted;
+        _balanceByAccountByAsset[msg.sender][cAsset].cAssetBalance += cTokensMinted;
 
         requireMaxCAssetBalance(cAsset);
 
@@ -575,7 +579,7 @@ contract NiftyApes is
         uint256 fullCTokenAmount = assetAmountToCAssetAmount(offer.asset, fullAmount);
 
         withdrawCBalance(prospectiveLender, cAsset, fullCTokenAmount);
-        _accountAssets[loanAuction.lender][cAsset].cAssetBalance += fullCTokenAmount;
+        _balanceByAccountByAsset[loanAuction.lender][cAsset].cAssetBalance += fullCTokenAmount;
 
         // update Loan state
         loanAuction.lender = prospectiveLender;
@@ -664,11 +668,11 @@ contract NiftyApes is
             // update LoanAuction lender
             loanAuction.lender = prospectiveLender;
 
-            _accountAssets[currentlender][cAsset].cAssetBalance +=
+            _balanceByAccountByAsset[currentlender][cAsset].cAssetBalance +=
                 fullCTokenAmount -
                 protocolPremimuimInCtokens;
-            _accountAssets[prospectiveLender][cAsset].cAssetBalance -= fullCTokenAmount;
-            _accountAssets[owner()][cAsset].cAssetBalance += protocolPremimuimInCtokens;
+            _balanceByAccountByAsset[prospectiveLender][cAsset].cAssetBalance -= fullCTokenAmount;
+            _balanceByAccountByAsset[owner()][cAsset].cAssetBalance += protocolPremimuimInCtokens;
         }
 
         emit Refinance(prospectiveLender, offer.nftContractAddress, offer.nftId, offer);
@@ -853,8 +857,8 @@ contract NiftyApes is
                 (loanAuction.amountDrawn + interestOwedToLender)) / payment;
             uint256 cTokensToProtocol = (cTokensMinted * interestOwedToProtocol) / payment;
 
-            _accountAssets[loanAuction.lender][cAsset].cAssetBalance += cTokensToLender;
-            _accountAssets[owner()][cAsset].cAssetBalance += cTokensToProtocol;
+            _balanceByAccountByAsset[loanAuction.lender][cAsset].cAssetBalance += cTokensToLender;
+            _balanceByAccountByAsset[owner()][cAsset].cAssetBalance += cTokensToProtocol;
         }
 
         if (repayFull) {
@@ -1147,6 +1151,6 @@ contract NiftyApes is
         uint256 cTokenAmount
     ) internal {
         require(getCAssetBalance(account, cAsset) >= cTokenAmount, "Insuffient ctoken balance");
-        _accountAssets[account][cAsset].cAssetBalance -= cTokenAmount;
+        _balanceByAccountByAsset[account][cAsset].cAssetBalance -= cTokenAmount;
     }
 }
