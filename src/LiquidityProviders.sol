@@ -8,10 +8,9 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "./Math.sol";
 import "./interfaces/compound/ICERC20.sol";
 import "./interfaces/compound/ICEther.sol";
-import "./ErrorReporter.sol";
-import "./Exponential.sol";
 import "./interfaces/ILiquidityProviders.sol";
 
 // @title An interface for liquidity providers to supply and withdraw tokens
@@ -22,14 +21,7 @@ import "./interfaces/ILiquidityProviders.sol";
 // TODO document reentrancy bugs for auditors
 // TODO Implement a proxy
 
-contract LiquidityProviders is
-    ILiquidityProviders,
-    Exponential,
-    Ownable,
-    Pausable,
-    ReentrancyGuard,
-    TokenErrorReporter
-{
+contract LiquidityProviders is ILiquidityProviders, Ownable, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
     // ---------- STATE VARIABLES --------------- //
 
@@ -211,12 +203,7 @@ contract LiquidityProviders is
 
         uint256 exchangeRateMantissa = cToken.exchangeRateCurrent();
 
-        (MathError mathError, uint256 amountCTokens) = divScalarByExpTruncate(
-            amount,
-            Exp({ mantissa: exchangeRateMantissa })
-        );
-
-        require(mathError == MathError.NO_ERROR, "Math failed");
+        uint256 amountCTokens = Math.divScalarByExpTruncate(amount, exchangeRateMantissa);
 
         return amountCTokens;
     }

@@ -4,10 +4,9 @@ pragma solidity 0.8.11;
 import { ICEther } from "../../interfaces/compound/ICEther.sol";
 import { ERC20, IERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "../../ErrorReporter.sol";
-import "../../Exponential.sol";
+import "../../Math.sol";
 
-contract CEtherMock is ERC20, ICEther, Exponential {
+contract CEtherMock is ERC20, ICEther {
     bool public transferFromFail;
     bool public transferFail;
 
@@ -28,12 +27,7 @@ contract CEtherMock is ERC20, ICEther, Exponential {
             revert("cToken mint");
         }
 
-        (CarefulMath.MathError mathError, uint256 amountCTokens) = divScalarByExpTruncate(
-            msg.value,
-            ExponentialNoError.Exp({ mantissa: exchangeRateCurrent() })
-        );
-
-        require(mathError == CarefulMath.MathError.NO_ERROR, "math");
+        uint256 amountCTokens = Math.divScalarByExpTruncate(msg.value, exchangeRateCurrent());
 
         _mint(msg.sender, amountCTokens);
     }
@@ -43,16 +37,13 @@ contract CEtherMock is ERC20, ICEther, Exponential {
             return 1;
         }
 
-        (CarefulMath.MathError mathError, uint256 amountCTokens) = divScalarByExpTruncate(
-            redeemAmount,
-            ExponentialNoError.Exp({ mantissa: exchangeRateCurrent() })
-        );
+        uint256 amountCTokens = Math.divScalarByExpTruncate(redeemAmount, exchangeRateCurrent());
 
         _burn(msg.sender, amountCTokens);
 
         Address.sendValue(payable(msg.sender), redeemAmount);
 
-        return uint256(mathError);
+        return 0;
     }
 
     function setMintFail(bool _mintFail) external {

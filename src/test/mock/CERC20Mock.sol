@@ -3,11 +3,10 @@ pragma solidity 0.8.11;
 
 import { ICERC20 } from "../../interfaces/compound/ICERC20.sol";
 import { ERC20, IERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "../../ErrorReporter.sol";
-import "../../Exponential.sol";
+import "../../Math.sol";
 import "./ERC20Mock.sol";
 
-contract CERC20Mock is ERC20, ICERC20, Exponential {
+contract CERC20Mock is ERC20, ICERC20 {
     ERC20Mock public underlying;
 
     bool public transferFromFail;
@@ -31,16 +30,13 @@ contract CERC20Mock is ERC20, ICERC20, Exponential {
             return 1;
         }
 
-        (CarefulMath.MathError mathError, uint256 amountCTokens) = divScalarByExpTruncate(
-            mintAmount,
-            ExponentialNoError.Exp({ mantissa: exchangeRateCurrent() })
-        );
+        uint256 amountCTokens = Math.divScalarByExpTruncate(mintAmount, exchangeRateCurrent());
 
         _mint(msg.sender, amountCTokens);
 
         underlying.burn(msg.sender, mintAmount);
 
-        return uint256(mathError);
+        return 0;
     }
 
     function redeemUnderlying(uint256 redeemAmount) external returns (uint256) {
@@ -48,16 +44,13 @@ contract CERC20Mock is ERC20, ICERC20, Exponential {
             return 1;
         }
 
-        (CarefulMath.MathError mathError, uint256 amountCTokens) = divScalarByExpTruncate(
-            redeemAmount,
-            ExponentialNoError.Exp({ mantissa: exchangeRateCurrent() })
-        );
+        uint256 amountCTokens = Math.divScalarByExpTruncate(redeemAmount, exchangeRateCurrent());
 
         _burn(msg.sender, amountCTokens);
 
         underlying.mint(msg.sender, redeemAmount);
 
-        return uint256(mathError);
+        return 0;
     }
 
     function setMintFail(bool _mintFail) external {

@@ -8,14 +8,13 @@ import "../interfaces/compound/ICERC20.sol";
 import "../interfaces/compound/ICEther.sol";
 import "../LiquidityProviders.sol";
 import "../interfaces/ILiquidityProviderEvents.sol";
-import "../Exponential.sol";
 import "./Utilities.sol";
 
 import "./mock/CERC20Mock.sol";
 import "./mock/CEtherMock.sol";
 import "./mock/ERC20Mock.sol";
 
-contract LiquidityProvidersUnitTest is DSTest, TestUtility, Exponential, ILiquidityProviderEvents {
+contract LiquidityProvidersUnitTest is DSTest, TestUtility, ILiquidityProviderEvents {
     LiquidityProviders liquidityProviders;
     ERC20Mock usdcToken;
     CERC20Mock cUSDCToken;

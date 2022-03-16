@@ -7,12 +7,11 @@ import "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "../interfaces/compound/ICERC20.sol";
 import "../interfaces/compound/ICEther.sol";
 import "../LiquidityProviders.sol";
-import "../Exponential.sol";
 import "./Utilities.sol";
 
 // @dev These tests are intended to be run against a forked mainnet.
 
-contract LiquidityProvidersTest is DSTest, TestUtility, Exponential {
+contract LiquidityProvidersTest is DSTest, TestUtility {
     IUniswapV2Router SushiSwapRouter;
     IWETH WETH;
     IERC20 DAI;
