@@ -432,7 +432,7 @@ contract LendingAuctionUnitTest is
             asset: address(usdcToken),
             amount: 6,
             duration: 7,
-            expiration: block.timestamp + 1
+            expiration: uint32(block.timestamp + 1)
         });
 
         lendingAction.createOffer(offer);
@@ -465,7 +465,7 @@ contract LendingAuctionUnitTest is
             asset: address(usdcToken),
             amount: 6,
             duration: 1 days,
-            expiration: block.timestamp + 1
+            expiration: uint32(block.timestamp + 1)
         });
 
         lendingAction.createOffer(offer);
@@ -508,7 +508,7 @@ contract LendingAuctionUnitTest is
             asset: address(usdcToken),
             amount: 6,
             duration: 1 days,
-            expiration: block.timestamp + 1
+            expiration: uint32(block.timestamp + 1)
         });
 
         lendingAction.createOffer(offer1);
@@ -525,7 +525,7 @@ contract LendingAuctionUnitTest is
             asset: address(usdcToken),
             amount: 6,
             duration: 1 days,
-            expiration: block.timestamp + 1
+            expiration: uint32(block.timestamp + 1)
         });
 
         lendingAction.createOffer(offer2);
@@ -569,7 +569,7 @@ contract LendingAuctionUnitTest is
             asset: address(usdcToken),
             amount: 6,
             duration: 1 days,
-            expiration: block.timestamp + 1
+            expiration: uint32(block.timestamp + 1)
         });
 
         lendingAction.createOffer(offer);
@@ -605,7 +605,7 @@ contract LendingAuctionUnitTest is
             asset: ETH_ADDRESS,
             amount: 6,
             duration: 1 days,
-            expiration: block.timestamp + 1
+            expiration: uint32(block.timestamp + 1)
         });
 
         lendingAction.createOffer(offer);
@@ -643,7 +643,7 @@ contract LendingAuctionUnitTest is
             asset: address(usdcToken),
             amount: 6,
             duration: 1 days,
-            expiration: block.timestamp + 1
+            expiration: uint32(block.timestamp + 1)
         });
 
         lendingAction.createOffer(offer);
@@ -705,7 +705,7 @@ contract LendingAuctionUnitTest is
             asset: ETH_ADDRESS,
             amount: 6,
             duration: 1 days,
-            expiration: block.timestamp + 1
+            expiration: uint32(block.timestamp + 1)
         });
 
         lendingAction.createOffer(offer);
@@ -754,7 +754,7 @@ contract LendingAuctionUnitTest is
             asset: address(usdcToken),
             amount: 6,
             duration: 1 days,
-            expiration: block.timestamp + 1
+            expiration: uint32(block.timestamp + 1)
         });
 
         lendingAction.createOffer(offer);
@@ -798,7 +798,7 @@ contract LendingAuctionUnitTest is
             asset: address(usdcToken),
             amount: 6,
             duration: 1 days,
-            expiration: block.timestamp + 1
+            expiration: uint32(block.timestamp + 1)
         });
 
         lendingAction.createOffer(offer);
@@ -830,7 +830,7 @@ contract LendingAuctionUnitTest is
             asset: address(usdcToken),
             amount: 6,
             duration: 1 days,
-            expiration: block.timestamp + 1
+            expiration: uint32(block.timestamp + 1)
         });
 
         lendingAction.createOffer(offer2);
@@ -861,7 +861,7 @@ contract LendingAuctionUnitTest is
             asset: address(usdcToken),
             amount: 6,
             duration: 1 days,
-            expiration: block.timestamp + 1
+            expiration: uint32(block.timestamp + 1)
         });
 
         lendingAction.createOffer(offer);
@@ -893,7 +893,7 @@ contract LendingAuctionUnitTest is
             asset: address(usdcToken),
             amount: 6,
             duration: 1 days,
-            expiration: block.timestamp + 1
+            expiration: uint32(block.timestamp + 1)
         });
 
         lendingAction.createOffer(offer2);
@@ -924,7 +924,7 @@ contract LendingAuctionUnitTest is
             asset: address(usdcToken),
             amount: 6,
             duration: 1 days,
-            expiration: block.timestamp + 1
+            expiration: uint32(block.timestamp + 1)
         });
 
         lendingAction.createOffer(offer);
@@ -956,7 +956,7 @@ contract LendingAuctionUnitTest is
             asset: address(usdcToken),
             amount: 6,
             duration: 1 days,
-            expiration: block.timestamp + 1
+            expiration: uint32(block.timestamp + 1)
         });
 
         lendingAction.createOffer(offer2);
@@ -985,7 +985,7 @@ contract LendingAuctionUnitTest is
             asset: address(usdcToken),
             amount: 6,
             duration: 1 days,
-            expiration: block.timestamp + 1
+            expiration: uint32(block.timestamp + 1)
         });
 
         lendingAction.createOffer(offer);
@@ -1017,7 +1017,7 @@ contract LendingAuctionUnitTest is
             asset: address(usdcToken),
             amount: 6,
             duration: 1 days,
-            expiration: block.timestamp + 1
+            expiration: uint32(block.timestamp + 1)
         });
 
         lendingAction.createOffer(offer2);
@@ -1052,7 +1052,7 @@ contract LendingAuctionUnitTest is
             asset: address(usdcToken),
             amount: 6,
             duration: 1 days,
-            expiration: block.timestamp + 1
+            expiration: uint32(block.timestamp + 1)
         });
 
         lendingAction.createOffer(offer);
@@ -1084,7 +1084,7 @@ contract LendingAuctionUnitTest is
             asset: address(usdcToken),
             amount: 6,
             duration: 1 days,
-            expiration: block.timestamp + 1
+            expiration: uint32(block.timestamp + 1)
         });
 
         lendingAction.createOffer(offer2);
@@ -1118,7 +1118,7 @@ contract LendingAuctionUnitTest is
             asset: address(usdcToken),
             amount: 6,
             duration: 1 days,
-            expiration: block.timestamp + 1
+            expiration: uint32(block.timestamp + 1)
         });
 
         lendingAction.createOffer(offer);
@@ -1150,7 +1150,7 @@ contract LendingAuctionUnitTest is
             asset: address(usdcToken),
             amount: 6,
             duration: 1 days,
-            expiration: block.timestamp + 1
+            expiration: uint32(block.timestamp + 1)
         });
 
         lendingAction.createOffer(offer2);
@@ -1183,7 +1183,7 @@ contract LendingAuctionUnitTest is
             asset: address(usdcToken),
             amount: 6,
             duration: 1 days,
-            expiration: block.timestamp + 1
+            expiration: uint32(block.timestamp + 1)
         });
 
         lendingAction.createOffer(offer);
@@ -1215,7 +1215,7 @@ contract LendingAuctionUnitTest is
             asset: address(usdcToken),
             amount: 6,
             duration: 3 days,
-            expiration: block.timestamp + 1
+            expiration: uint32(block.timestamp + 1)
         });
 
         lendingAction.createOffer(offer2);
@@ -1291,7 +1291,7 @@ contract LendingAuctionUnitTest is
             asset: address(usdcToken),
             amount: 6,
             duration: 1 days,
-            expiration: block.timestamp + 1
+            expiration: uint32(block.timestamp + 1)
         });
 
         lendingAction.createOffer(offer);
@@ -1331,7 +1331,7 @@ contract LendingAuctionUnitTest is
             asset: address(usdcToken),
             amount: 6,
             duration: 1 days,
-            expiration: block.timestamp + 1
+            expiration: uint32(block.timestamp + 1)
         });
 
         lendingAction.createOffer(offer);
@@ -1377,7 +1377,7 @@ contract LendingAuctionUnitTest is
             asset: address(usdcToken),
             amount: 6,
             duration: 1 days,
-            expiration: block.timestamp + 1
+            expiration: uint32(block.timestamp + 1)
         });
 
         lendingAction.createOffer(offer);
@@ -1433,7 +1433,7 @@ contract LendingAuctionUnitTest is
             asset: address(usdcToken),
             amount: 6,
             duration: 1 days,
-            expiration: block.timestamp + 1
+            expiration: uint32(block.timestamp + 1)
         });
 
         lendingAction.createOffer(offer);

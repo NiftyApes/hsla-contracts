@@ -10,6 +10,7 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 /**
  * @title NiftyApes LendingAuction Contract
@@ -438,10 +439,10 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         loanAuction.amount = offer.amount;
         loanAuction.interestRateBps = offer.interestRateBps;
         loanAuction.duration = offer.duration;
-        loanAuction.amountDrawn = fullAmount;
-        loanAuction.timeOfInterestStart = block.timestamp;
-        loanAuction.historicLenderInterest += currentLenderInterest;
-        loanAuction.historicProtocolInterest += currentProtocolInterest;
+        loanAuction.amountDrawn = SafeCast.toUint128(fullAmount);
+        loanAuction.timeOfInterestStart = SafeCast.toUint32(block.timestamp);
+        loanAuction.historicLenderInterest += SafeCast.toUint128(currentLenderInterest);
+        loanAuction.historicProtocolInterest += SafeCast.toUint128(currentProtocolInterest);
 
         emit Refinance(prospectiveLender, offer.nftContractAddress, offer.nftId, offer);
     }
@@ -475,9 +476,9 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         loanAuction.amount = offer.amount;
         loanAuction.interestRateBps = offer.interestRateBps;
         loanAuction.duration = offer.duration;
-        loanAuction.timeOfInterestStart = block.timestamp;
-        loanAuction.historicLenderInterest += currentLenderInterest;
-        loanAuction.historicProtocolInterest += currentProtocolInterest;
+        loanAuction.timeOfInterestStart = SafeCast.toUint32(block.timestamp);
+        loanAuction.historicLenderInterest += SafeCast.toUint128(currentLenderInterest);
+        loanAuction.historicProtocolInterest += SafeCast.toUint128(currentProtocolInterest);
 
         if (loanAuction.lender == prospectiveLender) {
             // If current lender is refinancing the loan they do not need to pay any fees or buy themselves out.
@@ -576,11 +577,11 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         );
 
         // reset timeOfinterestStart and update historic interest due to parameters of loan changing
-        loanAuction.historicLenderInterest += lenderInterest;
-        loanAuction.historicProtocolInterest += protocolInterest;
-        loanAuction.timeOfInterestStart = block.timestamp;
+        loanAuction.historicLenderInterest += SafeCast.toUint128(lenderInterest);
+        loanAuction.historicProtocolInterest += SafeCast.toUint128(protocolInterest);
+        loanAuction.timeOfInterestStart = SafeCast.toUint32(block.timestamp);
 
-        loanAuction.timeDrawn += drawTime;
+        loanAuction.timeDrawn += SafeCast.toUint32(drawTime);
 
         emit TimeDrawn(nftContractAddress, nftId, drawTime, loanAuction.timeDrawn);
     }
@@ -612,12 +613,12 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         );
 
         // reset timeOfinterestStart and update historic interest due to parameters of loan changing
-        loanAuction.historicLenderInterest += lenderInterest;
-        loanAuction.historicProtocolInterest += protocolInterest;
-        loanAuction.timeOfInterestStart = block.timestamp;
+        loanAuction.historicLenderInterest += SafeCast.toUint128(lenderInterest);
+        loanAuction.historicProtocolInterest += SafeCast.toUint128(protocolInterest);
+        loanAuction.timeOfInterestStart = SafeCast.toUint32(block.timestamp);
 
         // set amountDrawn
-        loanAuction.amountDrawn += drawAmount;
+        loanAuction.amountDrawn += SafeCast.toUint128(drawAmount);
 
         uint256 cTokensBurnt = burnCErc20(loanAuction.asset, drawAmount);
         withdrawCBalance(loanAuction.lender, cAsset, cTokensBurnt);
@@ -839,6 +840,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         internal
         view
     {
+        // TODO(dankurka): Discuss with Kevin
         require(offer.duration >= loanAuction.duration + 1 days, "offer duration");
     }
 
@@ -918,7 +920,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         loanAuction.amount = offer.amount;
         loanAuction.interestRateBps = offer.interestRateBps;
         loanAuction.duration = offer.duration;
-        loanAuction.timeOfInterestStart = block.timestamp;
+        loanAuction.timeOfInterestStart = SafeCast.toUint32(block.timestamp);
         loanAuction.timeDrawn = offer.duration;
         loanAuction.amountDrawn = offer.amount;
         loanAuction.fixedTerms = offer.fixedTerms;
