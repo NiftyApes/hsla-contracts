@@ -139,6 +139,19 @@ contract LiquidityProvidersUnitTest is DSTest, TestUtility, ILiquidityProviderEv
         assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 1 ether);
     }
 
+    function testCannotSupplyErc20_maxCAssethit() public {
+        usdcToken.mint(address(this), 2);
+        usdcToken.approve(address(liquidityProviders), 2);
+
+        liquidityProviders.setMaxCAssetBalance(address(usdcToken), 1 ether);
+
+        liquidityProviders.supplyErc20(address(usdcToken), 1);
+
+        hevm.expectRevert("max casset");
+
+        liquidityProviders.supplyErc20(address(usdcToken), 1);
+    }
+
     function testSupplyErc20_supply_erc20_with_event() public {
         usdcToken.mint(address(this), 1);
         usdcToken.approve(address(liquidityProviders), 1);
@@ -208,6 +221,21 @@ contract LiquidityProvidersUnitTest is DSTest, TestUtility, ILiquidityProviderEv
         emit CErc20Supplied(address(this), address(cUSDCToken), 1);
 
         liquidityProviders.supplyCErc20(address(cUSDCToken), 1);
+    }
+
+    function testCannotSupplyCErc20_maxCAssethit() public {
+        usdcToken.mint(address(this), 2);
+
+        cUSDCToken.mint(2);
+        cUSDCToken.approve(address(liquidityProviders), 2 ether);
+
+        liquidityProviders.setMaxCAssetBalance(address(usdcToken), 1 ether);
+
+        liquidityProviders.supplyCErc20(address(cUSDCToken), 1 ether);
+
+        hevm.expectRevert("max casset");
+
+        liquidityProviders.supplyCErc20(address(cUSDCToken), 1 ether);
     }
 
     function testCannotSupplyCErc20_transfer_from_fails() public {
@@ -405,6 +433,24 @@ contract LiquidityProvidersUnitTest is DSTest, TestUtility, ILiquidityProviderEv
         hevm.expectEmit(true, false, false, true);
 
         emit EthSupplied(address(this), 1, 1 ether);
+
+        liquidityProviders.supplyEth{ value: 1 }();
+    }
+
+    function testCannotSupplyEth_maxCAssethit() public {
+        liquidityProviders.setCAssetAddress(
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
+            address(cEtherToken)
+        );
+
+        liquidityProviders.setMaxCAssetBalance(
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
+            1 ether
+        );
+
+        liquidityProviders.supplyEth{ value: 1 }();
+
+        hevm.expectRevert("max casset");
 
         liquidityProviders.supplyEth{ value: 1 }();
     }
