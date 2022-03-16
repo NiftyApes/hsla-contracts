@@ -4,7 +4,7 @@ pragma solidity 0.8.11;
 import "@openzeppelin/contracts/interfaces/IERC20Upgradeable.sol";
 import "../../interfaces/compound/ICERC20.sol";
 import "../../interfaces/compound/ICEther.sol";
-import "../../LendingAuction.sol";
+import "../../NiftyApes.sol";
 import "../../interfaces/ILiquidityProviderEvents.sol";
 
 import "../common/BaseTest.sol";
@@ -13,7 +13,7 @@ import "../mock/CEtherMock.sol";
 import "../mock/ERC20Mock.sol";
 
 contract LiquidityProvidersUnitTest is BaseTest, ILiquidityProviderEvents {
-    LiquidityProviders liquidityProviders;
+    NiftyApes liquidityProviders;
     ERC20Mock usdcToken;
     CERC20Mock cUSDCToken;
 
@@ -26,9 +26,8 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityProviderEvents {
     }
 
     function setUp() public {
-        LendingAuction la = new LendingAuction();
-        la.initialize();
-        liquidityProviders = la;
+        liquidityProviders = new NiftyApes();
+        liquidityProviders.initialize();
 
         usdcToken = new ERC20Mock();
         usdcToken.initialize("USD Coin", "USDC");
