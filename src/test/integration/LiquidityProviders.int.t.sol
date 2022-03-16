@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.11;
 
-import "ds-test/test.sol";
 import "@openzeppelin/contracts/interfaces/IERC20Upgradeable.sol";
-import "../interfaces/compound/ICERC20.sol";
-import "../interfaces/compound/ICEther.sol";
-import "../LiquidityProviders.sol";
-import "./Utilities.sol";
+import "../../interfaces/compound/ICERC20.sol";
+import "../../interfaces/compound/ICEther.sol";
+import "../../LiquidityProviders.sol";
+import "../interfaces/IUniswapV2Router.sol";
+import "../interfaces/IWETH.sol";
+import "../common/BaseTest.sol";
 
 // @dev These tests are intended to be run against a forked mainnet.
 
-contract LiquidityProvidersTest is DSTest, TestUtility {
+contract LiquidityProvidersIntegrationTest is BaseTest {
     IUniswapV2Router SushiSwapRouter;
     IWETH WETH;
     IERC20Upgradeable DAI;
