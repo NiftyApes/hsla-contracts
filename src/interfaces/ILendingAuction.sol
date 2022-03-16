@@ -224,10 +224,4 @@ interface ILendingAuction is ILiquidityProviders, ILendingAuctionEvents, ILendin
         external
         view
         returns (uint256, uint256);
-
-    function updateLoanDrawProtocolFee(uint16 newLoanDrawProtocolFeeBps) external;
-
-    function updateRefinancePremiumLenderFee(uint16 newPremiumLenderBps) external;
-
-    function updateRefinancePremiumProtocolFee(uint16 newPremiumProtocolBps) external;
 }

@@ -2,20 +2,11 @@
 pragma solidity ^0.8.11;
 
 import "./ILiquidityProviderEvents.sol";
+import "./ILiquidityProviderStructs.sol";
 
-// @dev public interface for LiquidityProviders.sol
-interface ILiquidityProviders is ILiquidityProviderEvents {
-    // Structs
-
-    struct Balance {
-        uint256 cAssetBalance;
-    }
-
-    // Functions
-
+/// @title NiftyApes interface for managing liquidity.
+interface ILiquidityProviders is ILiquidityProviderEvents, ILiquidityProviderStructs {
     function assetToCAsset(address asset) external view returns (address cAsset);
-
-    function setCAssetAddress(address asset, address cAsset) external;
 
     function getCAssetBalance(address account, address cAsset) external view returns (uint256);
 
