@@ -17,17 +17,6 @@ import "./interfaces/compound/ICERC20.sol";
 
 import "./Math.sol";
 
-//  TODO Comment each function and each line of funtionality for readability by auditors - essential
-// TODO(Use the non mutating libcompound type implementation for major gas savings) - nice to have
-// A major issue is the libcompound has not been audited at this point in time
-// TODO(Can the offer book mapping be factored out to a library?) - nice to have
-// I dont think so due to storage value needed in the library
-// TODO(need to implement Proxy and Intitializable contracts to enable upgarability and big fixes?)
-
-// TODO refactor to ensure that capital can't be moved or is present for amountDrawn
-// TODO document reentrancy bugs for auditors
-// TODO(dankurka): Missing pause only owner methods
-
 contract NiftyApes is
     OwnableUpgradeable,
     PausableUpgradeable,
