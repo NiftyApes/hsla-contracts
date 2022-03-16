@@ -73,7 +73,7 @@ contract LiquidityProviders is ILiquidityProviders, Ownable, Pausable, Reentranc
 
         _accountAssets[msg.sender][cAsset].cAssetBalance += cTokensMinted;
 
-        requireMaxCAssetBalance(cAsset, cTokensMinted);
+        requireMaxCAssetBalance(cAsset);
 
         emit Erc20Supplied(msg.sender, asset, numTokensToSupply, cTokensMinted);
 
@@ -93,7 +93,7 @@ contract LiquidityProviders is ILiquidityProviders, Ownable, Pausable, Reentranc
 
         _accountAssets[msg.sender][cAsset].cAssetBalance += cTokenAmount;
 
-        requireMaxCAssetBalance(cAsset, cTokenAmount);
+        requireMaxCAssetBalance(cAsset);
 
         emit CErc20Supplied(msg.sender, cAsset, cTokenAmount);
     }
@@ -143,7 +143,7 @@ contract LiquidityProviders is ILiquidityProviders, Ownable, Pausable, Reentranc
 
         _accountAssets[msg.sender][cAsset].cAssetBalance += cTokensMinted;
 
-        requireMaxCAssetBalance(cAsset, cTokensMinted);
+        requireMaxCAssetBalance(cAsset);
 
         emit EthSupplied(msg.sender, msg.value, cTokensMinted);
 
@@ -169,13 +169,10 @@ contract LiquidityProviders is ILiquidityProviders, Ownable, Pausable, Reentranc
         return cTokensBurnt;
     }
 
-    function requireMaxCAssetBalance(address cAsset, uint256 amount) internal {
+    function requireMaxCAssetBalance(address cAsset) internal {
         uint256 maxCAssetBalance = maxBalanceByCAsset[cAsset];
         if (maxCAssetBalance != 0) {
-            require(
-                maxCAssetBalance >= ICERC20(cAsset).balanceOf(address(this)) + amount,
-                "max casset"
-            );
+            require(maxCAssetBalance >= ICERC20(cAsset).balanceOf(address(this)), "max casset");
         }
     }
 
