@@ -39,7 +39,14 @@ interface ILending is ILendingEvents, ILendingStructs {
      * @notice Generate a hash of an offer and sign with the EIP712 standard
      * @param offer The details of a loan auction offer
      */
-    function getEIP712EncodedOffer(Offer memory offer) external view returns (bytes32 signedOffer);
+    function getOfferHash(Offer memory offer) external view returns (bytes32 signedOffer);
+
+    /**
+     * @notice Get the offer signer given an offerHash and signature for the offer.
+     * @param offerHash encoded hash of an offer (from LoanAuction.getOfferHash(offer))
+     * @param signature The 65 byte (r, s, v) signature of a signedOffer
+     */
+    function getOfferSigner(bytes32 offerHash, bytes memory signature) external returns (address);
 
     /**
      * @notice Check whether a signature-based offer has been cancelledOrFinalized

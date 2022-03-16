@@ -232,7 +232,7 @@ contract NiftyApes is
     }
 
     /// @inheritdoc ILending
-    function getEIP712EncodedOffer(Offer memory offer) public view returns (bytes32 signedOffer) {
+    function getOfferHash(Offer memory offer) public view returns (bytes32 signedOffer) {
         return
             _hashTypedDataV4(
                 keccak256(
@@ -257,23 +257,19 @@ contract NiftyApes is
         return _cancelledOrFinalized[signature];
     }
 
-    /**
-     * @notice Get the offer signer given an offerHash and signature for the offer.
-     * @param eip712EncodedOffer encoded hash of an offer (from LoanAuction.getEIP712EncodedOffer(offer))
-     * @param signature The 65 byte (r, s, v) signature of a signedOffer
-     */
+    /// @inheritdoc ILending
     function getOfferSigner(
-        bytes32 eip712EncodedOffer, // hash of offer
+        bytes32 offerHash, // hash of offer
         bytes memory signature //proof the actor signed the offer
-    ) internal pure returns (address) {
-        return ECDSAUpgradeable.recover(eip712EncodedOffer, signature);
+    ) public pure override returns (address) {
+        return ECDSAUpgradeable.recover(offerHash, signature);
     }
 
     /// @inheritdoc ILending
     function withdrawOfferSignature(Offer memory offer, bytes calldata signature) external {
         requireAvailableSignature(signature);
 
-        bytes32 offerHash = getEIP712EncodedOffer(offer);
+        bytes32 offerHash = getOfferHash(offer);
 
         address signer = getOfferSigner(offerHash, signature);
 
@@ -325,7 +321,7 @@ contract NiftyApes is
             offer.floorTerm
         );
 
-        bytes32 offerHash = getEIP712EncodedOffer(offer);
+        bytes32 offerHash = getOfferHash(offer);
 
         offerBook[offerHash] = offer;
 
@@ -389,7 +385,7 @@ contract NiftyApes is
     ) external payable whenNotPaused nonReentrant {
         requireAvailableSignature(signature);
 
-        address lender = getOfferSigner(getEIP712EncodedOffer(offer), signature);
+        address lender = getOfferSigner(getOfferHash(offer), signature);
         requireOfferCreator(offer, lender);
 
         if (!offer.floorTerm) {
@@ -428,7 +424,7 @@ contract NiftyApes is
     {
         requireAvailableSignature(signature);
 
-        address borrower = getOfferSigner(getEIP712EncodedOffer(offer), signature);
+        address borrower = getOfferSigner(getOfferHash(offer), signature);
         requireOfferCreator(offer, borrower);
 
         markSignatureUsed(signature);
@@ -506,7 +502,7 @@ contract NiftyApes is
         bytes calldata signature,
         uint256 nftId
     ) external payable whenNotPaused nonReentrant {
-        address prospectiveLender = getOfferSigner(getEIP712EncodedOffer(offer), signature);
+        address prospectiveLender = getOfferSigner(getOfferHash(offer), signature);
 
         requireOfferCreator(offer, prospectiveLender);
 
