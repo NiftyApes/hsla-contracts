@@ -1,21 +1,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.11;
 
-import "ds-test/test.sol";
 import "@openzeppelin/contracts/interfaces/IERC20Upgradeable.sol";
-import "../interfaces/compound/ICERC20.sol";
-import "../interfaces/compound/ICEther.sol";
-import "../LendingAuction.sol";
-import "./Utilities.sol";
-import "./mock/ERC721Mock.sol";
+import "../../interfaces/compound/ICERC20.sol";
+import "../../interfaces/compound/ICEther.sol";
+import "../../LendingAuction.sol";
+import "../interfaces/IUniswapV2Router.sol";
+import "../interfaces/IWETH.sol";
+import "../mock/ERC721Mock.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
+import "../common/BaseTest.sol";
 
 // @dev These tests are intended to be run against a forked mainnet.
 
 //  TODO Comment each line of testing for readability by auditors
 
 // TODO(Refactor/deduplicate with LiquidityProviders testing)
-contract TestLendingAuction is DSTest, TestUtility, ERC721HolderUpgradeable {
+contract TestLendingAuctionIntegrationTest is BaseTest, ERC721HolderUpgradeable {
     IUniswapV2Router SushiSwapRouter;
     ERC721Mock mockNFT;
     IWETH WETH;
