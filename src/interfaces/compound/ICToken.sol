@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.11;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IERC20Upgradeable } from "@openzeppelin/contracts/token/ERC20/IERC20Upgradeable.sol";
 
-interface ICToken is IERC20 {
+interface ICToken is IERC20Upgradeable {
     function exchangeRateCurrent() external returns (uint256);
 }

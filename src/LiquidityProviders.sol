@@ -2,12 +2,12 @@
 
 pragma solidity ^0.8.11;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts/security/PausableUpgradeable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "@openzeppelin/contracts/utils/AddressUpgradeable.sol";
 import "./Math.sol";
 import "./interfaces/compound/ICERC20.sol";
 import "./interfaces/compound/ICEther.sol";
@@ -22,9 +22,14 @@ import "./interfaces/ILiquidityProviders.sol";
 // TODO Implement a proxy
 // TODO(dankurka): Missing pause only owner methods
 
-contract LiquidityProviders is ILiquidityProviders, Ownable, Pausable, ReentrancyGuard {
-    using SafeERC20 for IERC20;
-    using Address for address payable;
+contract LiquidityProviders is
+    ILiquidityProviders,
+    OwnableUpgradeable,
+    PausableUpgradeable,
+    ReentrancyGuardUpgradeable
+{
+    using SafeERC20Upgradeable for IERC20Upgradeable;
+    using AddressUpgradeable for address payable;
     // ---------- STATE VARIABLES --------------- //
 
     // Mapping of assetAddress to cAssetAddress
@@ -38,6 +43,13 @@ contract LiquidityProviders is ILiquidityProviders, Ownable, Pausable, Reentranc
     mapping(address => uint256) public maxBalanceByCAsset;
 
     address constant ETH_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
+
+    // TODO(dankurka): Can not be public / remove after contract merge
+    function _init() internal onlyInitializing {
+        OwnableUpgradeable.__Ownable_init();
+        PausableUpgradeable.__Pausable_init();
+        ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
+    }
 
     // This is needed to receive ETH when calling withdrawing ETH from compund
     receive() external payable {}
@@ -87,7 +99,7 @@ contract LiquidityProviders is ILiquidityProviders, Ownable, Pausable, Reentranc
         nonReentrant
     {
         getAsset(cAsset); // Ensures asset / cAsset is in the allow list
-        IERC20 cToken = IERC20(cAsset);
+        IERC20Upgradeable cToken = IERC20Upgradeable(cAsset);
 
         cToken.safeTransferFrom(msg.sender, address(this), cTokenAmount);
 
@@ -106,7 +118,7 @@ contract LiquidityProviders is ILiquidityProviders, Ownable, Pausable, Reentranc
         returns (uint256)
     {
         address cAsset = getCAsset(asset);
-        IERC20 underlying = IERC20(asset);
+        IERC20Upgradeable underlying = IERC20Upgradeable(asset);
 
         uint256 cTokensBurnt = burnCErc20(asset, amountToWithdraw);
 
@@ -126,7 +138,7 @@ contract LiquidityProviders is ILiquidityProviders, Ownable, Pausable, Reentranc
         nonReentrant
     {
         address asset = getAsset(cAsset);
-        IERC20 cToken = IERC20(cAsset);
+        IERC20Upgradeable cToken = IERC20Upgradeable(cAsset);
 
         withdrawCBalance(msg.sender, cAsset, amountToWithdraw);
 
@@ -186,7 +198,7 @@ contract LiquidityProviders is ILiquidityProviders, Ownable, Pausable, Reentranc
         uint256 amount
     ) internal returns (uint256) {
         address cAsset = assetToCAsset[asset];
-        IERC20 underlying = IERC20(asset);
+        IERC20Upgradeable underlying = IERC20Upgradeable(asset);
         ICERC20 cToken = ICERC20(cAsset);
 
         underlying.safeTransferFrom(from, to, amount);
