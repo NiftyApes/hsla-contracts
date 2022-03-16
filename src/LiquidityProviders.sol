@@ -39,9 +39,7 @@ contract LiquidityProviders is ILiquidityProviders, Ownable, Pausable, Reentranc
 
     address constant ETH_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
 
-    // ---------- FUNCTIONS -------------- //
-
-    // This is needed to receive ETH when calling `withdrawEth`
+    // This is needed to receive ETH when calling withdrawing ETH from compund
     receive() external payable {}
 
     // @notice Sets an asset as allowed on the platform and creates asset => cAsset mapping

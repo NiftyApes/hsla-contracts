@@ -66,8 +66,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     /// @inheritdoc ILendingAuction
     uint16 public refinancePremiumProtocolBps = 50;
 
-    // ---------- FUNCTIONS -------------- //
-
     /**
      * @notice Construct contract with pre-appended information for EIP712 signatures
      */
@@ -142,8 +140,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         emit SigOfferCancelled(nftContractAddress, nftId, signature);
     }
 
-    // ---------- On-chain Offer Functions ---------- //
-
     function getOfferBook(
         address nftContractAddress,
         uint256 nftId,
@@ -176,7 +172,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
         uint256 offerTokens = assetAmountToCAssetAmount(offer.asset, offer.amount);
 
-        // require msg.sender has sufficient available balance of cErc20
         require(getCAssetBalance(msg.sender, cAsset) >= offerTokens, "Insufficient lender balance");
 
         mapping(bytes32 => Offer) storage offerBook = getOfferBook(
@@ -223,8 +218,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         emit OfferRemoved(offer.creator, offer.asset, offer.nftContractAddress, offer, offerHash);
     }
 
-    // ---------- Execute Loan Functions ---------- //
-
     /// @inheritdoc ILendingAuction
     function executeLoanByBorrower(
         address nftContractAddress,
@@ -246,6 +239,7 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
     function executeLoanByBorrowerSignature(
         Offer calldata offer,
         bytes calldata signature,
+        // TODO(dankurka): Discuss with kevin
         uint256 nftId // nftId should match offer.nftId if offer.floorTerm false, nftId should not match if offer.floorTerm true. Need to provide as function parameter to pass nftId with floor terms.
     ) external payable whenNotPaused nonReentrant {
         requireAvailableSignature(signature);
@@ -337,8 +331,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
         emit LoanExecuted(lender, borrower, offer.nftContractAddress, offer.nftId, offer);
     }
-
-    // ---------- Refinance Loan Functions ---------- //
 
     /// @inheritdoc ILendingAuction
     function refinanceByBorrower(
@@ -544,8 +536,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         return (loanAuction, getCAsset(offer.asset));
     }
 
-    // // ---------- Borrower Draw Functions ---------- //
-
     /// @inheritdoc ILendingAuction
     function drawLoanTime(
         address nftContractAddress,
@@ -633,8 +623,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
 
         emit AmountDrawn(nftContractAddress, nftId, drawAmount, loanAuction.amountDrawn);
     }
-
-    // ---------- Repayment and Asset Seizure Functions ---------- //
 
     /// @inheritdoc ILendingAuction
     function repayLoan(address nftContractAddress, uint256 nftId) external payable override {
@@ -749,7 +737,6 @@ contract LendingAuction is ILendingAuction, LiquidityProviders, EIP712 {
         emit AssetSeized(currentLender, currentBorrower, nftContractAddress, nftId);
     }
 
-    // ---------- Helper Functions ---------- //
     /// @inheritdoc ILendingAuction
     function ownerOf(address nftContractAddress, uint256 nftId) public view returns (address) {
         return _loanAuctions[nftContractAddress][nftId].nftOwner;
