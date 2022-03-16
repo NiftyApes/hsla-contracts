@@ -19,7 +19,6 @@ import "./interfaces/ILiquidityProviders.sol";
 // @notice This contract wraps and unwraps, tracks balances of deposited Assets and cAssets
 
 // TODO document reentrancy bugs for auditors
-// TODO Implement a proxy
 // TODO(dankurka): Missing pause only owner methods
 
 contract LiquidityProviders is
