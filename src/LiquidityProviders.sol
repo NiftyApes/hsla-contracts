@@ -33,6 +33,8 @@ contract LiquidityProviders is ILiquidityProviders, Ownable, Pausable, Reentranc
 
     mapping(address => mapping(address => Balance)) internal _accountAssets;
 
+    mapping(address => uint256) public maxBalanceByCAsset;
+
     address constant ETH_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
 
     // ---------- FUNCTIONS -------------- //
@@ -69,6 +71,8 @@ contract LiquidityProviders is ILiquidityProviders, Ownable, Pausable, Reentranc
 
         _accountAssets[msg.sender][cAsset].cAssetBalance += cTokensMinted;
 
+        requireMaxCAssetBalance(cAsset, cTokensMinted);
+
         emit Erc20Supplied(msg.sender, asset, numTokensToSupply, cTokensMinted);
 
         return cTokensMinted;
@@ -86,6 +90,8 @@ contract LiquidityProviders is ILiquidityProviders, Ownable, Pausable, Reentranc
         cToken.safeTransferFrom(msg.sender, address(this), cTokenAmount);
 
         _accountAssets[msg.sender][cAsset].cAssetBalance += cTokenAmount;
+
+        requireMaxCAssetBalance(cAsset, cTokenAmount);
 
         emit CErc20Supplied(msg.sender, cAsset, cTokenAmount);
     }
@@ -135,6 +141,8 @@ contract LiquidityProviders is ILiquidityProviders, Ownable, Pausable, Reentranc
 
         _accountAssets[msg.sender][cAsset].cAssetBalance += cTokensMinted;
 
+        requireMaxCAssetBalance(cAsset, cTokensMinted);
+
         emit EthSupplied(msg.sender, msg.value, cTokensMinted);
 
         return cTokensMinted;
@@ -157,6 +165,16 @@ contract LiquidityProviders is ILiquidityProviders, Ownable, Pausable, Reentranc
         emit EthWithdrawn(msg.sender, amountToWithdraw, cTokensBurnt);
 
         return cTokensBurnt;
+    }
+
+    function requireMaxCAssetBalance(address cAsset, uint256 amount) internal {
+        uint256 maxCAssetBalance = maxBalanceByCAsset[cAsset];
+        if (maxCAssetBalance != 0) {
+            require(
+                maxCAssetBalance >= ICERC20(cAsset).balanceOf(address(this)) + amount,
+                "max casset"
+            );
+        }
     }
 
     function mintCErc20(

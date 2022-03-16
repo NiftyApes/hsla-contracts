@@ -530,4 +530,6 @@ contract LiquidityProvidersUnitTest is DSTest, TestUtility, ILiquidityProviderEv
 
         liquidityProviders.withdrawEth(1);
     }
+
+    // TODO(dankurka): Missing unit tests for max c asset balance
 }
