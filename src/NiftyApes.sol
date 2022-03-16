@@ -108,6 +108,7 @@ contract NiftyApes is
         maxBalanceByCAsset[getCAsset(asset)] = maxBalance;
     }
 
+    /// @inheritdoc ILiquidity
     function getCAssetBalance(address account, address cAsset) public view returns (uint256) {
         return _balanceByAccountByAsset[account][cAsset].cAssetBalance;
     }
@@ -251,8 +252,6 @@ contract NiftyApes is
             );
     }
 
-    // ---------- Signature Offer Functions ---------- //
-
     /// @inheritdoc ILending
     function getOfferSignatureStatus(bytes calldata signature) external view returns (bool) {
         return _cancelledOrFinalized[signature];
@@ -271,23 +270,19 @@ contract NiftyApes is
     }
 
     /// @inheritdoc ILending
-    function withdrawOfferSignature(
-        // TODO(dankurka): These params have not been validated (but we output them in the event)
-        address nftContractAddress,
-        uint256 nftId,
-        bytes32 eip712EncodedOffer,
-        bytes calldata signature
-    ) external {
+    function withdrawOfferSignature(Offer memory offer, bytes calldata signature) external {
         requireAvailableSignature(signature);
 
-        address signer = getOfferSigner(eip712EncodedOffer, signature);
+        bytes32 offerHash = getEIP712EncodedOffer(offer);
+
+        address signer = getOfferSigner(offerHash, signature);
 
         // Require that msg.sender is signer of the signature
         require(signer == msg.sender, "Msg.sender is not the signer of the submitted signature");
 
         markSignatureUsed(signature);
 
-        emit SigOfferCancelled(nftContractAddress, nftId, signature);
+        emit SigOfferCancelled(offer.nftContractAddress, offer.nftId, signature);
     }
 
     function getOfferBook(
@@ -389,8 +384,8 @@ contract NiftyApes is
     function executeLoanByBorrowerSignature(
         Offer calldata offer,
         bytes calldata signature,
-        // TODO(dankurka): Discuss with kevin
-        uint256 nftId // nftId should match offer.nftId if offer.floorTerm false, nftId should not match if offer.floorTerm true. Need to provide as function parameter to pass nftId with floor terms.
+        // TODO(dankurka): Add a good explanation
+        uint256 nftId
     ) external payable whenNotPaused nonReentrant {
         requireAvailableSignature(signature);
 
@@ -406,7 +401,7 @@ contract NiftyApes is
         // execute state changes for executeLoanByBid
         _executeLoanInternal(offer, lender, msg.sender, nftId);
 
-        emit SigOfferFinalized(offer.nftContractAddress, offer.nftId, signature);
+        emit SigOfferFinalized(offer.nftContractAddress, nftId, signature);
     }
 
     /// @inheritdoc ILending
@@ -586,6 +581,7 @@ contract NiftyApes is
         loanAuction.amount = offer.amount;
         loanAuction.interestRateBps = offer.interestRateBps;
         loanAuction.duration = offer.duration;
+        loanAuction.timeDrawn = offer.duration;
         loanAuction.amountDrawn = SafeCastUpgradeable.toUint128(fullAmount);
         loanAuction.timeOfInterestStart = SafeCastUpgradeable.toUint32(block.timestamp);
         loanAuction.historicLenderInterest += SafeCastUpgradeable.toUint128(currentLenderInterest);
@@ -625,6 +621,10 @@ contract NiftyApes is
         loanAuction.amount = offer.amount;
         loanAuction.interestRateBps = offer.interestRateBps;
         loanAuction.duration = offer.duration;
+        loanAuction.timeDrawn -= SafeCastUpgradeable.toUint32(
+            block.timestamp - loanAuction.timeOfInterestStart
+        );
+
         loanAuction.timeOfInterestStart = SafeCastUpgradeable.toUint32(block.timestamp);
         loanAuction.historicLenderInterest += SafeCastUpgradeable.toUint128(currentLenderInterest);
         loanAuction.historicProtocolInterest += SafeCastUpgradeable.toUint128(
@@ -687,6 +687,7 @@ contract NiftyApes is
         requireNoFixedTerm(loanAuction);
         requireOpenLoan(loanAuction);
         requireOfferNotExpired(offer);
+        // TODO(dankurka):Check here is wrong, this should only be the case if the only thing updated is the duration
         requireMinDurationForOffer(loanAuction, offer);
 
         requireMatchingAsset(offer.asset, loanAuction.asset);
@@ -705,19 +706,6 @@ contract NiftyApes is
 
         requireOpenLoan(loanAuction);
         requireNftOwner(loanAuction, msg.sender);
-
-        // document that a user CAN draw more time after a loan has expired, but they are still open to asset siezure until they draw enough time.
-        // // Require that loan has not expired
-        // require(
-        //     block.timestamp <
-        //         loanAuction.loanExecutedTime + loanAuction.timeDrawn,
-        //     "Cannot draw more time after a loan has expired"
-        // );
-
-        // TODO(dankurka): Discuss with Kevin
-        // Require timeDrawn is less than the duration. Ensures there is time available to draw
-        require(loanAuction.timeDrawn < loanAuction.duration, "Draw Time amount not available");
-
         requireTimeAvailable(loanAuction, drawTime);
 
         (uint256 lenderInterest, uint256 protocolInterest) = calculateInterestAccrued(
@@ -729,7 +717,6 @@ contract NiftyApes is
         loanAuction.historicLenderInterest += SafeCastUpgradeable.toUint128(lenderInterest);
         loanAuction.historicProtocolInterest += SafeCastUpgradeable.toUint128(protocolInterest);
         loanAuction.timeOfInterestStart = SafeCastUpgradeable.toUint32(block.timestamp);
-
         loanAuction.timeDrawn += SafeCastUpgradeable.toUint32(drawTime);
 
         emit TimeDrawn(nftContractAddress, nftId, drawTime, loanAuction.timeDrawn);
@@ -748,10 +735,6 @@ contract NiftyApes is
         requireOpenLoan(loanAuction);
 
         requireNftOwner(loanAuction, msg.sender);
-
-        // Require amountDrawn is less than the bestOfferAmount
-        // TODO(dankurka): Talk with kevin but this seems redundant
-        // require(loanAuction.amountDrawn < loanAuction.amount, "Draw down amount not available");
 
         requireFundsAvailable(loanAuction, drawAmount);
         requireLoanNotExpired(loanAuction);
@@ -816,7 +799,7 @@ contract NiftyApes is
 
         requireOpenLoan(loanAuction);
 
-        // TODO(dankurka): Discuss Maybe we should allow others to repay your loan
+        // TODO(dankurka): Decision add another top level that allows paying other peoples loans
         // require(msg.sender == loanAuction.nftOwner, "Msg.sender is not the NFT owner");
 
         // calculate the amount of interest accrued by the lender
@@ -882,7 +865,6 @@ contract NiftyApes is
         address cAsset = getCAsset(loanAuction.asset);
         requireOpenLoan(loanAuction);
 
-        // TODO(dankurka): Does not take into account that there might be more time available due to a refianance
         requireLoanExpired(loanAuction);
 
         address currentLender = loanAuction.lender;

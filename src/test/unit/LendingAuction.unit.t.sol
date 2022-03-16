@@ -1258,7 +1258,7 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.historicLenderInterest, 0);
         assertEq(loanAuction.historicProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 6);
-        assertEq(loanAuction.timeDrawn, 1 days);
+        assertEq(loanAuction.timeDrawn, 3 days);
     }
 
     // TODO(dankurka): Lots of missing refinance test cases

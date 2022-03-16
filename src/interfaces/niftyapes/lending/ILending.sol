@@ -51,12 +51,7 @@ interface ILending is ILendingEvents, ILendingStructs {
      * @notice Cancel a signature based offer on chain
      * @dev This function is the only way to ensure an offer can't be used on chain
      */
-    function withdrawOfferSignature(
-        address nftContractAddress,
-        uint256 nftId,
-        bytes32 offerHash,
-        bytes calldata signature
-    ) external;
+    function withdrawOfferSignature(Offer memory offer, bytes calldata signature) external;
 
     /**
      * @notice Retrieve an offer from the on-chain floor or individual NFT offer books by offerHash identifier
