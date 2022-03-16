@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.11;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721Upgradeable.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
 
 interface Hevm {
     // Set block.timestamp
@@ -127,8 +127,10 @@ interface IUniswapV2Router {
     ) external payable returns (uint256[] memory amounts);
 }
 
-contract MockERC721Token is ERC721, ERC721Enumerable {
-    constructor(string memory name, string memory symbol) ERC721(name, symbol) {}
+contract MockERC721Token is ERC721Upgradeable, ERC721EnumerableUpgradeable {
+    function initialize(string memory name, string memory symbol) public initializer {
+        ERC721Upgradeable.__ERC721_init(name, symbol);
+    }
 
     function safeMint(address to, uint256 tokenId) public {
         _safeMint(to, tokenId);
@@ -140,14 +142,14 @@ contract MockERC721Token is ERC721, ERC721Enumerable {
         address from,
         address to,
         uint256 tokenId
-    ) internal override(ERC721, ERC721Enumerable) {
+    ) internal override(ERC721Upgradeable, ERC721EnumerableUpgradeable) {
         super._beforeTokenTransfer(from, to, tokenId);
     }
 
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(ERC721, ERC721Enumerable)
+        override(ERC721Upgradeable, ERC721EnumerableUpgradeable)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);

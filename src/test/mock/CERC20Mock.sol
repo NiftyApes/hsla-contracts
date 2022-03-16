@@ -2,11 +2,11 @@
 pragma solidity 0.8.11;
 
 import { ICERC20 } from "../../interfaces/compound/ICERC20.sol";
-import { ERC20, IERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { ERC20Upgradeable, IERC20Upgradeable } from "@openzeppelin/contracts/token/ERC20/ERC20Upgradeable.sol";
 import "../../Math.sol";
 import "./ERC20Mock.sol";
 
-contract CERC20Mock is ERC20, ICERC20 {
+contract CERC20Mock is ERC20Upgradeable, ICERC20 {
     ERC20Mock public underlying;
 
     bool public transferFromFail;
@@ -16,7 +16,8 @@ contract CERC20Mock is ERC20, ICERC20 {
     bool public redeemUnderlyingFail;
     uint256 exchangeRateCurrentValue;
 
-    constructor(ERC20Mock _underlying) ERC20("cUSDC", "cUSD") {
+    function initialize(ERC20Mock _underlying) public initializer {
+        ERC20Upgradeable.__ERC20_init("cUSDC", "cUSD");
         underlying = _underlying;
         exchangeRateCurrentValue = 1;
     }
@@ -69,12 +70,12 @@ contract CERC20Mock is ERC20, ICERC20 {
         address from,
         address to,
         uint256 amount
-    ) public virtual override(ERC20, IERC20) returns (bool) {
+    ) public virtual override(ERC20Upgradeable, IERC20Upgradeable) returns (bool) {
         if (transferFromFail) {
             return false;
         }
 
-        return ERC20.transferFrom(from, to, amount);
+        return ERC20Upgradeable.transferFrom(from, to, amount);
     }
 
     function setTransferFromFail(bool fail) external {
@@ -84,14 +85,14 @@ contract CERC20Mock is ERC20, ICERC20 {
     function transfer(address to, uint256 amount)
         public
         virtual
-        override(ERC20, IERC20)
+        override(ERC20Upgradeable, IERC20Upgradeable)
         returns (bool)
     {
         if (transferFail) {
             return false;
         }
 
-        return ERC20.transfer(to, amount);
+        return ERC20Upgradeable.transfer(to, amount);
     }
 
     function setTransferFail(bool fail) external {

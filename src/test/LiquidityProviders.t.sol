@@ -3,7 +3,7 @@ pragma solidity 0.8.11;
 
 import "./Console.sol";
 import "ds-test/test.sol";
-import "@openzeppelin/contracts/interfaces/IERC20.sol";
+import "@openzeppelin/contracts/interfaces/IERC20Upgradeable.sol";
 import "../interfaces/compound/ICERC20.sol";
 import "../interfaces/compound/ICEther.sol";
 import "../LiquidityProviders.sol";
@@ -14,7 +14,7 @@ import "./Utilities.sol";
 contract LiquidityProvidersTest is DSTest, TestUtility {
     IUniswapV2Router SushiSwapRouter;
     IWETH WETH;
-    IERC20 DAI;
+    IERC20Upgradeable DAI;
     ICERC20 cDAI;
     ICEther cETH;
     LiquidityProviders liquidityProviders;
@@ -27,7 +27,7 @@ contract LiquidityProvidersTest is DSTest, TestUtility {
         WETH = IWETH(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
 
         // Setup DAI
-        DAI = IERC20(0x6B175474E89094C44Da98b954EedeAC495271d0F);
+        DAI = IERC20Upgradeable(0x6B175474E89094C44Da98b954EedeAC495271d0F);
 
         // Setup SushiSwapRouter
         SushiSwapRouter = IUniswapV2Router(0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F);

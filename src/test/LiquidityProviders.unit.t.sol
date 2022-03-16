@@ -3,10 +3,10 @@ pragma solidity 0.8.11;
 
 import "./Console.sol";
 import "ds-test/test.sol";
-import "@openzeppelin/contracts/interfaces/IERC20.sol";
+import "@openzeppelin/contracts/interfaces/IERC20Upgradeable.sol";
 import "../interfaces/compound/ICERC20.sol";
 import "../interfaces/compound/ICEther.sol";
-import "../LiquidityProviders.sol";
+import "../LendingAuction.sol";
 import "../interfaces/ILiquidityProviderEvents.sol";
 import "./Utilities.sol";
 
@@ -28,13 +28,18 @@ contract LiquidityProvidersUnitTest is DSTest, TestUtility, ILiquidityProviderEv
     }
 
     function setUp() public {
-        liquidityProviders = new LiquidityProviders();
+        LendingAuction la = new LendingAuction();
+        la.initialize();
+        liquidityProviders = la;
 
-        usdcToken = new ERC20Mock("USD Coin", "USDC");
-        cUSDCToken = new CERC20Mock(usdcToken);
+        usdcToken = new ERC20Mock();
+        usdcToken.initialize("USD Coin", "USDC");
+        cUSDCToken = new CERC20Mock();
+        cUSDCToken.initialize(usdcToken);
         liquidityProviders.setCAssetAddress(address(usdcToken), address(cUSDCToken));
 
         cEtherToken = new CEtherMock();
+        cEtherToken.initialize();
 
         acceptEth = true;
     }

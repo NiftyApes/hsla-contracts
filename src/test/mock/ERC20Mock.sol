@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.11;
 
-import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { ERC20Upgradeable } from "@openzeppelin/contracts/token/ERC20/ERC20Upgradeable.sol";
 
-contract ERC20Mock is ERC20 {
+contract ERC20Mock is ERC20Upgradeable {
     bool public transferFromFail;
     bool public transferFail;
 
-    constructor(string memory name_, string memory symbol_) ERC20(name_, symbol_) {}
+    function initialize(string memory name_, string memory symbol_) public initializer {
+        ERC20Upgradeable.__ERC20_init(name_, symbol_);
+    }
 
     function mint(address account, uint256 amount) public {
         _mint(account, amount);
@@ -26,7 +28,7 @@ contract ERC20Mock is ERC20 {
             return false;
         }
 
-        return ERC20.transferFrom(from, to, amount);
+        return ERC20Upgradeable.transferFrom(from, to, amount);
     }
 
     function setTransferFromFail(bool fail) external {
@@ -38,7 +40,7 @@ contract ERC20Mock is ERC20 {
             return false;
         }
 
-        return ERC20.transfer(to, amount);
+        return ERC20Upgradeable.transfer(to, amount);
     }
 
     function setTransferFail(bool fail) external {

@@ -3,8 +3,8 @@ pragma solidity 0.8.11;
 
 import "./Console.sol";
 import "ds-test/test.sol";
-import "@openzeppelin/contracts/interfaces/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
+import "@openzeppelin/contracts/interfaces/IERC20Upgradeable.sol";
+import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 import "../interfaces/compound/ICERC20.sol";
 import "../interfaces/compound/ICEther.sol";
 import "../LendingAuction.sol";
@@ -20,7 +20,7 @@ contract LendingAuctionUnitTest is
     TestUtility,
     ILendingAuctionEvents,
     ILendingAuctionStructs,
-    ERC721Holder
+    ERC721HolderUpgradeable
 {
     LendingAuction lendingAction;
     ERC20Mock usdcToken;
@@ -44,12 +44,16 @@ contract LendingAuctionUnitTest is
 
     function setUp() public {
         lendingAction = new LendingAuction();
+        lendingAction.initialize();
 
-        usdcToken = new ERC20Mock("USD Coin", "USDC");
-        cUSDCToken = new CERC20Mock(usdcToken);
+        usdcToken = new ERC20Mock();
+        usdcToken.initialize("USD Coin", "USDC");
+        cUSDCToken = new CERC20Mock();
+        cUSDCToken.initialize(usdcToken);
         lendingAction.setCAssetAddress(address(usdcToken), address(cUSDCToken));
 
         cEtherToken = new CEtherMock();
+        cEtherToken.initialize();
         lendingAction.setCAssetAddress(
             address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
             address(cEtherToken)
@@ -57,7 +61,8 @@ contract LendingAuctionUnitTest is
 
         acceptEth = true;
 
-        mockNft = new MockERC721Token("BoredApe", "BAYC");
+        mockNft = new MockERC721Token();
+        mockNft.initialize("BoredApe", "BAYC");
 
         mockNft.safeMint(address(this), 1);
         mockNft.approve(address(lendingAction), 1);
