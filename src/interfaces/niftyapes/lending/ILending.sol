@@ -4,14 +4,22 @@ pragma solidity ^0.8.11;
 import "./ILendingEvents.sol";
 import "./ILendingStructs.sol";
 
+/// @title The lending interface for Nifty Apes
+///        This interface is intended to be used for interacting with loans on the protocol.
 interface ILending is ILendingEvents, ILendingStructs {
-    // Functions
+    /// @notice Returns the fee that computes protocol interest
+    ///         Fees are denomiated in basis points, parts of 10_000
     function loanDrawFeeProtocolBps() external view returns (uint16);
 
+    /// @notice Returns the fee for refinancing a loan that the new lender has to pay
+    ///         Fees are denomiated in basis points, parts of 10_000
     function refinancePremiumLenderBps() external view returns (uint16);
 
+    /// @notice Returns the fee for refinancing a loan that is paid to the protocol
+    ///         Fees are denomiated in basis points, parts of 10_000
     function refinancePremiumProtocolBps() external view returns (uint16);
 
+    // TODO(dankurka): move
     /// @notice Returns the owner of a given nft if there is a current loan on the NFT, otherwise zero.
     /// @param nftContractAddress The address of the given nft contract
     /// @param nftId The id of the given nft

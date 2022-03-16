@@ -37,14 +37,12 @@ interface ILendingEvents {
         ILendingStructs.Offer offer
     );
 
-    // cancellation sig event
     event SigOfferCancelled(
         address indexed nftContractAddress,
         uint256 indexed nftId,
         bytes signature
     );
 
-    // finalize sig event
     event SigOfferFinalized(
         address indexed nftContractAddress,
         uint256 indexed nftId,
