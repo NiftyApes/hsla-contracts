@@ -1459,6 +1459,49 @@ contract LendingAuctionUnitTest is
         lendingAction.seizeAsset(address(mockNft), 1);
     }
 
+    function testCannotRepayLoan_no_loan() public {
+        hevm.expectRevert("asset allow list");
+        lendingAction.repayLoan(address(mockNft), 1);
+    }
+
+    function testRepayLoan_works_no_interest_no_time() public {
+        hevm.startPrank(LENDER_1);
+        usdcToken.mint(address(LENDER_1), 6);
+        usdcToken.approve(address(lendingAction), 6);
+
+        lendingAction.supplyErc20(address(usdcToken), 6);
+
+        Offer memory offer = Offer({
+            creator: LENDER_1,
+            nftContractAddress: address(mockNft),
+            interestRateBps: 3,
+            fixedTerms: false,
+            floorTerm: true,
+            nftId: 1,
+            asset: address(usdcToken),
+            amount: 6,
+            duration: 1 days,
+            expiration: uint32(block.timestamp + 1)
+        });
+
+        lendingAction.createOffer(offer);
+
+        hevm.stopPrank();
+
+        bytes32 offerHash = lendingAction.getOfferHash(offer);
+
+        lendingAction.executeLoanByBorrower(
+            offer.nftContractAddress,
+            offer.nftId,
+            offerHash,
+            offer.floorTerm
+        );
+
+        usdcToken.approve(address(lendingAction), 6);
+
+        lendingAction.repayLoan(offer.nftContractAddress, offer.nftId);
+    }
+
     // TODO(dankurka): Tests missing for drawAmount
 
     // TODO(dankurka): Tests missing for drawTime

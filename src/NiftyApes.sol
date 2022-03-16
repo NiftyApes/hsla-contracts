@@ -763,7 +763,16 @@ contract NiftyApes is
 
     /// @inheritdoc ILending
     function repayLoan(address nftContractAddress, uint256 nftId) external payable override {
-        _repayLoanAmount(nftContractAddress, nftId, true, 0);
+        _repayLoanAmount(nftContractAddress, nftId, true, 0, true);
+    }
+
+    /// @inheritdoc ILending
+    function repayLoanForAccount(address nftContractAddress, uint256 nftId)
+        external
+        payable
+        override
+    {
+        _repayLoanAmount(nftContractAddress, nftId, true, 0, false);
     }
 
     /// @inheritdoc ILending
@@ -772,7 +781,7 @@ contract NiftyApes is
         uint256 nftId,
         uint256 amount
     ) external payable whenNotPaused nonReentrant {
-        _repayLoanAmount(nftContractAddress, nftId, false, amount);
+        _repayLoanAmount(nftContractAddress, nftId, false, amount, true);
     }
 
     /**
@@ -784,7 +793,8 @@ contract NiftyApes is
         address nftContractAddress,
         uint256 nftId,
         bool repayFull,
-        uint256 paymentAmount
+        uint256 paymentAmount,
+        bool checkMsgSender
     ) internal {
         LoanAuction storage loanAuction = _loanAuctions[nftContractAddress][nftId];
         address cAsset = getCAsset(loanAuction.asset);
@@ -795,8 +805,9 @@ contract NiftyApes is
 
         requireOpenLoan(loanAuction);
 
-        // TODO(dankurka): Decision add another top level that allows paying other peoples loans
-        // require(msg.sender == loanAuction.nftOwner, "Msg.sender is not the NFT owner");
+        if (checkMsgSender) {
+            require(msg.sender == loanAuction.nftOwner, "msg.sender is not the borrower");
+        }
 
         // calculate the amount of interest accrued by the lender
         (uint256 lenderInterest, uint256 protocolInterest) = calculateInterestAccrued(
@@ -841,11 +852,21 @@ contract NiftyApes is
         }
 
         if (repayFull) {
+            IERC721Upgradeable(nftContractAddress).transferFrom(
+                address(this),
+                loanAuction.nftOwner,
+                nftId
+            );
+
+            emit LoanRepaid(
+                nftContractAddress,
+                nftId,
+                loanAuction.nftOwner,
+                loanAuction.asset,
+                payment
+            );
+
             delete _loanAuctions[nftContractAddress][nftId];
-
-            IERC721Upgradeable(nftContractAddress).transferFrom(address(this), msg.sender, nftId);
-
-            emit LoanRepaid(nftContractAddress, nftId);
         } else {
             emit PartialRepayment(nftContractAddress, nftId, loanAuction.asset, paymentAmount);
         }

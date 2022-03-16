@@ -63,7 +63,13 @@ interface ILendingEvents {
         uint256 totalDrawn
     );
 
-    event LoanRepaid(address indexed nftContractAddress, uint256 indexed nftId);
+    event LoanRepaid(
+        address indexed nftContractAddress,
+        uint256 indexed nftId,
+        address indexed borrower,
+        address asset,
+        uint256 totalPayment
+    );
 
     event PartialRepayment(
         address indexed nftContractAddress,
