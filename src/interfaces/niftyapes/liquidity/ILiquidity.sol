@@ -1,11 +1,11 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.11;
 
-import "./ILiquidityProviderEvents.sol";
-import "./ILiquidityProviderStructs.sol";
+import "./ILiquidityEvents.sol";
+import "./ILiquidityStructs.sol";
 
 /// @title NiftyApes interface for managing liquidity.
-interface ILiquidityProviders is ILiquidityProviderEvents, ILiquidityProviderStructs {
+interface ILiquidity is ILiquidityEvents, ILiquidityStructs {
     function assetToCAsset(address asset) external view returns (address cAsset);
 
     function getCAssetBalance(address account, address cAsset) external view returns (uint256);

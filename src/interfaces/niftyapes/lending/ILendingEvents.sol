@@ -1,15 +1,15 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.11;
 
-import "./ILendingAuctionStructs.sol";
+import "../lending/ILendingStructs.sol";
 
-interface ILendingAuctionEvents {
+interface ILendingEvents {
     event NewOffer(
         address indexed lender,
         address indexed asset,
         address indexed nftContractAddress,
         uint256 nftId,
-        ILendingAuctionStructs.Offer offer,
+        ILendingStructs.Offer offer,
         bytes32 offerHash
     );
 
@@ -17,7 +17,7 @@ interface ILendingAuctionEvents {
         address indexed lender,
         address indexed asset,
         address indexed nftContractAddress,
-        ILendingAuctionStructs.Offer offer,
+        ILendingStructs.Offer offer,
         bytes32 offerHash
     );
 
@@ -26,7 +26,7 @@ interface ILendingAuctionEvents {
         address nftOwner,
         address indexed nftContractAddress,
         uint256 indexed nftId,
-        ILendingAuctionStructs.Offer offer
+        ILendingStructs.Offer offer
         // TODO(dankurka): Inconsistent missing offer hash
     );
 
@@ -34,7 +34,7 @@ interface ILendingAuctionEvents {
         address lender,
         address indexed nftContractAddress,
         uint256 indexed nftId,
-        ILendingAuctionStructs.Offer offer
+        ILendingStructs.Offer offer
     );
 
     // cancellation sig event

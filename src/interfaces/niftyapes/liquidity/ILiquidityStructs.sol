@@ -1,9 +1,7 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.11;
 
-import "./ILiquidityProviderEvents.sol";
-
-interface ILiquidityProviderStructs is ILiquidityProviderEvents {
+interface ILiquidityStructs {
     struct Balance {
         uint256 cAssetBalance;
     }
