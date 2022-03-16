@@ -53,6 +53,10 @@ contract LiquidityProviders is ILiquidityProviders, Ownable, Pausable, Reentranc
         emit NewAssetWhitelisted(asset, cAsset);
     }
 
+    function setMaxCAssetBalance(address asset, uint256 maxBalance) external onlyOwner {
+        maxBalanceByCAsset[getCAsset(asset)] = maxBalance;
+    }
+
     function getCAssetBalance(address account, address cAsset) public view returns (uint256) {
         return _accountAssets[account][cAsset].cAssetBalance;
     }
