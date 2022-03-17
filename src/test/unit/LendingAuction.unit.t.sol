@@ -142,7 +142,7 @@ contract LendingAuctionUnitTest is
             expiration: 8
         });
 
-        hevm.expectRevert("Insufficient cAsset balance");
+        hevm.expectRevert("Insufficient cToken balance");
 
         lendingAction.createOffer(offer);
     }
@@ -544,7 +544,7 @@ contract LendingAuctionUnitTest is
             offer1.floorTerm
         );
 
-        hevm.expectRevert("Insuffient ctoken balance");
+        hevm.expectRevert("Insufficient cToken balance");
 
         lendingAction.executeLoanByBorrower(
             offer2.nftContractAddress,
