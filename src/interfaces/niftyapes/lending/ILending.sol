@@ -239,6 +239,7 @@ interface ILending is ILendingEvents, ILendingStructs {
      */
     function seizeAsset(address nftContractAddress, uint256 nftId) external;
 
+    // TODO(dankurka): Not helpful by itself if we have refiananced
     function calculateInterestAccrued(address nftContractAddress, uint256 nftId)
         external
         view
