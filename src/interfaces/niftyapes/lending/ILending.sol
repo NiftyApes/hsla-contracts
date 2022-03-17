@@ -176,19 +176,6 @@ interface ILending is ILendingEvents, ILendingStructs {
     function refinanceByLender(Offer calldata offer) external payable;
 
     /**
-     * @notice If a loan has been refinanced with a longer duration this function allows a borrower to draw down additional time for their loan.
-     * @dev Drawing down time increases the maximum loan pay back amount and so is not automatically imposed on a refinance by lender, hence this function.
-     * @param nftContractAddress The address of the NFT collection
-     * @param nftId The id of the specified NFT
-     * @param drawTime The amount of time to draw and add to the loan duration
-     */
-    function drawLoanTime(
-        address nftContractAddress,
-        uint256 nftId,
-        uint256 drawTime
-    ) external;
-
-    /**
      * @notice If a loan has been refinanced with a higher amount this function allows a borrower to draw down additional value for their loan.
      * @dev Drawing down value increases the maximum loan pay back amount and so is not automatically imposed on a refinance by lender, hence this function.
      * @param nftContractAddress The address of the NFT collection

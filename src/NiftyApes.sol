@@ -549,7 +549,6 @@ contract NiftyApes is
         loanAuction.amount = offer.amount;
         loanAuction.interestRateBps = offer.interestRateBps;
         loanAuction.duration = offer.duration;
-        loanAuction.timeDrawn = offer.duration;
         loanAuction.amountDrawn = SafeCastUpgradeable.toUint128(fullAmount);
 
         emit Refinance(prospectiveLender, offer.nftContractAddress, offer.nftId, offer);
@@ -570,12 +569,6 @@ contract NiftyApes is
         loanAuction.amount = offer.amount;
         loanAuction.interestRateBps = offer.interestRateBps;
         loanAuction.duration = offer.duration;
-        // TODO(dankurka): Discuss with Kevin / Zack
-        // If a lender is refinancing a loan we are drawing more time onto the loan, since this would cost
-        // the borrower more interest if they end up using it
-        loanAuction.timeDrawn -= SafeCastUpgradeable.toUint32(
-            block.timestamp - originalInterestStart
-        );
 
         if (loanAuction.lender == prospectiveLender) {
             // If current lender is refinancing the loan they do not need to pay any fees or buy themselves out.
@@ -648,26 +641,6 @@ contract NiftyApes is
         requireMatchingAsset(offer.asset, loanAuction.asset);
 
         return (loanAuction, getCAsset(offer.asset));
-    }
-
-    /// @inheritdoc ILending
-    function drawLoanTime(
-        address nftContractAddress,
-        uint256 nftId,
-        uint256 drawTime
-    ) external whenNotPaused nonReentrant {
-        // Instantiate LoanAuction Struct
-        LoanAuction storage loanAuction = _loanAuctions[nftContractAddress][nftId];
-
-        requireOpenLoan(loanAuction);
-        requireNftOwner(loanAuction, msg.sender);
-        requireTimeAvailable(loanAuction, drawTime);
-
-        updateInterest(loanAuction);
-
-        loanAuction.timeDrawn += SafeCastUpgradeable.toUint32(drawTime);
-
-        emit TimeDrawn(nftContractAddress, nftId, drawTime, loanAuction.timeDrawn);
     }
 
     /// @inheritdoc ILending
@@ -885,7 +858,7 @@ contract NiftyApes is
             uint256 timeOutstanding = block.timestamp - timeOfInterestStart;
 
             uint256 interestBase = (loanAuction.amountDrawn * timeOutstanding) /
-                loanAuction.timeDrawn;
+                loanAuction.duration;
 
             lenderInterest = (loanAuction.interestRateBps * interestBase) / MAX_BPS;
 

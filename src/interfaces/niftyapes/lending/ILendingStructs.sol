@@ -13,8 +13,6 @@ interface ILendingStructs {
         uint32 duration;
         // timestamp of start of interest acummulation. Is reset when a new lender takes over the loan or the borrower makes a partial repayment.
         uint32 timeOfInterestStart;
-        // time withdrawn by the nftOwner. This is the time they will pay interest on, with this value as minimum
-        uint32 timeDrawn;
         // SLOT 1 START
         // The current lender of a loan
         address lender;
