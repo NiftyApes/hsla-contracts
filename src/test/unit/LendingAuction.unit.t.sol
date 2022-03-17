@@ -35,6 +35,7 @@ contract LendingAuctionUnitTest is
 
     address constant LENDER_1 = address(0x1010);
     address constant LENDER_2 = address(0x2020);
+    address constant BORROWER_1 = address(0x101);
 
     receive() external payable {
         require(acceptEth, "acceptEth");
@@ -1457,6 +1458,168 @@ contract LendingAuctionUnitTest is
         emit AssetSeized(LENDER_1, address(this), address(mockNft), 1);
 
         lendingAction.seizeAsset(address(mockNft), 1);
+    }
+
+    function testCannotRepayLoan_no_loan() public {
+        hevm.expectRevert("asset allow list");
+        lendingAction.repayLoan(address(mockNft), 1);
+    }
+
+    function testCannotRepayLoan_someone_elses_loan() public {
+        hevm.startPrank(LENDER_1);
+        usdcToken.mint(address(LENDER_1), 6);
+        usdcToken.approve(address(lendingAction), 6);
+
+        lendingAction.supplyErc20(address(usdcToken), 6);
+
+        Offer memory offer = Offer({
+            creator: LENDER_1,
+            nftContractAddress: address(mockNft),
+            interestRateBps: 3,
+            fixedTerms: false,
+            floorTerm: true,
+            nftId: 1,
+            asset: address(usdcToken),
+            amount: 6,
+            duration: 1 days,
+            expiration: uint32(block.timestamp + 1)
+        });
+
+        lendingAction.createOffer(offer);
+
+        hevm.stopPrank();
+
+        bytes32 offerHash = lendingAction.getOfferHash(offer);
+
+        lendingAction.executeLoanByBorrower(
+            offer.nftContractAddress,
+            offer.nftId,
+            offerHash,
+            offer.floorTerm
+        );
+
+        hevm.startPrank(BORROWER_1);
+
+        usdcToken.approve(address(lendingAction), 6);
+
+        hevm.expectRevert("msg.sender is not the borrower");
+        lendingAction.repayLoan(offer.nftContractAddress, offer.nftId);
+    }
+
+    function testRepayLoan_works_no_interest_no_time() public {
+        hevm.startPrank(LENDER_1);
+        usdcToken.mint(address(LENDER_1), 6);
+        usdcToken.approve(address(lendingAction), 6);
+
+        lendingAction.supplyErc20(address(usdcToken), 6);
+
+        Offer memory offer = Offer({
+            creator: LENDER_1,
+            nftContractAddress: address(mockNft),
+            interestRateBps: 3,
+            fixedTerms: false,
+            floorTerm: true,
+            nftId: 1,
+            asset: address(usdcToken),
+            amount: 6,
+            duration: 1 days,
+            expiration: uint32(block.timestamp + 1)
+        });
+
+        lendingAction.createOffer(offer);
+
+        hevm.stopPrank();
+
+        bytes32 offerHash = lendingAction.getOfferHash(offer);
+
+        lendingAction.executeLoanByBorrower(
+            offer.nftContractAddress,
+            offer.nftId,
+            offerHash,
+            offer.floorTerm
+        );
+
+        usdcToken.approve(address(lendingAction), 6);
+
+        lendingAction.repayLoan(offer.nftContractAddress, offer.nftId);
+    }
+
+    function testRepayLoan_works_with_interest() public {
+        hevm.startPrank(LENDER_1);
+        usdcToken.mint(address(LENDER_1), 6 ether);
+        usdcToken.approve(address(lendingAction), 6 ether);
+
+        lendingAction.supplyErc20(address(usdcToken), 6 ether);
+
+        Offer memory offer = Offer({
+            creator: LENDER_1,
+            nftContractAddress: address(mockNft),
+            interestRateBps: 3,
+            fixedTerms: false,
+            floorTerm: true,
+            nftId: 1,
+            asset: address(usdcToken),
+            amount: 1 ether,
+            duration: 1 days,
+            expiration: uint32(block.timestamp + 1)
+        });
+
+        lendingAction.createOffer(offer);
+
+        hevm.stopPrank();
+
+        bytes32 offerHash = lendingAction.getOfferHash(offer);
+
+        lendingAction.executeLoanByBorrower(
+            offer.nftContractAddress,
+            offer.nftId,
+            offerHash,
+            offer.floorTerm
+        );
+
+        hevm.warp(block.timestamp + 1 days);
+
+        uint256 principal = 1 ether;
+        uint256 lenderInterest = (3 * principal) / 10000;
+        uint256 protocolInterest = (50 * principal) / 10000;
+
+        uint256 repayAmount = principal + lenderInterest + protocolInterest;
+
+        usdcToken.mint(address(this), lenderInterest + protocolInterest);
+
+        usdcToken.approve(address(lendingAction), repayAmount);
+
+        lendingAction.repayLoan(offer.nftContractAddress, offer.nftId);
+
+        assertEq(usdcToken.balanceOf(address(this)), 0);
+        assertEq(usdcToken.balanceOf(address(lendingAction)), 0);
+        assertEq(
+            cUSDCToken.balanceOf(address(lendingAction)),
+            (6 ether + lenderInterest + protocolInterest) * 1 ether
+        );
+
+        assertEq(
+            cUSDCToken.balanceOf(address(lendingAction)),
+            (6 ether + lenderInterest + protocolInterest) * 1 ether
+        );
+
+        assertEq(mockNft.ownerOf(1), address(this));
+
+        LoanAuction memory loanAuction = lendingAction.getLoanAuction(address(mockNft), 1);
+
+        assertEq(loanAuction.nftOwner, ZERO_ADDRESS);
+        assertEq(loanAuction.lender, ZERO_ADDRESS);
+        assertEq(loanAuction.asset, ZERO_ADDRESS);
+        assertEq(loanAuction.interestRateBps, 0);
+        assertTrue(!loanAuction.fixedTerms);
+
+        assertEq(loanAuction.amount, 0);
+        assertEq(loanAuction.duration, 0);
+        assertEq(loanAuction.timeOfInterestStart, 0);
+        assertEq(loanAuction.historicLenderInterest, 0);
+        assertEq(loanAuction.historicProtocolInterest, 0);
+        assertEq(loanAuction.amountDrawn, 0);
+        assertEq(loanAuction.timeDrawn, 0);
     }
 
     // TODO(dankurka): Tests missing for drawAmount

@@ -208,6 +208,16 @@ interface ILending is ILendingEvents, ILendingStructs {
      */
     function repayLoan(address nftContractAddress, uint256 nftId) external payable;
 
+    /// @notice Repay someone elses loan
+    ///         This function is similar to repayLoan except that it allows for msg.sender to not be
+    ///         the borrower of the loan.
+    ///         The reason this is broken into another function is to make it harder to accidentally
+    ///         be repaying someone elses loan.
+    ///         Unless you are intending to repay someone elses loan you should be using #repayLoan instead
+    /// @param nftContractAddress The address of the NFT collection
+    /// @param nftId The id of the specified NFT
+    function repayLoanForAccount(address nftContractAddress, uint256 nftId) external payable;
+
     /**
      * @notice Allows borrowers to make a partial payment toward the principle of their loan
      * @dev This function does not charge any interest or fees. It does change the calculation for future interest and fees accrual, so we track historicLenderInterest and historicProtocolInterest
@@ -229,6 +239,7 @@ interface ILending is ILendingEvents, ILendingStructs {
      */
     function seizeAsset(address nftContractAddress, uint256 nftId) external;
 
+    // TODO(dankurka): Not helpful by itself if we have refiananced
     function calculateInterestAccrued(address nftContractAddress, uint256 nftId)
         external
         view
