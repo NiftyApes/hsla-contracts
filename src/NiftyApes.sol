@@ -594,6 +594,9 @@ contract NiftyApes is
         loanAuction.amount = offer.amount;
         loanAuction.interestRateBps = offer.interestRateBps;
         loanAuction.duration = offer.duration;
+        // TODO(dankurka): Discuss with Kevin / Zack
+        // If a lender is refinancing a loan we are drawing more time onto the loan, since this would cost
+        // the borrower more interest if they end up using it
         loanAuction.timeDrawn -= SafeCastUpgradeable.toUint32(
             block.timestamp - originalInterestStart
         );
@@ -1130,10 +1133,7 @@ contract NiftyApes is
         ICERC20 cToken = ICERC20(cAsset);
 
         uint256 exchangeRateMantissa = cToken.exchangeRateCurrent();
-
-        uint256 amountCTokens = Math.divScalarByExpTruncate(amount, exchangeRateMantissa);
-
-        return amountCTokens;
+        return Math.divScalarByExpTruncate(amount, exchangeRateMantissa);
     }
 
     function getCAsset(address asset) internal view returns (address) {
