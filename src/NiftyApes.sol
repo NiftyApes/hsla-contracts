@@ -868,6 +868,8 @@ contract NiftyApes is
 
             delete _loanAuctions[nftContractAddress][nftId];
         } else {
+            // TODO(dankurka): We have a bug here if the partial payment is the full payment we would not delete the loan
+            // and send back the NFT.
             emit PartialRepayment(nftContractAddress, nftId, loanAuction.asset, paymentAmount);
         }
     }
