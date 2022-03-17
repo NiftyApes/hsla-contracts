@@ -123,7 +123,7 @@ contract LendingAuctionUnitTest is
             expiration: 8
         });
 
-        hevm.expectRevert("creator != sender");
+        hevm.expectRevert("offer creator");
 
         lendingAction.createOffer(offer);
     }
@@ -142,7 +142,7 @@ contract LendingAuctionUnitTest is
             expiration: 8
         });
 
-        hevm.expectRevert("Insufficient lender balance");
+        hevm.expectRevert("Insufficient cToken balance");
 
         lendingAction.createOffer(offer);
     }
@@ -249,7 +249,7 @@ contract LendingAuctionUnitTest is
 
         hevm.prank(address(0x0000000000000000000000000000000000000001));
 
-        hevm.expectRevert("wrong offer creator");
+        hevm.expectRevert("offer creator");
 
         lendingAction.removeOffer(
             offer.nftContractAddress,
@@ -544,7 +544,7 @@ contract LendingAuctionUnitTest is
             offer1.floorTerm
         );
 
-        hevm.expectRevert("Insuffient ctoken balance");
+        hevm.expectRevert("Insufficient cToken balance");
 
         lendingAction.executeLoanByBorrower(
             offer2.nftContractAddress,

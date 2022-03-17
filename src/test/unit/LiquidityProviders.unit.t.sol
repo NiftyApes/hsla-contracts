@@ -315,7 +315,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
 
         hevm.stopPrank();
 
-        hevm.expectRevert("Insuffient ctoken balance");
+        hevm.expectRevert("Insufficient cToken balance");
 
         liquidityProviders.withdrawErc20(address(usdcToken), 2);
     }
@@ -381,7 +381,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
 
         hevm.stopPrank();
 
-        hevm.expectRevert("Insuffient ctoken balance");
+        hevm.expectRevert("Insufficient cToken balance");
 
         liquidityProviders.withdrawCErc20(address(cUSDCToken), 2 ether);
     }
@@ -559,7 +559,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
 
         hevm.stopPrank();
 
-        hevm.expectRevert("Insuffient ctoken balance");
+        hevm.expectRevert("Insufficient cToken balance");
 
         liquidityProviders.withdrawEth(2);
     }
