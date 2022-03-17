@@ -902,14 +902,14 @@ contract NiftyApes is
 
     function requireLoanExpired(LoanAuction storage loanAuction) internal view {
         require(
-            block.timestamp >= loanAuction.timeOfInterestStart + loanAuction.timeDrawn,
+            block.timestamp >= loanAuction.timeOfInterestStart + loanAuction.duration,
             "loan not expired"
         );
     }
 
     function requireLoanNotExpired(LoanAuction storage loanAuction) internal view {
         require(
-            block.timestamp < loanAuction.timeOfInterestStart + loanAuction.timeDrawn,
+            block.timestamp < loanAuction.timeOfInterestStart + loanAuction.duration,
             "loan expired"
         );
     }
@@ -944,10 +944,6 @@ contract NiftyApes is
 
     function requireFundsAvailable(LoanAuction storage loanAuction, uint256 drawAmount) internal {
         require((drawAmount + loanAuction.amountDrawn) <= loanAuction.amount, "funds overdrawn");
-    }
-
-    function requireTimeAvailable(LoanAuction storage loanAuction, uint256 drawTime) internal {
-        require((drawTime + loanAuction.timeDrawn) <= loanAuction.duration, "time overdrawn");
     }
 
     function requireNftOwner(LoanAuction storage loanAuction, address nftOwner) internal view {
@@ -1047,7 +1043,6 @@ contract NiftyApes is
         loanAuction.interestRateBps = offer.interestRateBps;
         loanAuction.duration = offer.duration;
         loanAuction.timeOfInterestStart = SafeCastUpgradeable.toUint32(block.timestamp);
-        loanAuction.timeDrawn = offer.duration;
         loanAuction.amountDrawn = offer.amount;
         loanAuction.fixedTerms = offer.fixedTerms;
     }
@@ -1089,6 +1084,7 @@ contract NiftyApes is
     }
 
     // This is needed to receive ETH when calling withdrawing ETH from compund
+    // solhint-disable-next-line no-empty-blocks
     receive() external payable {}
 
     function requireMaxCAssetBalance(address cAsset) internal {

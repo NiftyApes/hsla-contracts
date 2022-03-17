@@ -689,7 +689,6 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.historicLenderInterest, 0);
         assertEq(loanAuction.historicProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 6);
-        assertEq(loanAuction.timeDrawn, 1 days);
     }
 
     function testExecuteLoanByBorrower_works_in_eth() public {
@@ -1259,7 +1258,6 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.historicLenderInterest, 0);
         assertEq(loanAuction.historicProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 6);
-        assertEq(loanAuction.timeDrawn, 3 days);
     }
 
     // TODO(dankurka): Lots of missing refinance test cases
@@ -1413,7 +1411,6 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.historicLenderInterest, 0);
         assertEq(loanAuction.historicProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 0);
-        assertEq(loanAuction.timeDrawn, 0);
 
         assertEq(mockNft.ownerOf(1), LENDER_1);
     }
@@ -1619,7 +1616,6 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.historicLenderInterest, 0);
         assertEq(loanAuction.historicProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 0);
-        assertEq(loanAuction.timeDrawn, 0);
     }
 
     // TODO(dankurka): Tests missing for drawAmount
