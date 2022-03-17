@@ -270,11 +270,9 @@ contract NiftyApes is
         requireAvailableSignature(signature);
 
         bytes32 offerHash = getOfferHash(offer);
-
         address signer = getOfferSigner(offerHash, signature);
 
-        // Require that msg.sender is signer of the signature
-        require(signer == msg.sender, "Msg.sender is not the signer of the submitted signature");
+        requireSigner(signer, msg.sender);
 
         markSignatureUsed(signature);
 
@@ -309,11 +307,11 @@ contract NiftyApes is
         // Create a reference to the corresponding cToken contract, like cDAI
         ICERC20 cToken = ICERC20(cAsset);
 
-        require(offer.creator == msg.sender, "creator != sender");
+        requireOfferCreator(offer.creator, msg.sender);
 
         uint256 offerTokens = assetAmountToCAssetAmount(offer.asset, offer.amount);
 
-        require(getCAssetBalance(msg.sender, cAsset) >= offerTokens, "Insufficient lender balance");
+        requireCAssetBalance(msg.sender, cAsset, offerTokens);
 
         mapping(bytes32 => Offer) storage offerBook = getOfferBook(
             offer.nftContractAddress,
@@ -352,7 +350,7 @@ contract NiftyApes is
         // Create a copy here so that we can log out the event below
         Offer memory offer = offerBook[offerHash];
 
-        require(msg.sender == offer.creator, "wrong offer creator");
+        requireOfferCreator(offer.creator, msg.sender);
 
         delete offerBook[offerHash];
 
@@ -459,11 +457,7 @@ contract NiftyApes is
 
         createLoan(loanAuction, offer, lender, borrower);
 
-        IERC721Upgradeable(offer.nftContractAddress).transferFrom(
-            borrower,
-            address(this),
-            offer.nftId
-        );
+        transferNft(offer.nftContractAddress, offer.nftId, borrower, address(this));
 
         uint256 cTokensBurned = burnCErc20(offer.asset, offer.amount);
         withdrawCBalance(lender, cAsset, cTokensBurned);
@@ -840,11 +834,7 @@ contract NiftyApes is
         _balanceByAccountByAsset[owner()][cAsset].cAssetBalance += cTokensToProtocol;
 
         if (rls.repayFull) {
-            IERC721Upgradeable(rls.nftContractAddress).transferFrom(
-                address(this),
-                loanAuction.nftOwner,
-                rls.nftId
-            );
+            transferNft(rls.nftContractAddress, rls.nftId, address(this), loanAuction.nftOwner);
 
             emit LoanRepaid(
                 rls.nftContractAddress,
@@ -884,7 +874,7 @@ contract NiftyApes is
 
         delete _loanAuctions[nftContractAddress][nftId];
 
-        IERC721Upgradeable(nftContractAddress).transferFrom(address(this), currentLender, nftId);
+        transferNft(nftContractAddress, nftId, address(this), currentLender);
 
         emit AssetSeized(currentLender, currentBorrower, nftContractAddress, nftId);
     }
@@ -1042,6 +1032,22 @@ contract NiftyApes is
         require(creator == offer.creator, "offer creator mismatch");
     }
 
+    function requireSigner(address signer, address expected) internal pure {
+        require(signer == expected, "signer");
+    }
+
+    function requireOfferCreator(address signer, address expected) internal pure {
+        require(signer == expected, "offer creator");
+    }
+
+    function requireCAssetBalance(
+        address account,
+        address cAsset,
+        uint256 amount
+    ) internal view {
+        require(getCAssetBalance(account, cAsset) >= amount, "Insufficient cAsset balance");
+    }
+
     function requireOfferParity(LoanAuction storage loanAuction, Offer memory offer) internal view {
         require(
             // Require bidAmount is greater than previous bid
@@ -1078,6 +1084,15 @@ contract NiftyApes is
         loanAuction.timeDrawn = offer.duration;
         loanAuction.amountDrawn = offer.amount;
         loanAuction.fixedTerms = offer.fixedTerms;
+    }
+
+    function transferNft(
+        address nftContractAddress,
+        uint256 nftId,
+        address from,
+        address to
+    ) internal {
+        IERC721Upgradeable(nftContractAddress).transferFrom(from, to, nftId);
     }
 
     // This is needed to receive ETH when calling withdrawing ETH from compund
