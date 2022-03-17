@@ -590,17 +590,6 @@ contract NiftyApes is
 
         updateInterest(loanAuction);
 
-        // calculate interest earned
-        uint256 interestAndPremiumOwedToCurrentLender = loanAuction.historicLenderInterest +
-            ((loanAuction.amountDrawn * refinancePremiumLenderBps) / MAX_BPS);
-
-        uint256 protocolPremium = (loanAuction.amountDrawn * refinancePremiumProtocolBps) / MAX_BPS;
-
-        // calculate fullRefinanceAmount
-        uint256 fullAmount = interestAndPremiumOwedToCurrentLender +
-            protocolPremium +
-            loanAuction.amountDrawn;
-
         // update LoanAuction struct
         loanAuction.amount = offer.amount;
         loanAuction.interestRateBps = offer.interestRateBps;
@@ -627,6 +616,17 @@ contract NiftyApes is
                 "lender balance"
             );
         } else {
+            // calculate interest earned
+            uint256 interestAndPremiumOwedToCurrentLender = loanAuction.historicLenderInterest +
+                ((loanAuction.amountDrawn * refinancePremiumLenderBps) / MAX_BPS);
+
+            uint256 protocolPremium = (loanAuction.amountDrawn * refinancePremiumProtocolBps) /
+                MAX_BPS;
+            // calculate fullRefinanceAmount
+            uint256 fullAmount = interestAndPremiumOwedToCurrentLender +
+                protocolPremium +
+                loanAuction.amountDrawn;
+
             // If refinancing is done by another lender they must buy out the loan and pay fees
             uint256 fullCTokenAmount = assetAmountToCAssetAmount(offer.asset, fullAmount);
 
@@ -828,15 +828,13 @@ contract NiftyApes is
             }
         }
 
-        {
-            uint256 cTokensToLender = (cTokensMinted *
-                (loanAuction.amountDrawn + loanAuction.historicLenderInterest)) / payment;
-            uint256 cTokensToProtocol = (cTokensMinted * loanAuction.historicProtocolInterest) /
-                payment;
+        uint256 cTokensToLender = (cTokensMinted *
+            (loanAuction.amountDrawn + loanAuction.historicLenderInterest)) / payment;
+        uint256 cTokensToProtocol = (cTokensMinted * loanAuction.historicProtocolInterest) /
+            payment;
 
-            _balanceByAccountByAsset[loanAuction.lender][cAsset].cAssetBalance += cTokensToLender;
-            _balanceByAccountByAsset[owner()][cAsset].cAssetBalance += cTokensToProtocol;
-        }
+        _balanceByAccountByAsset[loanAuction.lender][cAsset].cAssetBalance += cTokensToLender;
+        _balanceByAccountByAsset[owner()][cAsset].cAssetBalance += cTokensToProtocol;
 
         if (rls.repayFull) {
             IERC721Upgradeable(rls.nftContractAddress).transferFrom(
@@ -907,8 +905,7 @@ contract NiftyApes is
         view
         returns (uint256, uint256)
     {
-        LoanAuction storage loanAuction = _loanAuctions[nftContractAddress][nftId];
-        return calculateInterestAccrued(loanAuction);
+        return calculateInterestAccrued(_loanAuctions[nftContractAddress][nftId]);
     }
 
     function calculateInterestAccrued(LoanAuction storage loanAuction)
@@ -922,15 +919,15 @@ contract NiftyApes is
             protocolInterest = 0;
             lenderInterest = 0;
         } else {
+            // Time since we last updated the loan
             uint256 timeOutstanding = block.timestamp - timeOfInterestStart;
 
-            uint256 maxDrawn = loanAuction.amountDrawn * loanAuction.timeDrawn;
+            uint256 interestBase = (loanAuction.amountDrawn * timeOutstanding) /
+                loanAuction.timeDrawn;
 
-            uint256 fractionOfDrawn = maxDrawn / timeOutstanding;
+            lenderInterest = (loanAuction.interestRateBps * interestBase) / MAX_BPS;
 
-            lenderInterest = (loanAuction.interestRateBps * fractionOfDrawn) / MAX_BPS;
-
-            protocolInterest = (loanDrawFeeProtocolBps * fractionOfDrawn) / MAX_BPS;
+            protocolInterest = (loanDrawFeeProtocolBps * interestBase) / MAX_BPS;
         }
     }
 
