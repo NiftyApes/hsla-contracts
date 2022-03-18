@@ -546,12 +546,8 @@ contract NiftyApes is
 
         uint256 fullAmount = loanAuction.amountDrawn + loanAuction.historicLenderInterest;
 
-        require(
-            offer.amount >= fullAmount,
-            "The loan offer must exceed the present outstanding balance."
-        );
+        requireOfferAmount(offer, fullAmount);
 
-        // Get the full amount of the loan outstanding balance in cTokens
         uint256 fullCTokenAmount = assetAmountToCAssetAmount(offer.asset, fullAmount);
 
         withdrawCBalance(prospectiveLender, cAsset, fullCTokenAmount);
@@ -573,8 +569,6 @@ contract NiftyApes is
         uint256 nftId // TODO(dankurka): Bug
     ) internal {
         (LoanAuction storage loanAuction, address cAsset) = _refinanceCheckState(offer);
-
-        uint32 originalInterestStart = loanAuction.timeOfInterestStart;
 
         updateInterest(loanAuction);
 
@@ -911,6 +905,10 @@ contract NiftyApes is
         require(offer.asset != address(0), "no offer");
     }
 
+    function requireOfferAmount(Offer memory offer, uint256 amount) internal pure {
+        require(offer.amount >= amount, "offer amount");
+    }
+
     function requireNoOpenLoan(LoanAuction storage loanAuction) internal view {
         require(loanAuction.timeOfInterestStart == 0, "Loan already open");
     }
@@ -1039,7 +1037,7 @@ contract NiftyApes is
     {
         // If the only part that is updated is the duration we enfore that its been changed by
         // at least one day
-        // This prevents lenders from refinancing loands with too small of change
+        // This prevents lenders from refinancing loands with too small of a change
         if (
             offer.amount == loanAuction.amount &&
             offer.interestRateBps == loanAuction.interestRateBps &&
