@@ -25,39 +25,32 @@ interface ILending is ILendingEvents, ILendingStructs {
     /// @param nftId The id of the given nft
     function ownerOf(address nftContractAddress, uint256 nftId) external view returns (address);
 
-    /**
-     * @notice Retrieve data about a given loan auction
-     * @param nftContractAddress The address of the NFT collection
-     * @param nftId The id of a specified NFT
-     */
+    /// @notice Returns a loan aution identified by a given nft.
+    /// @param nftContractAddress The address of the NFT collection
+    /// @param nftId The id of a specified NFT
     function getLoanAuction(address nftContractAddress, uint256 nftId)
         external
         view
         returns (LoanAuction memory auction);
 
-    /**
-     * @notice Generate a hash of an offer and sign with the EIP712 standard
-     * @param offer The details of a loan auction offer
-     */
-    function getOfferHash(Offer memory offer) external view returns (bytes32 signedOffer);
+    /// @notice Returns an EIP712 standard compatiable hash for a given offer
+    ///         This hash can be signed to create a valid offer.
+    /// @param offer The offer to compute the hash for
+    function getOfferHash(Offer memory offer) external view returns (bytes32);
 
-    /**
-     * @notice Get the offer signer given an offerHash and signature for the offer.
-     * @param offerHash encoded hash of an offer (from LoanAuction.getOfferHash(offer))
-     * @param signature The 65 byte (r, s, v) signature of a signedOffer
-     */
-    function getOfferSigner(bytes32 offerHash, bytes memory signature) external returns (address);
+    /// @notice Returns the signer of an offer or throws an error.
+    /// @param offer The offer to use for retrieving the signer
+    /// @param signature The signature to use for retrieving the signer
+    function getOfferSigner(Offer memory offer, bytes memory signature) external returns (address);
 
-    /**
-     * @notice Check whether a signature-based offer has been cancelledOrFinalized
-     * @param signature A signed offerHash
-     */
+    /// @notice Returns true if a given signature has been revoked otherwise false
+    /// @param signature The signature to check
     function getOfferSignatureStatus(bytes calldata signature) external view returns (bool status);
 
-    /**
-     * @notice Cancel a signature based offer on chain
-     * @dev This function is the only way to ensure an offer can't be used on chain
-     */
+    /// @notice Withdraw a given offer
+    ///         Calling this method allows users to withdraw a given offer by cancelling their signature on chain
+    /// @param offer The offer to withdraw
+    /// @param signature The signature of the offer
     function withdrawOfferSignature(Offer memory offer, bytes calldata signature) external;
 
     /**

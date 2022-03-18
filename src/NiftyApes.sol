@@ -270,10 +270,10 @@ contract NiftyApes is
 
     /// @inheritdoc ILending
     function getOfferSigner(
-        bytes32 offerHash, // hash of offer
+        Offer memory offer,
         bytes memory signature //proof the actor signed the offer
-    ) public pure override returns (address) {
-        return ECDSAUpgradeable.recover(offerHash, signature);
+    ) public view override returns (address) {
+        return ECDSAUpgradeable.recover(getOfferHash(offer), signature);
     }
 
     /// @inheritdoc ILending
@@ -283,8 +283,7 @@ contract NiftyApes is
     {
         requireAvailableSignature(signature);
 
-        bytes32 offerHash = getOfferHash(offer);
-        address signer = getOfferSigner(offerHash, signature);
+        address signer = getOfferSigner(offer, signature);
 
         requireSigner(signer, msg.sender);
 
@@ -394,7 +393,7 @@ contract NiftyApes is
     ) external payable whenNotPaused nonReentrant {
         requireAvailableSignature(signature);
 
-        address lender = getOfferSigner(getOfferHash(offer), signature);
+        address lender = getOfferSigner(offer, signature);
         requireOfferCreator(offer, lender);
 
         if (!offer.floorTerm) {
@@ -433,7 +432,7 @@ contract NiftyApes is
     {
         requireAvailableSignature(signature);
 
-        address borrower = getOfferSigner(getOfferHash(offer), signature);
+        address borrower = getOfferSigner(offer, signature);
         requireOfferCreator(offer, borrower);
 
         markSignatureUsed(signature);
@@ -443,12 +442,6 @@ contract NiftyApes is
         emit SigOfferFinalized(offer.nftContractAddress, offer.nftId, signature);
     }
 
-    /**
-     * @notice Handles checks, state transitions, and value/asset transfers for executeLoanbyLender
-     * @param offer The details of a loan auction offer
-     * @param lender The prospective lender
-     * @param borrower The prospective borrower and owner of the NFT
-     */
     function _executeLoanInternal(
         Offer memory offer,
         address lender,
@@ -503,7 +496,7 @@ contract NiftyApes is
         bytes calldata signature,
         uint256 nftId
     ) external payable whenNotPaused nonReentrant {
-        address prospectiveLender = getOfferSigner(getOfferHash(offer), signature);
+        address prospectiveLender = getOfferSigner(offer, signature);
 
         requireOfferCreator(offer, prospectiveLender);
 
