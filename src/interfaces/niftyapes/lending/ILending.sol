@@ -125,8 +125,8 @@ interface ILending is ILendingEvents, ILendingStructs {
      */
     function executeLoanByLender(
         address nftContractAddress,
-        bool floorTerm,
         uint256 nftId,
+        bool floorTerm,
         bytes32 offerHash
     ) external payable;
 
@@ -148,8 +148,8 @@ interface ILending is ILendingEvents, ILendingStructs {
      */
     function refinanceByBorrower(
         address nftContractAddress,
-        bool floorTerm,
         uint256 nftId,
+        bool floorTerm,
         bytes32 offerHash
     ) external payable;
 

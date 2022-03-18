@@ -108,6 +108,16 @@ contract NiftyApes is
         maxBalanceByCAsset[getCAsset(asset)] = maxBalance;
     }
 
+    /// @inheritdoc INiftyApesAdmin
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    /// @inheritdoc INiftyApesAdmin
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+
     /// @inheritdoc ILiquidity
     function getCAssetBalance(address account, address cAsset) public view returns (uint256) {
         return _balanceByAccountByAsset[account][cAsset].cAssetBalance;
@@ -267,7 +277,10 @@ contract NiftyApes is
     }
 
     /// @inheritdoc ILending
-    function withdrawOfferSignature(Offer memory offer, bytes calldata signature) external {
+    function withdrawOfferSignature(Offer memory offer, bytes calldata signature)
+        external
+        whenNotPaused
+    {
         requireAvailableSignature(signature);
 
         bytes32 offerHash = getOfferHash(offer);
@@ -302,7 +315,7 @@ contract NiftyApes is
     }
 
     /// @inheritdoc ILending
-    function createOffer(Offer calldata offer) external {
+    function createOffer(Offer calldata offer) external whenNotPaused {
         address cAsset = getCAsset(offer.asset);
 
         requireOfferCreator(offer.creator, msg.sender);
@@ -337,7 +350,7 @@ contract NiftyApes is
         uint256 nftId,
         bytes32 offerHash,
         bool floorTerm
-    ) external {
+    ) external whenNotPaused {
         // Get pointer to offer book
         mapping(bytes32 => Offer) storage offerBook = getOfferBook(
             nftContractAddress,
@@ -399,8 +412,8 @@ contract NiftyApes is
     /// @inheritdoc ILending
     function executeLoanByLender(
         address nftContractAddress,
-        bool floorTerm,
         uint256 nftId,
+        bool floorTerm,
         bytes32 offerHash
     ) public payable whenNotPaused nonReentrant {
         Offer memory offer = floorTerm
@@ -468,8 +481,8 @@ contract NiftyApes is
     /// @inheritdoc ILending
     function refinanceByBorrower(
         address nftContractAddress,
-        bool floorTerm,
         uint256 nftId,
+        bool floorTerm,
         bytes32 offerHash
     ) external payable whenNotPaused nonReentrant {
         Offer memory offer = floorTerm
@@ -670,7 +683,12 @@ contract NiftyApes is
     }
 
     /// @inheritdoc ILending
-    function repayLoan(address nftContractAddress, uint256 nftId) external payable override {
+    function repayLoan(address nftContractAddress, uint256 nftId)
+        external
+        payable
+        override
+        whenNotPaused
+    {
         RepayLoanStruct memory rls = RepayLoanStruct({
             nftContractAddress: nftContractAddress,
             nftId: nftId,
@@ -686,6 +704,7 @@ contract NiftyApes is
         external
         payable
         override
+        whenNotPaused
     {
         RepayLoanStruct memory rls = RepayLoanStruct({
             nftContractAddress: nftContractAddress,
