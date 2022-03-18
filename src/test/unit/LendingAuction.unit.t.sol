@@ -842,7 +842,7 @@ contract LendingAuctionUnitTest is
 
         hevm.expectRevert("fixed term loan");
 
-        lendingAction.refinanceByBorrower(address(mockNft), true, 1, offerHash2);
+        lendingAction.refinanceByBorrower(address(mockNft), 1, true, offerHash2);
     }
 
     function testCannotRefinanceByBorrower_not_floor_term_mismatch_nftid() public {
@@ -905,7 +905,7 @@ contract LendingAuctionUnitTest is
 
         hevm.expectRevert("offer nftId mismatch");
 
-        lendingAction.refinanceByBorrower(address(mockNft), false, 3, offerHash2);
+        lendingAction.refinanceByBorrower(address(mockNft), 3, false, offerHash2);
     }
 
     function testCannotRefinanceByBorrower_borrower_not_nft_owner() public {
@@ -966,7 +966,7 @@ contract LendingAuctionUnitTest is
 
         hevm.expectRevert("nft owner");
 
-        lendingAction.refinanceByBorrower(address(mockNft), false, 2, offerHash2);
+        lendingAction.refinanceByBorrower(address(mockNft), 2, false, offerHash2);
     }
 
     function testCannotRefinanceByBorrower_no_open_loan() public {
@@ -1033,7 +1033,7 @@ contract LendingAuctionUnitTest is
 
         hevm.expectRevert("nft owner");
 
-        lendingAction.refinanceByBorrower(address(mockNft), true, 2, offerHash2);
+        lendingAction.refinanceByBorrower(address(mockNft), 2, true, offerHash2);
     }
 
     function testCannotRefinanceByBorrower_nft_owner() public {
@@ -1099,7 +1099,7 @@ contract LendingAuctionUnitTest is
 
         hevm.expectRevert("nft owner");
 
-        lendingAction.refinanceByBorrower(address(mockNft), true, 1, offerHash2);
+        lendingAction.refinanceByBorrower(address(mockNft), 1, true, offerHash2);
     }
 
     function testCannotRefinanceByBorrower_offer_expired() public {
@@ -1164,7 +1164,7 @@ contract LendingAuctionUnitTest is
 
         hevm.expectRevert("offer expired");
 
-        lendingAction.refinanceByBorrower(address(mockNft), true, 1, offerHash2);
+        lendingAction.refinanceByBorrower(address(mockNft), 1, true, offerHash2);
     }
 
     function testRefinanceByBorrower_works() public {
@@ -1225,7 +1225,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        lendingAction.refinanceByBorrower(address(mockNft), true, 1, offerHash2);
+        lendingAction.refinanceByBorrower(address(mockNft), 1, true, offerHash2);
 
         assertEq(usdcToken.balanceOf(address(this)), 6);
         assertEq(cUSDCToken.balanceOf(address(this)), 0);

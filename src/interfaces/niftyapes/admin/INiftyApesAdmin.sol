@@ -24,4 +24,11 @@ interface INiftyApesAdmin {
     /// @notice Updates the fee for refinancing a loan that is paid to the protocol
     ///         Fees are denomiated in basis points, parts of 10_000
     function updateRefinancePremiumProtocolFee(uint16 newPremiumProtocolBps) external;
+
+    /// @notice Pauses all interactions with the contract.
+    ///         This is intended to be used as an emergency measure to avoid loosing funds.
+    function pause() external;
+
+    /// @notice Unpauses all interactions with the contract.
+    function unpause() external;
 }
