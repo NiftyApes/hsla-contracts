@@ -452,7 +452,7 @@ contract NiftyApes is
 
         address cAsset = getCAsset(offer.asset);
 
-        LoanAuction storage loanAuction = _loanAuctions[offer.nftContractAddress][offer.nftId];
+        LoanAuction storage loanAuction = _loanAuctions[offer.nftContractAddress][nftId];
 
         requireNoOpenLoan(loanAuction);
         requireOfferNotExpired(offer);
@@ -461,14 +461,14 @@ contract NiftyApes is
 
         createLoan(loanAuction, offer, lender, borrower);
 
-        transferNft(offer.nftContractAddress, offer.nftId, borrower, address(this));
+        transferNft(offer.nftContractAddress, nftId, borrower, address(this));
 
         uint256 cTokensBurned = burnCErc20(offer.asset, offer.amount);
         withdrawCBalance(lender, cAsset, cTokensBurned);
 
         sendValue(offer.asset, offer.amount, borrower);
 
-        emit LoanExecuted(lender, borrower, offer.nftContractAddress, offer.nftId, offer);
+        emit LoanExecuted(lender, borrower, offer.nftContractAddress, nftId, offer);
     }
 
     /// @inheritdoc ILending
@@ -504,7 +504,7 @@ contract NiftyApes is
             requireMatchingNftId(offer, nftId);
         }
 
-        requireNftOwner(_loanAuctions[offer.nftContractAddress][offer.nftId], msg.sender);
+        requireNftOwner(_loanAuctions[offer.nftContractAddress][nftId], msg.sender);
 
         markSignatureUsed(signature);
 
@@ -525,15 +525,15 @@ contract NiftyApes is
 
         requireValidDurationUpdate(loanAuction, offer);
 
-        _refinanceByLender(offer, offer.creator, offer.nftId);
+        _refinanceByLender(offer, offer.creator);
     }
 
     function _refinanceByBorrower(
         Offer memory offer,
         address prospectiveLender,
-        uint256 nftId // TODO(dankurka): Bug
+        uint256 nftId
     ) internal {
-        (LoanAuction storage loanAuction, address cAsset) = _refinanceCheckState(offer);
+        (LoanAuction storage loanAuction, address cAsset) = _refinanceCheckState(offer, nftId);
 
         updateInterest(loanAuction);
 
@@ -553,15 +553,14 @@ contract NiftyApes is
         loanAuction.duration = offer.duration;
         loanAuction.amountDrawn = SafeCastUpgradeable.toUint128(fullAmount);
 
-        emit Refinance(prospectiveLender, offer.nftContractAddress, offer.nftId, offer);
+        emit Refinance(prospectiveLender, offer.nftContractAddress, nftId, offer);
     }
 
-    function _refinanceByLender(
-        Offer memory offer,
-        address prospectiveLender,
-        uint256 nftId // TODO(dankurka): Bug
-    ) internal {
-        (LoanAuction storage loanAuction, address cAsset) = _refinanceCheckState(offer);
+    function _refinanceByLender(Offer memory offer, address prospectiveLender) internal {
+        (LoanAuction storage loanAuction, address cAsset) = _refinanceCheckState(
+            offer,
+            offer.nftId
+        );
 
         updateInterest(loanAuction);
 
@@ -628,11 +627,11 @@ contract NiftyApes is
         emit Refinance(prospectiveLender, offer.nftContractAddress, offer.nftId, offer);
     }
 
-    function _refinanceCheckState(Offer memory offer)
+    function _refinanceCheckState(Offer memory offer, uint256 nftId)
         internal
         returns (LoanAuction storage loanAuction, address)
     {
-        LoanAuction storage loanAuction = _loanAuctions[offer.nftContractAddress][offer.nftId];
+        LoanAuction storage loanAuction = _loanAuctions[offer.nftContractAddress][nftId];
 
         requireNoFixedTerm(loanAuction);
         requireOpenLoan(loanAuction);
