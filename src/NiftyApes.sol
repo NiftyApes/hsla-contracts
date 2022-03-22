@@ -533,7 +533,15 @@ contract NiftyApes is
         address prospectiveLender,
         uint256 nftId
     ) internal {
-        (LoanAuction storage loanAuction, address cAsset) = _refinanceCheckState(offer, nftId);
+        LoanAuction storage loanAuction = _loanAuctions[offer.nftContractAddress][nftId];
+
+        requireNoFixedTerm(loanAuction);
+        requireOpenLoan(loanAuction);
+        requireOfferNotExpired(offer);
+
+        requireMatchingAsset(offer.asset, loanAuction.asset);
+
+        address cAsset = getCAsset(offer.asset);
 
         updateInterest(loanAuction);
 
@@ -557,10 +565,15 @@ contract NiftyApes is
     }
 
     function _refinanceByLender(Offer memory offer, address prospectiveLender) internal {
-        (LoanAuction storage loanAuction, address cAsset) = _refinanceCheckState(
-            offer,
-            offer.nftId
-        );
+        LoanAuction storage loanAuction = _loanAuctions[offer.nftContractAddress][nftId];
+
+        requireNoFixedTerm(loanAuction);
+        requireOpenLoan(loanAuction);
+        requireOfferNotExpired(offer);
+
+        requireMatchingAsset(offer.asset, loanAuction.asset);
+
+        address cAsset = getCAsset(offer.asset);
 
         updateInterest(loanAuction);
 
@@ -625,21 +638,6 @@ contract NiftyApes is
         }
 
         emit Refinance(prospectiveLender, offer.nftContractAddress, offer.nftId, offer);
-    }
-
-    function _refinanceCheckState(Offer memory offer, uint256 nftId)
-        internal
-        returns (LoanAuction storage loanAuction, address)
-    {
-        LoanAuction storage loanAuction = _loanAuctions[offer.nftContractAddress][nftId];
-
-        requireNoFixedTerm(loanAuction);
-        requireOpenLoan(loanAuction);
-        requireOfferNotExpired(offer);
-
-        requireMatchingAsset(offer.asset, loanAuction.asset);
-
-        return (loanAuction, getCAsset(offer.asset));
     }
 
     /// @inheritdoc ILending
