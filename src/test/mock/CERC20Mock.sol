@@ -3,7 +3,7 @@ pragma solidity 0.8.11;
 
 import { ICERC20 } from "../../interfaces/compound/ICERC20.sol";
 import { ERC20Upgradeable, IERC20Upgradeable } from "@openzeppelin/contracts/token/ERC20/ERC20Upgradeable.sol";
-import "../../Math.sol";
+import "../../lib/Math.sol";
 import "./ERC20Mock.sol";
 
 contract CERC20Mock is ERC20Upgradeable, ICERC20 {
