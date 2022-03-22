@@ -560,6 +560,8 @@ contract NiftyApes is
 
         requireOpenLoan(loanAuction);
 
+        requireOfferCreator(offer, msg.sender);
+
         requireLoanNotExpired(loanAuction);
 
         requireOfferParity(loanAuction, offer);
