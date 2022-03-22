@@ -309,7 +309,16 @@ contract NiftyApes is
         uint256 nftId,
         bytes32 offerHash,
         bool floorTerm
-    ) external view returns (Offer memory) {
+    ) public view returns (Offer memory) {
+        return getOfferInternal(nftContractAddress, nftId, offerHash, floorTerm);
+    }
+
+    function getOfferInternal(
+        address nftContractAddress,
+        uint256 nftId,
+        bytes32 offerHash,
+        bool floorTerm
+    ) internal view returns (Offer storage) {
         return getOfferBook(nftContractAddress, nftId, floorTerm)[offerHash];
     }
 
@@ -350,6 +359,20 @@ contract NiftyApes is
         bytes32 offerHash,
         bool floorTerm
     ) external whenNotPaused {
+        // Create a copy here so that we can log out the event below
+        Offer memory offer = getOffer(nftContractAddress, nftId, offerHash, floorTerm);
+
+        requireOfferCreator(offer.creator, msg.sender);
+
+        doRemoveOffer(nftContractAddress, nftId, offerHash, floorTerm);
+    }
+
+    function doRemoveOffer(
+        address nftContractAddress,
+        uint256 nftId,
+        bytes32 offerHash,
+        bool floorTerm
+    ) internal whenNotPaused {
         // Get pointer to offer book
         mapping(bytes32 => Offer) storage offerBook = getOfferBook(
             nftContractAddress,
@@ -357,14 +380,11 @@ contract NiftyApes is
             floorTerm
         );
 
-        // Create a copy here so that we can log out the event below
-        Offer memory offer = offerBook[offerHash];
-
-        requireOfferCreator(offer.creator, msg.sender);
-
-        delete offerBook[offerHash];
+        Offer storage offer = offerBook[offerHash];
 
         emit OfferRemoved(offer.creator, offer.asset, offer.nftContractAddress, offer, offerHash);
+
+        delete offerBook[offerHash];
     }
 
     /// @inheritdoc ILending
@@ -374,13 +394,18 @@ contract NiftyApes is
         bytes32 offerHash,
         bool floorTerm
     ) external payable whenNotPaused nonReentrant {
-        mapping(bytes32 => Offer) storage offerBook = getOfferBook(
+        Offer storage offerStorage = getOfferInternal(
             nftContractAddress,
             nftId,
+            offerHash,
             floorTerm
         );
-        Offer memory offer = offerBook[offerHash];
 
+        // Make a memory copy
+        Offer memory offer = offerStorage;
+
+        // Remove the offer from storage, saving gas
+        doRemoveOffer(nftContractAddress, nftId, offerHash, floorTerm);
         _executeLoanInternal(offer, offer.creator, msg.sender, nftId);
     }
 
@@ -415,9 +440,17 @@ contract NiftyApes is
         bool floorTerm,
         bytes32 offerHash
     ) public payable whenNotPaused nonReentrant {
-        Offer memory offer = floorTerm
-            ? _floorOfferBooks[nftContractAddress][offerHash]
-            : _nftOfferBooks[nftContractAddress][nftId][offerHash];
+        Offer storage offerStorage = getOfferInternal(
+            nftContractAddress,
+            nftId,
+            offerHash,
+            floorTerm
+        );
+
+        // Make a memory copy
+        Offer memory offer = offerStorage;
+
+        doRemoveOffer(nftContractAddress, nftId, offerHash, floorTerm);
 
         // execute state changes for executeLoanByAsk
         _executeLoanInternal(offer, msg.sender, offer.creator, nftId);
@@ -478,9 +511,17 @@ contract NiftyApes is
         bool floorTerm,
         bytes32 offerHash
     ) external payable whenNotPaused nonReentrant {
-        Offer memory offer = floorTerm
-            ? _floorOfferBooks[nftContractAddress][offerHash]
-            : _nftOfferBooks[nftContractAddress][nftId][offerHash];
+        Offer storage offerStorage = getOfferInternal(
+            nftContractAddress,
+            nftId,
+            offerHash,
+            floorTerm
+        );
+
+        // Make a memory copy
+        Offer memory offer = offerStorage;
+
+        doRemoveOffer(nftContractAddress, nftId, offerHash, floorTerm);
 
         if (!offer.floorTerm) {
             requireMatchingNftId(offer, nftId);
@@ -518,6 +559,8 @@ contract NiftyApes is
         LoanAuction storage loanAuction = _loanAuctions[offer.nftContractAddress][offer.nftId];
 
         requireOpenLoan(loanAuction);
+
+        requireOfferCreator(offer, msg.sender);
 
         requireLoanNotExpired(loanAuction);
 
@@ -629,7 +672,7 @@ contract NiftyApes is
 
     function _refinanceCheckState(Offer memory offer, uint256 nftId)
         internal
-        returns (LoanAuction storage loanAuction, address)
+        returns (LoanAuction storage, address)
     {
         LoanAuction storage loanAuction = _loanAuctions[offer.nftContractAddress][nftId];
 
