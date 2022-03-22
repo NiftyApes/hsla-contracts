@@ -4,7 +4,7 @@ pragma solidity 0.8.11;
 import { ICEther } from "../../interfaces/compound/ICEther.sol";
 import { ERC20Upgradeable, IERC20Upgradeable } from "@openzeppelin/contracts/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin/contracts/utils/AddressUpgradeable.sol";
-import "../../Math.sol";
+import "../../lib/Math.sol";
 
 contract CEtherMock is ERC20Upgradeable, ICEther {
     bool public transferFromFail;

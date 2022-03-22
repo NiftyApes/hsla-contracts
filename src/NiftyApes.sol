@@ -14,7 +14,7 @@ import "@openzeppelin/contracts/utils/math/SafeCastUpgradeable.sol";
 import "./interfaces/compound/ICEther.sol";
 import "./interfaces/niftyapes/INiftyApes.sol";
 import "./interfaces/compound/ICERC20.sol";
-import "./Math.sol";
+import "./lib/Math.sol";
 import "./test/common/Console.sol";
 
 contract NiftyApes is
