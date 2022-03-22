@@ -559,16 +559,73 @@ contract NiftyApes is
         LoanAuction storage loanAuction = _loanAuctions[offer.nftContractAddress][offer.nftId];
 
         requireOpenLoan(loanAuction);
-
         requireOfferCreator(offer, msg.sender);
-
         requireLoanNotExpired(loanAuction);
-
         requireOfferParity(loanAuction, offer);
-
         requireValidDurationUpdate(loanAuction, offer);
+        requireNoFixedTerm(loanAuction);
+        requireOfferNotExpired(offer);
+        requireMatchingAsset(offer.asset, loanAuction.asset);
 
-        _refinanceByLender(offer, offer.creator);
+        address cAsset = getCAsset(offer.asset);
+
+        updateInterest(loanAuction);
+
+        // update LoanAuction struct
+        loanAuction.amount = offer.amount;
+        loanAuction.interestRateBps = offer.interestRateBps;
+        loanAuction.duration = offer.duration;
+
+        if (loanAuction.lender == offer.creator) {
+            // If current lender is refinancing the loan they do not need to pay any fees or buy themselves out.
+            // require prospective lender has sufficient available balance to refinance loan
+
+            uint256 cTokenAmountDrawn = assetAmountToCAssetAmount(
+                offer.asset,
+                loanAuction.amountDrawn
+            );
+
+            uint256 cTokenOfferAmount = assetAmountToCAssetAmount(offer.asset, offer.amount);
+
+            uint256 additionalTokens = cTokenOfferAmount - cTokenAmountDrawn;
+
+            require(getCAssetBalance(offer.creator, cAsset) >= additionalTokens, "lender balance");
+        } else {
+            // calculate interest earned
+            uint256 interestAndPremiumOwedToCurrentLender = loanAuction.historicLenderInterest +
+                ((loanAuction.amountDrawn * refinancePremiumLenderBps) / MAX_BPS);
+
+            uint256 protocolPremium = (loanAuction.amountDrawn * refinancePremiumProtocolBps) /
+                MAX_BPS;
+            // calculate fullRefinanceAmount
+            uint256 fullAmount = interestAndPremiumOwedToCurrentLender +
+                protocolPremium +
+                loanAuction.amountDrawn;
+
+            // If refinancing is done by another lender they must buy out the loan and pay fees
+            uint256 fullCTokenAmount = assetAmountToCAssetAmount(offer.asset, fullAmount);
+
+            // require prospective lender has sufficient available balance to refinance loan
+            require(getCAssetBalance(offer.creator, cAsset) >= fullCTokenAmount, "lender balance");
+
+            uint256 protocolPremimuimInCtokens = assetAmountToCAssetAmount(
+                offer.asset,
+                protocolPremium
+            );
+
+            address currentlender = loanAuction.lender;
+
+            // update LoanAuction lender
+            loanAuction.lender = offer.creator;
+
+            _balanceByAccountByAsset[currentlender][cAsset].cAssetBalance +=
+                fullCTokenAmount -
+                protocolPremimuimInCtokens;
+            _balanceByAccountByAsset[offer.creator][cAsset].cAssetBalance -= fullCTokenAmount;
+            _balanceByAccountByAsset[owner()][cAsset].cAssetBalance += protocolPremimuimInCtokens;
+        }
+
+        emit Refinance(offer.creator, offer.nftContractAddress, offer.nftId, offer);
     }
 
     function _refinanceByBorrower(
@@ -605,82 +662,6 @@ contract NiftyApes is
         loanAuction.amountDrawn = SafeCastUpgradeable.toUint128(fullAmount);
 
         emit Refinance(prospectiveLender, offer.nftContractAddress, nftId, offer);
-    }
-
-    function _refinanceByLender(Offer memory offer, address prospectiveLender) internal {
-        LoanAuction storage loanAuction = _loanAuctions[offer.nftContractAddress][nftId];
-
-        requireNoFixedTerm(loanAuction);
-        requireOpenLoan(loanAuction);
-        requireOfferNotExpired(offer);
-
-        requireMatchingAsset(offer.asset, loanAuction.asset);
-
-        address cAsset = getCAsset(offer.asset);
-
-        updateInterest(loanAuction);
-
-        // update LoanAuction struct
-        loanAuction.amount = offer.amount;
-        loanAuction.interestRateBps = offer.interestRateBps;
-        loanAuction.duration = offer.duration;
-
-        if (loanAuction.lender == prospectiveLender) {
-            // If current lender is refinancing the loan they do not need to pay any fees or buy themselves out.
-            // require prospective lender has sufficient available balance to refinance loan
-
-            uint256 cTokenAmountDrawn = assetAmountToCAssetAmount(
-                offer.asset,
-                loanAuction.amountDrawn
-            );
-
-            uint256 cTokenOfferAmount = assetAmountToCAssetAmount(offer.asset, offer.amount);
-
-            uint256 additionalTokens = cTokenOfferAmount - cTokenAmountDrawn;
-
-            require(
-                getCAssetBalance(prospectiveLender, cAsset) >= additionalTokens,
-                "lender balance"
-            );
-        } else {
-            // calculate interest earned
-            uint256 interestAndPremiumOwedToCurrentLender = loanAuction.historicLenderInterest +
-                ((loanAuction.amountDrawn * refinancePremiumLenderBps) / MAX_BPS);
-
-            uint256 protocolPremium = (loanAuction.amountDrawn * refinancePremiumProtocolBps) /
-                MAX_BPS;
-            // calculate fullRefinanceAmount
-            uint256 fullAmount = interestAndPremiumOwedToCurrentLender +
-                protocolPremium +
-                loanAuction.amountDrawn;
-
-            // If refinancing is done by another lender they must buy out the loan and pay fees
-            uint256 fullCTokenAmount = assetAmountToCAssetAmount(offer.asset, fullAmount);
-
-            // require prospective lender has sufficient available balance to refinance loan
-            require(
-                getCAssetBalance(prospectiveLender, cAsset) >= fullCTokenAmount,
-                "lender balance"
-            );
-
-            uint256 protocolPremimuimInCtokens = assetAmountToCAssetAmount(
-                offer.asset,
-                protocolPremium
-            );
-
-            address currentlender = loanAuction.lender;
-
-            // update LoanAuction lender
-            loanAuction.lender = prospectiveLender;
-
-            _balanceByAccountByAsset[currentlender][cAsset].cAssetBalance +=
-                fullCTokenAmount -
-                protocolPremimuimInCtokens;
-            _balanceByAccountByAsset[prospectiveLender][cAsset].cAssetBalance -= fullCTokenAmount;
-            _balanceByAccountByAsset[owner()][cAsset].cAssetBalance += protocolPremimuimInCtokens;
-        }
-
-        emit Refinance(prospectiveLender, offer.nftContractAddress, offer.nftId, offer);
     }
 
     /// @inheritdoc ILending
