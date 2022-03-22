@@ -72,7 +72,7 @@ contract NiftyApesPauseUnitTest is BaseTest, ILendingStructs, ERC721HolderUpgrad
             Offer({
                 creator: address(0x0000000000000000000000000000000000000001),
                 nftContractAddress: address(0x0000000000000000000000000000000000000002),
-                interestRateBps: 3,
+                interestRateBpsPerSecond: 3,
                 fixedTerms: false,
                 floorTerm: false,
                 nftId: 4,

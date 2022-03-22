@@ -10,14 +10,14 @@ interface ILendingStructs {
         // of the underlying nft. This field tracks who to return the nft to if the loan gets repaid.
         address nftOwner;
         // loan duration of loan in number of seconds
-        uint32 duration;
-        // timestamp of start of interest acummulation. Is reset when a new lender takes over the loan or the borrower makes a partial repayment.
-        uint32 timeOfInterestStart;
+        uint32 loanEndTimestamp;
+        /// Last timestamp this loan was updated
+        uint32 lastUpdatedTimestamp;
         // SLOT 1 START
         // The current lender of a loan
         address lender;
         // The interest rate on the loan in base points (parts of 10_000)
-        uint16 interestRateBps;
+        uint64 interestRateBpsPerSecond;
         // Whether or not the loan can be refinanced
         bool fixedTerms;
         // SLOT 2 START
@@ -44,8 +44,6 @@ interface ILendingStructs {
         uint32 duration;
         // The expiration timestamp of the offer in a unix timestamp in seconds
         uint32 expiration;
-        // offer interest rate in basis points for the loan duration
-        uint16 interestRateBps;
         // is loan offer fixed terms or open for perpetual auction
         bool fixedTerms;
         // is offer for single NFT or for every NFT in a collection
@@ -53,6 +51,8 @@ interface ILendingStructs {
         // SLOT 1 START
         // offer NFT contract address
         address nftContractAddress;
+        // offer interest rate in basis points for the loan duration
+        uint64 interestRateBpsPerSecond;
         // SLOT 2 START
         // offer NFT ID
         uint256 nftId; // ignored if floorTerm is true
