@@ -9,13 +9,12 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Upgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSAUpgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712Upgradeable.sol";
-import "@openzeppelin/contracts/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts/utils/math/SafeCastUpgradeable.sol";
+import "@openzeppelin/contracts/utils/AddressUpgradeable.sol";
 import "./interfaces/compound/ICEther.sol";
-import "./interfaces/niftyapes/INiftyApes.sol";
 import "./interfaces/compound/ICERC20.sol";
+import "./interfaces/niftyapes/INiftyApes.sol";
 import "./lib/Math.sol";
-import "./test/common/Console.sol";
 
 contract NiftyApes is
     OwnableUpgradeable,
