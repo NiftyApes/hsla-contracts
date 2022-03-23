@@ -521,7 +521,6 @@ contract NiftyApes is
             requireMatchingNftId(offer, nftId);
         }
 
-        requireNftOwner(_loanAuctions[nftContractAddress][nftId], msg.sender);
         _refinanceByBorrower(offer, offer.creator, nftId);
     }
 
@@ -539,8 +538,6 @@ contract NiftyApes is
             requireMatchingNftId(offer, nftId);
         }
 
-        requireNftOwner(_loanAuctions[offer.nftContractAddress][nftId], msg.sender);
-
         markSignatureUsed(signature);
 
         _refinanceByBorrower(offer, offer.creator, nftId);
@@ -555,6 +552,7 @@ contract NiftyApes is
     ) internal {
         LoanAuction storage loanAuction = _loanAuctions[offer.nftContractAddress][nftId];
 
+        requireNftOwner(loanAuction, msg.sender);
         requireNoFixedTerm(loanAuction);
         requireOpenLoan(loanAuction);
         requireOfferNotExpired(offer);
