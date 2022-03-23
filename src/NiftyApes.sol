@@ -554,6 +554,42 @@ contract NiftyApes is
         emit SigOfferFinalized(offer.nftContractAddress, offer.nftId, signature);
     }
 
+    function _refinanceByBorrower(
+        Offer memory offer,
+        address prospectiveLender,
+        uint256 nftId
+    ) internal {
+        LoanAuction storage loanAuction = _loanAuctions[offer.nftContractAddress][nftId];
+
+        requireNoFixedTerm(loanAuction);
+        requireOpenLoan(loanAuction);
+        requireOfferNotExpired(offer);
+
+        requireMatchingAsset(offer.asset, loanAuction.asset);
+
+        address cAsset = getCAsset(offer.asset);
+
+        updateInterest(loanAuction);
+
+        uint256 fullAmount = loanAuction.amountDrawn + loanAuction.accumulatedLenderInterest;
+
+        requireOfferAmount(offer, fullAmount);
+
+        uint256 fullCTokenAmount = assetAmountToCAssetAmount(offer.asset, fullAmount);
+
+        withdrawCBalance(prospectiveLender, cAsset, fullCTokenAmount);
+        _balanceByAccountByAsset[loanAuction.lender][cAsset].cAssetBalance += fullCTokenAmount;
+
+        // update Loan state
+        loanAuction.lender = prospectiveLender;
+        loanAuction.amount = offer.amount;
+        loanAuction.interestRatePerSecond = offer.interestRatePerSecond;
+        loanAuction.loanEndTimestamp = now() + offer.duration;
+        loanAuction.amountDrawn = SafeCastUpgradeable.toUint128(fullAmount);
+
+        emit Refinance(prospectiveLender, offer.nftContractAddress, nftId, offer);
+    }
+
     /// @inheritdoc ILending
     function refinanceByLender(Offer calldata offer) external payable whenNotPaused nonReentrant {
         LoanAuction storage loanAuction = _loanAuctions[offer.nftContractAddress][offer.nftId];
@@ -574,9 +610,7 @@ contract NiftyApes is
         // update LoanAuction struct
         loanAuction.amount = offer.amount;
         loanAuction.interestRatePerSecond = offer.interestRatePerSecond;
-        loanAuction.loanEndTimestamp =
-            SafeCastUpgradeable.toUint32(block.timestamp) +
-            offer.duration;
+        loanAuction.loanEndTimestamp = now() + offer.duration;
 
         if (loanAuction.lender == offer.creator) {
             // If current lender is refinancing the loan they do not need to pay any fees or buy themselves out.
@@ -628,44 +662,6 @@ contract NiftyApes is
         }
 
         emit Refinance(offer.creator, offer.nftContractAddress, offer.nftId, offer);
-    }
-
-    function _refinanceByBorrower(
-        Offer memory offer,
-        address prospectiveLender,
-        uint256 nftId
-    ) internal {
-        LoanAuction storage loanAuction = _loanAuctions[offer.nftContractAddress][nftId];
-
-        requireNoFixedTerm(loanAuction);
-        requireOpenLoan(loanAuction);
-        requireOfferNotExpired(offer);
-
-        requireMatchingAsset(offer.asset, loanAuction.asset);
-
-        address cAsset = getCAsset(offer.asset);
-
-        updateInterest(loanAuction);
-
-        uint256 fullAmount = loanAuction.amountDrawn + loanAuction.accumulatedLenderInterest;
-
-        requireOfferAmount(offer, fullAmount);
-
-        uint256 fullCTokenAmount = assetAmountToCAssetAmount(offer.asset, fullAmount);
-
-        withdrawCBalance(prospectiveLender, cAsset, fullCTokenAmount);
-        _balanceByAccountByAsset[loanAuction.lender][cAsset].cAssetBalance += fullCTokenAmount;
-
-        // update Loan state
-        loanAuction.lender = prospectiveLender;
-        loanAuction.amount = offer.amount;
-        loanAuction.interestRatePerSecond = offer.interestRatePerSecond;
-        loanAuction.loanEndTimestamp =
-            SafeCastUpgradeable.toUint32(block.timestamp) +
-            offer.duration;
-        loanAuction.amountDrawn = SafeCastUpgradeable.toUint128(fullAmount);
-
-        emit Refinance(prospectiveLender, offer.nftContractAddress, nftId, offer);
     }
 
     /// @inheritdoc ILending
@@ -864,7 +860,7 @@ contract NiftyApes is
         loanAuction.accumulatedProtocolInterest += SafeCastUpgradeable.toUint128(protocolInterest);
 
         uint256 maxTime = loanAuction.loanEndTimestamp;
-        uint256 actualTime = block.timestamp - loanAuction.lastUpdatedTimestamp;
+        uint256 actualTime = now() - loanAuction.lastUpdatedTimestamp;
         uint256 timePassed = MathUpgradeable.min(actualTime, maxTime);
 
         loanAuction.lastUpdatedTimestamp += SafeCastUpgradeable.toUint32(timePassed);
@@ -1074,10 +1070,8 @@ contract NiftyApes is
         loanAuction.asset = offer.asset;
         loanAuction.amount = offer.amount;
         loanAuction.interestRatePerSecond = offer.interestRatePerSecond;
-        loanAuction.loanEndTimestamp =
-            SafeCastUpgradeable.toUint32(block.timestamp) +
-            offer.duration;
-        loanAuction.lastUpdatedTimestamp = SafeCastUpgradeable.toUint32(block.timestamp);
+        loanAuction.loanEndTimestamp = now() + offer.duration;
+        loanAuction.lastUpdatedTimestamp = now();
         loanAuction.amountDrawn = offer.amount;
         loanAuction.fixedTerms = offer.fixedTerms;
     }
@@ -1116,6 +1110,10 @@ contract NiftyApes is
 
         _balanceByAccountByAsset[loanAuction.lender][cAsset].cAssetBalance += cTokensToLender;
         _balanceByAccountByAsset[owner()][cAsset].cAssetBalance += cTokensToProtocol;
+    }
+
+    function now() internal returns (uint32) {
+        return SafeCastUpgradeable.toUint32(block.timestamp);
     }
 
     // This is needed to receive ETH when calling withdrawing ETH from compund
