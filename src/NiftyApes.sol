@@ -267,7 +267,7 @@ contract NiftyApes is
     /// @inheritdoc ILending
     function getOfferSigner(
         Offer memory offer,
-        bytes memory signature //proof the actor signed the offer
+        bytes memory signature
     ) public view override returns (address) {
         return ECDSAUpgradeable.recover(getOfferHash(offer), signature);
     }
@@ -355,7 +355,6 @@ contract NiftyApes is
         bytes32 offerHash,
         bool floorTerm
     ) external whenNotPaused {
-        // Create a copy here so that we can log out the event below
         Offer memory offer = getOffer(nftContractAddress, nftId, offerHash, floorTerm);
 
         requireOfferCreator(offer.creator, msg.sender);
@@ -369,7 +368,6 @@ contract NiftyApes is
         bytes32 offerHash,
         bool floorTerm
     ) internal whenNotPaused {
-        // Get pointer to offer book
         mapping(bytes32 => Offer) storage offerBook = getOfferBook(
             nftContractAddress,
             nftId,
@@ -409,7 +407,6 @@ contract NiftyApes is
     function executeLoanByBorrowerSignature(
         Offer calldata offer,
         bytes calldata signature,
-        // TODO(dankurka): Add a good explanation
         uint256 nftId
     ) external payable whenNotPaused nonReentrant {
         requireAvailableSignature(signature);
