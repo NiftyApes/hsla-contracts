@@ -594,7 +594,7 @@ contract NiftyApes is
             require(getCAssetBalance(offer.creator, cAsset) >= additionalTokens, "lender balance");
         } else {
             // calculate interest earned
-            uint256 interestAndPremiumOwedToCurrentLender = loanAuction.historicLenderInterest +
+            uint256 interestAndPremiumOwedToCurrentLender = loanAuction.accumulatedLenderInterest +
                 ((loanAuction.amountDrawn * refinancePremiumLenderBps) / MAX_BPS);
 
             uint256 protocolPremium = (loanAuction.amountDrawn * refinancePremiumProtocolBps) /
@@ -647,7 +647,7 @@ contract NiftyApes is
 
         updateInterest(loanAuction);
 
-        uint256 fullAmount = loanAuction.amountDrawn + loanAuction.historicLenderInterest;
+        uint256 fullAmount = loanAuction.amountDrawn + loanAuction.accumulatedLenderInterest;
 
         requireOfferAmount(offer, fullAmount);
 
@@ -775,8 +775,8 @@ contract NiftyApes is
         updateInterest(loanAuction);
 
         uint256 payment = rls.repayFull
-            ? loanAuction.historicLenderInterest +
-                loanAuction.historicProtocolInterest +
+            ? loanAuction.accumulatedLenderInterest +
+                loanAuction.accumulatedProtocolInterest +
                 loanAuction.amountDrawn
             : rls.paymentAmount;
 
@@ -860,8 +860,8 @@ contract NiftyApes is
     function updateInterest(LoanAuction storage loanAuction) internal {
         (uint256 lenderInterest, uint256 protocolInterest) = calculateInterestAccrued(loanAuction);
 
-        loanAuction.historicLenderInterest += SafeCastUpgradeable.toUint128(lenderInterest);
-        loanAuction.historicProtocolInterest += SafeCastUpgradeable.toUint128(protocolInterest);
+        loanAuction.accumulatedLenderInterest += SafeCastUpgradeable.toUint128(lenderInterest);
+        loanAuction.accumulatedProtocolInterest += SafeCastUpgradeable.toUint128(protocolInterest);
 
         uint256 maxTime = loanAuction.loanEndTimestamp;
         uint256 actualTime = block.timestamp - loanAuction.lastUpdatedTimestamp;
@@ -1110,8 +1110,8 @@ contract NiftyApes is
         uint256 totalPayment
     ) internal {
         uint256 cTokensToLender = (totalCTokens *
-            (loanAuction.amountDrawn + loanAuction.historicLenderInterest)) / totalPayment;
-        uint256 cTokensToProtocol = (totalCTokens * loanAuction.historicProtocolInterest) /
+            (loanAuction.amountDrawn + loanAuction.accumulatedLenderInterest)) / totalPayment;
+        uint256 cTokensToProtocol = (totalCTokens * loanAuction.accumulatedProtocolInterest) /
             totalPayment;
 
         _balanceByAccountByAsset[loanAuction.lender][cAsset].cAssetBalance += cTokensToLender;

@@ -24,9 +24,9 @@ interface ILendingStructs {
         address asset;
         // SLOT 3 START
         // cumulative interest of varying rates paid by new lenders to buy out the loan auction
-        uint128 historicLenderInterest;
+        uint128 accumulatedLenderInterest;
         // cumulative interest of varying rates accrued by the protocol. To be repaid at the end of the loan.
-        uint128 historicProtocolInterest;
+        uint128 accumulatedProtocolInterest;
         // SLOT 4 START
         // The maximum amount of tokens that can be drawn from this loan
         uint128 amount;

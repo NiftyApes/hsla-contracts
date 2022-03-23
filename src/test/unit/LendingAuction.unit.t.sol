@@ -686,8 +686,8 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.amount, 6);
         assertEq(loanAuction.loanEndTimestamp, block.timestamp + 1 days);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
-        assertEq(loanAuction.historicLenderInterest, 0);
-        assertEq(loanAuction.historicProtocolInterest, 0);
+        assertEq(loanAuction.accumulatedLenderInterest, 0);
+        assertEq(loanAuction.accumulatedProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 6);
     }
 
@@ -1255,8 +1255,8 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.amount, 6);
         assertEq(loanAuction.loanEndTimestamp, block.timestamp + 3 days);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
-        assertEq(loanAuction.historicLenderInterest, 0);
-        assertEq(loanAuction.historicProtocolInterest, 0);
+        assertEq(loanAuction.accumulatedLenderInterest, 0);
+        assertEq(loanAuction.accumulatedProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 6);
     }
 
@@ -1408,8 +1408,8 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.amount, 0);
         assertEq(loanAuction.loanEndTimestamp, 0);
         assertEq(loanAuction.lastUpdatedTimestamp, 0);
-        assertEq(loanAuction.historicLenderInterest, 0);
-        assertEq(loanAuction.historicProtocolInterest, 0);
+        assertEq(loanAuction.accumulatedLenderInterest, 0);
+        assertEq(loanAuction.accumulatedProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 0);
 
         assertEq(mockNft.ownerOf(1), LENDER_1);
@@ -1613,8 +1613,8 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.amount, 0);
         assertEq(loanAuction.loanEndTimestamp, 0);
         assertEq(loanAuction.lastUpdatedTimestamp, 0);
-        assertEq(loanAuction.historicLenderInterest, 0);
-        assertEq(loanAuction.historicProtocolInterest, 0);
+        assertEq(loanAuction.accumulatedLenderInterest, 0);
+        assertEq(loanAuction.accumulatedProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 0);
     }
 
