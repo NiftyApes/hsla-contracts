@@ -1577,8 +1577,8 @@ contract LendingAuctionUnitTest is
         hevm.warp(block.timestamp + 1 days);
 
         uint256 principal = 1 ether;
-        uint256 lenderInterest = (3 * 30 days * principal) / (10000 * 30 days);
-        uint256 protocolInterest = (50 * 30 days * principal) / (10000 * 30 days);
+        uint256 lenderInterest = (3 * 30 days * 1 days * principal) / (10000 * 30 days);
+        uint256 protocolInterest = (50 * 1 days * principal) / (10000 * 30 days);
 
         uint256 repayAmount = principal + lenderInterest + protocolInterest;
 
@@ -1600,22 +1600,22 @@ contract LendingAuctionUnitTest is
             (6 ether + lenderInterest + protocolInterest) * 1 ether
         );
 
-        // assertEq(mockNft.ownerOf(1), address(this));
+        assertEq(mockNft.ownerOf(1), address(this));
 
         LoanAuction memory loanAuction = lendingAction.getLoanAuction(address(mockNft), 1);
 
         assertEq(loanAuction.nftOwner, ZERO_ADDRESS);
         assertEq(loanAuction.lender, ZERO_ADDRESS);
         assertEq(loanAuction.asset, ZERO_ADDRESS);
-        // assertEq(loanAuction.interestRateBpsPerSecond, 0);
-        // assertTrue(!loanAuction.fixedTerms);
+        assertEq(loanAuction.interestRateBpsPerSecond, 0);
+        assertTrue(!loanAuction.fixedTerms);
 
-        // assertEq(loanAuction.amount, 0);
-        // assertEq(loanAuction.loanEndTimestamp, block.timestamp + 1 days);
-        // assertEq(loanAuction.lastUpdatedTimestamp, 0);
-        // assertEq(loanAuction.historicLenderInterest, 0);
-        // assertEq(loanAuction.historicProtocolInterest, 0);
-        // assertEq(loanAuction.amountDrawn, 0);
+        assertEq(loanAuction.amount, 0);
+        assertEq(loanAuction.loanEndTimestamp, 0);
+        assertEq(loanAuction.lastUpdatedTimestamp, 0);
+        assertEq(loanAuction.historicLenderInterest, 0);
+        assertEq(loanAuction.historicProtocolInterest, 0);
+        assertEq(loanAuction.amountDrawn, 0);
     }
 
     // TODO(dankurka): Tests missing for drawAmount
