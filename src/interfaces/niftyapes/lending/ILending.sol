@@ -8,9 +8,8 @@ import "./ILendingStructs.sol";
 ///        This interface is intended to be used for interacting with loans on the protocol.
 interface ILending is ILendingEvents, ILendingStructs {
     /// @notice Returns the fee that computes protocol interest
-    // TODO(dankurka): Wrong!!
-    ///         Fees are denomiated in basis points, parts of 10_000
-    function loanDrawFeeProtocolBps() external view returns (uint64);
+    ///         This fee is the rate of interest per second
+    function loanDrawFeeProtocolPerSecond() external view returns (uint128);
 
     /// @notice Returns the fee for refinancing a loan that the new lender has to pay
     ///         Fees are denomiated in basis points, parts of 10_000

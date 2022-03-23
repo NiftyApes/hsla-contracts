@@ -70,7 +70,7 @@ contract NiftyApes is
     mapping(bytes => bool) private _cancelledOrFinalized;
 
     /// @inheritdoc ILending
-    uint64 public loanDrawFeeProtocolBps;
+    uint128 public loanDrawFeeProtocolPerSecond;
 
     /// @inheritdoc ILending
     uint16 public refinancePremiumLenderBps;
@@ -84,7 +84,7 @@ contract NiftyApes is
     function initialize() public initializer {
         EIP712Upgradeable.__EIP712_init("NiftyApes", "0.0.1");
 
-        loanDrawFeeProtocolBps = 50;
+        loanDrawFeeProtocolPerSecond = 50;
         refinancePremiumLenderBps = 50;
         refinancePremiumProtocolBps = 50;
 
@@ -253,7 +253,7 @@ contract NiftyApes is
                         offer.nftId,
                         offer.asset,
                         offer.amount,
-                        offer.interestRateBpsPerSecond,
+                        offer.interestRatePerSecond,
                         offer.duration,
                         offer.expiration,
                         offer.fixedTerms,
@@ -573,7 +573,7 @@ contract NiftyApes is
 
         // update LoanAuction struct
         loanAuction.amount = offer.amount;
-        loanAuction.interestRateBpsPerSecond = offer.interestRateBpsPerSecond;
+        loanAuction.interestRatePerSecond = offer.interestRatePerSecond;
         loanAuction.loanEndTimestamp =
             SafeCastUpgradeable.toUint32(block.timestamp) +
             offer.duration;
@@ -659,7 +659,7 @@ contract NiftyApes is
         // update Loan state
         loanAuction.lender = prospectiveLender;
         loanAuction.amount = offer.amount;
-        loanAuction.interestRateBpsPerSecond = offer.interestRateBpsPerSecond;
+        loanAuction.interestRatePerSecond = offer.interestRatePerSecond;
         loanAuction.loanEndTimestamp =
             SafeCastUpgradeable.toUint32(block.timestamp) +
             offer.duration;
@@ -889,14 +889,16 @@ contract NiftyApes is
         uint256 timePassed = MathUpgradeable.min(actualTime, maxTime);
         uint256 amountXTime = timePassed * loanAuction.amountDrawn;
 
-        lenderInterest = (amountXTime * loanAuction.interestRateBpsPerSecond) / (30 days * MAX_BPS);
-        protocolInterest = (amountXTime * loanDrawFeeProtocolBps) / (30 days * MAX_BPS);
+        lenderInterest = amountXTime * loanAuction.interestRatePerSecond;
+        protocolInterest = amountXTime * loanDrawFeeProtocolPerSecond;
     }
 
     /// @inheritdoc INiftyApesAdmin
-    function updateLoanDrawProtocolFee(uint64 newLoanDrawProtocolFeeBps) external onlyOwner {
-        require(newLoanDrawProtocolFeeBps <= MAX_FEE * 30 days, "max fee");
-        loanDrawFeeProtocolBps = newLoanDrawProtocolFeeBps;
+    function updateLoanDrawProtocolFeePerSecond(uint128 newLoanDrawFeeProtocolPerSecond)
+        external
+        onlyOwner
+    {
+        loanDrawFeeProtocolPerSecond = newLoanDrawFeeProtocolPerSecond;
     }
 
     /// @inheritdoc INiftyApesAdmin
@@ -1006,14 +1008,14 @@ contract NiftyApes is
     function requireOfferParity(LoanAuction storage loanAuction, Offer memory offer) internal view {
         // Caching fields here for gas usage
         uint256 amount = loanAuction.amount;
-        uint256 interestRateBpsPerSecond = loanAuction.interestRateBpsPerSecond;
+        uint256 interestRatePerSecond = loanAuction.interestRatePerSecond;
         uint256 loanEndTime = loanAuction.loanEndTimestamp;
         uint256 offerEndTime = block.timestamp + offer.duration;
 
         // Better amount
         if (
             offer.amount > amount &&
-            offer.interestRateBpsPerSecond <= interestRateBpsPerSecond &&
+            offer.interestRatePerSecond <= interestRatePerSecond &&
             offerEndTime >= loanEndTime
         ) {
             return;
@@ -1022,7 +1024,7 @@ contract NiftyApes is
         // Lower interest rate
         if (
             offer.amount >= amount &&
-            offer.interestRateBpsPerSecond < interestRateBpsPerSecond &&
+            offer.interestRatePerSecond < interestRatePerSecond &&
             offerEndTime >= loanEndTime
         ) {
             return;
@@ -1031,7 +1033,7 @@ contract NiftyApes is
         // Longer duration
         if (
             offer.amount >= amount &&
-            offer.interestRateBpsPerSecond <= interestRateBpsPerSecond &&
+            offer.interestRatePerSecond <= interestRatePerSecond &&
             offerEndTime > loanEndTime
         ) {
             return;
@@ -1051,7 +1053,7 @@ contract NiftyApes is
         // This prevents lenders from refinancing loands with too small of a change
         if (
             offer.amount == loanAuction.amount &&
-            offer.interestRateBpsPerSecond == loanAuction.interestRateBpsPerSecond &&
+            offer.interestRatePerSecond == loanAuction.interestRatePerSecond &&
             currentTime + offer.duration > loanAuction.loanEndTimestamp
         ) {
             require(
@@ -1071,7 +1073,7 @@ contract NiftyApes is
         loanAuction.lender = lender;
         loanAuction.asset = offer.asset;
         loanAuction.amount = offer.amount;
-        loanAuction.interestRateBpsPerSecond = offer.interestRateBpsPerSecond;
+        loanAuction.interestRatePerSecond = offer.interestRatePerSecond;
         loanAuction.loanEndTimestamp =
             SafeCastUpgradeable.toUint32(block.timestamp) +
             offer.duration;

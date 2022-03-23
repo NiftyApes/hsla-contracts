@@ -16,8 +16,6 @@ interface ILendingStructs {
         // SLOT 1 START
         // The current lender of a loan
         address lender;
-        // The interest rate on the loan in base points (parts of 10_000)
-        uint64 interestRateBpsPerSecond;
         // Whether or not the loan can be refinanced
         bool fixedTerms;
         // SLOT 2 START
@@ -34,6 +32,8 @@ interface ILendingStructs {
         uint128 amount;
         // amount withdrawn by the nftOwner. This is the amount they will pay interest on, with this value as minimum
         uint128 amountDrawn;
+        // This fee is the rate of interest per second
+        uint128 interestRatePerSecond;
     }
 
     struct Offer {
@@ -51,8 +51,6 @@ interface ILendingStructs {
         // SLOT 1 START
         // offer NFT contract address
         address nftContractAddress;
-        // offer interest rate in basis points for the loan duration
-        uint64 interestRateBpsPerSecond;
         // SLOT 2 START
         // offer NFT ID
         uint256 nftId; // ignored if floorTerm is true
@@ -62,5 +60,7 @@ interface ILendingStructs {
         // SLOT 4 START
         // offer loan amount
         uint128 amount;
+        // offer interest rate in basis points for the loan duration
+        uint128 interestRatePerSecond;
     }
 }

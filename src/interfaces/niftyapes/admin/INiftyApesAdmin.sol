@@ -16,7 +16,7 @@ interface INiftyApesAdmin {
     /// @notice Updates the fee that computes protocol interest
     ///         Fees are denomiated in basis points, parts of 10_000
     // TODO(dankurka): wrong
-    function updateLoanDrawProtocolFee(uint64 newLoanDrawProtocolFeeBps) external;
+    function updateLoanDrawProtocolFeePerSecond(uint128 newLoanDrawProtocolFeePerSecond) external;
 
     /// @notice Updates the fee for refinancing a loan that the new lender has to pay
     ///         Fees are denomiated in basis points, parts of 10_000
