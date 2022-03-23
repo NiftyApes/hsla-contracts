@@ -13,11 +13,13 @@ interface ILendingStructs {
         uint32 loanEndTimestamp;
         /// Last timestamp this loan was updated
         uint32 lastUpdatedTimestamp;
+        // Whether or not the loan can be refinanced
+        bool fixedTerms;
         // SLOT 1 START
         // The current lender of a loan
         address lender;
-        // Whether or not the loan can be refinanced
-        bool fixedTerms;
+        // This fee is the rate of interest per second
+        uint96 interestRatePerSecond;
         // SLOT 2 START
         // TODO(dankurka): replace this field with an enum rather than storing addresses over and over
         // The asset in which the loan has been denominated
@@ -32,8 +34,6 @@ interface ILendingStructs {
         uint128 amount;
         // amount withdrawn by the nftOwner. This is the amount they will pay interest on, with this value as minimum
         uint128 amountDrawn;
-        // This fee is the rate of interest per second
-        uint128 interestRatePerSecond;
     }
 
     struct Offer {
@@ -61,6 +61,6 @@ interface ILendingStructs {
         // offer loan amount
         uint128 amount;
         // offer interest rate in basis points for the loan duration
-        uint128 interestRatePerSecond;
+        uint96 interestRatePerSecond;
     }
 }

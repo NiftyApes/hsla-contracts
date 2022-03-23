@@ -70,7 +70,7 @@ contract NiftyApes is
     mapping(bytes => bool) private _cancelledOrFinalized;
 
     /// @inheritdoc ILending
-    uint128 public loanDrawFeeProtocolPerSecond;
+    uint96 public loanDrawFeeProtocolPerSecond;
 
     /// @inheritdoc ILending
     uint16 public refinancePremiumLenderBps;
@@ -894,7 +894,7 @@ contract NiftyApes is
     }
 
     /// @inheritdoc INiftyApesAdmin
-    function updateLoanDrawProtocolFeePerSecond(uint128 newLoanDrawFeeProtocolPerSecond)
+    function updateLoanDrawProtocolFeePerSecond(uint96 newLoanDrawFeeProtocolPerSecond)
         external
         onlyOwner
     {
