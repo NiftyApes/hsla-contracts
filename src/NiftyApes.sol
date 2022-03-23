@@ -59,12 +59,17 @@ contract NiftyApes is
     /// @dev A mapping for a NFT to an Offer
     ///      The mapping has to be broken into three parts since an NFT is denomiated by its address (first part)
     ///      and its nftId (second part), offers are reffered to by their hash (see #getEIP712EncodedOffer for details) (third part).
-    mapping(address => mapping(uint256 => mapping(bytes32 => Offer))) private _nftOfferBooks;
+    mapping(address => mapping(uint256 => mapping(bytes32 => Offer))) private _lenderOfferBook;
+
+    /// @dev A mapping for a NFT to an Offer
+    ///      The mapping has to be broken into three parts since an NFT is denomiated by its address (first part)
+    ///      and its nftId (second part), offers are reffered to by their hash (see #getEIP712EncodedOffer for details) (third part).
+    mapping(address => mapping(uint256 => mapping(bytes32 => Offer))) private _borrowerOfferBook;
 
     /// @dev A mapping for a NFT to a floor offer
     ///      Floor offers are different from offers on a specific NFT since they are valid on any NFT fro the same address.
     ///      Thus this mapping skips the nftId, see _nftOfferBooks above.
-    mapping(address => mapping(bytes32 => Offer)) private _floorOfferBooks;
+    mapping(address => mapping(bytes32 => Offer)) private _lenderFloorOfferBook;
 
     /// @dev A mapping to mark a signature as used.
     ///      The mapping allows users to withdraw offers that they made by signature.
@@ -293,35 +298,62 @@ contract NiftyApes is
     function getOfferBook(
         address nftContractAddress,
         uint256 nftId,
-        bool floorTerm
+        bool floorTerm,
+        bool lenderOffer
     ) internal view returns (mapping(bytes32 => Offer) storage) {
-        return
-            floorTerm
-                ? _floorOfferBooks[nftContractAddress]
-                : _nftOfferBooks[nftContractAddress][nftId];
+        if (lenderOffer) {
+            return
+                floorTerm
+                    ? _lenderFloorOfferBook[nftContractAddress]
+                    : _lenderOfferBook[nftContractAddress][nftId];
+        }
+
+        // TODO
+        require(!floorTerm, "asdf");
+
+        return _borrowerOfferBook[nftContractAddress][nftId];
     }
 
     /// @inheritdoc ILending
-    function getOffer(
+    function getLenderOffer(
         address nftContractAddress,
         uint256 nftId,
         bytes32 offerHash,
         bool floorTerm
     ) public view returns (Offer memory) {
-        return getOfferInternal(nftContractAddress, nftId, offerHash, floorTerm);
+        return getOfferInternal(nftContractAddress, nftId, offerHash, floorTerm, true);
+    }
+
+    /// @inheritdoc ILending
+    function getBorrowerOffer(
+        address nftContractAddress,
+        uint256 nftId,
+        bytes32 offerHash
+    ) public view returns (Offer memory) {
+        return getOfferInternal(nftContractAddress, nftId, offerHash, false, false);
     }
 
     function getOfferInternal(
         address nftContractAddress,
         uint256 nftId,
         bytes32 offerHash,
-        bool floorTerm
+        bool floorTerm,
+        bool lenderOffer
     ) internal view returns (Offer storage) {
-        return getOfferBook(nftContractAddress, nftId, floorTerm)[offerHash];
+        return getOfferBook(nftContractAddress, nftId, floorTerm, lenderOffer)[offerHash];
     }
 
     /// @inheritdoc ILending
-    function createOffer(Offer calldata offer) external whenNotPaused {
+    function createBorrowerOffer(Offer calldata offer) external override whenNotPaused {
+        doCreateOffer(offer, false);
+    }
+
+    /// @inheritdoc ILending
+    function createLenderOffer(Offer calldata offer) external override whenNotPaused {
+        doCreateOffer(offer, true);
+    }
+
+    function doCreateOffer(Offer calldata offer, bool lenderOffer) internal {
         address cAsset = getCAsset(offer.asset);
 
         requireOfferCreator(offer.creator, msg.sender);
@@ -333,21 +365,33 @@ contract NiftyApes is
         mapping(bytes32 => Offer) storage offerBook = getOfferBook(
             offer.nftContractAddress,
             offer.nftId,
-            offer.floorTerm
+            offer.floorTerm,
+            lenderOffer
         );
 
         bytes32 offerHash = getOfferHash(offer);
 
         offerBook[offerHash] = offer;
 
-        emit NewOffer(
-            offer.creator,
-            offer.asset,
-            offer.nftContractAddress,
-            offer.nftId,
-            offer,
-            offerHash
-        );
+        if (lenderOffer) {
+            emit NewLenderOffer(
+                offer.creator,
+                offer.asset,
+                offer.nftContractAddress,
+                offer.nftId,
+                offer,
+                offerHash
+            );
+        } else {
+            emit NewBorowerrOffer(
+                offer.creator,
+                offer.asset,
+                offer.nftContractAddress,
+                offer.nftId,
+                offer,
+                offerHash
+            );
+        }
     }
 
     /// @inheritdoc ILending
@@ -355,9 +399,10 @@ contract NiftyApes is
         address nftContractAddress,
         uint256 nftId,
         bytes32 offerHash,
-        bool floorTerm
+        bool floorTerm,
+        bool lenderOffer
     ) external whenNotPaused {
-        Offer memory offer = getOffer(nftContractAddress, nftId, offerHash, floorTerm);
+        Offer memory offer = getOffer(nftContractAddress, nftId, offerHash, floorTerm, lenderOffer);
 
         requireOfferCreator(offer.creator, msg.sender);
 

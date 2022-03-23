@@ -58,16 +58,30 @@ interface ILending is ILendingEvents, ILendingStructs {
     /// @param nftId The id of the specified NFT
     /// @param offerHash The hash of all parameters in an offer
     /// @param floorTerm Indicates whether this is a floor or individual NFT offer.
-    function getOffer(
+    function getLenderOffer(
         address nftContractAddress,
         uint256 nftId,
         bytes32 offerHash,
         bool floorTerm
     ) external view returns (Offer memory offer);
 
+    /// @notice Returns an offer from the on-chain offer books
+    /// @param nftContractAddress The address of the NFT collection
+    /// @param nftId The id of the specified NFT
+    /// @param offerHash The hash of all parameters in an offer
+    function getBorrowerOffer(
+        address nftContractAddress,
+        uint256 nftId,
+        bytes32 offerHash
+    ) external view returns (Offer memory offer);
+
     /// @notice Creates an offer on the on chain offer book
     /// @param offer The details of offer
-    function createOffer(Offer calldata offer) external;
+    function createBorrowerOffer(Offer calldata offer) external;
+
+    /// @notice Creates an offer on the on chain offer book
+    /// @param offer The details of offer
+    function createLenderOffer(Offer calldata offer) external;
 
     /// @notice Removes an offer from the on-chain offer book
     /// @param nftContractAddress The address of the NFT collection

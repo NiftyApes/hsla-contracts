@@ -4,8 +4,17 @@ pragma solidity ^0.8.13;
 import "../lending/ILendingStructs.sol";
 
 interface ILendingEvents {
-    event NewOffer(
+    event NewLenderOffer(
         address indexed lender,
+        address indexed asset,
+        address indexed nftContractAddress,
+        uint256 nftId,
+        ILendingStructs.Offer offer,
+        bytes32 offerHash
+    );
+
+    event NewBorowerrOffer(
+        address indexed borrower,
         address indexed asset,
         address indexed nftContractAddress,
         uint256 nftId,
