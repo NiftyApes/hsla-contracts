@@ -17,6 +17,7 @@ import "./interfaces/compound/ICERC20.sol";
 import "./interfaces/niftyapes/INiftyApes.sol";
 import "./lib/Math.sol";
 
+/// @title Implemention of the INiftyApes interface
 contract NiftyApes is
     OwnableUpgradeable,
     PausableUpgradeable,
