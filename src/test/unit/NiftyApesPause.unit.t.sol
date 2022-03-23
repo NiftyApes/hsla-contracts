@@ -67,167 +67,167 @@ contract NiftyApesPauseUnitTest is BaseTest, ILendingStructs, ERC721HolderUpgrad
         mockNft.approve(address(niftyApes), 2);
     }
 
-    function getOffer() internal returns (Offer memory offer) {
-        return
-            Offer({
-                creator: address(0x0000000000000000000000000000000000000001),
-                nftContractAddress: address(0x0000000000000000000000000000000000000002),
-                interestRatePerSecond: 3,
-                fixedTerms: false,
-                floorTerm: false,
-                nftId: 4,
-                asset: address(usdcToken),
-                amount: 6,
-                duration: 7,
-                expiration: 8
-            });
-    }
+    // function getOffer() internal returns (Offer memory offer) {
+    //     return
+    //         Offer({
+    //             creator: address(0x0000000000000000000000000000000000000001),
+    //             nftContractAddress: address(0x0000000000000000000000000000000000000002),
+    //             interestRatePerSecond: 3,
+    //             fixedTerms: false,
+    //             floorTerm: false,
+    //             nftId: 4,
+    //             asset: address(usdcToken),
+    //             amount: 6,
+    //             duration: 7,
+    //             expiration: 8
+    //         });
+    // }
 
-    function testCannotPause_not_owner() public {
-        hevm.startPrank(LENDER_1);
+    // function testCannotPause_not_owner() public {
+    //     hevm.startPrank(LENDER_1);
 
-        hevm.expectRevert("Ownable: caller is not the owner");
+    //     hevm.expectRevert("Ownable: caller is not the owner");
 
-        niftyApes.pause();
-    }
+    //     niftyApes.pause();
+    // }
 
-    function testCannotUnpause_not_owner() public {
-        hevm.startPrank(LENDER_1);
+    // function testCannotUnpause_not_owner() public {
+    //     hevm.startPrank(LENDER_1);
 
-        hevm.expectRevert("Ownable: caller is not the owner");
+    //     hevm.expectRevert("Ownable: caller is not the owner");
 
-        niftyApes.unpause();
-    }
+    //     niftyApes.unpause();
+    // }
 
-    function testCannotsupplyErc20_paused() public {
-        hevm.expectRevert("Pausable: paused");
+    // function testCannotsupplyErc20_paused() public {
+    //     hevm.expectRevert("Pausable: paused");
 
-        niftyApes.supplyErc20(address(usdcToken), 1);
-    }
+    //     niftyApes.supplyErc20(address(usdcToken), 1);
+    // }
 
-    function testCannotSupplyErc20_paused() public {
-        hevm.expectRevert("Pausable: paused");
+    // function testCannotSupplyErc20_paused() public {
+    //     hevm.expectRevert("Pausable: paused");
 
-        niftyApes.supplyErc20(address(usdcToken), 1);
-    }
+    //     niftyApes.supplyErc20(address(usdcToken), 1);
+    // }
 
-    function testCannotSupplyCErc20_paused() public {
-        hevm.expectRevert("Pausable: paused");
+    // function testCannotSupplyCErc20_paused() public {
+    //     hevm.expectRevert("Pausable: paused");
 
-        niftyApes.supplyCErc20(address(cUSDCToken), 1);
-    }
+    //     niftyApes.supplyCErc20(address(cUSDCToken), 1);
+    // }
 
-    function testCannotWithdrawErc20_paused() public {
-        hevm.expectRevert("Pausable: paused");
+    // function testCannotWithdrawErc20_paused() public {
+    //     hevm.expectRevert("Pausable: paused");
 
-        niftyApes.withdrawErc20(address(usdcToken), 1);
-    }
+    //     niftyApes.withdrawErc20(address(usdcToken), 1);
+    // }
 
-    function testCannotwithdrawCErc20_paused() public {
-        hevm.expectRevert("Pausable: paused");
+    // function testCannotwithdrawCErc20_paused() public {
+    //     hevm.expectRevert("Pausable: paused");
 
-        niftyApes.withdrawCErc20(address(cUSDCToken), 1);
-    }
+    //     niftyApes.withdrawCErc20(address(cUSDCToken), 1);
+    // }
 
-    function testCannotSupplyEth_paused() public {
-        hevm.expectRevert("Pausable: paused");
+    // function testCannotSupplyEth_paused() public {
+    //     hevm.expectRevert("Pausable: paused");
 
-        niftyApes.supplyEth();
-    }
+    //     niftyApes.supplyEth();
+    // }
 
-    function testCannotWithdrawEth_paused() public {
-        hevm.expectRevert("Pausable: paused");
+    // function testCannotWithdrawEth_paused() public {
+    //     hevm.expectRevert("Pausable: paused");
 
-        niftyApes.withdrawEth(1);
-    }
+    //     niftyApes.withdrawEth(1);
+    // }
 
-    function testCannotWithdrawOfferSignature_paused() public {
-        hevm.expectRevert("Pausable: paused");
+    // function testCannotWithdrawOfferSignature_paused() public {
+    //     hevm.expectRevert("Pausable: paused");
 
-        niftyApes.withdrawOfferSignature(getOffer(), "");
-    }
+    //     niftyApes.withdrawOfferSignature(getOffer(), "");
+    // }
 
-    function testCannotCreateOffer_paused() public {
-        hevm.expectRevert("Pausable: paused");
+    // function testCannotCreateOffer_paused() public {
+    //     hevm.expectRevert("Pausable: paused");
 
-        niftyApes.createOffer(getOffer());
-    }
+    //     niftyApes.createOffer(getOffer());
+    // }
 
-    function testCannotRemoveOffer_paused() public {
-        hevm.expectRevert("Pausable: paused");
+    // function testCannotRemoveOffer_paused() public {
+    //     hevm.expectRevert("Pausable: paused");
 
-        niftyApes.removeOffer(address(0), 1, bytes32(0), false);
-    }
+    //     niftyApes.removeOffer(address(0), 1, bytes32(0), false);
+    // }
 
-    function testCannotExecuteLoanByBorrower_paused() public {
-        hevm.expectRevert("Pausable: paused");
+    // function testCannotExecuteLoanByBorrower_paused() public {
+    //     hevm.expectRevert("Pausable: paused");
 
-        niftyApes.executeLoanByBorrower(address(0), 1, bytes32(0), false);
-    }
+    //     niftyApes.executeLoanByBorrower(address(0), 1, bytes32(0), false);
+    // }
 
-    function testCannotExecuteLoanByBorrowerSignature_paused() public {
-        hevm.expectRevert("Pausable: paused");
+    // function testCannotExecuteLoanByBorrowerSignature_paused() public {
+    //     hevm.expectRevert("Pausable: paused");
 
-        niftyApes.executeLoanByBorrowerSignature(getOffer(), "", 0);
-    }
+    //     niftyApes.executeLoanByBorrowerSignature(getOffer(), "", 0);
+    // }
 
-    function testCannotExecuteLoanByLender_paused() public {
-        hevm.expectRevert("Pausable: paused");
+    // function testCannotExecuteLoanByLender_paused() public {
+    //     hevm.expectRevert("Pausable: paused");
 
-        niftyApes.executeLoanByLender(address(0), 1, false, bytes32(0));
-    }
+    //     niftyApes.executeLoanByLender(address(0), 1, false, bytes32(0));
+    // }
 
-    function testCannotExecuteLoanByLenderSignature_paused() public {
-        hevm.expectRevert("Pausable: paused");
+    // function testCannotExecuteLoanByLenderSignature_paused() public {
+    //     hevm.expectRevert("Pausable: paused");
 
-        niftyApes.executeLoanByLenderSignature(getOffer(), "");
-    }
+    //     niftyApes.executeLoanByLenderSignature(getOffer(), "");
+    // }
 
-    function testCannotRefinanceByBorrower_paused() public {
-        hevm.expectRevert("Pausable: paused");
+    // function testCannotRefinanceByBorrower_paused() public {
+    //     hevm.expectRevert("Pausable: paused");
 
-        niftyApes.refinanceByBorrower(address(0), 1, false, bytes32(0));
-    }
+    //     niftyApes.refinanceByBorrower(address(0), 1, false, bytes32(0));
+    // }
 
-    function testCannotRefinanceByBorrowerSignature_paused() public {
-        hevm.expectRevert("Pausable: paused");
+    // function testCannotRefinanceByBorrowerSignature_paused() public {
+    //     hevm.expectRevert("Pausable: paused");
 
-        niftyApes.refinanceByBorrowerSignature(getOffer(), "", 1);
-    }
+    //     niftyApes.refinanceByBorrowerSignature(getOffer(), "", 1);
+    // }
 
-    function testCannotRefinanceByLender_paused() public {
-        hevm.expectRevert("Pausable: paused");
+    // function testCannotRefinanceByLender_paused() public {
+    //     hevm.expectRevert("Pausable: paused");
 
-        niftyApes.refinanceByLender(getOffer());
-    }
+    //     niftyApes.refinanceByLender(getOffer());
+    // }
 
-    function testCannotDrawLoanAmount_paused() public {
-        hevm.expectRevert("Pausable: paused");
+    // function testCannotDrawLoanAmount_paused() public {
+    //     hevm.expectRevert("Pausable: paused");
 
-        niftyApes.drawLoanAmount(address(0), 1, 2);
-    }
+    //     niftyApes.drawLoanAmount(address(0), 1, 2);
+    // }
 
-    function testCannotRepayLoan_paused() public {
-        hevm.expectRevert("Pausable: paused");
+    // function testCannotRepayLoan_paused() public {
+    //     hevm.expectRevert("Pausable: paused");
 
-        niftyApes.repayLoan(address(0), 1);
-    }
+    //     niftyApes.repayLoan(address(0), 1);
+    // }
 
-    function testCannotRepayLoanForAccount_paused() public {
-        hevm.expectRevert("Pausable: paused");
+    // function testCannotRepayLoanForAccount_paused() public {
+    //     hevm.expectRevert("Pausable: paused");
 
-        niftyApes.repayLoanForAccount(address(0), 1);
-    }
+    //     niftyApes.repayLoanForAccount(address(0), 1);
+    // }
 
-    function testCannotPartialRepayLoan_paused() public {
-        hevm.expectRevert("Pausable: paused");
+    // function testCannotPartialRepayLoan_paused() public {
+    //     hevm.expectRevert("Pausable: paused");
 
-        niftyApes.partialRepayLoan(address(0), 1, 2);
-    }
+    //     niftyApes.partialRepayLoan(address(0), 1, 2);
+    // }
 
-    function testCannotSeizeAsset_paused() public {
-        hevm.expectRevert("Pausable: paused");
+    // function testCannotSeizeAsset_paused() public {
+    //     hevm.expectRevert("Pausable: paused");
 
-        niftyApes.seizeAsset(address(0), 1);
-    }
+    //     niftyApes.seizeAsset(address(0), 1);
+    // }
 }

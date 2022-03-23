@@ -395,30 +395,50 @@ contract NiftyApes is
     }
 
     /// @inheritdoc ILending
-    function removeOffer(
+    function removeBorrowerOffer(
         address nftContractAddress,
         uint256 nftId,
-        bytes32 offerHash,
-        bool floorTerm,
-        bool lenderOffer
+        bytes32 offerHash
     ) external whenNotPaused {
-        Offer memory offer = getOffer(nftContractAddress, nftId, offerHash, floorTerm, lenderOffer);
+        Offer storage offer = getOfferInternal(nftContractAddress, nftId, offerHash, false, false);
 
         requireOfferCreator(offer.creator, msg.sender);
 
-        doRemoveOffer(nftContractAddress, nftId, offerHash, floorTerm);
+        doRemoveOffer(nftContractAddress, nftId, offerHash, false, false);
+    }
+
+    /// @inheritdoc ILending
+    function removeLenderOffer(
+        address nftContractAddress,
+        uint256 nftId,
+        bytes32 offerHash,
+        bool floorTerm
+    ) external whenNotPaused {
+        Offer storage offer = getOfferInternal(
+            nftContractAddress,
+            nftId,
+            offerHash,
+            floorTerm,
+            true
+        );
+
+        requireOfferCreator(offer.creator, msg.sender);
+
+        doRemoveOffer(nftContractAddress, nftId, offerHash, floorTerm, true);
     }
 
     function doRemoveOffer(
         address nftContractAddress,
         uint256 nftId,
         bytes32 offerHash,
-        bool floorTerm
+        bool floorTerm,
+        bool lenderOffer
     ) internal whenNotPaused {
         mapping(bytes32 => Offer) storage offerBook = getOfferBook(
             nftContractAddress,
             nftId,
-            floorTerm
+            floorTerm,
+            lenderOffer
         );
 
         Offer storage offer = offerBook[offerHash];
@@ -439,7 +459,8 @@ contract NiftyApes is
             nftContractAddress,
             nftId,
             offerHash,
-            floorTerm
+            floorTerm,
+            true
         );
 
         // Make a memory copy
@@ -449,7 +470,7 @@ contract NiftyApes is
         // We can only do this for non floor offers since
         // a floor offer can be used for multiple nfts
         if (!floorTerm) {
-            doRemoveOffer(nftContractAddress, nftId, offerHash, floorTerm);
+            doRemoveOffer(nftContractAddress, nftId, offerHash, floorTerm, true);
         }
         _executeLoanInternal(offer, offer.creator, msg.sender, nftId);
     }
@@ -488,13 +509,14 @@ contract NiftyApes is
             nftContractAddress,
             nftId,
             offerHash,
-            floorTerm
+            floorTerm,
+            false
         );
 
         // Make a memory copy
         Offer memory offer = offerStorage;
 
-        doRemoveOffer(nftContractAddress, nftId, offerHash, floorTerm);
+        doRemoveOffer(nftContractAddress, nftId, offerHash, floorTerm, false);
 
         _executeLoanInternal(offer, msg.sender, offer.creator, nftId);
     }
@@ -558,7 +580,8 @@ contract NiftyApes is
             nftContractAddress,
             nftId,
             offerHash,
-            floorTerm
+            floorTerm,
+            true
         );
 
         // Make a memory copy
@@ -568,7 +591,7 @@ contract NiftyApes is
             requireMatchingNftId(offer, nftId);
             // Only removing the offer if its not a floor term offer
             // Floor term offers can be used for multiple nfts
-            doRemoveOffer(nftContractAddress, nftId, offerHash, floorTerm);
+            doRemoveOffer(nftContractAddress, nftId, offerHash, floorTerm, true);
         }
 
         _refinanceByBorrower(offer, offer.creator, nftId);

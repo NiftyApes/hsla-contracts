@@ -87,8 +87,18 @@ interface ILending is ILendingEvents, ILendingStructs {
     /// @param nftContractAddress The address of the NFT collection
     /// @param nftId The id of the specified NFT
     /// @param offerHash The hash of all parameters in an offer
+    function removeBorrowerOffer(
+        address nftContractAddress,
+        uint256 nftId,
+        bytes32 offerHash
+    ) external;
+
+    /// @notice Removes an offer from the on-chain offer book
+    /// @param nftContractAddress The address of the NFT collection
+    /// @param nftId The id of the specified NFT
+    /// @param offerHash The hash of all parameters in an offer
     /// @param floorTerm Indicates whether this is a floor or individual NFT offer.
-    function removeOffer(
+    function removeLenderOffer(
         address nftContractAddress,
         uint256 nftId,
         bytes32 offerHash,
