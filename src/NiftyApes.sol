@@ -835,6 +835,7 @@ contract NiftyApes is
         LoanAuction storage loanAuction = _loanAuctions[nftContractAddress][nftId];
         getCAsset(loanAuction.asset); // Ensure asset mapping exists
         requireOpenLoan(loanAuction);
+
         requireLoanExpired(loanAuction);
 
         address currentLender = loanAuction.lender;
