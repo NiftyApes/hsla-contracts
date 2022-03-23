@@ -399,7 +399,11 @@ contract NiftyApes is
         Offer memory offer = offerStorage;
 
         // Remove the offer from storage, saving gas
-        doRemoveOffer(nftContractAddress, nftId, offerHash, floorTerm);
+        // We can only do this for non floor offers since 
+        // a floor offer can be used for multiple nfts
+        if (!floorTerm) {
+          doRemoveOffer(nftContractAddress, nftId, offerHash, floorTerm);
+        }
         _executeLoanInternal(offer, offer.creator, msg.sender, nftId);
     }
 
@@ -513,10 +517,11 @@ contract NiftyApes is
         // Make a memory copy
         Offer memory offer = offerStorage;
 
-        doRemoveOffer(nftContractAddress, nftId, offerHash, floorTerm);
-
         if (!offer.floorTerm) {
             requireMatchingNftId(offer, nftId);
+            // Only removing the offer if its not a floor term offer
+            // Floor term offers can be used for multiple nfts
+            doRemoveOffer(nftContractAddress, nftId, offerHash, floorTerm);
         }
 
         _refinanceByBorrower(offer, offer.creator, nftId);
