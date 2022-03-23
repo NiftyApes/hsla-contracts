@@ -845,12 +845,7 @@ contract NiftyApes is
 
         loanAuction.accumulatedLenderInterest += SafeCastUpgradeable.toUint128(lenderInterest);
         loanAuction.accumulatedProtocolInterest += SafeCastUpgradeable.toUint128(protocolInterest);
-
-        uint256 maxTime = loanAuction.loanEndTimestamp;
-        uint256 actualTime = currentTimestamp() - loanAuction.lastUpdatedTimestamp;
-        uint256 timePassed = MathUpgradeable.min(actualTime, maxTime);
-
-        loanAuction.lastUpdatedTimestamp += SafeCastUpgradeable.toUint32(timePassed);
+        loanAuction.lastUpdatedTimestamp = currentTimestamp();
     }
 
     /// @inheritdoc ILending
@@ -867,9 +862,9 @@ contract NiftyApes is
         view
         returns (uint256 lenderInterest, uint256 protocolInterest)
     {
-        uint256 maxTime = loanAuction.loanEndTimestamp;
-        uint256 actualTime = block.timestamp - loanAuction.lastUpdatedTimestamp;
-        uint256 timePassed = MathUpgradeable.min(actualTime, maxTime);
+        uint256 currentTime = currentTimestamp();
+        uint256 endTime = MathUpgradeable.min(currentTime, loanAuction.loanEndTimestamp);
+        uint256 timePassed = endTime - currentTime;
         uint256 amountXTime = timePassed * loanAuction.amountDrawn;
 
         lenderInterest = amountXTime * loanAuction.interestRatePerSecond;
