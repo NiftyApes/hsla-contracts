@@ -865,7 +865,7 @@ contract NiftyApes is
     {
         uint256 currentTime = currentTimestamp();
         uint256 endTime = MathUpgradeable.min(currentTime, loanAuction.loanEndTimestamp);
-        uint256 timePassed = endTime - currentTime;
+        uint256 timePassed = endTime - loanAuction.lastUpdatedTimestamp;
         uint256 amountXTime = timePassed * loanAuction.amountDrawn;
 
         lenderInterest = amountXTime * loanAuction.interestRatePerSecond;
