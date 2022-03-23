@@ -607,15 +607,10 @@ contract NiftyApes is
         if (loanAuction.lender == offer.creator) {
             // If current lender is refinancing the loan they do not need to pay any fees or buy themselves out.
             // require prospective lender has sufficient available balance to refinance loan
-
-            uint256 cTokenAmountDrawn = assetAmountToCAssetAmount(
+            uint256 additionalTokens = assetAmountToCAssetAmount(
                 offer.asset,
-                loanAuction.amountDrawn
+                offer.amount - loanAuction.amountDrawn
             );
-
-            uint256 cTokenOfferAmount = assetAmountToCAssetAmount(offer.asset, offer.amount);
-
-            uint256 additionalTokens = cTokenOfferAmount - cTokenAmountDrawn;
 
             require(getCAssetBalance(offer.creator, cAsset) >= additionalTokens, "lender balance");
         } else {
