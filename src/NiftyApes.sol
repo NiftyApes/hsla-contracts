@@ -265,10 +265,12 @@ contract NiftyApes is
     }
 
     /// @inheritdoc ILending
-    function getOfferSigner(
-        Offer memory offer,
-        bytes memory signature
-    ) public view override returns (address) {
+    function getOfferSigner(Offer memory offer, bytes memory signature)
+        public
+        view
+        override
+        returns (address)
+    {
         return ECDSAUpgradeable.recover(getOfferHash(offer), signature);
     }
 
@@ -399,10 +401,10 @@ contract NiftyApes is
         Offer memory offer = offerStorage;
 
         // Remove the offer from storage, saving gas
-        // We can only do this for non floor offers since 
+        // We can only do this for non floor offers since
         // a floor offer can be used for multiple nfts
         if (!floorTerm) {
-          doRemoveOffer(nftContractAddress, nftId, offerHash, floorTerm);
+            doRemoveOffer(nftContractAddress, nftId, offerHash, floorTerm);
         }
         _executeLoanInternal(offer, offer.creator, msg.sender, nftId);
     }
