@@ -912,18 +912,18 @@ contract NiftyApes is
     }
 
     function requireLoanExpired(LoanAuction storage loanAuction) internal view {
-        require(block.timestamp >= loanAuction.loanEndTimestamp, "loan not expired");
+        require(currentTimestamp() >= loanAuction.loanEndTimestamp, "loan not expired");
     }
 
     function requireLoanNotExpired(LoanAuction storage loanAuction) internal view {
-        require(block.timestamp < loanAuction.loanEndTimestamp, "loan expired");
+        require(currentTimestamp() < loanAuction.loanEndTimestamp, "loan expired");
     }
 
     function requireOfferNotExpired(Offer memory offer) internal view {
-        require(offer.expiration > block.timestamp, "offer expired");
+        require(offer.expiration > currentTimestamp(), "offer expired");
     }
 
-    function requireMinDurationForOffer(Offer memory offer) internal view {
+    function requireMinDurationForOffer(Offer memory offer) internal pure {
         require(offer.duration >= 1 days, "offer duration");
     }
 
@@ -943,11 +943,14 @@ contract NiftyApes is
         require(asset1 == asset2, "asset mismatch");
     }
 
-    function requireAvailableSignature(bytes memory signature) internal {
+    function requireAvailableSignature(bytes memory signature) internal view {
         require(!_cancelledOrFinalized[signature], "signature not available");
     }
 
-    function requireFundsAvailable(LoanAuction storage loanAuction, uint256 drawAmount) internal {
+    function requireFundsAvailable(LoanAuction storage loanAuction, uint256 drawAmount)
+        internal
+        view
+    {
         require((drawAmount + loanAuction.amountDrawn) <= loanAuction.amount, "funds overdrawn");
     }
 
@@ -988,7 +991,7 @@ contract NiftyApes is
         uint256 amount = loanAuction.amount;
         uint256 interestRatePerSecond = loanAuction.interestRatePerSecond;
         uint256 loanEndTime = loanAuction.loanEndTimestamp;
-        uint256 offerEndTime = block.timestamp + offer.duration;
+        uint256 offerEndTime = currentTimestamp() + offer.duration;
 
         // Better amount
         if (
@@ -1024,7 +1027,7 @@ contract NiftyApes is
         internal
         view
     {
-        uint256 currentTime = block.timestamp;
+        uint256 currentTime = currentTimestamp();
 
         // If the only part that is updated is the duration we enfore that its been changed by
         // at least one day
@@ -1094,7 +1097,7 @@ contract NiftyApes is
         _balanceByAccountByAsset[owner()][cAsset].cAssetBalance += cTokensToProtocol;
     }
 
-    function currentTimestamp() internal returns (uint32) {
+    function currentTimestamp() internal view returns (uint32) {
         return SafeCastUpgradeable.toUint32(block.timestamp);
     }
 
@@ -1102,7 +1105,7 @@ contract NiftyApes is
     // solhint-disable-next-line no-empty-blocks
     receive() external payable {}
 
-    function requireMaxCAssetBalance(address cAsset) internal {
+    function requireMaxCAssetBalance(address cAsset) internal view {
         uint256 maxCAssetBalance = maxBalanceByCAsset[cAsset];
         if (maxCAssetBalance != 0) {
             require(maxCAssetBalance >= ICERC20(cAsset).balanceOf(address(this)), "max casset");
