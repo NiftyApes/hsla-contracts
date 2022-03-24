@@ -16,8 +16,7 @@ interface INiftyApesAdmin is INiftyApesAdminEvents {
     function setMaxCAssetBalance(address asset, uint256 maxBalance) external;
 
     /// @notice Updates the fee that computes protocol interest
-    ///         Fees are denomiated in basis points, parts of 10_000
-    // TODO(dankurka): wrong
+    ///         Interest is charged per second on a loan.
     function updateLoanDrawProtocolFeePerSecond(uint96 newLoanDrawProtocolFeePerSecond) external;
 
     /// @notice Updates the fee for refinancing a loan that the new lender has to pay
