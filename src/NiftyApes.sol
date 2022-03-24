@@ -400,6 +400,8 @@ contract NiftyApes is
         // Make a memory copy
         Offer memory offer = offerStorage;
 
+        requireLenderOffer(offer);
+
         // Remove the offer from storage, saving gas
         // We can only do this for non floor offers since
         // a floor offer can be used for multiple nfts
@@ -419,6 +421,7 @@ contract NiftyApes is
 
         address lender = getOfferSigner(offer, signature);
         requireOfferCreator(offer, lender);
+        requireLenderOffer(offer);
 
         if (!offer.floorTerm) {
             requireMatchingNftId(offer, nftId);
@@ -449,6 +452,8 @@ contract NiftyApes is
         // Make a memory copy
         Offer memory offer = offerStorage;
 
+        requireBorrowerOffer(offer);
+
         doRemoveOffer(nftContractAddress, nftId, offerHash, floorTerm);
 
         _executeLoanInternal(offer, msg.sender, offer.creator, nftId);
@@ -465,6 +470,8 @@ contract NiftyApes is
 
         address borrower = getOfferSigner(offer, signature);
         requireOfferCreator(offer, borrower);
+
+        requireBorrowerOffer(offer);
 
         markSignatureUsed(signature);
 
@@ -519,6 +526,8 @@ contract NiftyApes is
         // Make a memory copy
         Offer memory offer = offerStorage;
 
+        requireLenderOffer(offer);
+
         if (!offer.floorTerm) {
             requireMatchingNftId(offer, nftId);
             // Only removing the offer if its not a floor term offer
@@ -535,13 +544,15 @@ contract NiftyApes is
         bytes calldata signature,
         uint256 nftId
     ) external payable whenNotPaused nonReentrant {
-        address prospectiveLender = getOfferSigner(offer, signature);
+        address signer = getOfferSigner(offer, signature);
 
-        requireOfferCreator(offer, prospectiveLender);
+        requireOfferCreator(offer, signer);
 
         if (!offer.floorTerm) {
             requireMatchingNftId(offer, nftId);
         }
+
+        requireLenderOffer(offer);
 
         markSignatureUsed(signature);
 
@@ -930,6 +941,14 @@ contract NiftyApes is
 
     function requireMinDurationForOffer(Offer memory offer) internal pure {
         require(offer.duration >= 1 days, "offer duration");
+    }
+
+    function requireLenderOffer(Offer memory offer) internal pure {
+        require(offer.lenderOffer, "lender offer");
+    }
+
+    function requireBorrowerOffer(Offer memory offer) internal pure {
+        require(!offer.lenderOffer, "borrower offer");
     }
 
     function requireNoFixedTerm(LoanAuction storage loanAuction) internal view {
