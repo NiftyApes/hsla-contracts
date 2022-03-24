@@ -380,7 +380,14 @@ contract NiftyApes is
 
         Offer storage offer = offerBook[offerHash];
 
-        emit OfferRemoved(offer.creator, offer.asset, offer.nftContractAddress, offer, offerHash);
+        emit OfferRemoved(
+            offer.creator,
+            offer.asset,
+            offer.nftContractAddress,
+            nftId,
+            offer,
+            offerHash
+        );
 
         delete offerBook[offerHash];
     }
@@ -503,7 +510,7 @@ contract NiftyApes is
 
         sendValue(offer.asset, offer.amount, borrower);
 
-        emit LoanExecuted(lender, borrower, offer.nftContractAddress, nftId, offer);
+        emit LoanExecuted(lender, offer.asset, borrower, offer.nftContractAddress, nftId, offer);
 
         emit AmountDrawn(borrower, offer.nftContractAddress, nftId, offer.amount, offer.amount);
     }
@@ -590,7 +597,14 @@ contract NiftyApes is
         loanAuction.loanEndTimestamp = currentTimestamp() + offer.duration;
         loanAuction.amountDrawn = SafeCastUpgradeable.toUint128(fullAmount);
 
-        emit Refinance(newLender, offer.nftContractAddress, nftId, offer);
+        emit Refinance(
+            newLender,
+            offer.asset,
+            loanAuction.nftOwner,
+            offer.nftContractAddress,
+            nftId,
+            offer
+        );
     }
 
     /// @inheritdoc ILending
@@ -659,7 +673,14 @@ contract NiftyApes is
             _balanceByAccountByAsset[owner()][cAsset].cAssetBalance += protocolPremimuimInCtokens;
         }
 
-        emit Refinance(offer.creator, offer.nftContractAddress, offer.nftId, offer);
+        emit Refinance(
+            offer.creator,
+            offer.asset,
+            loanAuction.nftOwner,
+            offer.nftContractAddress,
+            offer.nftId,
+            offer
+        );
     }
 
     /// @inheritdoc ILending
@@ -788,10 +809,10 @@ contract NiftyApes is
             transferNft(rls.nftContractAddress, rls.nftId, address(this), loanAuction.nftOwner);
 
             emit LoanRepaid(
-                rls.nftContractAddress,
-                rls.nftId,
                 loanAuction.lender,
                 loanAuction.nftOwner,
+                rls.nftContractAddress,
+                rls.nftId,
                 loanAuction.asset,
                 payment
             );
@@ -801,10 +822,10 @@ contract NiftyApes is
             loanAuction.amountDrawn -= SafeCastUpgradeable.toUint128(payment);
 
             emit PartialRepayment(
-                rls.nftContractAddress,
-                rls.nftId,
                 loanAuction.lender,
                 loanAuction.nftOwner,
+                rls.nftContractAddress,
+                rls.nftId,
                 loanAuction.asset,
                 rls.paymentAmount
             );

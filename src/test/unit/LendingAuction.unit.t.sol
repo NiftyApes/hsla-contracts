@@ -346,6 +346,7 @@ contract LendingAuctionUnitTest is
             address(this),
             address(usdcToken),
             address(0x0000000000000000000000000000000000000002),
+            4,
             offer,
             offerHash
         );
@@ -786,7 +787,7 @@ contract LendingAuctionUnitTest is
 
         hevm.expectEmit(true, false, false, true);
 
-        emit LoanExecuted(LENDER_1, address(this), address(mockNft), 1, offer);
+        emit LoanExecuted(LENDER_1, address(usdcToken), address(this), address(mockNft), 1, offer);
 
         lendingAction.executeLoanByBorrower(
             offer.nftContractAddress,
