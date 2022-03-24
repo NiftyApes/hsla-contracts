@@ -504,6 +504,8 @@ contract NiftyApes is
         sendValue(offer.asset, offer.amount, borrower);
 
         emit LoanExecuted(lender, borrower, offer.nftContractAddress, nftId, offer);
+
+        emit AmountDrawn(borrower, offer.nftContractAddress, nftId, offer.amount, offer.amount);
     }
 
     /// @inheritdoc ILending
@@ -554,7 +556,7 @@ contract NiftyApes is
 
     function _refinanceByBorrower(
         Offer memory offer,
-        address prospectiveLender,
+        address newLender,
         uint256 nftId
     ) internal {
         LoanAuction storage loanAuction = _loanAuctions[offer.nftContractAddress][nftId];
@@ -578,17 +580,17 @@ contract NiftyApes is
 
         uint256 fullCTokenAmount = assetAmountToCAssetAmount(offer.asset, fullAmount);
 
-        withdrawCBalance(prospectiveLender, cAsset, fullCTokenAmount);
+        withdrawCBalance(newLender, cAsset, fullCTokenAmount);
         _balanceByAccountByAsset[loanAuction.lender][cAsset].cAssetBalance += fullCTokenAmount;
 
         // update Loan state
-        loanAuction.lender = prospectiveLender;
+        loanAuction.lender = newLender;
         loanAuction.amount = offer.amount;
         loanAuction.interestRatePerSecond = offer.interestRatePerSecond;
         loanAuction.loanEndTimestamp = currentTimestamp() + offer.duration;
         loanAuction.amountDrawn = SafeCastUpgradeable.toUint128(fullAmount);
 
-        emit Refinance(prospectiveLender, offer.nftContractAddress, nftId, offer);
+        emit Refinance(newLender, offer.nftContractAddress, nftId, offer);
     }
 
     /// @inheritdoc ILending
@@ -683,7 +685,13 @@ contract NiftyApes is
 
         sendValue(loanAuction.asset, drawAmount, loanAuction.nftOwner);
 
-        emit AmountDrawn(nftContractAddress, nftId, drawAmount, loanAuction.amountDrawn);
+        emit AmountDrawn(
+            msg.sender,
+            nftContractAddress,
+            nftId,
+            drawAmount,
+            loanAuction.amountDrawn
+        );
     }
 
     /// @inheritdoc ILending
@@ -782,6 +790,7 @@ contract NiftyApes is
             emit LoanRepaid(
                 rls.nftContractAddress,
                 rls.nftId,
+                loanAuction.lender,
                 loanAuction.nftOwner,
                 loanAuction.asset,
                 payment
@@ -794,6 +803,8 @@ contract NiftyApes is
             emit PartialRepayment(
                 rls.nftContractAddress,
                 rls.nftId,
+                loanAuction.lender,
+                loanAuction.nftOwner,
                 loanAuction.asset,
                 rls.paymentAmount
             );

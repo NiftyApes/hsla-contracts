@@ -30,7 +30,7 @@ interface ILendingEvents {
     );
 
     event Refinance(
-        address lender,
+        address indexed lender,
         address indexed nftContractAddress,
         uint256 indexed nftId,
         ILendingStructs.Offer offer
@@ -44,6 +44,7 @@ interface ILendingEvents {
     );
 
     event AmountDrawn(
+        address indexed borrower,
         address indexed nftContractAddress,
         uint256 indexed nftId,
         uint256 drawAmount,
@@ -53,7 +54,8 @@ interface ILendingEvents {
     event LoanRepaid(
         address indexed nftContractAddress,
         uint256 indexed nftId,
-        address indexed borrower,
+        address borrower,
+        address indexed lender,
         address asset,
         uint256 totalPayment
     );
@@ -61,6 +63,8 @@ interface ILendingEvents {
     event PartialRepayment(
         address indexed nftContractAddress,
         uint256 indexed nftId,
+        address borrower,
+        address indexed lender,
         address asset,
         uint256 amount
     );
