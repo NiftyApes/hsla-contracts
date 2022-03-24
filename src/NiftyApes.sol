@@ -490,6 +490,8 @@ contract NiftyApes is
             requireMatchingNftId(offer, nftId);
         }
 
+        requireLenderOffer(offer);
+
         markSignatureUsed(signature);
 
         // execute state changes for executeLoanByBid
@@ -974,6 +976,14 @@ contract NiftyApes is
 
     function requireOfferAmount(Offer memory offer, uint256 amount) internal pure {
         require(offer.amount >= amount, "offer amount");
+    }
+
+    function requireLenderOffer(Offer memory offer) internal pure {
+        require(offer.lenderOffer, "lender offer");
+    }
+
+    function requireLenderOffer(Offer memory offer) internal pure {
+        require(offer.borrowerOffer, "borrower offer");
     }
 
     function requireNoOpenLoan(LoanAuction storage loanAuction) internal view {
