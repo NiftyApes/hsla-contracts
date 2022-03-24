@@ -919,6 +919,8 @@ contract LendingAuctionUnitTest is
 
         emit LoanExecuted(LENDER_1, address(usdcToken), address(this), address(mockNft), 1, offer);
 
+        emit AmountDrawn(address(this), address(mockNft), 1, 6, 6);
+
         lendingAction.executeLoanByBorrower(
             offer.nftContractAddress,
             offer.nftId,
