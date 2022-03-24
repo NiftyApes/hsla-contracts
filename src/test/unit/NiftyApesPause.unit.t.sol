@@ -75,6 +75,7 @@ contract NiftyApesPauseUnitTest is BaseTest, ILendingStructs, ERC721HolderUpgrad
                 interestRatePerSecond: 3,
                 fixedTerms: false,
                 floorTerm: false,
+                lenderOffer: true,
                 nftId: 4,
                 asset: address(usdcToken),
                 amount: 6,
