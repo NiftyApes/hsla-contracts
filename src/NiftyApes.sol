@@ -572,6 +572,7 @@ contract NiftyApes is
         requireOpenLoan(loanAuction);
         requireOfferNotExpired(offer);
         requireLenderOffer(offer);
+        requireMinDurationForOffer(offer);
 
         requireMatchingAsset(offer.asset, loanAuction.asset);
 
@@ -1067,10 +1068,7 @@ contract NiftyApes is
             offer.interestRatePerSecond == loanAuction.interestRatePerSecond &&
             currentTime + offer.duration > loanAuction.loanEndTimestamp
         ) {
-            require(
-                currentTime + offer.duration >= (loanAuction.loanEndTimestamp + 1 days),
-                "24 hours min"
-            );
+            requireMinDurationForOffer(offer);
         }
     }
 
