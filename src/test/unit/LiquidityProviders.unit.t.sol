@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/interfaces/IERC20Upgradeable.sol";
 import "../../interfaces/compound/ICERC20.sol";
 import "../../interfaces/compound/ICEther.sol";
 import "../../NiftyApes.sol";
+import "../../interfaces/niftyapes/admin/INiftyApesAdminEvents.sol";
 import "../../interfaces/niftyapes/liquidity/ILiquidityEvents.sol";
 
 import "../common/BaseTest.sol";
@@ -12,7 +13,7 @@ import "../mock/CERC20Mock.sol";
 import "../mock/CEtherMock.sol";
 import "../mock/ERC20Mock.sol";
 
-contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
+contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents, INiftyApesAdminEvents {
     NiftyApes liquidityProviders;
     ERC20Mock usdcToken;
     CERC20Mock cUSDCToken;
@@ -39,70 +40,6 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         cEtherToken.initialize();
 
         acceptEth = true;
-    }
-
-    function testSetCAddressMapping_returns_null_address() public {
-        assertEq(
-            liquidityProviders.assetToCAsset(address(0x0000000000000000000000000000000000000001)),
-            address(0x0000000000000000000000000000000000000000)
-        );
-    }
-
-    function testSetCAddressMapping_can_be_set_by_owner() public {
-        hevm.expectEmit(true, false, false, true);
-
-        emit NewAssetWhitelisted(
-            address(0x0000000000000000000000000000000000000001),
-            address(0x0000000000000000000000000000000000000002)
-        );
-
-        liquidityProviders.setCAssetAddress(
-            address(0x0000000000000000000000000000000000000001),
-            address(0x0000000000000000000000000000000000000002)
-        );
-
-        assertEq(
-            liquidityProviders.assetToCAsset(address(0x0000000000000000000000000000000000000001)),
-            address(0x0000000000000000000000000000000000000002)
-        );
-    }
-
-    function testCannotSetCAddressMapping_can_not_be_set_by_non_owner() public {
-        liquidityProviders.renounceOwnership();
-
-        hevm.expectRevert("Ownable: caller is not the owner");
-        liquidityProviders.setCAssetAddress(
-            address(0x0000000000000000000000000000000000000001),
-            address(0x0000000000000000000000000000000000000002)
-        );
-    }
-
-    function testCannotSetCAddressMapping_can_not_overwrite_mapping_asset() public {
-        liquidityProviders.setCAssetAddress(
-            address(0x0000000000000000000000000000000000000001),
-            address(0x0000000000000000000000000000000000000002)
-        );
-
-        hevm.expectRevert("asset already set");
-
-        liquidityProviders.setCAssetAddress(
-            address(0x0000000000000000000000000000000000000001),
-            address(0x0000000000000000000000000000000000000003)
-        );
-    }
-
-    function testCannotSetCAddressMapping_can_not_overwrite_mapping_casset() public {
-        liquidityProviders.setCAssetAddress(
-            address(0x0000000000000000000000000000000000000001),
-            address(0x0000000000000000000000000000000000000002)
-        );
-
-        hevm.expectRevert("casset already set");
-
-        liquidityProviders.setCAssetAddress(
-            address(0x0000000000000000000000000000000000000003),
-            address(0x0000000000000000000000000000000000000002)
-        );
     }
 
     function testCAssetBalance_starts_at_zero() public {

@@ -105,7 +105,7 @@ contract NiftyApes is
         assetToCAsset[asset] = cAsset;
         _cAssetToAsset[cAsset] = asset;
 
-        emit NewAssetWhitelisted(asset, cAsset);
+        emit NewAssetListed(asset, cAsset);
     }
 
     /// @inheritdoc INiftyApesAdmin
@@ -892,18 +892,24 @@ contract NiftyApes is
         external
         onlyOwner
     {
+        emit LoanDrawProtocolFeeUpdated(
+            loanDrawFeeProtocolPerSecond,
+            newLoanDrawFeeProtocolPerSecond
+        );
         loanDrawFeeProtocolPerSecond = newLoanDrawFeeProtocolPerSecond;
     }
 
     /// @inheritdoc INiftyApesAdmin
-    function updateRefinancePremiumLenderFee(uint16 newPremiumLenderBps) external onlyOwner {
+    function updateRefinancePremiumLenderBps(uint16 newPremiumLenderBps) external onlyOwner {
         require(newPremiumLenderBps <= MAX_FEE, "max fee");
+        emit RefinancePremiumLenderBpsUpdated(refinancePremiumLenderBps, newPremiumLenderBps);
         refinancePremiumLenderBps = newPremiumLenderBps;
     }
 
     /// @inheritdoc INiftyApesAdmin
-    function updateRefinancePremiumProtocolFee(uint16 newPremiumProtocolBps) external onlyOwner {
+    function updateRefinancePremiumProtocolBps(uint16 newPremiumProtocolBps) external onlyOwner {
         require(newPremiumProtocolBps <= MAX_FEE, "max fee");
+        emit RefinancePremiumProtocolBpsUpdated(refinancePremiumProtocolBps, newPremiumProtocolBps);
         refinancePremiumProtocolBps = newPremiumProtocolBps;
     }
 
