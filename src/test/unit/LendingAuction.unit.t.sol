@@ -927,7 +927,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        hevm.expectRevert("lender offer");
+        hevm.expectRevert("offer nftId mismatch");
 
         lendingAction.refinanceByBorrower(address(mockNft), 3, false, offerHash2);
     }

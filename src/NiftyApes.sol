@@ -426,7 +426,6 @@ contract NiftyApes is
         if (!offer.floorTerm) {
             requireMatchingNftId(offer, nftId);
         }
-
         markSignatureUsed(signature);
 
         // execute state changes for executeLoanByBid
@@ -526,8 +525,6 @@ contract NiftyApes is
         // Make a memory copy
         Offer memory offer = offerStorage;
 
-        requireLenderOffer(offer);
-
         if (!offer.floorTerm) {
             requireMatchingNftId(offer, nftId);
             // Only removing the offer if its not a floor term offer
@@ -552,8 +549,6 @@ contract NiftyApes is
             requireMatchingNftId(offer, nftId);
         }
 
-        requireLenderOffer(offer);
-
         markSignatureUsed(signature);
 
         _refinanceByBorrower(offer, offer.creator, nftId);
@@ -572,6 +567,7 @@ contract NiftyApes is
         requireNoFixedTerm(loanAuction);
         requireOpenLoan(loanAuction);
         requireOfferNotExpired(offer);
+        requireLenderOffer(offer);
 
         requireMatchingAsset(offer.asset, loanAuction.asset);
 
