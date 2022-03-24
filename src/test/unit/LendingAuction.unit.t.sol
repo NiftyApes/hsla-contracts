@@ -1660,6 +1660,4 @@ contract LendingAuctionUnitTest is
     }
 
     // TODO(dankurka): Tests missing for drawAmount
-
-    // TODO(dankurka): Tests missing for drawTime
 }
