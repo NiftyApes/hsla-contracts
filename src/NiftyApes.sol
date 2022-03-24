@@ -79,6 +79,10 @@ contract NiftyApes is
     /// @inheritdoc ILending
     uint16 public refinancePremiumProtocolBps;
 
+    /// @dev This empty reserved space is put in place to allow future versions to add new
+    /// variables without shifting storage.
+    uint256[500] private __gap;
+
     /// @notice The initializer for the NiftyApes protocol.
     ///         Nifty Apes is intended to be deployed behind a proxy amd thus needs to initialize
     ///         its state outsize of a constructor.

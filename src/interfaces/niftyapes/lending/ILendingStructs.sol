@@ -48,6 +48,7 @@ interface ILendingStructs {
         bool fixedTerms;
         // is offer for single NFT or for every NFT in a collection
         bool floorTerm;
+        // Whether or not this offer was made by a lender or a borrower
         bool lenderOffer;
         // SLOT 1 START
         // offer NFT contract address
