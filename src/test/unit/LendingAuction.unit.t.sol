@@ -646,7 +646,42 @@ contract LendingAuctionUnitTest is
         );
     }
 
-    function testExecuteLoanByBorrower_works() public {
+    function testCannotExecuteLoanByBorrower_borrower_offer() public {
+        hevm.startPrank(LENDER_1);
+
+        lendingAction.supplyEth{ value: 6 }();
+
+        Offer memory offer = Offer({
+            creator: LENDER_1,
+            nftContractAddress: address(mockNft),
+            interestRatePerSecond: 3,
+            fixedTerms: true,
+            floorTerm: true,
+            lenderOffer: false,
+            nftId: 1,
+            asset: ETH_ADDRESS,
+            amount: 6,
+            duration: 1 days,
+            expiration: uint32(block.timestamp + 1)
+        });
+
+        lendingAction.createOffer(offer);
+
+        hevm.stopPrank();
+
+        bytes32 offerHash = lendingAction.getOfferHash(offer);
+
+        hevm.expectRevert("lender offer");
+
+        lendingAction.executeLoanByBorrower(
+            offer.nftContractAddress,
+            offer.nftId,
+            offerHash,
+            offer.floorTerm
+        );
+    }
+
+    function testExecuteLoanByBorrower_works_floor_term() public {
         hevm.startPrank(LENDER_1);
         usdcToken.mint(address(LENDER_1), 6);
         usdcToken.approve(address(lendingAction), 6);
@@ -708,6 +743,101 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.accumulatedLenderInterest, 0);
         assertEq(loanAuction.accumulatedProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 6);
+
+        // ensure that the offer is still there since its a floor offer
+
+        Offer memory onChainOffer = lendingAction.getOffer(address(mockNft), 1, offerHash, true);
+
+        assertEq(onChainOffer.creator, LENDER_1);
+        assertEq(onChainOffer.nftContractAddress, address(mockNft));
+        assertEq(onChainOffer.interestRatePerSecond, 3);
+        assertTrue(onChainOffer.fixedTerms);
+        assertTrue(onChainOffer.floorTerm);
+        assertTrue(onChainOffer.lenderOffer);
+        assertEq(onChainOffer.nftId, 1);
+        assertEq(onChainOffer.asset, address(usdcToken));
+        assertEq(onChainOffer.amount, 6);
+        assertEq(onChainOffer.duration, 1 days);
+        assertEq(onChainOffer.expiration, uint32(block.timestamp + 1));
+    }
+
+    function testExecuteLoanByBorrower_works_not_floor_term() public {
+        hevm.startPrank(LENDER_1);
+        usdcToken.mint(address(LENDER_1), 6);
+        usdcToken.approve(address(lendingAction), 6);
+
+        lendingAction.supplyErc20(address(usdcToken), 6);
+
+        Offer memory offer = Offer({
+            creator: LENDER_1,
+            nftContractAddress: address(mockNft),
+            interestRatePerSecond: 3,
+            fixedTerms: true,
+            floorTerm: false,
+            lenderOffer: true,
+            nftId: 1,
+            asset: address(usdcToken),
+            amount: 6,
+            duration: 1 days,
+            expiration: uint32(block.timestamp + 1)
+        });
+
+        lendingAction.createOffer(offer);
+
+        hevm.stopPrank();
+
+        bytes32 offerHash = lendingAction.getOfferHash(offer);
+
+        lendingAction.executeLoanByBorrower(
+            offer.nftContractAddress,
+            offer.nftId,
+            offerHash,
+            offer.floorTerm
+        );
+
+        assertEq(usdcToken.balanceOf(address(this)), 6);
+        assertEq(cUSDCToken.balanceOf(address(this)), 0);
+
+        assertEq(usdcToken.balanceOf(address(LENDER_1)), 0);
+        assertEq(cUSDCToken.balanceOf(address(LENDER_1)), 0);
+
+        assertEq(usdcToken.balanceOf(address(lendingAction)), 0);
+        assertEq(cUSDCToken.balanceOf(address(lendingAction)), 0);
+
+        assertEq(mockNft.ownerOf(1), address(lendingAction));
+        assertEq(lendingAction.ownerOf(address(mockNft), 1), address(this));
+
+        assertEq(lendingAction.getCAssetBalance(address(this), address(cUSDCToken)), 0);
+
+        LoanAuction memory loanAuction = lendingAction.getLoanAuction(address(mockNft), 1);
+
+        assertEq(loanAuction.nftOwner, address(this));
+        assertEq(loanAuction.lender, LENDER_1);
+        assertEq(loanAuction.asset, address(usdcToken));
+        assertEq(loanAuction.interestRatePerSecond, 3);
+        assertTrue(loanAuction.fixedTerms);
+
+        assertEq(loanAuction.amount, 6);
+        assertEq(loanAuction.loanEndTimestamp, block.timestamp + 1 days);
+        assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
+        assertEq(loanAuction.accumulatedLenderInterest, 0);
+        assertEq(loanAuction.accumulatedProtocolInterest, 0);
+        assertEq(loanAuction.amountDrawn, 6);
+
+        // ensure that the offer is gone
+        Offer memory onChainOffer = lendingAction.getOffer(address(mockNft), 1, offerHash, false);
+
+        assertEq(onChainOffer.creator, ZERO_ADDRESS);
+        assertEq(onChainOffer.nftContractAddress, ZERO_ADDRESS);
+        assertEq(onChainOffer.interestRatePerSecond, 0);
+        assertTrue(!onChainOffer.fixedTerms);
+        assertTrue(!onChainOffer.floorTerm);
+        assertTrue(!onChainOffer.lenderOffer);
+        assertEq(onChainOffer.nftId, 0);
+        assertEq(onChainOffer.asset, ZERO_ADDRESS);
+        assertEq(onChainOffer.amount, 0);
+        assertEq(onChainOffer.duration, 0);
+        assertEq(onChainOffer.expiration, 0);
     }
 
     function testExecuteLoanByBorrower_works_in_eth() public {
