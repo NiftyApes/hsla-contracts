@@ -1068,7 +1068,10 @@ contract NiftyApes is
             offer.interestRatePerSecond == loanAuction.interestRatePerSecond &&
             currentTime + offer.duration > loanAuction.loanEndTimestamp
         ) {
-            requireMinDurationForOffer(offer);
+            require(
+                currentTime + offer.duration >= (loanAuction.loanEndTimestamp + 1 days),
+                "24 hours min"
+            );
         }
     }
 
