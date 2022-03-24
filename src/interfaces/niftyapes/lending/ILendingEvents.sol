@@ -5,16 +5,16 @@ import "../lending/ILendingStructs.sol";
 
 interface ILendingEvents {
     event NewOffer(
-        address indexed lender,
-        address indexed asset,
+        address indexed creator,
+        address asset,
         address indexed nftContractAddress,
-        uint256 nftId,
+        uint256 indexed nftId,
         ILendingStructs.Offer offer,
         bytes32 offerHash
     );
 
     event OfferRemoved(
-        address indexed lender,
+        address indexed creator,
         address indexed asset,
         address indexed nftContractAddress,
         ILendingStructs.Offer offer,
@@ -23,11 +23,10 @@ interface ILendingEvents {
 
     event LoanExecuted(
         address indexed lender,
-        address nftOwner,
+        address borrower,
         address indexed nftContractAddress,
         uint256 indexed nftId,
         ILendingStructs.Offer offer
-        // TODO(dankurka): Inconsistent missing offer hash
     );
 
     event Refinance(
@@ -37,23 +36,11 @@ interface ILendingEvents {
         ILendingStructs.Offer offer
     );
 
-    event SigOfferCancelled(
+    event OfferSignatureUsed(
         address indexed nftContractAddress,
         uint256 indexed nftId,
+        ILendingStructs.Offer offer,
         bytes signature
-    );
-
-    event SigOfferFinalized(
-        address indexed nftContractAddress,
-        uint256 indexed nftId,
-        bytes signature
-    );
-
-    event TimeDrawn(
-        address indexed nftContractAddress,
-        uint256 indexed nftId,
-        uint256 drawTime,
-        uint256 totalDrawn
     );
 
     event AmountDrawn(

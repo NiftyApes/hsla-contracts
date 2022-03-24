@@ -289,9 +289,7 @@ contract NiftyApes is
 
         requireSigner(signer, msg.sender);
 
-        markSignatureUsed(signature);
-
-        emit SigOfferCancelled(offer.nftContractAddress, offer.nftId, signature);
+        markSignatureUsed(offer, signature);
     }
 
     function getOfferBook(
@@ -430,12 +428,10 @@ contract NiftyApes is
         if (!offer.floorTerm) {
             requireMatchingNftId(offer, nftId);
         }
-        markSignatureUsed(signature);
+        markSignatureUsed(offer, signature);
 
         // execute state changes for executeLoanByBid
         _executeLoanInternal(offer, lender, msg.sender, nftId);
-
-        emit SigOfferFinalized(offer.nftContractAddress, nftId, signature);
     }
 
     /// @inheritdoc ILending
@@ -476,11 +472,9 @@ contract NiftyApes is
 
         requireBorrowerOffer(offer);
 
-        markSignatureUsed(signature);
+        markSignatureUsed(offer, signature);
 
         _executeLoanInternal(offer, msg.sender, borrower, offer.nftId);
-
-        emit SigOfferFinalized(offer.nftContractAddress, offer.nftId, signature);
     }
 
     function _executeLoanInternal(
@@ -553,11 +547,9 @@ contract NiftyApes is
             requireMatchingNftId(offer, nftId);
         }
 
-        markSignatureUsed(signature);
+        markSignatureUsed(offer, signature);
 
         _refinanceByBorrower(offer, offer.creator, nftId);
-
-        emit SigOfferFinalized(offer.nftContractAddress, offer.nftId, signature);
     }
 
     function _refinanceByBorrower(
@@ -914,8 +906,10 @@ contract NiftyApes is
         refinancePremiumProtocolBps = newPremiumProtocolBps;
     }
 
-    function markSignatureUsed(bytes memory signature) internal {
+    function markSignatureUsed(Offer memory offer, bytes memory signature) internal {
         _cancelledOrFinalized[signature] = true;
+
+        emit OfferSignatureUsed(offer.nftContractAddress, offer.nftId, offer, signature);
     }
 
     function requireOfferPresent(Offer memory offer) internal pure {
