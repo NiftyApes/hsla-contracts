@@ -602,6 +602,9 @@ contract NiftyApes is
         loanAuction.loanEndTimestamp = currentTimestamp() + offer.duration;
         loanAuction.amountDrawn = SafeCastUpgradeable.toUint128(fullAmount);
         loanAuction.accumulatedLenderInterest = 0;
+        if (offer.fixedTerms) {
+            loanAuction.fixedTerms = offer.fixedTerms;
+        }
 
         emit Refinance(
             newLender,
