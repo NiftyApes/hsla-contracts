@@ -23,5 +23,6 @@
     "solhint": "^3.3.6"
   },
   "dependencies": {
+    "@openzeppelin/contracts-upgradeable": "^4.5.2"
   }
 }
