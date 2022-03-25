@@ -434,8 +434,8 @@ contract NiftyApes is
 
         if (!offer.floorTerm) {
             requireMatchingNftId(offer, nftId);
+            markSignatureUsed(offer, signature);
         }
-        markSignatureUsed(offer, signature);
 
         // execute state changes for executeLoanByBid
         _executeLoanInternal(offer, lender, msg.sender, nftId);
@@ -554,9 +554,8 @@ contract NiftyApes is
 
         if (!offer.floorTerm) {
             requireMatchingNftId(offer, nftId);
+            markSignatureUsed(offer, signature);
         }
-
-        markSignatureUsed(offer, signature);
 
         _refinanceByBorrower(offer, offer.creator, nftId);
     }
