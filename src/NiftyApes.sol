@@ -333,9 +333,8 @@ contract NiftyApes is
             uint256 offerTokens = assetAmountToCAssetAmount(offer.asset, offer.amount);
             requireCAssetBalance(msg.sender, cAsset, offerTokens);
         } else {
-            if (!offer.floorTerm) {
-                requireNftOwner(offer.nftContractAddress, offer.nftId, msg.sender);
-            }
+            requireNftOwner(offer.nftContractAddress, offer.nftId, msg.sender);
+            requireNoFloorTerms(offer);
         }
 
         mapping(bytes32 => Offer) storage offerBook = getOfferBook(
@@ -465,10 +464,9 @@ contract NiftyApes is
         Offer memory offer = offerStorage;
 
         requireBorrowerOffer(offer);
+        requireNoFloorTerms(offer);
 
-        if (!offer.floorTerm) {
-            doRemoveOffer(nftContractAddress, nftId, offerHash, floorTerm);
-        }
+        doRemoveOffer(nftContractAddress, nftId, offerHash, floorTerm);
 
         _executeLoanInternal(offer, msg.sender, offer.creator, nftId);
     }
@@ -486,6 +484,7 @@ contract NiftyApes is
         requireOfferCreator(offer, borrower);
 
         requireBorrowerOffer(offer);
+        requireNoFloorTerms(offer);
 
         markSignatureUsed(offer, signature);
 
@@ -989,6 +988,10 @@ contract NiftyApes is
 
     function requireBorrowerOffer(Offer memory offer) internal pure {
         require(!offer.lenderOffer, "borrower offer");
+    }
+
+    function requireNoFloorTerms(Offer memory offer) internal pure {
+        require(!offer.floorTerm, "floor term");
     }
 
     function requireNoFixedTerm(LoanAuction storage loanAuction) internal view {
