@@ -558,6 +558,7 @@ contract NiftyApes is
         address signer = getOfferSigner(offer, signature);
 
         requireOfferCreator(offer, signer);
+        requireAvailableSignature(signature);
 
         if (!offer.floorTerm) {
             requireMatchingNftId(offer, nftId);
