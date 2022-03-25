@@ -1444,11 +1444,13 @@ contract LendingAuctionUnitTest is
 
         bytes memory signature = signOffer(offer);
 
-        hevm.expectEmit(true, true, false, true);
+        hevm.expectEmit(true, true, true, true);
 
         emit LoanExecuted(SIGNER_1, address(usdcToken), address(this), address(mockNft), 1, offer);
 
         emit AmountDrawn(address(this), address(mockNft), 1, 6, 6);
+
+        emit OfferSignatureUsed(address(mockNft), 1, offer, signature);
 
         lendingAction.executeLoanByBorrowerSignature(offer, signature, 1);
     }
