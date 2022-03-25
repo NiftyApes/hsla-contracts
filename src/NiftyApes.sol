@@ -586,6 +586,7 @@ contract NiftyApes is
         updateInterest(loanAuction);
 
         uint256 fullAmount = loanAuction.amountDrawn + loanAuction.accumulatedLenderInterest;
+        uint256 previousDrawn = loanAuction.amountDrawn;
 
         requireOfferAmount(offer, fullAmount);
 
@@ -608,6 +609,14 @@ contract NiftyApes is
             offer.nftContractAddress,
             nftId,
             offer
+        );
+
+        emit AmountDrawn(
+            loanAuction.nftOwner,
+            offer.nftContractAddress,
+            nftId,
+            loanAuction.amountDrawn - previousDrawn,
+            loanAuction.amountDrawn
         );
     }
 

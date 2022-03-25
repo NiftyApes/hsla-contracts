@@ -1534,6 +1534,8 @@ contract LendingAuctionUnitTest is
 
         hevm.expectRevert("offer expired");
 
+        hevm.stopPrank();
+
         hevm.startPrank(LENDER_1);
 
         lendingAction.executeLoanByLender(
@@ -3334,6 +3336,8 @@ contract LendingAuctionUnitTest is
         hevm.expectEmit(true, false, false, true);
 
         emit Refinance(LENDER_2, offer2.asset, address(this), address(mockNft), 1, offer2);
+
+        emit AmountDrawn(address(this), offer.nftContractAddress, 1, 0, 6);
 
         lendingAction.refinanceByBorrower(address(mockNft), 1, true, offerHash2);
     }
