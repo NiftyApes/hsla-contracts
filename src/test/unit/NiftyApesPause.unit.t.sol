@@ -175,7 +175,7 @@ contract NiftyApesPauseUnitTest is BaseTest, ILendingStructs, ERC721HolderUpgrad
     function testCannotExecuteLoanByLender_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        niftyApes.executeLoanByLender(address(0), 1, false, bytes32(0));
+        niftyApes.executeLoanByLender(address(0), 1, bytes32(0), false);
     }
 
     function testCannotExecuteLoanByLenderSignature_paused() public {

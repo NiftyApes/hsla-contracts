@@ -328,9 +328,14 @@ contract NiftyApes is
 
         requireOfferCreator(offer.creator, msg.sender);
 
-        uint256 offerTokens = assetAmountToCAssetAmount(offer.asset, offer.amount);
-
-        requireCAssetBalance(msg.sender, cAsset, offerTokens);
+        if (offer.lenderOffer) {
+            uint256 offerTokens = assetAmountToCAssetAmount(offer.asset, offer.amount);
+            requireCAssetBalance(msg.sender, cAsset, offerTokens);
+        } else {
+            if (!offer.floorTerm) {
+                requireNftOwner(offer.nftContractAddress, offer.nftId, msg.sender);
+            }
+        }
 
         mapping(bytes32 => Offer) storage offerBook = getOfferBook(
             offer.nftContractAddress,
@@ -445,8 +450,8 @@ contract NiftyApes is
     function executeLoanByLender(
         address nftContractAddress,
         uint256 nftId,
-        bool floorTerm,
-        bytes32 offerHash
+        bytes32 offerHash,
+        bool floorTerm
     ) public payable whenNotPaused nonReentrant {
         Offer storage offerStorage = getOfferInternal(
             nftContractAddress,
@@ -460,7 +465,9 @@ contract NiftyApes is
 
         requireBorrowerOffer(offer);
 
-        doRemoveOffer(nftContractAddress, nftId, offerHash, floorTerm);
+        if (!offer.floorTerm) {
+            doRemoveOffer(nftContractAddress, nftId, offerHash, floorTerm);
+        }
 
         _executeLoanInternal(offer, msg.sender, offer.creator, nftId);
     }

@@ -112,13 +112,13 @@ interface ILending is ILendingEvents, ILendingStructs {
     ///         execute these offers
     /// @param nftContractAddress The address of the NFT collection
     /// @param nftId The id of the specified NFT
-    /// @param floorTerm Indicates whether this is a floor or individual NFT offer.
     /// @param offerHash The hash of all parameters in an offer
+    /// @param floorTerm Indicates whether this is a floor or individual NFT offer.
     function executeLoanByLender(
         address nftContractAddress,
         uint256 nftId,
-        bool floorTerm,
-        bytes32 offerHash
+        bytes32 offerHash,
+        bool floorTerm
     ) external payable;
 
     /// @notice Start a loan as the lender using a borrowers offer and signature.
