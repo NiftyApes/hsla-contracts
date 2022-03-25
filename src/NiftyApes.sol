@@ -927,7 +927,7 @@ contract NiftyApes is
         uint256 amountXTime = timePassed * loanAuction.amountDrawn;
 
         lenderInterest = (amountXTime * loanAuction.interestRatePerSecond) / 1 ether;
-        protocolInterest = (amountXTime * loanDrawFeeProtocolPerSecond) / 1 ether;
+        protocolInterest = (amountXTime * loanAuction.loanDrawFeeProtocolPerSecond) / 1 ether;
     }
 
     /// @inheritdoc INiftyApesAdmin
@@ -1138,6 +1138,7 @@ contract NiftyApes is
         loanAuction.lastUpdatedTimestamp = currentTimestamp();
         loanAuction.amountDrawn = offer.amount;
         loanAuction.fixedTerms = offer.fixedTerms;
+        loanAuction.loanDrawFeeProtocolPerSecond = loanDrawFeeProtocolPerSecond;
     }
 
     function transferNft(
