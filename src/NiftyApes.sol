@@ -601,6 +601,7 @@ contract NiftyApes is
         loanAuction.interestRatePerSecond = offer.interestRatePerSecond;
         loanAuction.loanEndTimestamp = currentTimestamp() + offer.duration;
         loanAuction.amountDrawn = SafeCastUpgradeable.toUint128(fullAmount);
+        loanAuction.accumulatedLenderInterest = 0;
 
         emit Refinance(
             newLender,
@@ -921,8 +922,8 @@ contract NiftyApes is
         uint256 timePassed = endTime - loanAuction.lastUpdatedTimestamp;
         uint256 amountXTime = timePassed * loanAuction.amountDrawn;
 
-        lenderInterest = amountXTime * loanAuction.interestRatePerSecond;
-        protocolInterest = amountXTime * loanDrawFeeProtocolPerSecond;
+        lenderInterest = (amountXTime * loanAuction.interestRatePerSecond) / 1 ether;
+        protocolInterest = (amountXTime * loanDrawFeeProtocolPerSecond) / 1 ether;
     }
 
     /// @inheritdoc INiftyApesAdmin
