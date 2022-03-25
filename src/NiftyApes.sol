@@ -573,15 +573,13 @@ contract NiftyApes is
         uint256 nftId
     ) internal {
         LoanAuction storage loanAuction = _loanAuctions[offer.nftContractAddress][nftId];
-
+        requireMatchingAsset(offer.asset, loanAuction.asset);
         requireNftOwner(loanAuction, msg.sender);
         requireNoFixedTerm(loanAuction);
         requireOpenLoan(loanAuction);
         requireOfferNotExpired(offer);
         requireLenderOffer(offer);
         requireMinDurationForOffer(offer);
-
-        requireMatchingAsset(offer.asset, loanAuction.asset);
 
         address cAsset = getCAsset(offer.asset);
 
