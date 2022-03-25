@@ -288,6 +288,7 @@ contract NiftyApes is
         address signer = getOfferSigner(offer, signature);
 
         requireSigner(signer, msg.sender);
+        requireOfferCreator(offer, msg.sender);
 
         markSignatureUsed(offer, signature);
     }
