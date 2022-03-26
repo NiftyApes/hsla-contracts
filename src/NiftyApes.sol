@@ -566,6 +566,7 @@ contract NiftyApes is
         address signer = getOfferSigner(offer, signature);
 
         requireOfferCreator(offer, signer);
+        requireAvailableSignature(signature);
 
         if (!offer.floorTerm) {
             requireMatchingNftId(offer, nftId);
@@ -609,6 +610,10 @@ contract NiftyApes is
         loanAuction.interestRatePerSecond = offer.interestRatePerSecond;
         loanAuction.loanEndTimestamp = currentTimestamp() + offer.duration;
         loanAuction.amountDrawn = SafeCastUpgradeable.toUint128(fullAmount);
+        loanAuction.accumulatedLenderInterest = 0;
+        if (offer.fixedTerms) {
+            loanAuction.fixedTerms = offer.fixedTerms;
+        }
 
         emit Refinance(
             newLender,
@@ -945,8 +950,8 @@ contract NiftyApes is
         uint256 timePassed = endTime - loanAuction.lastUpdatedTimestamp;
         uint256 amountXTime = timePassed * loanAuction.amountDrawn;
 
-        lenderInterest = amountXTime * loanAuction.interestRatePerSecond;
-        protocolInterest = amountXTime * loanDrawFeeProtocolPerSecond;
+        lenderInterest = (amountXTime * loanAuction.interestRatePerSecond) / 1 ether;
+        protocolInterest = (amountXTime * loanAuction.loanDrawFeeProtocolPerSecond) / 1 ether;
     }
 
     /// @inheritdoc INiftyApesAdmin
@@ -1170,6 +1175,7 @@ contract NiftyApes is
         loanAuction.lastUpdatedTimestamp = currentTimestamp();
         loanAuction.amountDrawn = offer.amount;
         loanAuction.fixedTerms = offer.fixedTerms;
+        loanAuction.loanDrawFeeProtocolPerSecond = loanDrawFeeProtocolPerSecond;
     }
 
     function transferNft(
