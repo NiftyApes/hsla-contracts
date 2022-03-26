@@ -4862,7 +4862,7 @@ contract LendingAuctionUnitTest is
         });
 
         hevm.expectRevert("fixed term loan");
-        hevm.startPrank(LENDER_2);
+
         lendingAction.refinanceByLender(offer2);
     }
 
@@ -4921,7 +4921,7 @@ contract LendingAuctionUnitTest is
         });
 
         hevm.expectRevert("not an improvement");
-        hevm.startPrank(LENDER_2);
+
         lendingAction.refinanceByLender(offer2);
     }
 
@@ -5102,7 +5102,6 @@ contract LendingAuctionUnitTest is
         });
 
         hevm.expectRevert("loan not active");
-        hevm.startPrank(LENDER_2);
 
         lendingAction.refinanceByLender(offer2);
     }
