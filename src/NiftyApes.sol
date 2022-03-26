@@ -631,12 +631,15 @@ contract NiftyApes is
 
         requireOpenLoan(loanAuction);
         requireOfferCreator(offer, msg.sender);
+        requireLenderOffer(offer);
         requireLoanNotExpired(loanAuction);
         requireOfferParity(loanAuction, offer);
         requireValidDurationUpdate(loanAuction, offer);
         requireNoFixedTerm(loanAuction);
+        requireNoFloorTerms(offer);
         requireOfferNotExpired(offer);
         requireMatchingAsset(offer.asset, loanAuction.asset);
+        requireNoFixTermOffer(offer);
 
         address cAsset = getCAsset(offer.asset);
 
@@ -1008,6 +1011,10 @@ contract NiftyApes is
 
     function requireNoFixedTerm(LoanAuction storage loanAuction) internal view {
         require(!loanAuction.fixedTerms, "fixed term loan");
+    }
+
+    function requireNoFixTermOffer(Offer memory offer) internal view {
+        require(!offer.fixedTerms, "fixed term offer");
     }
 
     function requireNftOwner(
