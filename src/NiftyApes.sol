@@ -79,6 +79,12 @@ contract NiftyApes is
     /// @inheritdoc ILending
     uint16 public refinancePremiumProtocolBps;
 
+        /// @inheritdoc ILending
+    uint16 public regenCollectiveBpsOfRevenue;
+
+    /// @dev @inheritdoc ILending
+    address public regenCollectiveAddress;
+
     /// @dev This empty reserved space is put in place to allow future versions to add new
     /// variables without shifting storage.
     uint256[500] private __gap;
@@ -92,6 +98,8 @@ contract NiftyApes is
         loanDrawFeeProtocolPerSecond = 50;
         refinancePremiumLenderBps = 50;
         refinancePremiumProtocolBps = 50;
+        regenCollectiveBpsOfRevenue = 100;
+        regenCollectiveAddress = address(0x252de94Ae0F07fb19112297F299f8c9Cc10E28a6);
 
         OwnableUpgradeable.__Ownable_init();
         PausableUpgradeable.__Pausable_init();
@@ -669,6 +677,10 @@ contract NiftyApes is
             // require prospective lender has sufficient available balance to refinance loan
             require(getCAssetBalance(offer.creator, cAsset) >= fullCTokenAmount, "lender balance");
 
+            uint256 regenCollectiveBpsOfPremium = (protocolPremium * regenCollectiveBpsOfRevenue) / MAX_BPS;
+
+            protocolPremium -= regenCollectiveBpsOfPremium;
+
             uint256 protocolPremimuimInCtokens = assetAmountToCAssetAmount(
                 offer.asset,
                 protocolPremium
@@ -684,6 +696,8 @@ contract NiftyApes is
                 protocolPremimuimInCtokens;
             _balanceByAccountByAsset[offer.creator][cAsset].cAssetBalance -= fullCTokenAmount;
             _balanceByAccountByAsset[owner()][cAsset].cAssetBalance += protocolPremimuimInCtokens;
+
+            sendValueToRegenCollective(offer.asset, regenCollectiveBpsOfPremium);
         }
 
         emit Refinance(
@@ -808,15 +822,19 @@ contract NiftyApes is
 
         updateInterest(loanAuction);
 
+        uint256 regenCollectiveBpsOfProtocolInterest = (loanAuction.accumulatedProtocolInterest * regenCollectiveBpsOfRevenue) / MAX_BPS;
+
+        uint256 accumulatedProtocolInterestMinusRegenBps = loanAuction.accumulatedProtocolInterest - regenCollectiveBpsOfProtocolInterest;
+
         uint256 payment = rls.repayFull
             ? loanAuction.accumulatedLenderInterest +
-                loanAuction.accumulatedProtocolInterest +
+                accumulatedProtocolInterestMinusRegenBps +
                 loanAuction.amountDrawn
             : rls.paymentAmount;
 
-        uint256 cTokensMinted = handleLoanPayment(rls, loanAuction, payment);
+        uint256 cTokensMinted = handleLoanPayment(rls, loanAuction, payment, regenCollectiveBpsOfProtocolInterest);
 
-        payoutCTokenBalances(loanAuction, cAsset, cTokensMinted, payment);
+        payoutCTokenBalances(loanAuction, cAsset, cTokensMinted, payment, regenCollectiveBpsOfProtocolInterest);
 
         if (rls.repayFull) {
             transferNft(rls.nftContractAddress, rls.nftId, address(this), loanAuction.nftOwner);
@@ -845,21 +863,27 @@ contract NiftyApes is
         }
     }
 
+    /// TODO(captn) should this be moved in helper function section near payoutCTokenBalance?
     function handleLoanPayment(
         RepayLoanStruct memory rls,
         LoanAuction storage loanAuction,
-        uint256 payment
+        uint256 payment, 
+        uint256 regenBpsOfInterest
     ) internal returns (uint256) {
+
+        sendValueToRegenCollective(loanAuction.asset, regenBpsOfInterest);
+
         if (loanAuction.asset == ETH_ADDRESS) {
             if (rls.repayFull) {
-                require(msg.value >= payment, "msg.value too low");
+                require(msg.value >= payment + regenBpsOfInterest, "msg.value too low");
             }
 
+            /// TODO(captn) there is an issue here. We are minting CEth before the msg.value check below. 
             uint256 cTokensMinted = mintCEth(payment);
 
             // If the caller has overpaid we send the extra ETH back
-            if (payment < msg.value) {
-                payable(msg.sender).sendValue(msg.value - payment);
+            if (payment + regenBpsOfInterest < msg.value) {
+                payable(msg.sender).sendValue(msg.value - payment - regenBpsOfInterest);
             }
             return cTokensMinted;
         } else {
@@ -949,6 +973,19 @@ contract NiftyApes is
         require(newPremiumProtocolBps <= MAX_FEE, "max fee");
         emit RefinancePremiumProtocolBpsUpdated(refinancePremiumProtocolBps, newPremiumProtocolBps);
         refinancePremiumProtocolBps = newPremiumProtocolBps;
+    }
+
+        /// @inheritdoc INiftyApesAdmin
+    function updateRegenCollectiveBpsOfRevenue(uint16 newRegenCollectiveBpsOfRevenue) external onlyOwner {
+        require(newRegenCollectiveBpsOfRevenue <= MAX_FEE, "max fee");
+        emit RegenCollectiveBpsOfRevenueUpdated(regenCollectiveBpsOfRevenue, newRegenCollectiveBpsOfRevenue);
+        regenCollectiveBpsOfRevenue = newRegenCollectiveBpsOfRevenue;
+    }
+
+    /// @inheritdoc INiftyApesAdmin
+    function updateRegenCollectiveAddress(uint16 newRegenCollectiveAddress) external onlyOwner {
+        emit RegenCollectiveAddressUpdated(newRegenCollectiveAddress);
+        regenCollectiveAddress = newRegenCollectiveAddress;
     }
 
     function markSignatureUsed(Offer memory offer, bytes memory signature) internal {
@@ -1156,15 +1193,30 @@ contract NiftyApes is
         }
     }
 
+    function sendValueToRegenCollective(
+        address asset,
+        uint256 amount
+    ) internal {
+        burnCErc20(asset, amount);
+
+        if (asset == ETH_ADDRESS) {
+            payable(regenCollectiveAddress).sendValue(amount);
+        } else {
+            IERC20Upgradeable(asset).safeTransfer(regenCollectiveAddress, amount);
+        }
+    }
+
+
     function payoutCTokenBalances(
         LoanAuction storage loanAuction,
         address cAsset,
         uint256 totalCTokens,
-        uint256 totalPayment
+        uint256 totalPayment,
+        uint256 regenBpsOfRevenue
     ) internal {
         uint256 cTokensToLender = (totalCTokens *
             (loanAuction.amountDrawn + loanAuction.accumulatedLenderInterest)) / totalPayment;
-        uint256 cTokensToProtocol = (totalCTokens * loanAuction.accumulatedProtocolInterest) /
+        uint256 cTokensToProtocol = (totalCTokens * (loanAuction.accumulatedProtocolInterest - regenBpsOfRevenue)) /
             totalPayment;
 
         _balanceByAccountByAsset[loanAuction.lender][cAsset].cAssetBalance += cTokensToLender;
