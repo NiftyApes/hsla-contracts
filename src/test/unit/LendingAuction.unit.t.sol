@@ -5873,7 +5873,7 @@ contract LendingAuctionUnitTest is
         Offer memory offer2 = Offer({
             creator: LENDER_2,
             nftContractAddress: address(mockNft),
-            interestRatePerSecond: 2,
+            interestRatePerSecond: 3,
             fixedTerms: false,
             floorTerm: false,
             lenderOffer: true,
@@ -5899,7 +5899,7 @@ contract LendingAuctionUnitTest is
         Offer memory offer3 = Offer({
             creator: LENDER_3,
             nftContractAddress: address(mockNft),
-            interestRatePerSecond: 2,
+            interestRatePerSecond: 3,
             fixedTerms: false,
             floorTerm: false,
             lenderOffer: true,
@@ -5939,12 +5939,12 @@ contract LendingAuctionUnitTest is
         );
         assertEq(
             lendingAction.getCAssetBalance(LENDER_2, address(cUSDCToken)),
-            9970000000000002400 ether // TODO(dankurka): Incorrect here (received 3600) but should have gotten his interest (3600 for the 200s) + the interest he had paid for to the first lender (1800)
+            9970000000000003600 ether
         );
 
         assertEq(
             lendingAction.getCAssetBalance(LENDER_3, address(cUSDCToken)),
-            3939999999999995800 ether // TODO(dankurka): paid for interest for interest (wrong 4200) and paid for protocol and lender premium (0.06)
+            3939999999999994600 ether
         );
 
         assertEq(
@@ -5952,20 +5952,20 @@ contract LendingAuctionUnitTest is
             60000000000000000 ether
         );
 
-        // LoanAuction memory loanAuction = lendingAction.getLoanAuction(address(mockNft), 1);
+        LoanAuction memory loanAuction = lendingAction.getLoanAuction(address(mockNft), 1);
 
-        // assertEq(loanAuction.nftOwner, address(this));
-        // assertEq(loanAuction.lender, LENDER_2);
-        // assertEq(loanAuction.asset, address(usdcToken));
-        // assertEq(loanAuction.interestRatePerSecond, 2);
-        // assertTrue(!loanAuction.fixedTerms);
+        assertEq(loanAuction.nftOwner, address(this));
+        assertEq(loanAuction.lender, LENDER_3);
+        assertEq(loanAuction.asset, address(usdcToken));
+        assertEq(loanAuction.interestRatePerSecond, 3);
+        assertTrue(!loanAuction.fixedTerms);
 
-        // assertEq(loanAuction.amount, 7 ether);
-        // assertEq(loanAuction.loanEndTimestamp, block.timestamp + 3 days);
-        // assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
-        // assertEq(loanAuction.accumulatedLenderInterest, 1800);
-        // assertEq(loanAuction.accumulatedProtocolInterest, 30000);
-        // assertEq(loanAuction.amountDrawn, 6000000000000000000);
+        assertEq(loanAuction.amount, 8 ether);
+        assertEq(loanAuction.loanEndTimestamp, block.timestamp + 3 days);
+        assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
+        assertEq(loanAuction.accumulatedLenderInterest, 5400);
+        assertEq(loanAuction.accumulatedProtocolInterest, 90000);
+        assertEq(loanAuction.amountDrawn, 6000000000000000000);
     }
 
     // TODO(dankurka): Missing test:
