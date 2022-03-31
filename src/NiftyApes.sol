@@ -264,7 +264,7 @@ contract NiftyApes is
     }
 
     /// @inheritdoc ILending
-    function getOfferSignatureStatus(bytes calldata signature) external view returns (bool) {
+    function getOfferSignatureStatus(bytes memory signature) external view returns (bool) {
         return _cancelledOrFinalized[signature];
     }
 
@@ -279,7 +279,7 @@ contract NiftyApes is
     }
 
     /// @inheritdoc ILending
-    function withdrawOfferSignature(Offer memory offer, bytes calldata signature)
+    function withdrawOfferSignature(Offer memory offer, bytes memory signature)
         external
         whenNotPaused
     {
@@ -324,7 +324,7 @@ contract NiftyApes is
     }
 
     /// @inheritdoc ILending
-    function createOffer(Offer calldata offer) external whenNotPaused {
+    function createOffer(Offer memory offer) external whenNotPaused {
         address cAsset = getCAsset(offer.asset);
 
         requireOfferCreator(offer.creator, msg.sender);
@@ -404,15 +404,7 @@ contract NiftyApes is
         bytes32 offerHash,
         bool floorTerm
     ) external payable whenNotPaused nonReentrant {
-        Offer storage offerStorage = getOfferInternal(
-            nftContractAddress,
-            nftId,
-            offerHash,
-            floorTerm
-        );
-
-        // Make a memory copy
-        Offer memory offer = offerStorage;
+        Offer memory offer = getOfferInternal(nftContractAddress, nftId, offerHash, floorTerm);
 
         requireLenderOffer(offer);
 
@@ -427,8 +419,8 @@ contract NiftyApes is
 
     /// @inheritdoc ILending
     function executeLoanByBorrowerSignature(
-        Offer calldata offer,
-        bytes calldata signature,
+        Offer memory offer,
+        bytes memory signature,
         uint256 nftId
     ) external payable whenNotPaused nonReentrant {
         requireAvailableSignature(signature);
@@ -453,15 +445,7 @@ contract NiftyApes is
         bytes32 offerHash,
         bool floorTerm
     ) public payable whenNotPaused nonReentrant {
-        Offer storage offerStorage = getOfferInternal(
-            nftContractAddress,
-            nftId,
-            offerHash,
-            floorTerm
-        );
-
-        // Make a memory copy
-        Offer memory offer = offerStorage;
+        Offer memory offer = getOfferInternal(nftContractAddress, nftId, offerHash, floorTerm);
 
         requireBorrowerOffer(offer);
         requireNoFloorTerms(offer);
@@ -472,7 +456,7 @@ contract NiftyApes is
     }
 
     /// @inheritdoc ILending
-    function executeLoanByLenderSignature(Offer calldata offer, bytes calldata signature)
+    function executeLoanByLenderSignature(Offer memory offer, bytes memory signature)
         external
         payable
         whenNotPaused
@@ -529,15 +513,7 @@ contract NiftyApes is
         bool floorTerm,
         bytes32 offerHash
     ) external payable whenNotPaused nonReentrant {
-        Offer storage offerStorage = getOfferInternal(
-            nftContractAddress,
-            nftId,
-            offerHash,
-            floorTerm
-        );
-
-        // Make a memory copy
-        Offer memory offer = offerStorage;
+        Offer memory offer = getOfferInternal(nftContractAddress, nftId, offerHash, floorTerm);
 
         if (!offer.floorTerm) {
             requireMatchingNftId(offer, nftId);
@@ -551,8 +527,8 @@ contract NiftyApes is
 
     /// @inheritdoc ILending
     function refinanceByBorrowerSignature(
-        Offer calldata offer,
-        bytes calldata signature,
+        Offer memory offer,
+        bytes memory signature,
         uint256 nftId
     ) external payable whenNotPaused nonReentrant {
         address signer = getOfferSigner(offer, signature);
@@ -626,7 +602,7 @@ contract NiftyApes is
     }
 
     /// @inheritdoc ILending
-    function refinanceByLender(Offer calldata offer) external payable whenNotPaused nonReentrant {
+    function refinanceByLender(Offer memory offer) external payable whenNotPaused nonReentrant {
         LoanAuction storage loanAuction = _loanAuctions[offer.nftContractAddress][offer.nftId];
 
         requireOpenLoan(loanAuction);
