@@ -50,24 +50,26 @@ contract AdminUnitTest is BaseTest, INiftyApesAdminEvents {
         );
     }
 
-    function testSetCAddressMapping_can_be_set_by_owner() public {
-        hevm.expectEmit(true, false, false, true);
+    // TODO
 
-        emit NewAssetListed(
-            address(0x0000000000000000000000000000000000000001),
-            address(0x0000000000000000000000000000000000000002)
-        );
+    // function testSetCAddressMapping_can_be_set_by_owner() public {
+    //     hevm.expectEmit(true, false, false, true);
 
-        niftyApes.setCAssetAddress(
-            address(0x0000000000000000000000000000000000000001),
-            address(0x0000000000000000000000000000000000000002)
-        );
+    //     emit NewAssetListed(
+    //         address(0x0000000000000000000000000000000000000001),
+    //         address(0x0000000000000000000000000000000000000002)
+    //     );
 
-        assertEq(
-            niftyApes.assetToCAsset(address(0x0000000000000000000000000000000000000001)),
-            address(0x0000000000000000000000000000000000000002)
-        );
-    }
+    //     niftyApes.setCAssetAddress(
+    //         address(0x0000000000000000000000000000000000000001),
+    //         address(0x0000000000000000000000000000000000000002)
+    //     );
+
+    //     assertEq(
+    //         niftyApes.assetToCAsset(address(0x0000000000000000000000000000000000000001)),
+    //         address(0x0000000000000000000000000000000000000002)
+    //     );
+    // }
 
     function testCannotSetCAddressMapping_can_not_be_set_by_non_owner() public {
         niftyApes.renounceOwnership();

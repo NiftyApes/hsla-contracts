@@ -5,16 +5,6 @@ import "./INiftyApesAdminEvents.sol";
 
 /// @title NiftyApes interface for the admin role.
 interface INiftyApesAdmin is INiftyApesAdminEvents {
-    /// @notice Allows the owner of the contract to add an asset to the allow list
-    ///         All assets on NiftyApes have to have a mapping present from asset to cAsset,
-    ///         The asset is a token like USDC while the cAsset is the corresponding token in compound cUSDC.
-    function setCAssetAddress(address asset, address cAsset) external;
-
-    /// @notice Updates the maximum cAsset balance that the contracts will allow
-    ///         This allows a guarded launch with NiftyApes limiting the amount of liquidity
-    ///         in the protocol.
-    function setMaxCAssetBalance(address asset, uint256 maxBalance) external;
-
     /// @notice Updates the fee that computes protocol interest
     ///         Interest is charged per second on a loan.
     function updateLoanDrawProtocolFeePerSecond(uint96 newLoanDrawProtocolFeePerSecond) external;

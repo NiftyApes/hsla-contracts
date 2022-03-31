@@ -57,4 +57,38 @@ interface ILiquidity is ILiquidityEvents, ILiquidityStructs {
     /// @notice Returns a maximum balance of compound tokens, if there is no limit returns zero.
     /// @param cAsset The compound token address
     function maxBalanceByCAsset(address cAsset) external view returns (uint256);
+
+    function getCAsset(address asset) external view returns (address);
+
+    function getAsset(address cAsset) external view returns (address);
+
+    function requireCAssetBalance(
+        address account,
+        address cAsset,
+        uint256 amount
+    ) external view;
+
+    // TODO
+    function burnCErc20(address asset, uint256 amount) external returns (uint256);
+
+    function mintCEth(uint256 amount) external returns (uint256);
+
+    function mintCErc20(
+        address from,
+        address to,
+        address asset,
+        uint256 amount
+    ) external returns (uint256);
+
+    function withdrawCBalance(
+        address account,
+        address cAsset,
+        uint256 cTokenAmount
+    ) external;
+
+    function addCBalance(
+        address account,
+        address cAsset,
+        uint256 cTokenAmount
+    ) external;
 }
