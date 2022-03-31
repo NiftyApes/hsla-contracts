@@ -257,7 +257,8 @@ contract NiftyApes is
                         offer.duration,
                         offer.expiration,
                         offer.fixedTerms,
-                        offer.floorTerm
+                        offer.floorTerm,
+                        offer.lenderOffer
                     )
                 )
             );
