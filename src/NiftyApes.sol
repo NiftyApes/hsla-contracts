@@ -238,6 +238,14 @@ contract NiftyApes is
         view
         returns (LoanAuction memory)
     {
+        return getLoanAuctionInternal(nftContractAddress, nftId);
+    }
+
+    function getLoanAuctionInternal(address nftContractAddress, uint256 nftId)
+        internal
+        view
+        returns (LoanAuction storage)
+    {
         return _loanAuctions[nftContractAddress][nftId];
     }
 
@@ -484,7 +492,7 @@ contract NiftyApes is
 
         address cAsset = getCAsset(offer.asset);
 
-        LoanAuction storage loanAuction = _loanAuctions[offer.nftContractAddress][nftId];
+        LoanAuction storage loanAuction = getLoanAuctionInternal(offer.nftContractAddress, nftId);
 
         requireNoOpenLoan(loanAuction);
         requireOfferNotExpired(offer);
@@ -548,7 +556,7 @@ contract NiftyApes is
         address newLender,
         uint256 nftId
     ) internal {
-        LoanAuction storage loanAuction = _loanAuctions[offer.nftContractAddress][nftId];
+        LoanAuction storage loanAuction = getLoanAuctionInternal(offer.nftContractAddress, nftId);
         requireMatchingAsset(offer.asset, loanAuction.asset);
         requireNftOwner(loanAuction, msg.sender);
         requireNoFixedTerm(loanAuction);
@@ -602,7 +610,10 @@ contract NiftyApes is
 
     /// @inheritdoc ILending
     function refinanceByLender(Offer memory offer) external payable whenNotPaused nonReentrant {
-        LoanAuction storage loanAuction = _loanAuctions[offer.nftContractAddress][offer.nftId];
+        LoanAuction storage loanAuction = getLoanAuctionInternal(
+            offer.nftContractAddress,
+            offer.nftId
+        );
 
         requireOpenLoan(loanAuction);
         requireOfferCreator(offer, msg.sender);
@@ -685,7 +696,7 @@ contract NiftyApes is
         uint256 nftId,
         uint256 drawAmount
     ) external whenNotPaused nonReentrant {
-        LoanAuction storage loanAuction = _loanAuctions[nftContractAddress][nftId];
+        LoanAuction storage loanAuction = getLoanAuctionInternal(nftContractAddress, nftId);
 
         address cAsset = getCAsset(loanAuction.asset);
 
@@ -773,7 +784,7 @@ contract NiftyApes is
     }
 
     function _repayLoanAmount(RepayLoanStruct memory rls) internal {
-        LoanAuction storage loanAuction = _loanAuctions[rls.nftContractAddress][rls.nftId];
+        LoanAuction storage loanAuction = getLoanAuctionInternal(rls.nftContractAddress, rls.nftId);
         address cAsset = getCAsset(loanAuction.asset);
 
         if (!rls.repayFull) {
@@ -856,7 +867,7 @@ contract NiftyApes is
         whenNotPaused
         nonReentrant
     {
-        LoanAuction storage loanAuction = _loanAuctions[nftContractAddress][nftId];
+        LoanAuction storage loanAuction = getLoanAuctionInternal(nftContractAddress, nftId);
         getCAsset(loanAuction.asset); // Ensure asset mapping exists
         requireOpenLoan(loanAuction);
 
@@ -891,7 +902,7 @@ contract NiftyApes is
         view
         returns (uint256, uint256)
     {
-        return calculateInterestAccrued(_loanAuctions[nftContractAddress][nftId]);
+        return calculateInterestAccrued(getLoanAuctionInternal(nftContractAddress, nftId));
     }
 
     function calculateInterestAccrued(LoanAuction storage loanAuction)
