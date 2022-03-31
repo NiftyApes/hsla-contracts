@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Upgradeable.sol";
-import "@openzeppelin/contracts/utils/cryptography/ECDSAUpgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712Upgradeable.sol";
 import "@openzeppelin/contracts/utils/math/MathUpgradeable.sol";
 import "@openzeppelin/contracts/utils/math/SafeCastUpgradeable.sol";
@@ -15,6 +14,7 @@ import "@openzeppelin/contracts/utils/AddressUpgradeable.sol";
 import "./interfaces/compound/ICEther.sol";
 import "./interfaces/compound/ICERC20.sol";
 import "./interfaces/niftyapes/INiftyApes.sol";
+import "./lib/ECDSABridge.sol";
 import "./lib/Math.sol";
 
 /// @title Implemention of the INiftyApes interface
@@ -25,7 +25,6 @@ contract NiftyApes is
     EIP712Upgradeable,
     INiftyApes
 {
-    using ECDSAUpgradeable for bytes32;
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using AddressUpgradeable for address payable;
 
@@ -275,7 +274,7 @@ contract NiftyApes is
         override
         returns (address)
     {
-        return ECDSAUpgradeable.recover(getOfferHash(offer), signature);
+        return ECDSABridge.recover(getOfferHash(offer), signature);
     }
 
     /// @inheritdoc ILending
@@ -989,7 +988,7 @@ contract NiftyApes is
         require(!loanAuction.fixedTerms, "fixed term loan");
     }
 
-    function requireNoFixTermOffer(Offer memory offer) internal view {
+    function requireNoFixTermOffer(Offer memory offer) internal pure {
         require(!offer.fixedTerms, "fixed term offer");
     }
 
