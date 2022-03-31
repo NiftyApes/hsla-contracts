@@ -142,6 +142,7 @@ contract NiftyApes is
         override
         returns (address)
     {
+        // 900 bytes
         return ECDSAUpgradeable.recover(getOfferHash(offer), signature);
     }
 
@@ -271,15 +272,10 @@ contract NiftyApes is
         bytes32 offerHash,
         bool floorTerm
     ) external payable whenNotPaused nonReentrant {
-        Offer storage offerStorage = getOfferInternal(
-            nftContractAddress,
-            nftId,
-            offerHash,
-            floorTerm
-        );
+        Offer memory offer = getOffer(nftContractAddress, nftId, offerHash, floorTerm);
 
         // Make a memory copy
-        Offer memory offer = offerStorage;
+        //Offer memory offer = offerStorage;
 
         requireLenderOffer(offer);
 
@@ -320,15 +316,10 @@ contract NiftyApes is
         bytes32 offerHash,
         bool floorTerm
     ) public payable whenNotPaused nonReentrant {
-        Offer storage offerStorage = getOfferInternal(
-            nftContractAddress,
-            nftId,
-            offerHash,
-            floorTerm
-        );
+        Offer memory offer = getOffer(nftContractAddress, nftId, offerHash, floorTerm);
 
         // Make a memory copy
-        Offer memory offer = offerStorage;
+        //Offer memory offer = offerStorage;
 
         requireBorrowerOffer(offer);
         requireNoFloorTerms(offer);
@@ -396,15 +387,10 @@ contract NiftyApes is
         bool floorTerm,
         bytes32 offerHash
     ) external payable whenNotPaused nonReentrant {
-        Offer storage offerStorage = getOfferInternal(
-            nftContractAddress,
-            nftId,
-            offerHash,
-            floorTerm
-        );
+        Offer memory offer = getOffer(nftContractAddress, nftId, offerHash, floorTerm);
 
         // Make a memory copy
-        Offer memory offer = offerStorage;
+        // Offer memory offer = offerStorage;
 
         if (!offer.floorTerm) {
             requireMatchingNftId(offer, nftId);
@@ -898,7 +884,7 @@ contract NiftyApes is
         require(!loanAuction.fixedTerms, "fixed term loan");
     }
 
-    function requireNoFixTermOffer(Offer memory offer) internal view {
+    function requireNoFixTermOffer(Offer memory offer) internal pure {
         require(!offer.fixedTerms, "fixed term offer");
     }
 
@@ -914,7 +900,7 @@ contract NiftyApes is
         require(asset1 == asset2, "asset mismatch");
     }
 
-    function requireAvailableSignature(bytes memory signature) internal view {
+    function requireAvailableSignature(bytes calldata signature) internal view {
         require(!_cancelledOrFinalized[signature], "signature not available");
     }
 
