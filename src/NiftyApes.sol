@@ -404,7 +404,7 @@ contract NiftyApes is
         bytes32 offerHash,
         bool floorTerm
     ) external payable whenNotPaused nonReentrant {
-        Offer memory offer = getOfferInternal(nftContractAddress, nftId, offerHash, floorTerm);
+        Offer memory offer = getOffer(nftContractAddress, nftId, offerHash, floorTerm);
 
         requireLenderOffer(offer);
 
@@ -445,7 +445,7 @@ contract NiftyApes is
         bytes32 offerHash,
         bool floorTerm
     ) public payable whenNotPaused nonReentrant {
-        Offer memory offer = getOfferInternal(nftContractAddress, nftId, offerHash, floorTerm);
+        Offer memory offer = getOffer(nftContractAddress, nftId, offerHash, floorTerm);
 
         requireBorrowerOffer(offer);
         requireNoFloorTerms(offer);
@@ -513,7 +513,7 @@ contract NiftyApes is
         bool floorTerm,
         bytes32 offerHash
     ) external payable whenNotPaused nonReentrant {
-        Offer memory offer = getOfferInternal(nftContractAddress, nftId, offerHash, floorTerm);
+        Offer memory offer = getOffer(nftContractAddress, nftId, offerHash, floorTerm);
 
         if (!offer.floorTerm) {
             requireMatchingNftId(offer, nftId);
