@@ -176,15 +176,41 @@ contract NiftyApes is
         address cAsset = getCAsset(asset);
         IERC20Upgradeable underlying = IERC20Upgradeable(asset);
 
-        uint256 cTokensBurnt = burnCErc20(asset, tokenAmount);
+        if (msg.sender == owner()) {
 
-        withdrawCBalance(msg.sender, cAsset, cTokensBurnt);
+            uint256 ownerBalance = getCAssetBalance(owner(), cAsset);
 
-        underlying.safeTransfer(msg.sender, tokenAmount);
+            uint256 cTokensBurnt = burnCErc20(asset, ownerBalance);
 
-        emit Erc20Withdrawn(msg.sender, asset, tokenAmount, cTokensBurnt);
+            // update to regenPercentage var
+            uint256 percentForRegen = ownerBalance * 100 / 1;
 
-        return cTokensBurnt;
+            uint256 ownerBalanceMinusRegen = ownerBalance - percentForRegen;
+
+            withdrawCBalance(owner(), cAsset, ownerBalance);
+
+            underlying.safeTransfer(msg.sender, ownerBalanceMinusRegen);
+
+            // update to regen address
+            underlying.safeTransfer(msg.sender, percentForRegen);
+
+            // add event for regen funds
+
+            emit Erc20Withdrawn(msg.sender, asset, tokenAmount, cTokensBurnt);
+
+            return cTokensBurnt;
+        } else {
+            
+            uint256 cTokensBurnt = burnCErc20(asset, tokenAmount);
+
+            withdrawCBalance(msg.sender, cAsset, cTokensBurnt);
+
+            underlying.safeTransfer(msg.sender, tokenAmount);
+
+            emit Erc20Withdrawn(msg.sender, asset, tokenAmount, cTokensBurnt);
+
+            return cTokensBurnt;
+        }
     }
 
     /// @inheritdoc ILiquidity
