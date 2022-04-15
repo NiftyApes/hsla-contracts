@@ -32,7 +32,7 @@ interface INiftyApesAdmin is INiftyApesAdminEvents {
     function updateRegenCollectiveBpsOfRevenue(uint16 newRegenCollectiveBpsOfRevenue) external;
 
      /// @notice Updates the address for the Regen Collective
-    function updateRegenCollectiveAddress(uint16 newRegenCollectiveAddress) external;
+    function updateRegenCollectiveAddress(address newRegenCollectiveAddress) external;
 
     /// @notice Pauses all interactions with the contract.
     ///         This is intended to be used as an emergency measure to avoid loosing funds.

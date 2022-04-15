@@ -190,17 +190,15 @@ contract NiftyApes is
 
             uint256 cTokensBurnt = burnCErc20(asset, ownerBalance);
 
-            // update to regenPercentage var
-            uint256 percentForRegen = ownerBalance * 100 / 1;
+            uint256 bpsForRegen = cTokensBurnt * 10_000 / regenCollectiveBpsOfRevenue;
 
-            uint256 ownerBalanceMinusRegen = ownerBalance - percentForRegen;
+            uint256 ownerBalanceMinusRegen = cTokensBurnt - bpsForRegen;
 
-            withdrawCBalance(owner(), cAsset, ownerBalance);
+            withdrawCBalance(owner(), cAsset, cTokensBurnt);
 
             underlying.safeTransfer(msg.sender, ownerBalanceMinusRegen);
 
-            // update to regen address
-            underlying.safeTransfer(msg.sender, percentForRegen);
+            underlying.safeTransfer(regenCollectiveAddress, bpsForRegen);
 
             // add event for regen funds
 
@@ -1001,7 +999,7 @@ contract NiftyApes is
     }
 
     /// @inheritdoc INiftyApesAdmin
-    function updateRegenCollectiveAddress(uint16 newRegenCollectiveAddress) external onlyOwner {
+    function updateRegenCollectiveAddress(address newRegenCollectiveAddress) external onlyOwner {
         emit RegenCollectiveAddressUpdated(newRegenCollectiveAddress);
         regenCollectiveAddress = newRegenCollectiveAddress;
     }
@@ -1060,7 +1058,7 @@ contract NiftyApes is
         require(!loanAuction.fixedTerms, "fixed term loan");
     }
 
-    function requireNoFixTermOffer(Offer memory offer) internal view {
+    function requireNoFixTermOffer(Offer memory offer) internal pure {
         require(!offer.fixedTerms, "fixed term offer");
     }
 
