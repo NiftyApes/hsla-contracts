@@ -79,6 +79,12 @@ contract NiftyApes is
     /// @inheritdoc ILending
     uint16 public refinancePremiumProtocolBps;
 
+            /// @inheritdoc ILending
+    uint16 public regenCollectiveBpsOfRevenue;
+
+    /// @dev @inheritdoc ILending
+    address public regenCollectiveAddress;
+
     /// @dev This empty reserved space is put in place to allow future versions to add new
     /// variables without shifting storage.
     uint256[500] private __gap;
@@ -92,6 +98,8 @@ contract NiftyApes is
         loanDrawFeeProtocolPerSecond = 50;
         refinancePremiumLenderBps = 50;
         refinancePremiumProtocolBps = 50;
+        regenCollectiveBpsOfRevenue = 100;
+        regenCollectiveAddress = address(0x252de94Ae0F07fb19112297F299f8c9Cc10E28a6);
 
         OwnableUpgradeable.__Ownable_init();
         PausableUpgradeable.__Pausable_init();
@@ -983,6 +991,19 @@ contract NiftyApes is
         require(newPremiumProtocolBps <= MAX_FEE, "max fee");
         emit RefinancePremiumProtocolBpsUpdated(refinancePremiumProtocolBps, newPremiumProtocolBps);
         refinancePremiumProtocolBps = newPremiumProtocolBps;
+    }
+
+    /// @inheritdoc INiftyApesAdmin
+    function updateRegenCollectiveBpsOfRevenue(uint16 newRegenCollectiveBpsOfRevenue) external onlyOwner {
+        require(newRegenCollectiveBpsOfRevenue <= MAX_FEE, "max fee");
+        emit RegenCollectiveBpsOfRevenueUpdated(regenCollectiveBpsOfRevenue, newRegenCollectiveBpsOfRevenue);
+        regenCollectiveBpsOfRevenue = newRegenCollectiveBpsOfRevenue;
+    }
+
+    /// @inheritdoc INiftyApesAdmin
+    function updateRegenCollectiveAddress(uint16 newRegenCollectiveAddress) external onlyOwner {
+        emit RegenCollectiveAddressUpdated(newRegenCollectiveAddress);
+        regenCollectiveAddress = newRegenCollectiveAddress;
     }
 
     function markSignatureUsed(Offer memory offer, bytes memory signature) internal {

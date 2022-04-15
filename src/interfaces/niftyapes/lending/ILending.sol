@@ -19,6 +19,13 @@ interface ILending is ILendingEvents, ILendingStructs {
     ///         Fees are denomiated in basis points, parts of 10_000
     function refinancePremiumProtocolBps() external view returns (uint16);
 
+    /// @notice Returns the basis points of revenue sent to the Regen Collective
+    ///         Denomiated in basis points, parts of 10_000
+    function regenCollectiveBpsOfRevenue() external view returns (uint16);
+
+    /// @notice Returns the address for the Regen Collective
+    function regenCollectiveAddress() external view returns (address);
+
     // TODO(dankurka): move
     /// @notice Returns the owner of a given nft if there is a current loan on the NFT, otherwise zero.
     /// @param nftContractAddress The address of the given nft contract

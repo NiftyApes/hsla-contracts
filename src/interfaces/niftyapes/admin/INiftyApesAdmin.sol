@@ -27,6 +27,13 @@ interface INiftyApesAdmin is INiftyApesAdminEvents {
     ///         Fees are denomiated in basis points, parts of 10_000
     function updateRefinancePremiumProtocolBps(uint16 newPremiumProtocolBps) external;
 
+    /// @notice Updates the bps of revenue sent to the Regen Collective
+    ///         Fees are denomiated in basis points, parts of 10_000
+    function updateRegenCollectiveBpsOfRevenue(uint16 newRegenCollectiveBpsOfRevenue) external;
+
+     /// @notice Updates the address for the Regen Collective
+    function updateRegenCollectiveAddress(uint16 newRegenCollectiveAddress) external;
+
     /// @notice Pauses all interactions with the contract.
     ///         This is intended to be used as an emergency measure to avoid loosing funds.
     function pause() external;
