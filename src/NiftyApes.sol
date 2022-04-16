@@ -706,19 +706,21 @@ contract NiftyApes is
         requireFundsAvailable(loanAuction, drawAmount);
         requireLoanNotExpired(loanAuction);
 
-        updateInterest(loanAuction);
-        loanAuction.amountDrawn += SafeCastUpgradeable.toUint128(drawAmount);
+        uint256 slashedDrawAmount = slashUnsupportedAmount(loanAuction, drawAmount);
 
-        uint256 cTokensBurnt = burnCErc20(loanAuction.asset, drawAmount);
+        updateInterest(loanAuction);
+        loanAuction.amountDrawn += SafeCastUpgradeable.toUint128(slashedDrawAmount);
+
+        uint256 cTokensBurnt = burnCErc20(loanAuction.asset, slashedDrawAmount);
         withdrawCBalance(loanAuction.lender, cAsset, cTokensBurnt);
 
-        sendValue(loanAuction.asset, drawAmount, loanAuction.nftOwner);
+        sendValue(loanAuction.asset, slashedDrawAmount, loanAuction.nftOwner);
 
         emit AmountDrawn(
             msg.sender,
             nftContractAddress,
             nftId,
-            drawAmount,
+            slashedDrawAmount,
             loanAuction.amountDrawn
         );
     }
@@ -882,6 +884,14 @@ contract NiftyApes is
         transferNft(nftContractAddress, nftId, address(this), currentLender);
 
         emit AssetSeized(currentLender, currentBorrower, nftContractAddress, nftId);
+    }
+
+        /// @inheritdoc ILending
+    function slashUnsupportedAmount(LoanAuction storage loanAuction, uint256 drawAmount) internal returns (uint256) {
+        // get lenders balance
+        // if insufficent
+        // subtract difference from loanAuction.amountDrawn
+        // return new drawAmount
     }
 
     /// @inheritdoc ILending
