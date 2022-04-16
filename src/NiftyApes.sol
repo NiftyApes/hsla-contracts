@@ -890,6 +890,10 @@ contract NiftyApes is
     }
 
     function updateInterest(LoanAuction storage loanAuction) internal {
+        if (loanAuction.loanDrawFeeProtocolPerSecond > loanDrawFeeProtocolPerSecond){
+            loanAuction.loanDrawFeeProtocolPerSecond = loanDrawFeeProtocolPerSecond;
+        }
+
         (uint256 lenderInterest, uint256 protocolInterest) = calculateInterestAccrued(loanAuction);
 
         loanAuction.accumulatedLenderInterest += SafeCastUpgradeable.toUint128(lenderInterest);
