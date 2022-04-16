@@ -706,9 +706,11 @@ contract NiftyApes is
         requireFundsAvailable(loanAuction, drawAmount);
         requireLoanNotExpired(loanAuction);
 
-        uint256 slashedDrawAmount = slashUnsupportedAmount(loanAuction, drawAmount);
+        uint256 slashedDrawAmount = slashUnsupportedAmount(loanAuction, drawAmount, cAsset);
 
         updateInterest(loanAuction);
+
+        // slashedDrawnAmount is incorrect here. Needs to resolve underlying and cAssetBalance
         loanAuction.amountDrawn += SafeCastUpgradeable.toUint128(slashedDrawAmount);
 
         uint256 cTokensBurnt = burnCErc20(loanAuction.asset, slashedDrawAmount);
@@ -886,12 +888,19 @@ contract NiftyApes is
         emit AssetSeized(currentLender, currentBorrower, nftContractAddress, nftId);
     }
 
-        /// @inheritdoc ILending
-    function slashUnsupportedAmount(LoanAuction storage loanAuction, uint256 drawAmount) internal returns (uint256) {
-        // get lenders balance
-        // if insufficent
-        // subtract difference from loanAuction.amountDrawn
-        // return new drawAmount
+    function slashUnsupportedAmount(LoanAuction storage loanAuction, uint256 drawAmount, address cAsset) internal returns (uint256) {
+        
+        uint256 lenderBalance = getCAssetBalance(loanAuction.lender, cAsset);
+
+        // there is an issue here that drawAmount is in underlying and lenderBalance is in cAsset
+
+        if (lenderBalance < drawAmount) {
+            uint256 balanceDelta = drawAmount - lenderBalance;
+            loanAuction.amountDrawn -= SafeCastUpgradeable.toUint128(balanceDelta);
+            drawAmount = lenderBalance;
+        }
+
+        return drawAmount;
     }
 
     /// @inheritdoc ILending
