@@ -17,26 +17,43 @@ import {
     Address
 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
-// Import interfaces for many popular DeFi projects, or add your own!
-//import "../interfaces/<protocol>/<Interface>.sol";
+import "./interfaces/niftyapes/lending/ILending.sol";
+import "./interfaces/niftyapes/liquidity/ILiquidity.sol";
 
 contract Strategy is BaseStrategy {
     using SafeERC20 for IERC20;
     using Address for address;
     using SafeMath for uint256;
 
+    address public constant BAYC = 0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D;
+    uint256 public constant PRECISION = 1e18;
+
+    uint256 public lastFloorPrice;
+    uint256 public lastOfferDate;
+    uint256 public collatRatio = 25 * 1e16; // 25%
+    uint256 public interestRate = 1e17; // 10%
+
+    // TODO: - does this need to be stored in a mapping / array of outstanding offers?
+    //       - do we need to store the basic offer values contract-wide or can they stay within the offer?
+    ILendingStructs.Offer public offer;
+
+    // TODO: how to track # of loans made over past period
+
+    // TODO: does this strat need to see other offers out there?
+
+
+    // https://github.com/yearn/yearn-vaults/blob/main/contracts/BaseStrategy.sol
     constructor(address _vault) public BaseStrategy(_vault) {
         // You can set these parameters on deployment to whatever you want
-        // maxReportDelay = 6300;
-        // profitFactor = 100;
-        // debtThreshold = 0;
+        // maxReportDelay = 6300;  // The maximum number of seconds between harvest calls
+        // profitFactor = 100; // The minimum multiple that `callCost` must be above the credit/profit to be "justifiable";
+        // debtThreshold = 0; // Use this to adjust the threshold at which running a debt causes harvest trigger
     }
 
     // ******** OVERRIDE THESE METHODS FROM BASE CONTRACT ************
 
     function name() external view override returns (string memory) {
-        // Add your own name here, suggestion e.g. "StrategyCreamYFI"
-        return "Strategy<ProtocolName><TokenType>";
+        return "StrategyNiftyApesBAYC";
     }
 
     function estimatedTotalAssets() public view override returns (uint256) {
@@ -61,6 +78,12 @@ contract Strategy is BaseStrategy {
     function adjustPosition(uint256 _debtOutstanding) internal override {
         // TODO: Do something to invest excess `want` tokens (from the Vault) into your positions
         // NOTE: Try to adjust positions so that `_debtOutstanding` can be freed up on *next* harvest (not immediately)
+
+        // TODO: fetch floor price based on SLP
+
+        // TODO: fetch current loan offers 
+
+        // TODO: Make offer based on outstanding loans?
     }
 
     function liquidatePosition(uint256 _amountNeeded)
@@ -96,22 +119,18 @@ contract Strategy is BaseStrategy {
     // Override this to add all tokens/tokenized positions this contract manages
     // on a *persistent* basis (e.g. not just for swapping back to want ephemerally)
     // NOTE: Do *not* include `want`, already included in `sweep` below
-    //
-    // Example:
-    //
-    //    function protectedTokens() internal override view returns (address[] memory) {
-    //      address[] memory protected = new address[](3);
-    //      protected[0] = tokenA;
-    //      protected[1] = tokenB;
-    //      protected[2] = tokenC;
-    //      return protected;
-    //    }
     function protectedTokens()
         internal
         view
         override
         returns (address[] memory)
-    {}
+    {
+        address[] memory protected = new address[](3);
+        protected[0] = 0xEA47B64e1BFCCb773A0420247C0aa0a3C1D2E5C5; // xBAYC erc20
+        protected[1] = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2; // WETH
+        protected[2] = 0xD829dE54877e0b66A2c3890b702fa5Df2245203E; // xBAYC/WETH SLP
+        return protected;
+    }
 
     /**
      * @notice
@@ -136,5 +155,19 @@ contract Strategy is BaseStrategy {
     {
         // TODO create an accurate price oracle
         return _amtInWei;
+    }
+
+
+    // ******************************************************************************
+    //                                  NEW METHODS
+    // ******************************************************************************
+
+    function calculateFloor() public view returns (uint256 floor) {
+        // Fetch current pool of sushi LP
+    }
+
+    function calculateInterestRate() public view returns (uint256 rate) {
+        // TODO: would we want to store interest per second and return interest over the duration?
+        // Or do we want to store interest rate for the total duration?
     }
 }
