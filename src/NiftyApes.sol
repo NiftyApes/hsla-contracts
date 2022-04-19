@@ -888,16 +888,19 @@ contract NiftyApes is
         emit AssetSeized(currentLender, currentBorrower, nftContractAddress, nftId);
     }
 
-    function slashUnsupportedAmount(LoanAuction storage loanAuction, uint256 drawAmount, address cAsset) internal returns (uint256) {
-        
+    function slashUnsupportedAmount(
+        LoanAuction storage loanAuction,
+        uint256 drawAmount,
+        address cAsset
+    ) internal returns (uint256) {
         uint256 lenderBalance = getCAssetBalance(loanAuction.lender, cAsset);
+        uint256 drawTokens = assetAmountToCAssetAmount(loanAuction.asset, drawAmount);
 
-        // there is an issue here that drawAmount is in underlying and lenderBalance is in cAsset
-
-        if (lenderBalance < drawAmount) {
-            uint256 balanceDelta = drawAmount - lenderBalance;
+        if (lenderBalance < drawTokens) {
+            uint256 balanceDelta = drawTokens - lenderBalance;
             loanAuction.amountDrawn -= SafeCastUpgradeable.toUint128(balanceDelta);
-            drawAmount = lenderBalance;
+            uint256 lenderBalanceUnderlying = cAssetAmountToAssetAmount(cAsset, lenderBalance);
+            drawAmount = lenderBalanceUnderlying;
         }
 
         return drawAmount;
@@ -1249,6 +1252,13 @@ contract NiftyApes is
 
         uint256 exchangeRateMantissa = cToken.exchangeRateCurrent();
         return Math.divScalarByExpTruncate(amount, exchangeRateMantissa);
+    }
+
+    function cAssetAmountToAssetAmount(address cAsset, uint256 amount) internal returns (uint256) {
+        ICERC20 cToken = ICERC20(cAsset);
+
+        uint256 exchangeRateMantissa = cToken.exchangeRateCurrent();
+        return Math.mulScalarTruncate(amount, exchangeRateMantissa);
     }
 
     function getCAsset(address asset) internal view returns (address) {
