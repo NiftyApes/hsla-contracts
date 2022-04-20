@@ -1,58 +1,48 @@
 // SPDX-License-Identifier: AGPL-3.0
 // Feel free to change the license, but this is what we use
 
-// Feel free to change this version of Solidity. We support >=0.6.0 <0.7.0;
-pragma solidity 0.6.12;
+pragma solidity ^0.8.12;
 pragma experimental ABIEncoderV2;
 
 // These are the core Yearn libraries
-import {
-    BaseStrategy,
-    StrategyParams
-} from "@yearnvaults/contracts/BaseStrategy.sol";
-import {
-    SafeERC20,
-    SafeMath,
-    IERC20,
-    Address
-} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import {BaseStrategy, StrategyParams} from "@yearnvaults/contracts/BaseStrategy.sol";
 
-import "./interfaces/niftyapes/lending/ILending.sol";
-import "./interfaces/niftyapes/liquidity/ILiquidity.sol";
+import {Address} from "@openzeppelin/contracts/utils/AddressUpgradeable.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20Upgradeable.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20Upgradeable.sol";
+
+import "./interfaces/niftyapes/INiftyApes.sol";
 
 contract Strategy is BaseStrategy {
     using SafeERC20 for IERC20;
     using Address for address;
-    using SafeMath for uint256;
 
+    INiftyApes public constant NIFTYAPES = address(0);
     address public constant BAYC = 0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D;
     address public constant XBAYC = 0xEA47B64e1BFCCb773A0420247C0aa0a3C1D2E5C5;
     address public constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     address public constant SUSHILP = 0xD829dE54877e0b66A2c3890b702fa5Df2245203E;
+    address public constant CDAI = 0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643;
     uint256 public constant PRECISION = 1e18;
 
     uint256 public lastFloorPrice;
     uint256 public lastOfferDate;
-    uint256 public collatRatio = 25 * 1e16; // 25%
-    uint256 public interestRatePerSecond = 1; // in basis points
+    uint256 public durationOfferOpen;
 
-    // TODO: - does this need to be stored in a mapping / array of outstanding offers?
-    //       - do we need to store the basic offer values contract-wide or can they stay within the offer?
+
+    uint256 public allowedDelta = 1e16; // 1% based on PRECISION
+    uint256 public collatRatio = 25 * 1e16; // 25%
+    uint96 public interestRatePerSecond = 1; // in basis points
+
+    uint256 numOffers;
     ILendingStructs.Offer public offer;
+    mapping (uint256 => ILendingStructs.Offer) public offers;
+    mapping (uint256 => bytes32) offerHashes;
+
     // TODO: will need to store the offers outstanding ->  timestamp of offer, offer hash
     // TODO: Needs to rescind offers --> how to make the rescinding appear profitable to a keeper
 
-    // TODO: how to track loans made on a specific offer?
-    //  Right now, all event based
 
-    // TODO: does this strat need to see other offers out there?
-    // No - new offer when floor price changes X%
-
-    // TODO: What would a "strategist" configure?
-    // Initial terms when strategy goes live, contructor arguments
-
-    // TODO: what is our "want" token? What token do we "want" to stack?
-    // DAI / USDC
 
     // https://github.com/yearn/yearn-vaults/blob/main/contracts/BaseStrategy.sol
     constructor(address _vault) public BaseStrategy(_vault) {
@@ -60,6 +50,16 @@ contract Strategy is BaseStrategy {
         // maxReportDelay = 6300;  // The maximum number of seconds between harvest calls
         // profitFactor = 100; // The minimum multiple that `callCost` must be above the credit/profit to be "justifiable";
         // debtThreshold = 0; // Use this to adjust the threshold at which running a debt causes harvest trigger
+        
+        offer.creator = address(this);
+        offer.duration = 
+        offer.expiration = 
+        offer.fixedTerms = true;
+        offer.floorTerm = true;
+        offer.lenderOffer = true;
+        offer.nftContractAddress = BAYC;
+        offer.asset = CDAI; // TODO: is this correct
+        offer.interestRatePerSecond = 1;
     }
 
     // ******** OVERRIDE THESE METHODS FROM BASE CONTRACT ************
@@ -92,16 +92,30 @@ contract Strategy is BaseStrategy {
         // NOTE: Try to adjust positions so that `_debtOutstanding` can be freed up on *next* harvest (not immediately)
 
         // TODO: fetch floor price based on SLP
+        uint128 floorPrice = calculateFloor();
 
-        // TODO: fetch current offers
 
-        // TODO: remove outstanding offers that are outdated / too high
+        // Remove outstanding offers that too high / have expired
+        if (floorPrice < lastFloorPrice) {
+        uint128 lastAmountLoaned = offers[numOffers].amount;
+        uint32 expiration = offers[numOffers].expiration;
 
-        // TODO: Make offer based on outstanding loans?
+            while (
+                (lastAmountLoaned > floorPrice || uint128(block.timestamp) > expiration)
+            ) {
+                // Remove offer - TODO: is this needed or can it just stay there?
+                NIFTYAPES.doRemoveOffer(BAYC, 0, offerHashes[numOffers], true);
 
-        // TODO: ask yearn
-        // - can a keeper pass an argument into tend()
-        // - can a keeper make an external API call
+                delete offers[numOffers--];
+                lastAmountLoaned = offers[numOffers].amount;
+                expiration = offers[numOffers].expiration;
+            }
+        }
+
+        // TODO: set offer values
+
+        lastFloorPrice = floorPrice;
+        lastOfferDate = block.timestamp;
     }
 
     function liquidatePosition(uint256 _amountNeeded)
@@ -116,11 +130,12 @@ contract Strategy is BaseStrategy {
         uint256 totalAssets = want.balanceOf(address(this));
         if (_amountNeeded > totalAssets) {
             _liquidatedAmount = totalAssets;
-            _loss = _amountNeeded.sub(totalAssets);
+            unchecked {
+                _loss = _amountNeeded - totalAssets;
+            }
         } else {
             _liquidatedAmount = _amountNeeded;
         }
-
     }
 
     function liquidateAllPositions() internal override returns (uint256) {
@@ -128,7 +143,13 @@ contract Strategy is BaseStrategy {
         return want.balanceOf(address(this));
 
         // TODO: call withdrawERC20()
+
+
         // TODO: remove outstanding offers
+        while (numOffers > 0) {
+            delete offers[numOffers--];
+        }
+
         // NOTE: needs to be recalled when outstanding loans expire
     }
 
@@ -194,6 +215,24 @@ contract Strategy is BaseStrategy {
         floorInEth = PRECISION * wethBalance / xbaycBalance;
     }
 
+
+
     function calculateInterestRateAnnually() public view returns (uint256 rate) {
     }
+
+    /*
+
+    TODO: how to track loans made on a specific offer? - right now it's event based
+    
+
+    - A strategiest would configure:
+        - Initial terms when strategy goes live
+        - constructor arguments
+
+    - Our "want" token to stack is DAI/USDC
+    
+    TODO: wait to hear from yearn
+    - can a keeper pass an argument into tend()
+    - can a keeper make an external API call
+    */
 }
