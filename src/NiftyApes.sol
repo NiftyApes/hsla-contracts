@@ -710,7 +710,6 @@ contract NiftyApes is
 
         updateInterest(loanAuction);
 
-        // slashedDrawnAmount is incorrect here. Needs to resolve underlying and cAssetBalance
         loanAuction.amountDrawn += SafeCastUpgradeable.toUint128(slashedDrawAmount);
 
         uint256 cTokensBurnt = burnCErc20(loanAuction.asset, slashedDrawAmount);
