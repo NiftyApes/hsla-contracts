@@ -26,21 +26,33 @@ contract Strategy is BaseStrategy {
     using SafeMath for uint256;
 
     address public constant BAYC = 0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D;
+    address public constant XBAYC = 0xEA47B64e1BFCCb773A0420247C0aa0a3C1D2E5C5;
+    address public constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+    address public constant SUSHILP = 0xD829dE54877e0b66A2c3890b702fa5Df2245203E;
     uint256 public constant PRECISION = 1e18;
 
     uint256 public lastFloorPrice;
     uint256 public lastOfferDate;
     uint256 public collatRatio = 25 * 1e16; // 25%
-    uint256 public interestRate = 1e17; // 10%
+    uint256 public interestRatePerSecond = 1; // in basis points
 
     // TODO: - does this need to be stored in a mapping / array of outstanding offers?
     //       - do we need to store the basic offer values contract-wide or can they stay within the offer?
     ILendingStructs.Offer public offer;
+    // TODO: will need to store the offers outstanding ->  timestamp of offer, offer hash
+    // TODO: Needs to rescind offers --> how to make the rescinding appear profitable to a keeper
 
-    // TODO: how to track # of loans made over past period
+    // TODO: how to track loans made on a specific offer?
+    //  Right now, all event based
 
     // TODO: does this strat need to see other offers out there?
+    // No - new offer when floor price changes X%
 
+    // TODO: What would a "strategist" configure?
+    // Initial terms when strategy goes live, contructor arguments
+
+    // TODO: what is our "want" token? What token do we "want" to stack?
+    // DAI / USDC
 
     // https://github.com/yearn/yearn-vaults/blob/main/contracts/BaseStrategy.sol
     constructor(address _vault) public BaseStrategy(_vault) {
@@ -81,9 +93,15 @@ contract Strategy is BaseStrategy {
 
         // TODO: fetch floor price based on SLP
 
-        // TODO: fetch current loan offers 
+        // TODO: fetch current offers
+
+        // TODO: remove outstanding offers that are outdated / too high
 
         // TODO: Make offer based on outstanding loans?
+
+        // TODO: ask yearn
+        // - can a keeper pass an argument into tend()
+        // - can a keeper make an external API call
     }
 
     function liquidatePosition(uint256 _amountNeeded)
@@ -102,11 +120,16 @@ contract Strategy is BaseStrategy {
         } else {
             _liquidatedAmount = _amountNeeded;
         }
+
     }
 
     function liquidateAllPositions() internal override returns (uint256) {
         // TODO: Liquidate all positions and return the amount freed.
         return want.balanceOf(address(this));
+
+        // TODO: call withdrawERC20()
+        // TODO: remove outstanding offers
+        // NOTE: needs to be recalled when outstanding loans expire
     }
 
     // NOTE: Can override `tendTrigger` and `harvestTrigger` if necessary
@@ -126,9 +149,9 @@ contract Strategy is BaseStrategy {
         returns (address[] memory)
     {
         address[] memory protected = new address[](3);
-        protected[0] = 0xEA47B64e1BFCCb773A0420247C0aa0a3C1D2E5C5; // xBAYC erc20
-        protected[1] = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2; // WETH
-        protected[2] = 0xD829dE54877e0b66A2c3890b702fa5Df2245203E; // xBAYC/WETH SLP
+        protected[0] = XBAYC;
+        protected[1] = WETH;
+        protected[2] = SUSHILP;
         return protected;
     }
 
@@ -162,12 +185,15 @@ contract Strategy is BaseStrategy {
     //                                  NEW METHODS
     // ******************************************************************************
 
-    function calculateFloor() public view returns (uint256 floor) {
+    // NOTE: this isn't exactly the spot price NFTx offers but it's "good enough"
+    function calculateFloor() public view returns (uint256 floorInEth) {
         // Fetch current pool of sushi LP
+        // balance of xBAYC
+        uint256 wethBalance = IERC20(WETH).balanceOf(SUSHILP);
+        uint256 xbaycBalance = IERC20(XBAYC).balanceOf(SUSHILP);
+        floorInEth = PRECISION * wethBalance / xbaycBalance;
     }
 
-    function calculateInterestRate() public view returns (uint256 rate) {
-        // TODO: would we want to store interest per second and return interest over the duration?
-        // Or do we want to store interest rate for the total duration?
+    function calculateInterestRateAnnually() public view returns (uint256 rate) {
     }
 }
