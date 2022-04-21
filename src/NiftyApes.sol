@@ -255,17 +255,24 @@ contract NiftyApes is
             _hashTypedDataV4(
                 keccak256(
                     abi.encode(
-                        offer.creator,
-                        offer.nftContractAddress,
-                        offer.nftId,
-                        offer.asset,
-                        offer.amount,
-                        offer.interestRatePerSecond,
-                        offer.duration,
-                        offer.expiration,
-                        offer.fixedTerms,
-                        offer.floorTerm,
-                        offer.lenderOffer
+                        keccak256(
+                            "Offer(address creator,uint32 duration,uint32 expiration,bool fixedTerms,bool floorTerm,bool lenderOffer,address nftContractAddress,uint256 nftId,address asset,uint128 amount,uint96 interestRatePerSecond)"
+                        ),
+                        keccak256(
+                            abi.encode(
+                                offer.creator,
+                                offer.duration,
+                                offer.expiration,
+                                offer.fixedTerms,
+                                offer.floorTerm,
+                                offer.lenderOffer,
+                                offer.nftContractAddress,
+                                offer.nftId,
+                                offer.asset,
+                                offer.amount,
+                                offer.interestRatePerSecond
+                            )
+                        )
                     )
                 )
             );
