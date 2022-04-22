@@ -332,7 +332,7 @@ contract NiftyApes is
     }
 
     /// @inheritdoc ILending
-    function createOffer(Offer memory offer) external whenNotPaused {
+    function createOffer(Offer memory offer) external whenNotPaused returns (bytes32 offerHash){
         address cAsset = getCAsset(offer.asset);
 
         requireOfferCreator(offer.creator, msg.sender);
@@ -351,7 +351,7 @@ contract NiftyApes is
             offer.floorTerm
         );
 
-        bytes32 offerHash = getOfferHash(offer);
+        offerHash = getOfferHash(offer);
 
         offerBook[offerHash] = offer;
 
