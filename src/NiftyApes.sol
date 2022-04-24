@@ -1141,7 +1141,7 @@ contract NiftyApes is
         address from,
         address to
     ) internal {
-        IERC721Upgradeable(nftContractAddress).transferFrom(from, to, nftId);
+        IERC721Upgradeable(nftContractAddress).safeTransferFrom(from, to, nftId);
     }
 
     function sendValue(
