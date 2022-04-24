@@ -520,7 +520,7 @@ contract NiftyApes is
         uint256 nftId,
         bool floorTerm,
         bytes32 offerHash
-    ) external payable whenNotPaused nonReentrant {
+    ) external whenNotPaused nonReentrant {
         Offer memory offer = getOffer(nftContractAddress, nftId, offerHash, floorTerm);
 
         if (!offer.floorTerm) {
@@ -538,7 +538,7 @@ contract NiftyApes is
         Offer memory offer,
         bytes memory signature,
         uint256 nftId
-    ) external payable whenNotPaused nonReentrant {
+    ) external whenNotPaused nonReentrant {
         address signer = getOfferSigner(offer, signature);
 
         requireOfferCreator(offer, signer);
@@ -610,7 +610,7 @@ contract NiftyApes is
     }
 
     /// @inheritdoc ILending
-    function refinanceByLender(Offer memory offer) external payable whenNotPaused nonReentrant {
+    function refinanceByLender(Offer memory offer) external whenNotPaused nonReentrant {
         LoanAuction storage loanAuction = getLoanAuctionInternal(
             offer.nftContractAddress,
             offer.nftId

@@ -141,7 +141,7 @@ interface ILending is ILendingEvents, ILendingStructs {
         uint256 nftId,
         bool floorTerm,
         bytes32 offerHash
-    ) external payable;
+    ) external;
 
     /// @notice Refinance a loan against an off chain signed offer as the borrower.
     ///         The new offer has to cover all interest owed on the loan
@@ -152,12 +152,12 @@ interface ILending is ILendingEvents, ILendingStructs {
         Offer calldata offer,
         bytes memory signature,
         uint256 nftId
-    ) external payable;
+    ) external;
 
     /// @notice Refinance a loan against a new offer.
     ///         The new offer has to improve conditions for the borrower
     /// @param offer The details of the loan auction offer
-    function refinanceByLender(Offer calldata offer) external payable;
+    function refinanceByLender(Offer calldata offer) external;
 
     /// @notice Allows borrowers to draw a higher balance on their loan if it has been refiance with a higher maximum amount.
     ///         Drawing down value increases the maximum loan pay back amount and so is not automatically imposed on a refinance by lender, hence this function.
