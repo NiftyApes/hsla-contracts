@@ -78,6 +78,9 @@ contract NiftyApes is
     /// @inheritdoc ILending
     uint16 public refinancePremiumProtocolBps;
 
+    /// @notice A bool to prevent external eth from being received and locked in the contract
+    bool private _ethTransferable = false;
+
     /// @dev This empty reserved space is put in place to allow future versions to add new
     /// variables without shifting storage.
     uint256[500] private __gap;
@@ -221,6 +224,7 @@ contract NiftyApes is
     /// @inheritdoc ILiquidity
     function withdrawEth(uint256 amount) external whenNotPaused nonReentrant returns (uint256) {
         address cAsset = getCAsset(ETH_ADDRESS);
+
         uint256 cTokensBurnt = burnCErc20(ETH_ADDRESS, amount);
 
         withdrawCBalance(msg.sender, cAsset, cTokensBurnt);
@@ -952,6 +956,10 @@ contract NiftyApes is
         emit OfferSignatureUsed(offer.nftContractAddress, offer.nftId, offer, signature);
     }
 
+    function requireEthTransferable() internal view {
+        require(_ethTransferable, "eth not transferable");
+    }
+
     function requireOfferPresent(Offer memory offer) internal pure {
         require(offer.asset != address(0), "no offer");
     }
@@ -1177,7 +1185,9 @@ contract NiftyApes is
 
     // This is needed to receive ETH when calling withdrawing ETH from compund
     // solhint-disable-next-line no-empty-blocks
-    receive() external payable {}
+    receive() external payable {
+        require(_ethTransferable, "eth not transferable");
+    }
 
     function requireMaxCAssetBalance(address cAsset) internal view {
         uint256 maxCAssetBalance = maxBalanceByCAsset[cAsset];
@@ -1219,7 +1229,9 @@ contract NiftyApes is
         ICERC20 cToken = ICERC20(cAsset);
 
         uint256 cTokenBalanceBefore = cToken.balanceOf(address(this));
+        _ethTransferable = true;
         require(cToken.redeemUnderlying(amount) == 0, "redeemUnderlying failed");
+        _ethTransferable = false;
         uint256 cTokenBalanceAfter = cToken.balanceOf(address(this));
         return cTokenBalanceBefore - cTokenBalanceAfter;
     }
