@@ -23,12 +23,14 @@ contract Strategy is BaseStrategy {
     address public constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     address public constant SUSHILP = 0xD829dE54877e0b66A2c3890b702fa5Df2245203E;
     address public constant CDAI = 0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643;
+    address public constant DAI = 0xC2e9F25Be6257c210d7Adf0D4Cd6E3E881ba25f8;
+    address private override want = dai;
+    IChainlinkOracle public constant ORACLE = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
     uint256 public constant PRECISION = 1e18;
 
     uint256 public lastFloorPrice;
     uint256 public lastOfferDate;
-    uint256 public durationOfferOpen;
-
+    uint256 public expirationWindow = 7 days;
 
     uint256 public allowedDelta = 1e16; // 1% based on PRECISION
     uint256 public collatRatio = 25 * 1e16; // 25%
@@ -39,27 +41,48 @@ contract Strategy is BaseStrategy {
     mapping (uint256 => ILendingStructs.Offer) public offers;
     mapping (uint256 => bytes32) offerHashes;
 
+
+    function setExpirationWindow() external {
+        // if the new window is shorter - to remove active previous offers
+
+        // if new window is longer - no need to remove as we can always assume the most recent
+        // offer expiration is greater than an older offer
+    }
+
+
     // TODO: will need to store the offers outstanding ->  timestamp of offer, offer hash
     // TODO: Needs to rescind offers --> how to make the rescinding appear profitable to a keeper
+    function setOffer(ILendingStructs.Offer memory _offer) external {
+        // TODO: access control
 
 
+        // TODO: should we remove all outstanding offers?
+        // what if a user has an offer with 100 day expiration, then switches to 10 day expiration?
+        //      - How would we remove those offers 
+        _setOffer(_offer);
+    }
+    function _setOffer(ILendingStructs.Offer memory _offer) private {
+        offer.duration = _offer.duration;
+        offer.fixedTerms = _offer.fixedTerms;
+        offer.floorTerms = _offer.floorTerms;
+        offer.lenderOffer = _offer.lenderOffer;
+        offer.nftContractAddress = _offer.nftContractAddress;
+        offer.asset = _offer.asset;
+        offer.interestRatePerSecond = _offer.interestRatePerSecond;
+    }
 
     // https://github.com/yearn/yearn-vaults/blob/main/contracts/BaseStrategy.sol
-    constructor(address _vault) public BaseStrategy(_vault) {
+    constructor(
+        address _vault,
+        ILendingStructs.Offer memory _offer
+    ) public BaseStrategy(_vault) {
         // You can set these parameters on deployment to whatever you want
         // maxReportDelay = 6300;  // The maximum number of seconds between harvest calls
         // profitFactor = 100; // The minimum multiple that `callCost` must be above the credit/profit to be "justifiable";
         // debtThreshold = 0; // Use this to adjust the threshold at which running a debt causes harvest trigger
         
         offer.creator = address(this);
-        offer.duration = 
-        offer.expiration = 
-        offer.fixedTerms = true;
-        offer.floorTerm = true;
-        offer.lenderOffer = true;
-        offer.nftContractAddress = BAYC;
-        offer.asset = CDAI; // TODO: is this correct
-        offer.interestRatePerSecond = 1;
+        _setOffer(_offer);
     }
 
     // ******** OVERRIDE THESE METHODS FROM BASE CONTRACT ************
@@ -91,31 +114,40 @@ contract Strategy is BaseStrategy {
         // TODO: Do something to invest excess `want` tokens (from the Vault) into your positions
         // NOTE: Try to adjust positions so that `_debtOutstanding` can be freed up on *next* harvest (not immediately)
 
-        // TODO: fetch floor price based on SLP
+        bytes32 offerHash;
         uint128 floorPrice = calculateFloor();
-
-
-        // Remove outstanding offers that too high / have expired
-        if (floorPrice < lastFloorPrice) {
         uint128 lastAmountLoaned = offers[numOffers].amount;
         uint32 expiration = offers[numOffers].expiration;
 
-            while (
-                (lastAmountLoaned > floorPrice || uint128(block.timestamp) > expiration)
-            ) {
-                // Remove offer - TODO: is this needed or can it just stay there?
-                NIFTYAPES.doRemoveOffer(BAYC, 0, offerHashes[numOffers], true);
-
-                delete offers[numOffers--];
-                lastAmountLoaned = offers[numOffers].amount;
-                expiration = offers[numOffers].expiration;
-            }
+        // Remove the outstanding offer if it hasn't expired
+        // TODO: connect to todo in `setOffer()`
+        while (
+            (lastAmountLoaned > floorPrice || block.timestamp < expiration)
+        ) {
+            NIFTYAPES.doRemoveOffer(BAYC, 0, offerHashes[numOffers], true);
+            delete offers[numOffers--];
+            lastAmountLoaned = offers[numOffers].amount;
+            expiration = offers[numOffers].expiration;
         }
 
-        // TODO: set offer values
+        // Determine if there's a large enough difference to trigger a new offer
+        uint256 delta;
+        floorPrice > lastFloorPrice
+            ? delta = PRECISION * (floorPrice - lastFloorPrice) / floorPrice
+            : delta = PRECISION * (lastFloorPrice - floorPrice) / floorPrice;
 
-        lastFloorPrice = floorPrice;
-        lastOfferDate = block.timestamp;
+        // Make offer if differential met OR last offer is expired
+        if (delta > allowedDelta || block.timestamp > offer.expiration) {
+            offer.expiration = block.timestamp + expirationWindow;
+            offer.amount = floorPrice * collatRatio / PRECISION;
+            offerHash = NIFTYAPES.createOffer(offer); // TODO: can this return the offer hash?
+
+            offers[++numOffers];
+            offerHashes[numOffers] = offerHash;
+
+            lastFloorPrice = floorPrice;
+            lastOfferDate = block.timestamp;
+        }
     }
 
     function liquidatePosition(uint256 _amountNeeded)
@@ -138,19 +170,25 @@ contract Strategy is BaseStrategy {
         }
     }
 
-    function liquidateAllPositions() internal override returns (uint256) {
-        // TODO: Liquidate all positions and return the amount freed.
-        return want.balanceOf(address(this));
+    function liquidateAllPositions() internal override returns (uint256 wantBalance) {
 
-        // TODO: call withdrawERC20()
+        uint256 cdaiBalance = NIFTYAPES.getCAssetBalance(address(this), CDAI);
+        // assume current implementation will add this func
+        uint256 daiBalance = NIFTYAPES.cAssetAmountToAssetAmount(CDAI, cdaiBalance);
 
+        NIFTYAPES.withdrawERC20(want, daiBalance)
+        wantBalance = want.balanceOf(address(this));
 
         // TODO: remove outstanding offers
         while (numOffers > 0) {
             delete offers[numOffers--];
         }
 
-        // NOTE: needs to be recalled when outstanding loans expire
+        // NOTE: needs to be re-called when outstanding loans expire
+        
+
+        // REQUIRED: Liquidate all positions and return the amount freed.
+        // return want.balanceOf(address(this));
     }
 
     // NOTE: Can override `tendTrigger` and `harvestTrigger` if necessary
@@ -207,23 +245,24 @@ contract Strategy is BaseStrategy {
     // ******************************************************************************
 
     // NOTE: this isn't exactly the spot price NFTx offers but it's "good enough"
-    function calculateFloor() public view returns (uint256 floorInEth) {
+    // TODO 1: manipulating sushi price?
+    function calculateFloor() public view returns (uint256 floor) {
         // Fetch current pool of sushi LP
         // balance of xBAYC
         uint256 wethBalance = IERC20(WETH).balanceOf(SUSHILP);
         uint256 xbaycBalance = IERC20(XBAYC).balanceOf(SUSHILP);
-        floorInEth = PRECISION * wethBalance / xbaycBalance;
+        uint256 floorInEth = PRECISION * wethBalance / xbaycBalance;
+        uint256 wthPrice = ORACLE.latestAnswer() / 1e8; // to get price in dollars
+        floor = floorInEth * ethPrice;
     }
 
-
-
-    function calculateInterestRateAnnually() public view returns (uint256 rate) {
-    }
 
     /*
 
-    TODO: how to track loans made on a specific offer? - right now it's event based
-    
+    // TODO: flash loans - can they be executed in a block, or only in a tx?    
+        - would a flash loan be able to impact the floor price when the keeper calls to refresh the offer?
+        - (?) put a price movement tolerance to see if price is stable -> if price is much different
+        - on this block vs. last - TWAP
 
     - A strategiest would configure:
         - Initial terms when strategy goes live
@@ -231,8 +270,7 @@ contract Strategy is BaseStrategy {
 
     - Our "want" token to stack is DAI/USDC
     
-    TODO: wait to hear from yearn
-    - can a keeper pass an argument into tend()
+    - can a keeper pass an argument into tend() - no
     - can a keeper make an external API call
     */
 }
