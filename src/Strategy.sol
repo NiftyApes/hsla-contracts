@@ -37,6 +37,9 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
     uint256 public collatRatio = 25 * 1e16; // 25%
     uint96 public interestRatePerSecond = 1; // in basis points
 
+    uint256 public loansInLastMonth;
+    uint256 public gasCostToCreateAndRemoveOffer;
+
     ILendingStructs.Offer public offer;
     bytes32 public offerHash;
 
@@ -52,6 +55,7 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
 
 
     function setOffer(ILendingStructs.Offer memory _offer) external onlyOwner {
+        removeOffer();
         _setOffer(_offer);
     }
 
@@ -87,7 +91,7 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
 
     function estimatedTotalAssets() public view override returns (uint256) {
         // TODO: Build a more accurate estimate using the value of all positions in terms of `want`
-        return want.balanceOf(address(this));
+        return want.balanceOf(address(this)) + calculateDaiBalance();
     }
 
     function prepareReturn(uint256 _debtOutstanding)
@@ -126,6 +130,8 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
         // NOTE: Maintain invariant `want.balanceOf(this) >= _liquidatedAmount`
         // NOTE: Maintain invariant `_liquidatedAmount + _loss <= _amountNeeded`
 
+        removeOffer();
+
         uint256 totalAssets = want.balanceOf(address(this));
         if (_amountNeeded > totalAssets) {
             _liquidatedAmount = totalAssets;
@@ -137,14 +143,17 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
         }
     }
 
+    /**
+     * Liquidate everything and returns the amount that got freed.
+     * This function is used during emergency exit instead of `prepareReturn()` to
+     * liquidate all of the Strategy's positions back to the Vault.
+     */
     function liquidateAllPositions() internal override returns (uint256 wantBalance) {
 
-        uint256 cdaiBalance = NIFTYAPES.getCAssetBalance(address(this), CDAI);
-        // assume current implementation will add this func
-        uint256 daiBalance = NIFTYAPES.cAssetAmountToAssetAmount(CDAI, cdaiBalance);
-
-        NIFTYAPES.withdrawERC20(want, daiBalance)
+        NIFTYAPES.withdrawERC20(want, calculateDaiBalance());
         wantBalance = want.balanceOf(address(this));
+
+        removeOffer();
 
         // NOTE: needs to be re-called when outstanding loans expire
         
@@ -197,14 +206,40 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
         override
         returns (uint256)
     {
-        // TODO create an accurate price oracle
-        return _amtInWei;
+        // Rough - get price of ETH and convert to wei
+        _amtInWei = ORACLE.latestAnswer() * 1e10;
     }
 
 
     // ******************************************************************************
     //                                  NEW METHODS
     // ******************************************************************************
+
+
+    function calcProfitability() public view returns (uint256) {
+        uint256 durationInPct = PRECISION * offer.duration / 30 days;
+        uint256 revenuePotential = offer.interestRatePerSecond * offer.duration * loansInLastMonth;
+        uint256 grossPotential = revenuePotential - gasCost();
+        // uint256 apy = offer.interestRatePerSecond
+    }
+
+    function gasCost() public {
+        // cost to create and remove offers
+    }
+
+    function setLoansInLastMonth(uint256 amount) public onlyOwner {
+        loansInLastMonth = amount;
+    }
+
+    // iterable mapping of structs
+    // contract address => structHash => index => bool
+    mapping(address => mapping(bytes32 => mapping(uint256 => bool))) public loans;
+
+    struct OfferInfo {
+        bytes32 offerHash;
+        uint256 timestamp;
+    }
+
 
     // NOTE: this isn't exactly the spot price NFTx offers but it's "good enough"
     function calculateFloorPrice() public view returns (uint256 floorPrice) {
@@ -213,7 +248,7 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
         uint256 wethBalance = IERC20(WETH).balanceOf(SUSHILP);
         uint256 xbaycBalance = IERC20(XBAYC).balanceOf(SUSHILP);
         uint256 floorInEth = PRECISION * wethBalance / xbaycBalance;
-        uint256 wthPrice = ORACLE.latestAnswer() / 1e8; // to get price in dollars
+        uint256 ethPrice = ORACLE.latestAnswer() / 1e8; // to get price in dollars
         floorPrice = floorInEth * ethPrice;
     }
 
@@ -252,6 +287,19 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
         lastOfferDate = block.timestamp;
     }
 
+    // Take the CDAI balance of this contract within NIFTY and convert to DAI
+    function calculateDaiBalance() public returns (daiBalance) {
+        uint256 cdaiBalance = NIFTYAPES.getCAssetBalance(address(this), CDAI);
+        // assume current implementation will add this func
+        daiBalance = NIFTYAPES.cAssetAmountToAssetAmount(CDAI, cdaiBalance);
+    }
+
+    // TODO: to be CDAI?
+    function freeAmount(uint256 daiAmount) internal returns (uint256 freedAmount) {
+        // TODO: withdraw amount of balance to strategy
+    }
+
+
 
     /*
 
@@ -268,5 +316,6 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
     
     - can a keeper pass an argument into tend() - no
     - can a keeper make an external API call
+    - can a k3pr handle an event
     */
 }
