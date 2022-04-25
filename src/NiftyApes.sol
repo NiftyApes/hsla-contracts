@@ -1254,4 +1254,6 @@ contract NiftyApes is
         requireCAssetBalance(account, cAsset, cTokenAmount);
         _balanceByAccountByAsset[account][cAsset].cAssetBalance -= cTokenAmount;
     }
+
+    function renounceOwnership() public override onlyOwner {}
 }
