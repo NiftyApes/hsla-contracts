@@ -6,6 +6,7 @@ pragma experimental ABIEncoderV2;
 
 // These are the core Yearn libraries
 import {BaseStrategy, StrategyParams} from "@yearnvaults/contracts/BaseStrategy.sol";
+import "@openzeppelin/contracts/access/OwnableUpgradeable.sol";
 
 import {Address} from "@openzeppelin/contracts/utils/AddressUpgradeable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20Upgradeable.sol";
@@ -13,7 +14,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20Upgr
 
 import "./interfaces/niftyapes/INiftyApes.sol";
 
-contract Strategy is BaseStrategy {
+contract Strategy is BaseStrategy, OwnableUpgradeable {
     using SafeERC20 for IERC20;
     using Address for address;
 
@@ -24,7 +25,7 @@ contract Strategy is BaseStrategy {
     address public constant SUSHILP = 0xD829dE54877e0b66A2c3890b702fa5Df2245203E;
     address public constant CDAI = 0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643;
     address public constant DAI = 0xC2e9F25Be6257c210d7Adf0D4Cd6E3E881ba25f8;
-    address private override want = dai;
+    address private override want = DAI; // TODO- correct?
     IChainlinkOracle public constant ORACLE = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
     uint256 public constant PRECISION = 1e18;
 
@@ -36,31 +37,24 @@ contract Strategy is BaseStrategy {
     uint256 public collatRatio = 25 * 1e16; // 25%
     uint96 public interestRatePerSecond = 1; // in basis points
 
-    uint256 numOffers;
     ILendingStructs.Offer public offer;
-    mapping (uint256 => ILendingStructs.Offer) public offers;
-    mapping (uint256 => bytes32) offerHashes;
+    bytes32 public offerHash;
 
-
-    function setExpirationWindow() external {
+    function setExpirationWindow(uint256 _expirationWindow) external {
         // if the new window is shorter - to remove active previous offers
-
         // if new window is longer - no need to remove as we can always assume the most recent
         // offer expiration is greater than an older offer
+        // NOTE: ^ is irrelevant w/ only one offer
+        require(_expirationWindow != expirationWindow, "Same window");
+        require(_expirationWindow > 1 days, "Too short of a window");
+        expirationWindow = _expirationWindow;
     }
 
 
-    // TODO: will need to store the offers outstanding ->  timestamp of offer, offer hash
-    // TODO: Needs to rescind offers --> how to make the rescinding appear profitable to a keeper
-    function setOffer(ILendingStructs.Offer memory _offer) external {
-        // TODO: access control
-
-
-        // TODO: should we remove all outstanding offers?
-        // what if a user has an offer with 100 day expiration, then switches to 10 day expiration?
-        //      - How would we remove those offers 
+    function setOffer(ILendingStructs.Offer memory _offer) external onlyOwner {
         _setOffer(_offer);
     }
+
     function _setOffer(ILendingStructs.Offer memory _offer) private {
         offer.duration = _offer.duration;
         offer.fixedTerms = _offer.fixedTerms;
@@ -114,39 +108,12 @@ contract Strategy is BaseStrategy {
         // TODO: Do something to invest excess `want` tokens (from the Vault) into your positions
         // NOTE: Try to adjust positions so that `_debtOutstanding` can be freed up on *next* harvest (not immediately)
 
-        bytes32 offerHash;
-        uint128 floorPrice = calculateFloor();
-        uint128 lastAmountLoaned = offers[numOffers].amount;
-        uint32 expiration = offers[numOffers].expiration;
+        uint128 floorPrice = calculateFloorPrice();
+        uint256 delta = calculateDelta(lastFloorPrice, floorPrice);
 
-        // Remove the outstanding offer if it hasn't expired
-        // TODO: connect to todo in `setOffer()`
-        while (
-            (lastAmountLoaned > floorPrice || block.timestamp < expiration)
-        ) {
-            NIFTYAPES.doRemoveOffer(BAYC, 0, offerHashes[numOffers], true);
-            delete offers[numOffers--];
-            lastAmountLoaned = offers[numOffers].amount;
-            expiration = offers[numOffers].expiration;
-        }
-
-        // Determine if there's a large enough difference to trigger a new offer
-        uint256 delta;
-        floorPrice > lastFloorPrice
-            ? delta = PRECISION * (floorPrice - lastFloorPrice) / floorPrice
-            : delta = PRECISION * (lastFloorPrice - floorPrice) / floorPrice;
-
-        // Make offer if differential met OR last offer is expired
-        if (delta > allowedDelta || block.timestamp > offer.expiration) {
-            offer.expiration = block.timestamp + expirationWindow;
-            offer.amount = floorPrice * collatRatio / PRECISION;
-            offerHash = NIFTYAPES.createOffer(offer); // TODO: can this return the offer hash?
-
-            offers[++numOffers];
-            offerHashes[numOffers] = offerHash;
-
-            lastFloorPrice = floorPrice;
-            lastOfferDate = block.timestamp;
+        if (canOffer(delta)) {
+            removeOffer();
+            createOffer(delta, floorPrice);
         }
     }
 
@@ -178,11 +145,6 @@ contract Strategy is BaseStrategy {
 
         NIFTYAPES.withdrawERC20(want, daiBalance)
         wantBalance = want.balanceOf(address(this));
-
-        // TODO: remove outstanding offers
-        while (numOffers > 0) {
-            delete offers[numOffers--];
-        }
 
         // NOTE: needs to be re-called when outstanding loans expire
         
@@ -245,15 +207,49 @@ contract Strategy is BaseStrategy {
     // ******************************************************************************
 
     // NOTE: this isn't exactly the spot price NFTx offers but it's "good enough"
-    // TODO 1: manipulating sushi price?
-    function calculateFloor() public view returns (uint256 floor) {
+    function calculateFloorPrice() public view returns (uint256 floorPrice) {
         // Fetch current pool of sushi LP
         // balance of xBAYC
         uint256 wethBalance = IERC20(WETH).balanceOf(SUSHILP);
         uint256 xbaycBalance = IERC20(XBAYC).balanceOf(SUSHILP);
         uint256 floorInEth = PRECISION * wethBalance / xbaycBalance;
         uint256 wthPrice = ORACLE.latestAnswer() / 1e8; // to get price in dollars
-        floor = floorInEth * ethPrice;
+        floorPrice = floorInEth * ethPrice;
+    }
+
+    function calculateDelta(uint256 oldPrice, uint256 newPrice) private returns (uint256) {
+        return newPrice > oldPrice 
+            ? PRECISION * (newPrice - oldPrice) / oldPrice
+            : PRECISION * (oldPrice - newPrice) / oldPrice;
+    }
+
+    // Make offer if
+    //  - price delta is met
+    //  - last offer expired, in which we'd need to renew our old offer
+    // Make offer if differential met OR last offer is expired
+    function canOffer(uint256 delta) public returns (bool) {
+        return delta > allowedDelta || block.timestamp > offer.expiration;
+    }
+
+    function removeOffer() private {
+        // Remove the outstanding offer if it's still live, as we are about
+        // to make a new offer
+        if (offer.expiration > block.timestamp) {
+            NIFTYAPES.doRemoveOffer(BAYC, 0, offerHash, true);
+        }
+    }
+
+    function createOffer(
+        uint256 delta,
+        uint256 floorPrice
+    ) private {
+        offer.expiration = block.timestamp + expirationWindow;
+        offer.amount = floorPrice * collatRatio / PRECISION;
+        
+        offerHash = NIFTYAPES.createOffer(offer); // TODO: have this return offer hash
+
+        lastFloorPrice = floorPrice;
+        lastOfferDate = block.timestamp;
     }
 
 
