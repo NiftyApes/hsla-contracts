@@ -70,7 +70,7 @@ contract NiftyApes is
     mapping(bytes => bool) private _cancelledOrFinalized;
 
     /// @inheritdoc ILending
-    uint96 public loanDrawFeeProtocolPerSecond;
+    uint96 public protocolFeeBps;
 
     /// @inheritdoc ILending
     uint16 public refinancePremiumLenderBps;
@@ -88,7 +88,7 @@ contract NiftyApes is
     function initialize() public initializer {
         EIP712Upgradeable.__EIP712_init("NiftyApes", "0.0.1");
 
-        loanDrawFeeProtocolPerSecond = 50;
+        protocolFeeBps = 50;
         refinancePremiumLenderBps = 50;
         refinancePremiumProtocolBps = 50;
 
@@ -917,19 +917,19 @@ contract NiftyApes is
         uint256 amountXTime = timePassed * loanAuction.amountDrawn;
 
         lenderInterest = (amountXTime * loanAuction.interestRatePerSecond) / 1 ether;
-        protocolInterest = (amountXTime * loanAuction.loanDrawFeeProtocolPerSecond) / 1 ether;
+        protocolInterest = (amountXTime * loanAuction.protocolFeePerSecond) / 1 ether;
     }
 
     /// @inheritdoc INiftyApesAdmin
-    function updateLoanDrawProtocolFeePerSecond(uint96 newLoanDrawFeeProtocolPerSecond)
+    function updateProtocolFeeBps(uint96 newProtocolFeeBps)
         external
         onlyOwner
     {
         emit LoanDrawProtocolFeeUpdated(
-            loanDrawFeeProtocolPerSecond,
-            newLoanDrawFeeProtocolPerSecond
+            protocolFeeBps,
+            newProtocolFeeBps
         );
-        loanDrawFeeProtocolPerSecond = newLoanDrawFeeProtocolPerSecond;
+        protocolFeeBps = newProtocolFeeBps;
     }
 
     /// @inheritdoc INiftyApesAdmin
@@ -1132,7 +1132,7 @@ contract NiftyApes is
         loanAuction.lastUpdatedTimestamp = currentTimestamp();
         loanAuction.amountDrawn = offer.amount;
         loanAuction.fixedTerms = offer.fixedTerms;
-        loanAuction.loanDrawFeeProtocolPerSecond = loanDrawFeeProtocolPerSecond;
+        loanAuction.protocolFeePerSecond = protocolFeeBps * SafeCastUpgradeable.toUint96(offer.amount) / SafeCastUpgradeable.toUint96(offer.duration);
     }
 
     function transferNft(
