@@ -31,7 +31,7 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
 
     uint256 public lastFloorPrice;
     uint256 public lastOfferDate;
-    uint256 public expirationWindow = 7 days;
+    uint32 public expirationWindow = 7 days;
 
     uint256 public allowedDelta = 1e16; // 1% based on PRECISION
     uint256 public collatRatio = 25 * 1e16; // 25%
@@ -43,7 +43,11 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
     ILendingStructs.Offer public offer;
     bytes32 public offerHash;
 
-    function setExpirationWindow(uint256 _expirationWindow) external {
+
+    uint256 offersInLastMonth; // TODO
+    uint256 removesInLastMonth; // TODO 
+
+    function setExpirationWindow(uint32 _expirationWindow) external {
         // if the new window is shorter - to remove active previous offers
         // if new window is longer - no need to remove as we can always assume the most recent
         // offer expiration is greater than an older offer
@@ -62,7 +66,7 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
     function _setOffer(ILendingStructs.Offer memory _offer) private {
         offer.duration = _offer.duration;
         offer.fixedTerms = _offer.fixedTerms;
-        offer.floorTerms = _offer.floorTerms;
+        offer.floorTerm = _offer.floorTerm;
         offer.lenderOffer = _offer.lenderOffer;
         offer.nftContractAddress = _offer.nftContractAddress;
         offer.asset = _offer.asset;
@@ -73,12 +77,12 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
     constructor(
         address _vault,
         ILendingStructs.Offer memory _offer
-    ) public BaseStrategy(_vault) {
+    ) BaseStrategy(_vault) {
         // You can set these parameters on deployment to whatever you want
         // maxReportDelay = 6300;  // The maximum number of seconds between harvest calls
         // profitFactor = 100; // The minimum multiple that `callCost` must be above the credit/profit to be "justifiable";
         // debtThreshold = 0; // Use this to adjust the threshold at which running a debt causes harvest trigger
-        want = DAI;
+        want = IERC20Upgradeable(DAI);
         offer.creator = address(this);
         _setOffer(_offer);
     }
@@ -112,12 +116,12 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
         // TODO: Do something to invest excess `want` tokens (from the Vault) into your positions
         // NOTE: Try to adjust positions so that `_debtOutstanding` can be freed up on *next* harvest (not immediately)
 
-        uint128 floorPrice = calculateFloorPrice();
+        uint256 floorPrice = calculateFloorPrice();
         uint256 delta = calculateDelta(lastFloorPrice, floorPrice);
 
         if (canOffer(delta)) {
             removeOffer();
-            createOffer(delta, floorPrice);
+            createOffer(floorPrice);
         }
     }
 
@@ -150,7 +154,7 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
      */
     function liquidateAllPositions() internal override returns (uint256 wantBalance) {
 
-        NIFTYAPES.withdrawERC20(want, calculateDaiBalance());
+        NIFTYAPES.withdrawErc20(address(want), calculateDaiBalance());
         wantBalance = want.balanceOf(address(this));
 
         removeOffer();
@@ -207,7 +211,7 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
         returns (uint256)
     {
         // Rough - get price of ETH and convert to wei
-        _amtInWei = ORACLE.latestAnswer() * 1e10;
+        _amtInWei = uint256(ORACLE.latestAnswer()) * 1e10;
     }
 
 
@@ -217,7 +221,7 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
 
     // TODO: offersInLastMonth, removesInLastMonth
     function calcMonthlyRevenue() external view returns (int256 revenue) {
-        return calculateMonthlyProfit() - calculateGasPerMonth();
+        return int256(calculateMonthlyProfit()) - int256(calculateGasPerMonth());
     }
 
     // TODO: loansInLastMonth
@@ -227,21 +231,22 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
         monthlyProfit = profitPotential * durationInDays / 30;
     }
 
-    function isProfitable() public returns (bool) {
+    function isProfitable() public view returns (bool) {
         return calculateMonthlyProfit() > calculateGasPerMonth();
     }
 
-    function calculateGasPerMonth() public returns (uint256) {
-        uint256 offersInLastMonth = 0;
-        uint256 removesInLastMonth = 0;
+    function calculateGasPerMonth() public view returns (uint256) {
+        // TODO: these vars
         return offersInLastMonth * gasCostCreateOffer() + removesInLastMonth * gasCostRemoveOffer();
     }
 
-    function gasCostCreateOffer() public {
+    function gasCostCreateOffer() public view returns (uint256) {
         // TODO: cost to create an offer
+        return 0;
     }
-    function gasCostRemoveOffer() public {
+    function gasCostRemoveOffer() public view returns (uint256) {
         // TODO: cost to remove an offer
+        return 1;
     }
 
 
@@ -266,11 +271,11 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
         uint256 wethBalance = IERC20Upgradeable(WETH).balanceOf(SUSHILP);
         uint256 xbaycBalance = IERC20Upgradeable(XBAYC).balanceOf(SUSHILP);
         uint256 floorInEth = PRECISION * wethBalance / xbaycBalance;
-        uint256 ethPrice = ORACLE.latestAnswer() / 1e8; // to get price in dollars
+        uint256 ethPrice = uint256(ORACLE.latestAnswer()) / 1e8; // to get price in dollars
         floorPrice = floorInEth * ethPrice;
     }
 
-    function calculateDelta(uint256 oldPrice, uint256 newPrice) private returns (uint256) {
+    function calculateDelta(uint256 oldPrice, uint256 newPrice) private view returns (uint256) {
         return newPrice > oldPrice 
             ? PRECISION * (newPrice - oldPrice) / oldPrice
             : PRECISION * (oldPrice - newPrice) / oldPrice;
@@ -280,7 +285,7 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
     //  - price delta is met
     //  - last offer expired, in which we'd need to renew our old offer
     // Make offer if differential met OR last offer is expired
-    function canOffer(uint256 delta) public returns (bool) {
+    function canOffer(uint256 delta) public view returns (bool) {
         return delta > allowedDelta || block.timestamp > offer.expiration;
     }
 
@@ -288,28 +293,29 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
         // Remove the outstanding offer if it's still live, as we are about
         // to make a new offer
         if (offer.expiration > block.timestamp) {
-            NIFTYAPES.doRemoveOffer(BAYC, 0, offerHash, true);
+            NIFTYAPES.removeOffer(BAYC, 0, offerHash, true);
         }
     }
 
     function createOffer(
-        uint256 delta,
         uint256 floorPrice
     ) private {
-        offer.expiration = block.timestamp + expirationWindow;
-        offer.amount = floorPrice * collatRatio / PRECISION;
+        offer.expiration = uint32(block.timestamp) + expirationWindow;
+        offer.amount = uint128(floorPrice * collatRatio / PRECISION);
         
-        offerHash = NIFTYAPES.createOffer(offer); // TODO: have this return offer hash
+        NIFTYAPES.createOffer(offer); // TODO: have this return offer hash
+        offerHash = "";
 
         lastFloorPrice = floorPrice;
         lastOfferDate = block.timestamp;
     }
 
     // Take the CDAI balance of this contract within NIFTY and convert to DAI
-    function calculateDaiBalance() public returns (uint256 daiBalance) {
+    function calculateDaiBalance() public view returns (uint256 daiBalance) {
         uint256 cdaiBalance = NIFTYAPES.getCAssetBalance(address(this), CDAI);
-        // assume current implementation will add this func
-        daiBalance = NIFTYAPES.cAssetAmountToAssetAmount(CDAI, cdaiBalance);
+        // assume current implementation will add this func- TODO
+        // daiBalance = NIFTYAPES.cAssetAmountToAssetAmount(CDAI, cdaiBalance);
+        daiBalance = 0;
     }
 
     // TODO: to be CDAI?
