@@ -37,8 +37,10 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
     uint256 public collatRatio = 25 * 1e16; // 25%
     uint96 public interestRatePerSecond = 1; // in basis points
 
-    uint256 public loansInLastMonth;
-    uint256 public gasCostToCreateAndRemoveOffer;
+    // strategist should update the profit potential in order to keep the strategy up to date with the market
+    uint256 public thirtyDayProfitPotential;
+    uint256 public offersInLastMonth;
+    uint256 public removesInLastMonth;
 
     ILendingStructs.Offer public offer;
     bytes32 public offerHash;
@@ -216,19 +218,36 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
     // ******************************************************************************
 
 
+    //  this could instead be supplied as setThirtyDayProfitPotential
     function calcProfitability() public view returns (uint256) {
-        uint256 durationInPct = PRECISION * offer.duration / 30 days;
-        uint256 revenuePotential = offer.interestRatePerSecond * offer.duration * loansInLastMonth;
-        uint256 grossPotential = revenuePotential - gasCost();
-        // uint256 apy = offer.interestRatePerSecond
+        return thirtyDayProfitPotential > calculateGasPerMonth();
     }
 
     function gasCost() public {
         // cost to create and remove offers
     }
 
-    function setLoansInLastMonth(uint256 amount) public onlyOwner {
-        loansInLastMonth = amount;
+    // thirtyDayProfitPotential should be calculated by finding the number of new loans in the last 30 days
+    // And multiplying the interestRatePerSecond by the duration of the loan
+    function setThirtyDayProfitPotential(uint256 amount) public onlyAuthorized {
+        thirtyDayProfitPotential = amount;
+    }
+
+    function setThirtyDayStrategyOffers(uint256 createAmount, uint256 removeAmount) public onlyAuthorized {
+        offersInLastMonth = createAmount;
+        removesInLastMonth = removeAmount;
+
+    }
+
+    function calculateGasPerMonth() public returns (uint256) {
+        return offersInLastMonth * gasCostCreateOffer() + removesInLastMonth * gasCostRemoveOffer();
+    }
+
+    function gasCostCreateOffer() public {
+        // TODO: cost to create an offer
+    }
+    function gasCostRemoveOffer() public {
+        // TODO: cost to remove an offer
     }
 
     // iterable mapping of structs
