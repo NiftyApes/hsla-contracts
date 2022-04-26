@@ -8,25 +8,25 @@ pragma experimental ABIEncoderV2;
 import {BaseStrategy, StrategyParams} from "@yearnvaults/contracts/BaseStrategy.sol";
 import "@openzeppelin/contracts/access/OwnableUpgradeable.sol";
 
-import {Address} from "@openzeppelin/contracts/utils/AddressUpgradeable.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20Upgradeable.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import {AddressUpgradeable} from "@openzeppelin/contracts/utils/AddressUpgradeable.sol";
+import {IERC20Upgradeable} from "@openzeppelin/contracts/token/ERC20/IERC20Upgradeable.sol";
+import {SafeERC20Upgradeable} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
 import "./interfaces/niftyapes/INiftyApes.sol";
+import "./interfaces/chainlink/IChainlinkOracle.sol";
 
 contract Strategy is BaseStrategy, OwnableUpgradeable {
-    using SafeERC20 for IERC20;
-    using Address for address;
+    using SafeERC20Upgradeable for IERC20Upgradeable;
+    using AddressUpgradeable for address;
 
-    INiftyApes public constant NIFTYAPES = address(0);
+    INiftyApes public constant NIFTYAPES = INiftyApes(address(0));
     address public constant BAYC = 0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D;
     address public constant XBAYC = 0xEA47B64e1BFCCb773A0420247C0aa0a3C1D2E5C5;
     address public constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     address public constant SUSHILP = 0xD829dE54877e0b66A2c3890b702fa5Df2245203E;
     address public constant CDAI = 0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643;
     address public constant DAI = 0xC2e9F25Be6257c210d7Adf0D4Cd6E3E881ba25f8;
-    address private override want = DAI; // TODO- correct?
-    IChainlinkOracle public constant ORACLE = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
+    IChainlinkOracle public constant ORACLE = IChainlinkOracle(0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419);
     uint256 public constant PRECISION = 1e18;
 
     uint256 public lastFloorPrice;
@@ -78,7 +78,7 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
         // maxReportDelay = 6300;  // The maximum number of seconds between harvest calls
         // profitFactor = 100; // The minimum multiple that `callCost` must be above the credit/profit to be "justifiable";
         // debtThreshold = 0; // Use this to adjust the threshold at which running a debt causes harvest trigger
-        
+        want = DAI;
         offer.creator = address(this);
         _setOffer(_offer);
     }
@@ -215,17 +215,35 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
     //                                  NEW METHODS
     // ******************************************************************************
 
-
-    function calcProfitability() public view returns (uint256) {
-        uint256 durationInPct = PRECISION * offer.duration / 30 days;
-        uint256 revenuePotential = offer.interestRatePerSecond * offer.duration * loansInLastMonth;
-        uint256 grossPotential = revenuePotential - gasCost();
-        // uint256 apy = offer.interestRatePerSecond
+    // TODO: offersInLastMonth, removesInLastMonth
+    function calcMonthlyRevenue() external view returns (int256 revenue) {
+        return calculateMonthlyProfit() - calculateGasPerMonth();
     }
 
-    function gasCost() public {
-        // cost to create and remove offers
+    // TODO: loansInLastMonth
+    function calculateMonthlyProfit() public view returns (uint256 monthlyProfit) {
+        uint256 durationInDays = offer.duration / 1 days;
+        uint256 profitPotential = offer.interestRatePerSecond * offer.duration * loansInLastMonth;
+        monthlyProfit = profitPotential * durationInDays / 30;
     }
+
+    function isProfitable() public returns (bool) {
+        return calculateMonthlyProfit() > calculateGasPerMonth();
+    }
+
+    function calculateGasPerMonth() public returns (uint256) {
+        uint256 offersInLastMonth = 0;
+        uint256 removesInLastMonth = 0;
+        return offersInLastMonth * gasCostCreateOffer() + removesInLastMonth * gasCostRemoveOffer();
+    }
+
+    function gasCostCreateOffer() public {
+        // TODO: cost to create an offer
+    }
+    function gasCostRemoveOffer() public {
+        // TODO: cost to remove an offer
+    }
+
 
     function setLoansInLastMonth(uint256 amount) public onlyOwner {
         loansInLastMonth = amount;
@@ -245,8 +263,8 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
     function calculateFloorPrice() public view returns (uint256 floorPrice) {
         // Fetch current pool of sushi LP
         // balance of xBAYC
-        uint256 wethBalance = IERC20(WETH).balanceOf(SUSHILP);
-        uint256 xbaycBalance = IERC20(XBAYC).balanceOf(SUSHILP);
+        uint256 wethBalance = IERC20Upgradeable(WETH).balanceOf(SUSHILP);
+        uint256 xbaycBalance = IERC20Upgradeable(XBAYC).balanceOf(SUSHILP);
         uint256 floorInEth = PRECISION * wethBalance / xbaycBalance;
         uint256 ethPrice = ORACLE.latestAnswer() / 1e8; // to get price in dollars
         floorPrice = floorInEth * ethPrice;
@@ -288,7 +306,7 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
     }
 
     // Take the CDAI balance of this contract within NIFTY and convert to DAI
-    function calculateDaiBalance() public returns (daiBalance) {
+    function calculateDaiBalance() public returns (uint256 daiBalance) {
         uint256 cdaiBalance = NIFTYAPES.getCAssetBalance(address(this), CDAI);
         // assume current implementation will add this func
         daiBalance = NIFTYAPES.cAssetAmountToAssetAmount(CDAI, cdaiBalance);
