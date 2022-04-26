@@ -236,7 +236,6 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
     function setThirtyDayStrategyOffers(uint256 createAmount, uint256 removeAmount) public onlyAuthorized {
         offersInLastMonth = createAmount;
         removesInLastMonth = removeAmount;
-
     }
 
     function calculateGasPerMonth() public returns (uint256) {
