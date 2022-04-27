@@ -198,8 +198,9 @@ interface ILending is ILendingEvents, ILendingStructs {
         uint256 amount
     ) external payable;
 
-    /// @notice Seizes an asset if the loan has expiured.
-    ///         This functions can be called by anyone as soon as the loan is expired without having been repaid.
+    /// @notice Seizes an asset if the loan has expired.
+    ///         This function can be called by anyone as soon as the loan is expired without having been repaid in full.
+    ///         This function allows anyone to call it so that an automated bot may seize the asset on behalf of a lender.
     /// @param nftContractAddress The address of the NFT collection
     /// @param nftId The id of the specified NFT
     function seizeAsset(address nftContractAddress, uint256 nftId) external;
