@@ -156,13 +156,13 @@ contract NiftyApes is
         getAsset(cAsset); // Ensures asset / cAsset is in the allow list
         IERC20Upgradeable cToken = IERC20Upgradeable(cAsset);
 
+        emit CErc20Supplied(msg.sender, cAsset, cTokenAmount);
+
         cToken.safeTransferFrom(msg.sender, address(this), cTokenAmount);
 
         _balanceByAccountByAsset[msg.sender][cAsset].cAssetBalance += cTokenAmount;
 
         requireMaxCAssetBalance(cAsset);
-
-        emit CErc20Supplied(msg.sender, cAsset, cTokenAmount);
     }
 
     /// @inheritdoc ILiquidity
@@ -177,11 +177,11 @@ contract NiftyApes is
 
         uint256 cTokensBurnt = burnCErc20(asset, tokenAmount);
 
+        emit Erc20Withdrawn(msg.sender, asset, tokenAmount, cTokensBurnt);
+
         withdrawCBalance(msg.sender, cAsset, cTokensBurnt);
 
         underlying.safeTransfer(msg.sender, tokenAmount);
-
-        emit Erc20Withdrawn(msg.sender, asset, tokenAmount, cTokensBurnt);
 
         return cTokensBurnt;
     }
@@ -198,9 +198,9 @@ contract NiftyApes is
 
         withdrawCBalance(msg.sender, cAsset, cTokenAmount);
 
-        cToken.safeTransfer(msg.sender, cTokenAmount);
-
         emit CErc20Withdrawn(msg.sender, cAsset, cTokenAmount);
+
+        cToken.safeTransfer(msg.sender, cTokenAmount);
     }
 
     /// @inheritdoc ILiquidity
