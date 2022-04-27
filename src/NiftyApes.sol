@@ -292,6 +292,7 @@ contract NiftyApes is
         whenNotPaused
     {
         requireAvailableSignature(signature);
+        requireSignature65(signature);
 
         address signer = getOfferSigner(offer, signature);
 
@@ -432,6 +433,7 @@ contract NiftyApes is
         uint256 nftId
     ) external payable whenNotPaused nonReentrant {
         requireAvailableSignature(signature);
+        requireSignature65(signature);
 
         address lender = getOfferSigner(offer, signature);
         requireOfferCreator(offer, lender);
@@ -471,6 +473,7 @@ contract NiftyApes is
         nonReentrant
     {
         requireAvailableSignature(signature);
+        requireSignature65(signature);
 
         address borrower = getOfferSigner(offer, signature);
         requireOfferCreator(offer, borrower);
@@ -543,6 +546,7 @@ contract NiftyApes is
 
         requireOfferCreator(offer, signer);
         requireAvailableSignature(signature);
+        requireSignature65(signature);
 
         if (!offer.floorTerm) {
             requireMatchingNftId(offer, nftId);
@@ -950,6 +954,10 @@ contract NiftyApes is
         _cancelledOrFinalized[signature] = true;
 
         emit OfferSignatureUsed(offer.nftContractAddress, offer.nftId, offer, signature);
+    }
+
+    function requireSignature65(bytes memory signature) internal pure {
+        require(signature.length == 65, "signature unsupported");
     }
 
     function requireOfferPresent(Offer memory offer) internal pure {
