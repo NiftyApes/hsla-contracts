@@ -26,7 +26,8 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
     address public constant SUSHILP = 0xD829dE54877e0b66A2c3890b702fa5Df2245203E;
     address public constant CDAI = 0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643;
     address public constant DAI = 0xC2e9F25Be6257c210d7Adf0D4Cd6E3E881ba25f8;
-    IChainlinkOracle public constant ORACLE = IChainlinkOracle(0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419);
+    IChainlinkOracle public constant ETHORACLE = IChainlinkOracle(0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419);
+    IChainlinkOracle public constant GASORACLE = IChainlinkOracle(0x169E633A2D1E6c10dD91238Ba11c4A708dfEF37C);
     uint256 public constant PRECISION = 1e18;
 
     uint256 public lastFloorPrice;
@@ -41,13 +42,11 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
     uint256 public thirtyDayProfitPotential;
     uint256 public offersInLastMonth;
     uint256 public removesInLastMonth;
+    uint256 public removeOfferGas = 8374;
+    uint256 public createOfferGas = 131110;
 
     ILendingStructs.Offer public offer;
     bytes32 public offerHash;
-
-
-    uint256 offersInLastMonth; // TODO
-    uint256 removesInLastMonth; // TODO 
 
     function setExpirationWindow(uint32 _expirationWindow) external {
         // if the new window is shorter - to remove active previous offers
@@ -221,37 +220,16 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
     //                                  NEW METHODS
     // ******************************************************************************
 
-    // TODO: offersInLastMonth, removesInLastMonth
-    function calcMonthlyRevenue() external view returns (int256 revenue) {
-        return int256(calculateMonthlyProfit()) - int256(calculateGasPerMonth());
-    }
-
-    // TODO: loansInLastMonth
-    function calculateMonthlyProfit() public view returns (uint256 monthlyProfit) {
-        uint256 durationInDays = offer.duration / 1 days;
-        uint256 profitPotential = offer.interestRatePerSecond * offer.duration * loansInLastMonth;
-        monthlyProfit = profitPotential * durationInDays / 30;
-    }
 
     function isProfitable() public view returns (bool) {
-        return calculateMonthlyProfit() > calculateGasPerMonth();
+        return calculateProfitability() > 0;
     }
 
     //  this could instead be supplied as setThirtyDayProfitPotential
-    function calcProfitability() public view returns (uint256) {
-        return thirtyDayProfitPotential > calculateGasPerMonth();
+    function calculateProfitability() public view returns (int256) {
+        return int256(thirtyDayProfitPotential) - int256(calculateGasPerMonth());
 
     }
-
-    function gasCostCreateOffer() public view returns (uint256) {
-        // TODO: cost to create an offer
-        return 0;
-    }
-    function gasCostRemoveOffer() public view returns (uint256) {
-        // TODO: cost to remove an offer
-        return 1;
-    }
-
 
     // thirtyDayProfitPotential should be calculated by finding the number of new loans in the last 30 days
     // And multiplying the interestRatePerSecond by the duration of the loan
@@ -262,27 +240,16 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
     function setThirtyDayStrategyOffers(uint256 createAmount, uint256 removeAmount) public onlyAuthorized {
         offersInLastMonth = createAmount;
         removesInLastMonth = removeAmount;
-
     }
 
-    function calculateGasPerMonth() public returns (uint256) {
-        return offersInLastMonth * gasCostCreateOffer() + removesInLastMonth * gasCostRemoveOffer();
+    function calculateGasPerMonth() public view returns (uint256) {
+        return offersInLastMonth * createOfferGas + removesInLastMonth * removeOfferGas;
     }
 
-    function gasCostCreateOffer() public {
-        // TODO: cost to create an offer
-    }
-    function gasCostRemoveOffer() public {
-        // TODO: cost to remove an offer
-    }
-
-    // iterable mapping of structs
-    // contract address => structHash => index => bool
-    mapping(address => mapping(bytes32 => mapping(uint256 => bool))) public loans;
-
-    struct OfferInfo {
-        bytes32 offerHash;
-        uint256 timestamp;
+    function calculateCostOfGasPerMonth() public view returns (uint256) {
+        uint256 gasPrice = uint256(GASORACLE.latestAnswer()) / 1e9; // returns gas in gwei
+        uint256 ethPrice = uint256(ETHORACLE.latestAnswer()) / 1e8; // returns eth price in $
+        return calculateGasPerMonth() * gasPrice * ethPrice / 1e9; // Divide by 1e9 as there's 1e9 gwei of gas in an ETH
     }
 
 
@@ -293,11 +260,11 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
         uint256 wethBalance = IERC20Upgradeable(WETH).balanceOf(SUSHILP);
         uint256 xbaycBalance = IERC20Upgradeable(XBAYC).balanceOf(SUSHILP);
         uint256 floorInEth = PRECISION * wethBalance / xbaycBalance;
-        uint256 ethPrice = uint256(ORACLE.latestAnswer()) / 1e8; // to get price in dollars
+        uint256 ethPrice = uint256(ETHORACLE.latestAnswer()) / 1e8; // to get price in dollars
         floorPrice = floorInEth * ethPrice;
     }
 
-    function calculateDelta(uint256 oldPrice, uint256 newPrice) private view returns (uint256) {
+    function calculateDelta(uint256 oldPrice, uint256 newPrice) private pure returns (uint256) {
         return newPrice > oldPrice 
             ? PRECISION * (newPrice - oldPrice) / oldPrice
             : PRECISION * (oldPrice - newPrice) / oldPrice;
