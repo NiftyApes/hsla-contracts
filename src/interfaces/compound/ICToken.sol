@@ -5,4 +5,5 @@ import { IERC20Upgradeable } from "@openzeppelin/contracts/token/ERC20/IERC20Upg
 
 interface ICToken is IERC20Upgradeable {
     function exchangeRateCurrent() external returns (uint256);
+    function exchangeRateStored() external view returns (uint256);
 }

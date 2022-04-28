@@ -211,4 +211,9 @@ interface ILending is ILendingEvents, ILendingStructs {
         external
         view
         returns (uint256, uint256);
+
+    function roughAssetAmountToCAssetAmount(address asset, uint256 amount)
+        external
+        view
+        returns (uint256);
 }

@@ -1232,6 +1232,15 @@ contract NiftyApes is
         return Math.divScalarByExpTruncate(amount, exchangeRateMantissa);
     }
 
+    // This function does not accrue interest before calculating the exchange rate
+        function roughAssetAmountToCAssetAmount(address asset, uint256 amount) external view returns (uint256) {
+        address cAsset = assetToCAsset[asset];
+        ICERC20 cToken = ICERC20(cAsset);
+
+        uint256 exchangeRateMantissa = cToken.exchangeRateStored();
+        return Math.divScalarByExpTruncate(amount, exchangeRateMantissa);
+    }
+
     function getCAsset(address asset) internal view returns (address) {
         address cAsset = assetToCAsset[asset];
         require(cAsset != address(0), "asset allow list");
