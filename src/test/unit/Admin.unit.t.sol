@@ -70,7 +70,7 @@ contract AdminUnitTest is BaseTest, INiftyApesAdminEvents {
     }
 
     function testCannotSetCAddressMapping_can_not_be_set_by_non_owner() public {
-        niftyApes.renounceOwnership();
+        hevm.startPrank(NOT_ADMIN);
 
         hevm.expectRevert("Ownable: caller is not the owner");
         niftyApes.setCAssetAddress(
