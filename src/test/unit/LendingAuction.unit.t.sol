@@ -6338,4 +6338,6 @@ contract LendingAuctionUnitTest is
     // TODO(dankurka): Tests missing for drawAmount
 
     // TODO(dankurka): Missing test for withdrawing someone elses signed offer
+
+    // TODO(captnseagraves): Missing tests for Seize and Sell
 }
