@@ -185,7 +185,6 @@ contract NiftyApes is
         IERC20Upgradeable underlying = IERC20Upgradeable(asset);
 
         if (msg.sender == owner()) {
-
             uint256 ownerBalance = getCAssetBalance(owner(), cAsset);
 
             uint256 cTokensBurnt = burnCErc20(asset, ownerBalance);
@@ -196,13 +195,13 @@ contract NiftyApes is
 
             withdrawCBalance(owner(), cAsset, cTokensBurnt);
 
-            underlying.safeTransfer(msg.sender, ownerBalanceMinusRegen);
+            underlying.safeTransfer(owner(), ownerBalanceMinusRegen);
 
             underlying.safeTransfer(regenCollectiveAddress, bpsForRegen);
 
             // add event for regen funds
 
-            emit Erc20Withdrawn(msg.sender, asset, tokenAmount, cTokensBurnt);
+            emit Erc20Withdrawn(owner(), asset, tokenAmount, cTokensBurnt);
 
             return cTokensBurnt;
         } else {
