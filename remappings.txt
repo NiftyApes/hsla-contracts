@@ -1,1 +1,3 @@
-@openzeppelin/=lib/openzeppelin-contracts-upgradeable/
+@openzeppelin-upgradeable/=lib/openzeppelin-contracts-upgradeable/
+@openzeppelin/=lib/openzeppelin/
+@yearnvaults/=lib/yearn-vaults/
