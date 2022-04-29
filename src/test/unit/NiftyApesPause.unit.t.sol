@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/interfaces/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
@@ -67,7 +67,7 @@ contract NiftyApesPauseUnitTest is BaseTest, ILendingStructs, ERC721HolderUpgrad
         mockNft.approve(address(niftyApes), 2);
     }
 
-    function getOffer() internal returns (Offer memory offer) {
+    function getOffer() internal view returns (Offer memory offer) {
         return
             Offer({
                 creator: address(0x0000000000000000000000000000000000000001),

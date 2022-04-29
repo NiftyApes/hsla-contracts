@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity 0.8.13;
 
 /// @title Events emmited for admin changes in the contract.
 interface INiftyApesAdminEvents {

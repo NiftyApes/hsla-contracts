@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/interfaces/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
@@ -6298,6 +6298,11 @@ contract LendingAuctionUnitTest is
         uint256 protocolInterest = (50 * 1 days * principal) / 1 ether;
 
         uint256 repayAmount = principal + lenderInterest + protocolInterest;
+
+        (uint256 lI, uint256 pI) = lendingAction.calculateInterestAccrued(offer.nftContractAddress, offer.nftId);
+
+        assertEq(lI, lenderInterest);
+        assertEq(pI, protocolInterest);
 
         usdcToken.mint(address(this), lenderInterest + protocolInterest);
 
