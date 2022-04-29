@@ -729,6 +729,7 @@ contract NiftyApes is
         payable
         override
         whenNotPaused
+        nonReentrant
     {
         RepayLoanStruct memory rls = RepayLoanStruct({
             nftContractAddress: nftContractAddress,
@@ -746,6 +747,7 @@ contract NiftyApes is
         payable
         override
         whenNotPaused
+        nonReentrant
     {
         RepayLoanStruct memory rls = RepayLoanStruct({
             nftContractAddress: nftContractAddress,
@@ -775,7 +777,7 @@ contract NiftyApes is
         _repayLoanAmount(rls);
     }
 
-    /// @dev Struct exitst since we ran out of stack space in _repayLoan
+    /// @dev Struct exists since we ran out of stack space in _repayLoan
     struct RepayLoanStruct {
         address nftContractAddress;
         uint256 nftId;
