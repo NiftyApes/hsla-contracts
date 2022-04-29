@@ -708,14 +708,16 @@ contract NiftyApes is
 
         uint256 slashedDrawAmount = slashUnsupportedAmount(loanAuction, drawAmount, cAsset);
 
-        updateInterest(loanAuction);
+        if (slashedDrawAmount > 0) {
+            updateInterest(loanAuction);
 
-        loanAuction.amountDrawn += SafeCastUpgradeable.toUint128(slashedDrawAmount);
+            loanAuction.amountDrawn += SafeCastUpgradeable.toUint128(slashedDrawAmount);
 
-        uint256 cTokensBurnt = burnCErc20(loanAuction.asset, slashedDrawAmount);
-        withdrawCBalance(loanAuction.lender, cAsset, cTokensBurnt);
+            uint256 cTokensBurnt = burnCErc20(loanAuction.asset, slashedDrawAmount);
+            withdrawCBalance(loanAuction.lender, cAsset, cTokensBurnt);
 
-        sendValue(loanAuction.asset, slashedDrawAmount, loanAuction.nftOwner);
+            sendValue(loanAuction.asset, slashedDrawAmount, loanAuction.nftOwner);
+        }
 
         emit AmountDrawn(
             msg.sender,
@@ -897,7 +899,10 @@ contract NiftyApes is
 
         if (lenderBalance < drawTokens) {
             uint256 balanceDelta = drawTokens - lenderBalance;
-            loanAuction.amountDrawn -= SafeCastUpgradeable.toUint128(balanceDelta);
+
+            uint256 balanceDeltaUnderlying = cAssetAmountToAssetAmount(cAsset, balanceDelta);
+            loanAuction.amountDrawn -= SafeCastUpgradeable.toUint128(balanceDeltaUnderlying);
+
             uint256 lenderBalanceUnderlying = cAssetAmountToAssetAmount(cAsset, lenderBalance);
             drawAmount = lenderBalanceUnderlying;
         }
