@@ -104,8 +104,6 @@ contract NiftyApes is
 
     /// @inheritdoc INiftyApesAdmin
     function setCAssetAddress(address asset, address cAsset) external onlyOwner {
-        require(assetToCAsset[asset] == address(0), "asset already set");
-        require(_cAssetToAsset[cAsset] == address(0), "casset already set");
         assetToCAsset[asset] = cAsset;
         _cAssetToAsset[cAsset] = asset;
 

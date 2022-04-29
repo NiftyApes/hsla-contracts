@@ -70,39 +70,11 @@ contract AdminUnitTest is BaseTest, INiftyApesAdminEvents {
     }
 
     function testCannotSetCAddressMapping_can_not_be_set_by_non_owner() public {
-        niftyApes.renounceOwnership();
+        hevm.startPrank(NOT_ADMIN);
 
         hevm.expectRevert("Ownable: caller is not the owner");
         niftyApes.setCAssetAddress(
             address(0x0000000000000000000000000000000000000001),
-            address(0x0000000000000000000000000000000000000002)
-        );
-    }
-
-    function testCannotSetCAddressMapping_can_not_overwrite_mapping_asset() public {
-        niftyApes.setCAssetAddress(
-            address(0x0000000000000000000000000000000000000001),
-            address(0x0000000000000000000000000000000000000002)
-        );
-
-        hevm.expectRevert("asset already set");
-
-        niftyApes.setCAssetAddress(
-            address(0x0000000000000000000000000000000000000001),
-            address(0x0000000000000000000000000000000000000003)
-        );
-    }
-
-    function testCannotSetCAddressMapping_can_not_overwrite_mapping_casset() public {
-        niftyApes.setCAssetAddress(
-            address(0x0000000000000000000000000000000000000001),
-            address(0x0000000000000000000000000000000000000002)
-        );
-
-        hevm.expectRevert("casset already set");
-
-        niftyApes.setCAssetAddress(
-            address(0x0000000000000000000000000000000000000003),
             address(0x0000000000000000000000000000000000000002)
         );
     }
