@@ -636,7 +636,6 @@ contract NiftyApes is
         requireLenderOffer(offer);
         requireLoanNotExpired(loanAuction);
         requireOfferParity(loanAuction, offer);
-        requireValidDurationUpdate(loanAuction, offer);
         requireNoFixedTerm(loanAuction);
         requireNoFloorTerms(offer);
         requireOfferNotExpired(offer);
@@ -1151,27 +1150,6 @@ contract NiftyApes is
         }
 
         revert("not an improvement");
-    }
-
-    function requireValidDurationUpdate(LoanAuction storage loanAuction, Offer memory offer)
-        internal
-        view
-    {
-        uint256 currentTime = currentTimestamp();
-
-        // If the only part that is updated is the duration we enfore that its been changed by
-        // at least one day
-        // This prevents lenders from refinancing loands with too small of a change
-        if (
-            offer.amount == loanAuction.amount &&
-            offer.interestRatePerSecond == loanAuction.interestRatePerSecond &&
-            currentTime + offer.duration > loanAuction.loanEndTimestamp
-        ) {
-            require(
-                currentTime + offer.duration >= (loanAuction.loanEndTimestamp + 1 days),
-                "24 hours min"
-            );
-        }
     }
 
     function createLoan(
