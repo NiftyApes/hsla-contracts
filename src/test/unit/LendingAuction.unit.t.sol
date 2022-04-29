@@ -6299,6 +6299,11 @@ contract LendingAuctionUnitTest is
 
         uint256 repayAmount = principal + lenderInterest + protocolInterest;
 
+        (uint256 lI, uint256 pI) = lendingAction.calculateInterestAccrued(offer.nftContractAddress, offer.nftId);
+
+        assertEq(lI, lenderInterest);
+        assertEq(pI, protocolInterest);
+
         usdcToken.mint(address(this), lenderInterest + protocolInterest);
 
         usdcToken.approve(address(lendingAction), repayAmount);
