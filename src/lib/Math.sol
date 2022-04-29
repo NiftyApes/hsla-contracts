@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: Unlicensed
-pragma solidity ^0.8.13;
+pragma solidity 0.8.13;
 
 /// @title A reimplementation of compounds math library
 ///        Currently we only need `divScalarByExpTruncate` which is implemented inefficiently and complex within
