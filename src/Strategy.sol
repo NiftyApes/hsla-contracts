@@ -6,19 +6,19 @@ pragma experimental ABIEncoderV2;
 
 // These are the core Yearn libraries
 import {BaseStrategy, StrategyParams} from "@yearnvaults/contracts/BaseStrategy.sol";
-import "@openzeppelin/contracts/access/OwnableUpgradeable.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-import {AddressUpgradeable} from "@openzeppelin/contracts/utils/AddressUpgradeable.sol";
-import {IERC20Upgradeable} from "@openzeppelin/contracts/token/ERC20/IERC20Upgradeable.sol";
-import {IERC721Upgradeable} from "@openzeppelin/contracts/token/ERC721/IERC721Upgradeable.sol";
-import {SafeERC20Upgradeable} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "./interfaces/niftyapes/INiftyApes.sol";
 import "./interfaces/chainlink/IChainlinkOracle.sol";
 
-contract Strategy is BaseStrategy, OwnableUpgradeable {
-    using SafeERC20Upgradeable for IERC20Upgradeable;
-    using AddressUpgradeable for address;
+contract Strategy is BaseStrategy, Ownable {
+    using SafeERC20 for IERC20;
+    using Address for address;
 
     INiftyApes public constant NIFTYAPES = INiftyApes(address(0));
     address public constant BAYC = 0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D;
@@ -58,7 +58,7 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
         // maxReportDelay = 6300;  // The maximum number of seconds between harvest calls
         // profitFactor = 100; // The minimum multiple that `callCost` must be above the credit/profit to be "justifiable";
         // debtThreshold = 0; // Use this to adjust the threshold at which running a debt causes harvest trigger
-        want = IERC20Upgradeable(DAI);
+        want = IERC20(DAI);
         offer.creator = address(this);
         _setOffer(_offer);
     }
@@ -92,9 +92,11 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
         uint256 oldWantBalance = want.balanceOf(address(this));
 
         // see how much cDAI nifty apes has vs what the debt of cdai is worth
-        uint256 debtInCDai = NIFTYAPES.roughAssetAmountToCAssetAmount(
-            address(want), _debtOutstanding
-        );
+        // TODO: implement this function
+        // uint256 debtInCDai = NIFTYAPES.roughAssetAmountToCAssetAmount(
+        //     address(want), _debtOutstanding
+        // );
+        uint256 debtInCDai = 0;
         uint256 cDaiBalance = NIFTYAPES.getCAssetBalance(address(this), CDAI);
 
         // withdraw excess cDai
@@ -253,7 +255,7 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
         NIFTYAPES.seizeAsset(BAYC, nftId);
     }
     function withdrawSeizedAsset(address to, uint256 nftId) external onlyOwner {
-        IERC721Upgradeable(BAYC).transferFrom(address(this), to, nftId);
+        IERC721(BAYC).transferFrom(address(this), to, nftId);
     }
 
     function setExpirationWindow(uint32 _expirationWindow) external onlyOwner {
@@ -315,8 +317,8 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
     function calculateFloorPrice() public view returns (uint256 floorPrice) {
         // Fetch current pool of sushi LP
         // balance of xBAYC
-        uint256 wethBalance = IERC20Upgradeable(WETH).balanceOf(SUSHILP);
-        uint256 xbaycBalance = IERC20Upgradeable(XBAYC).balanceOf(SUSHILP);
+        uint256 wethBalance = IERC20(WETH).balanceOf(SUSHILP);
+        uint256 xbaycBalance = IERC20(XBAYC).balanceOf(SUSHILP);
         uint256 floorInEth = PRECISION * wethBalance / xbaycBalance;
         uint256 ethPrice = uint256(ETHORACLE.latestAnswer()) / 1e8; // to get price in dollars
         floorPrice = floorInEth * ethPrice;
