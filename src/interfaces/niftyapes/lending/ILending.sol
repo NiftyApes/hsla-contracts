@@ -67,7 +67,7 @@ interface ILending is ILendingEvents, ILendingStructs {
 
     /// @notice Creates an offer on the on chain offer book
     /// @param offer The details of offer
-    function createOffer(Offer calldata offer) external;
+    function createOffer(Offer calldata offer) external returns (bytes32);
 
     /// @notice Removes an offer from the on-chain offer book
     /// @param nftContractAddress The address of the NFT collection
