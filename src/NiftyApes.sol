@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Upgradeable.sol";
+import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712Upgradeable.sol";
 import "@openzeppelin/contracts/utils/math/MathUpgradeable.sol";
 import "@openzeppelin/contracts/utils/math/SafeCastUpgradeable.sol";
@@ -23,6 +24,7 @@ contract NiftyApes is
     PausableUpgradeable,
     ReentrancyGuardUpgradeable,
     EIP712Upgradeable,
+    ERC721HolderUpgradeable,
     INiftyApes
 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -1188,7 +1190,7 @@ contract NiftyApes is
         address from,
         address to
     ) internal {
-        IERC721Upgradeable(nftContractAddress).transferFrom(from, to, nftId);
+        IERC721Upgradeable(nftContractAddress).safeTransferFrom(from, to, nftId);
     }
 
     function sendValue(
