@@ -13,7 +13,7 @@ interface INiftyApesAdminEvents {
     ///         This is the fee that the protocol charges for facilitating the loan
     /// @param oldInterestPersecond The old value denominated in tokens per second
     /// @param newInterestPersecond The new value denominated in tokens per second
-    event LoanDrawProtocolFeeUpdated(uint96 oldInterestPersecond, uint96 newInterestPersecond);
+    event ProtocolInterestBpsUpdated(uint96 oldInterestPersecond, uint96 newInterestPersecond);
 
     /// @notice Emmited when the premium that a lender is charged for refinancing a loan is changed
     /// @param oldPremiumLenderBps The old basis points denominated in parts of 10_000

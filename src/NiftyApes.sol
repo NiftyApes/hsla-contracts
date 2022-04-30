@@ -70,7 +70,7 @@ contract NiftyApes is
     mapping(bytes => bool) private _cancelledOrFinalized;
 
     /// @inheritdoc ILending
-    uint96 public loanDrawFeeProtocolPerSecond;
+    uint96 public protocolInterestBps;
 
     /// @inheritdoc ILending
     uint16 public refinancePremiumLenderBps;
@@ -88,7 +88,7 @@ contract NiftyApes is
     function initialize() public initializer {
         EIP712Upgradeable.__EIP712_init("NiftyApes", "0.0.1");
 
-        loanDrawFeeProtocolPerSecond = 50;
+        protocolInterestBps = 50;
         refinancePremiumLenderBps = 50;
         refinancePremiumProtocolBps = 50;
 
@@ -890,8 +890,8 @@ contract NiftyApes is
     }
 
     function updateInterest(LoanAuction storage loanAuction) internal {
-        if (loanAuction.loanDrawFeeProtocolPerSecond > loanDrawFeeProtocolPerSecond){
-            loanAuction.loanDrawFeeProtocolPerSecond = loanDrawFeeProtocolPerSecond;
+        if (loanAuction.protocolInterestBps > protocolInterestBps){
+            loanAuction.protocolInterestBps = protocolInterestBps;
         }
 
         (uint256 lenderInterest, uint256 protocolInterest) = calculateInterestAccrued(loanAuction);
@@ -921,19 +921,19 @@ contract NiftyApes is
         uint256 amountXTime = timePassed * loanAuction.amountDrawn;
 
         lenderInterest = (amountXTime * loanAuction.interestRatePerSecond) / 1 ether;
-        protocolInterest = (amountXTime * loanAuction.loanDrawFeeProtocolPerSecond) / 1 ether;
+        protocolInterest = (amountXTime * loanAuction.protocolInterestBps) / 1 ether;
     }
 
     /// @inheritdoc INiftyApesAdmin
-    function updateLoanDrawProtocolFeePerSecond(uint96 newLoanDrawFeeProtocolPerSecond)
+    function updateProtocolInterestBps(uint96 newProtocolInterestBps)
         external
         onlyOwner
     {
-        emit LoanDrawProtocolFeeUpdated(
-            loanDrawFeeProtocolPerSecond,
-            newLoanDrawFeeProtocolPerSecond
+        emit ProtocolInterestBpsUpdated(
+            protocolInterestBps,
+            newProtocolInterestBps
         );
-        loanDrawFeeProtocolPerSecond = newLoanDrawFeeProtocolPerSecond;
+        protocolInterestBps = newProtocolInterestBps;
     }
 
     /// @inheritdoc INiftyApesAdmin
@@ -1136,7 +1136,7 @@ contract NiftyApes is
         loanAuction.lastUpdatedTimestamp = currentTimestamp();
         loanAuction.amountDrawn = offer.amount;
         loanAuction.fixedTerms = offer.fixedTerms;
-        loanAuction.loanDrawFeeProtocolPerSecond = loanDrawFeeProtocolPerSecond;
+        loanAuction.protocolInterestBps = protocolInterestBps;
     }
 
     function transferNft(

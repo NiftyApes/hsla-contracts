@@ -107,19 +107,19 @@ contract AdminUnitTest is BaseTest, INiftyApesAdminEvents {
         );
     }
 
-    function testCannotUpdateLoanDrawProtocolFee_not_owner() public {
+    function testCannotUpdateProtocolInterestBps_not_owner() public {
         hevm.startPrank(NOT_ADMIN);
         hevm.expectRevert("Ownable: caller is not the owner");
-        niftyApes.updateLoanDrawProtocolFeePerSecond(1);
+        niftyApes.updateProtocolInterestBps(1);
     }
 
-    function testUpdateLoanDrawProtocolFee_owner() public {
-        assertEq(niftyApes.loanDrawFeeProtocolPerSecond(), 50);
+    function testUpdateProtocolInterestBps_owner() public {
+        assertEq(niftyApes.protocolInterestBps(), 50);
         hevm.expectEmit(true, false, false, true);
 
-        emit LoanDrawProtocolFeeUpdated(50, 1);
-        niftyApes.updateLoanDrawProtocolFeePerSecond(1);
-        assertEq(niftyApes.loanDrawFeeProtocolPerSecond(), 1);
+        emit ProtocolInterestBpsUpdated(50, 1);
+        niftyApes.updateProtocolInterestBps(1);
+        assertEq(niftyApes.protocolInterestBps(), 1);
     }
 
     function testCannotUpdateRefinancePremiumLenderFee_not_owner() public {
