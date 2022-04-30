@@ -25,7 +25,7 @@ interface ILendingStructs {
         // The asset in which the loan has been denominated
         address asset;
         // This fee is the rate of interest per second for the protocol
-        uint96 protocolInterestBps;
+        uint96 protocolInterestPerSecond;
         // SLOT 3 START
         // cumulative interest of varying rates paid by new lenders to buy out the loan auction
         uint128 accumulatedLenderInterest;

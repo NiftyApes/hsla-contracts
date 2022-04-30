@@ -72,7 +72,7 @@ contract NiftyApes is
     mapping(bytes => bool) private _cancelledOrFinalized;
 
     /// @inheritdoc ILending
-    uint96 public protocolInterestBps;
+    uint96 public protocolInterestPerSecond;
 
     /// @inheritdoc ILending
     uint16 public refinancePremiumLenderBps;
@@ -93,7 +93,7 @@ contract NiftyApes is
     function initialize() public initializer {
         EIP712Upgradeable.__EIP712_init("NiftyApes", "0.0.1");
 
-        protocolInterestBps = 50;
+        protocolInterestPerSecond = 50;
         refinancePremiumLenderBps = 50;
         refinancePremiumProtocolBps = 50;
 
@@ -932,8 +932,8 @@ contract NiftyApes is
     }
 
     function updateInterest(LoanAuction storage loanAuction) internal {
-        if (loanAuction.protocolInterestBps > protocolInterestBps){
-            loanAuction.protocolInterestBps = protocolInterestBps;
+        if (loanAuction.protocolInterestPerSecond > protocolInterestPerSecond){
+            loanAuction.protocolInterestPerSecond = protocolInterestPerSecond;
         }
 
         (uint256 lenderInterest, uint256 protocolInterest) = calculateInterestAccrued(loanAuction);
@@ -963,19 +963,19 @@ contract NiftyApes is
         uint256 amountXTime = timePassed * loanAuction.amountDrawn;
 
         lenderInterest = (amountXTime * loanAuction.interestRatePerSecond) / 1 ether;
-        protocolInterest = (amountXTime * loanAuction.protocolInterestBps) / 1 ether;
+        protocolInterest = (amountXTime * loanAuction.protocolInterestPerSecond) / 1 ether;
     }
 
     /// @inheritdoc INiftyApesAdmin
-    function updateProtocolInterestBps(uint96 newProtocolInterestBps)
+    function updateProtocolInterestPerSecond(uint96 newProtocolInterestPerSecond)
         external
         onlyOwner
     {
-        emit ProtocolInterestBpsUpdated(
-            protocolInterestBps,
-            newProtocolInterestBps
+        emit ProtocolInterestPerSecondUpdated(
+            protocolInterestPerSecond,
+            newProtocolInterestPerSecond
         );
-        protocolInterestBps = newProtocolInterestBps;
+        protocolInterestPerSecond = newProtocolInterestPerSecond;
     }
 
     /// @inheritdoc INiftyApesAdmin
@@ -1167,7 +1167,7 @@ contract NiftyApes is
         loanAuction.lastUpdatedTimestamp = currentTimestamp();
         loanAuction.amountDrawn = offer.amount;
         loanAuction.fixedTerms = offer.fixedTerms;
-        loanAuction.protocolInterestBps = protocolInterestBps;
+        loanAuction.protocolInterestPerSecond = protocolInterestPerSecond;
     }
 
     function transferNft(

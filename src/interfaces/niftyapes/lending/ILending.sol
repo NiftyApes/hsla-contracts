@@ -9,7 +9,7 @@ import "./ILendingStructs.sol";
 interface ILending is ILendingEvents, ILendingStructs {
     /// @notice Returns the fee that computes protocol interest
     ///         This fee is the basis points in order to calculate interest per second
-    function protocolInterestBps() external view returns (uint96);
+    function protocolInterestPerSecond() external view returns (uint96);
 
     /// @notice Returns the fee for refinancing a loan that the new lender has to pay
     ///         Fees are denomiated in basis points, parts of 10_000
