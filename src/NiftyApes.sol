@@ -17,6 +17,7 @@ import "./interfaces/compound/ICERC20.sol";
 import "./interfaces/niftyapes/INiftyApes.sol";
 import "./lib/ECDSABridge.sol";
 import "./lib/Math.sol";
+import "./test/console.sol";
 
 /// @title Implemention of the INiftyApes interface
 contract NiftyApes is
@@ -938,6 +939,11 @@ contract NiftyApes is
 
         (uint256 lenderInterest, uint256 protocolInterest) = calculateInterestAccrued(loanAuction);
 
+        uint96 loanDuration = (loanAuction.interestRatePerSecond * SafeCastUpgradeable.toUint96(MAX_BPS)) / (SafeCastUpgradeable.toUint96(loanAuction.amountDrawn) * protocolInterestPerSecond);
+        console.log("loanDuration", loanDuration);
+        loanAuction.protocolInterestPerSecond = (protocolInterestPerSecond * SafeCastUpgradeable.toUint96(loanAuction.amountDrawn)) / SafeCastUpgradeable.toUint96(MAX_BPS) / SafeCastUpgradeable.toUint96(loanDuration);
+        console.log("loanAuction.protocolInterestPerSecond 2", loanAuction.protocolInterestPerSecond);
+
         loanAuction.accumulatedLenderInterest += SafeCastUpgradeable.toUint128(lenderInterest);
         loanAuction.accumulatedProtocolInterest += SafeCastUpgradeable.toUint128(protocolInterest);
         loanAuction.lastUpdatedTimestamp = currentTimestamp();
@@ -1167,7 +1173,9 @@ contract NiftyApes is
         loanAuction.lastUpdatedTimestamp = currentTimestamp();
         loanAuction.amountDrawn = offer.amount;
         loanAuction.fixedTerms = offer.fixedTerms;
-        loanAuction.protocolInterestPerSecond = protocolInterestPerSecond;
+        loanAuction.protocolInterestPerSecond = (protocolInterestPerSecond * SafeCastUpgradeable.toUint96(offer.amount)) / SafeCastUpgradeable.toUint96(MAX_BPS) / SafeCastUpgradeable.toUint96(offer.duration);
+
+        console.log("loanAuction.protocolInterestPerSecond 1", loanAuction.protocolInterestPerSecond);
     }
 
     function transferNft(
