@@ -17,7 +17,7 @@ interface INiftyApesAdmin is INiftyApesAdminEvents {
 
     /// @notice Updates the fee that computes protocol interest
     ///         Interest is charged per second on a loan.
-    function updateProtocolInterestPerSecond(uint96 newProtocolInterestPerSecond) external;
+    function updateProtocolInterestBps(uint96 newProtocolInterestBps) external;
 
     /// @notice Updates the fee for refinancing a loan that the new lender has to pay
     ///         Fees are denomiated in basis points, parts of 10_000

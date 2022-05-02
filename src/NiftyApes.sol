@@ -73,7 +73,7 @@ contract NiftyApes is
     mapping(bytes => bool) private _cancelledOrFinalized;
 
     /// @inheritdoc ILending
-    uint96 public protocolInterestPerSecond;
+    uint96 public protocolInterestBps;
 
     /// @inheritdoc ILending
     uint16 public refinancePremiumLenderBps;
@@ -94,7 +94,7 @@ contract NiftyApes is
     function initialize() public initializer {
         EIP712Upgradeable.__EIP712_init("NiftyApes", "0.0.1");
 
-        protocolInterestPerSecond = 50;
+        protocolInterestBps = 50;
         refinancePremiumLenderBps = 50;
         refinancePremiumProtocolBps = 50;
 
@@ -261,7 +261,7 @@ contract NiftyApes is
                 keccak256(
                     abi.encode(
                         keccak256(
-                            "Offer(address creator,uint32 duration,uint32 expiration,bool fixedTerms,bool floorTerm,bool lenderOffer,address nftContractAddress,uint256 nftId,address asset,uint128 amount,uint96 interestRatePerSecond)"
+                            "Offer(address creator,uint32 duration,uint32 expiration,bool fixedTerms,bool floorTerm,bool lenderOffer,address nftContractAddress,uint256 nftId,address asset,uint128 amount,uint96 interestRateBps)"
                         ),
                         keccak256(
                             abi.encode(
@@ -275,7 +275,7 @@ contract NiftyApes is
                                 offer.nftId,
                                 offer.asset,
                                 offer.amount,
-                                offer.interestRatePerSecond
+                                offer.interestRateBps
                             )
                         )
                     )
@@ -345,7 +345,7 @@ contract NiftyApes is
     }
 
     /// @inheritdoc ILending
-    function createOffer(Offer memory offer) external whenNotPaused returns (bytes32 offerHash){
+    function createOffer(Offer memory offer) external whenNotPaused returns (bytes32 offerHash) {
         address cAsset = getCAsset(offer.asset);
 
         requireOfferCreator(offer.creator, msg.sender);
@@ -599,7 +599,7 @@ contract NiftyApes is
         // update Loan state
         loanAuction.lender = newLender;
         loanAuction.amount = offer.amount;
-        loanAuction.interestRatePerSecond = offer.interestRatePerSecond;
+        loanAuction.interestRateBps = offer.interestRateBps;
         loanAuction.loanEndTimestamp = currentTimestamp() + offer.duration;
         loanAuction.amountDrawn = SafeCastUpgradeable.toUint128(fullAmount);
         loanAuction.accumulatedLenderInterest = 0;
@@ -649,7 +649,7 @@ contract NiftyApes is
 
         // update LoanAuction struct
         loanAuction.amount = offer.amount;
-        loanAuction.interestRatePerSecond = offer.interestRatePerSecond;
+        loanAuction.interestRateBps = offer.interestRateBps;
         loanAuction.loanEndTimestamp = currentTimestamp() + offer.duration;
 
         if (loanAuction.lender == offer.creator) {
@@ -933,16 +933,11 @@ contract NiftyApes is
     }
 
     function updateInterest(LoanAuction storage loanAuction) internal {
-        if (loanAuction.protocolInterestPerSecond > protocolInterestPerSecond){
-            loanAuction.protocolInterestPerSecond = protocolInterestPerSecond;
+        if (loanAuction.protocolInterestBps > protocolInterestBps) {
+            loanAuction.protocolInterestBps = protocolInterestBps;
         }
 
         (uint256 lenderInterest, uint256 protocolInterest) = calculateInterestAccrued(loanAuction);
-
-        uint96 loanDuration = (loanAuction.interestRatePerSecond * SafeCastUpgradeable.toUint96(MAX_BPS)) / (SafeCastUpgradeable.toUint96(loanAuction.amountDrawn) * protocolInterestPerSecond);
-        console.log("loanDuration", loanDuration);
-        loanAuction.protocolInterestPerSecond = (protocolInterestPerSecond * SafeCastUpgradeable.toUint96(loanAuction.amountDrawn)) / SafeCastUpgradeable.toUint96(MAX_BPS) / SafeCastUpgradeable.toUint96(loanDuration);
-        console.log("loanAuction.protocolInterestPerSecond 2", loanAuction.protocolInterestPerSecond);
 
         loanAuction.accumulatedLenderInterest += SafeCastUpgradeable.toUint128(lenderInterest);
         loanAuction.accumulatedProtocolInterest += SafeCastUpgradeable.toUint128(protocolInterest);
@@ -968,20 +963,38 @@ contract NiftyApes is
         uint256 timePassed = endTime - loanAuction.lastUpdatedTimestamp;
         uint256 amountXTime = timePassed * loanAuction.amountDrawn;
 
-        lenderInterest = (amountXTime * loanAuction.interestRatePerSecond) / 1 ether;
-        protocolInterest = (amountXTime * loanAuction.protocolInterestPerSecond) / 1 ether;
+        (
+            uint256 lenderInterestPerSecond,
+            uint256 protocolInterestPerSecond
+        ) = calculateInterestPerSecond(loanAuction);
+
+        lenderInterest = (amountXTime * lenderInterestPerSecond) / 1 ether;
+        protocolInterest = (amountXTime * protocolInterestPerSecond) / 1 ether;
+    }
+
+    function calculateInterestPerSecond(LoanAuction storage loanAuction)
+        internal
+        view
+        returns (uint256 lenderInterestPerSecond, uint256 protocolInterestPerSecond)
+    {
+        console.log("(loanAuction.interestRateBps * loanAuction.amountDrawn)", (loanAuction.interestRateBps * loanAuction.amountDrawn));
+        console.log("MAX_BPS", MAX_BPS);
+        console.log("(loanAuction.loanEndTimestamp - loanAuction.loanBeginTimestamp)", (loanAuction.loanEndTimestamp - loanAuction.loanBeginTimestamp));
+
+        lenderInterestPerSecond =
+            (loanAuction.interestRateBps * loanAuction.amountDrawn) /
+            MAX_BPS /
+            (loanAuction.loanEndTimestamp - loanAuction.loanBeginTimestamp);
+        protocolInterestPerSecond =
+            (protocolInterestBps * loanAuction.amountDrawn) /
+            MAX_BPS /
+            (loanAuction.loanEndTimestamp - loanAuction.loanBeginTimestamp);
     }
 
     /// @inheritdoc INiftyApesAdmin
-    function updateProtocolInterestPerSecond(uint96 newProtocolInterestPerSecond)
-        external
-        onlyOwner
-    {
-        emit ProtocolInterestPerSecondUpdated(
-            protocolInterestPerSecond,
-            newProtocolInterestPerSecond
-        );
-        protocolInterestPerSecond = newProtocolInterestPerSecond;
+    function updateProtocolInterestBps(uint96 newProtocolInterestBps) external onlyOwner {
+        emit ProtocolInterestBpsUpdated(protocolInterestBps, newProtocolInterestBps);
+        protocolInterestBps = newProtocolInterestBps;
     }
 
     /// @inheritdoc INiftyApesAdmin
@@ -1004,14 +1017,12 @@ contract NiftyApes is
         emit OfferSignatureUsed(offer.nftContractAddress, offer.nftId, offer, signature);
     }
 
-
     function requireEthTransferable() internal view {
         require(_ethTransferable, "eth not transferable");
     }
 
     function requireSignature65(bytes memory signature) internal pure {
         require(signature.length == 65, "signature unsupported");
-
     }
 
     function requireOfferPresent(Offer memory offer) internal pure {
@@ -1124,14 +1135,15 @@ contract NiftyApes is
     function requireOfferParity(LoanAuction storage loanAuction, Offer memory offer) internal view {
         // Caching fields here for gas usage
         uint256 amount = loanAuction.amount;
-        uint256 interestRatePerSecond = loanAuction.interestRatePerSecond;
+        uint256 interestRateBps = loanAuction.interestRateBps;
         uint256 loanEndTime = loanAuction.loanEndTimestamp;
+        // TODO(captnseagraves) we dont want to just append the full offer duration to the end of the loan, we want to add the delta between the current loan and the offer.
         uint256 offerEndTime = currentTimestamp() + offer.duration;
 
         // Better amount
         if (
             offer.amount > amount &&
-            offer.interestRatePerSecond <= interestRatePerSecond &&
+            offer.interestRateBps <= interestRateBps &&
             offerEndTime >= loanEndTime
         ) {
             return;
@@ -1140,7 +1152,7 @@ contract NiftyApes is
         // Lower interest rate
         if (
             offer.amount >= amount &&
-            offer.interestRatePerSecond < interestRatePerSecond &&
+            offer.interestRateBps < interestRateBps &&
             offerEndTime >= loanEndTime
         ) {
             return;
@@ -1149,7 +1161,7 @@ contract NiftyApes is
         // Longer duration
         if (
             offer.amount >= amount &&
-            offer.interestRatePerSecond <= interestRatePerSecond &&
+            offer.interestRateBps <= interestRateBps &&
             offerEndTime > loanEndTime
         ) {
             return;
@@ -1168,14 +1180,15 @@ contract NiftyApes is
         loanAuction.lender = lender;
         loanAuction.asset = offer.asset;
         loanAuction.amount = offer.amount;
-        loanAuction.interestRatePerSecond = offer.interestRatePerSecond;
+        loanAuction.interestRateBps = offer.interestRateBps;
         loanAuction.loanEndTimestamp = currentTimestamp() + offer.duration;
+        loanAuction.loanBeginTimestamp = currentTimestamp();
         loanAuction.lastUpdatedTimestamp = currentTimestamp();
         loanAuction.amountDrawn = offer.amount;
         loanAuction.fixedTerms = offer.fixedTerms;
-        loanAuction.protocolInterestPerSecond = (protocolInterestPerSecond * SafeCastUpgradeable.toUint96(offer.amount)) / SafeCastUpgradeable.toUint96(MAX_BPS) / SafeCastUpgradeable.toUint96(offer.duration);
+        loanAuction.protocolInterestBps = protocolInterestBps;
 
-        console.log("loanAuction.protocolInterestPerSecond 1", loanAuction.protocolInterestPerSecond);
+        console.log("loanAuction.protocolInterestBps 1", loanAuction.protocolInterestBps);
     }
 
     function transferNft(
