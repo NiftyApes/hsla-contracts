@@ -20,7 +20,7 @@ interface ILendingStructs {
         address lender;
         // TODO(captnseagraves) change to unit8
         // interest rate of loan in basis points
-        uint96 interestRateBps;
+        uint96 interestRatePerSecond;
         // SLOT 2 START
         // TODO(dankurka): replace this field with an enum rather than storing addresses over and over
         // The asset in which the loan has been denominated
@@ -38,7 +38,7 @@ interface ILendingStructs {
         // amount withdrawn by the nftOwner. This is the amount they will pay interest on, with this value as minimum
         uint128 amountDrawn;
         // SLOT 5 START
-        uint96 protocolInterestBps;
+        uint96 protocolInterestRatePerSecond;
 
     }
 
@@ -70,6 +70,6 @@ interface ILendingStructs {
         uint128 amount;
         // TODO(captnseagraves) type size and comment
         // offer interest rate in basis points for the loan duration
-        uint96 interestRateBps;
+        uint96 interestRatePerSecond;
     }
 }
