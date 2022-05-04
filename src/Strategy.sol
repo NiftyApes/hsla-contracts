@@ -12,6 +12,7 @@ import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 
 import "./interfaces/niftyapes/INiftyApes.sol";
 import "./interfaces/chainlink/IChainlinkOracle.sol";
@@ -32,7 +33,7 @@ https://yearn.watch/network/ethereum/vault/0xa354F35829Ae975e850e23e9615b11Da1B3
 https://yearn.watch/network/ethereum/vault/0xdA816459F1AB5631232FE5e97a05BBBb94970c95/strategy/0xa6d1c610b3000f143c18c75d84baa0ec22681185
 */
 
-contract Strategy is BaseStrategy, Ownable {
+contract Strategy is BaseStrategy, Ownable, ERC721Holder {
     using SafeERC20 for IERC20;
     using Address for address;
 
@@ -59,6 +60,7 @@ contract Strategy is BaseStrategy, Ownable {
     uint256 public thirtyDayProfitPotential;
     uint256 public offersInLastMonth;
     uint256 public removesInLastMonth;
+    uint256 public outstandingLoans; // DAI value of outstanding loans hardcoded by strategiest
     uint256 public removeOfferGas = 8374;
     uint256 public createOfferGas = 131110;
 
@@ -90,9 +92,6 @@ contract Strategy is BaseStrategy, Ownable {
         return want.balanceOf(address(this)) + calculateDaiBalance();
     }
 
-    // TODO: how to calculate profit even if loans are outstanding? cdai balance of contract would be
-    // less than what it started with as long as a loan is out and profit earned is less than the outstanding
-    // loan value.  Need a way to calculate loans outstanding to get total va
     function prepareReturn(uint256 _debtOutstanding)
         internal
         override
@@ -107,10 +106,9 @@ contract Strategy is BaseStrategy, Ownable {
 
         // see how much cDAI nifty apes has vs what the debt of cdai is worth
         // TODO: implement this function
-        // uint256 debtInCDai = NIFTYAPES.roughAssetAmountToCAssetAmount(
-        //     address(want), _debtOutstanding
-        // );
-        uint256 debtInCDai = 0;
+        uint256 debtInCDai = NIFTYAPES.assetAmountToCAssetAmount(
+            address(want), _debtOutstanding
+        );
         uint256 cDaiBalance = NIFTYAPES.getCAssetBalance(address(this), CDAI);
 
         // Withdraw any cDAI that's in profit
@@ -120,31 +118,32 @@ contract Strategy is BaseStrategy, Ownable {
 
        // withdraw excess cDai
         uint256 totalDebt = vault.strategies(address(this)).totalDebt;
-        uint256 amountAvailable = want.balanceOf(address(this));
-
-        if (amountAvailable > totalDebt) {
+        uint256 totalAssets = want.balanceOf(address(this)) + outstandingLoans;
+        
+        if (totalAssets > totalDebt) {
             // we have profit
-            _profit =  amountAvailable - totalDebt;
+            _profit =  totalAssets - totalDebt;
         }
 
         // free funds to repay debt + profit to strategy
         uint256 amountRequired = _debtOutstanding + _profit;
-        if (amountRequired > amountAvailable) {
+        if (amountRequired > totalAssets) {
             // we need to free funds
-            (amountAvailable, ) = liquidatePosition(amountRequired);
-            if (amountAvailable > amountRequired) {
+            // TODO: how to liquidate when there are outstanding loans?
+            (totalAssets, ) = liquidatePosition(amountRequired);
+            if (totalAssets > amountRequired) {
                 _debtPayment = _debtOutstanding;
                 // profit remains unchanged unless there's not enough to pay for it
                 if (amountRequired - _debtPayment < _profit) _profit = amountRequired - _debtPayment;
             } else {
                 // we were not able to free funds
-                if (amountAvailable < _debtOutstanding) {
+                if (totalAssets < _debtOutstanding) {
                     // available funds are lower than the repayment we need to do
                     _profit = 0;
-                    _debtPayment = amountAvailable;
+                    _debtPayment = totalAssets;
                 } else {
                     _debtPayment = _debtOutstanding;
-                    _profit = amountAvailable - _debtPayment;
+                    _profit = totalAssets - _debtPayment;
                 }
             }
         } else {
@@ -162,7 +161,6 @@ contract Strategy is BaseStrategy, Ownable {
         uint256 daiToDeposit = want.balanceOf(address(this));
         if (daiToDeposit > 0) NIFTYAPES.supplyErc20(address(DAI), daiToDeposit);
 
-        // TODO: Do something to invest excess `want` tokens (from the Vault) into your positions
         // NOTE: Try to adjust positions so that `_debtOutstanding` can be freed up on *next* harvest (not immediately)
         uint256 floorPrice = calculateFloorPrice();
         uint256 delta = calculateDelta(lastFloorPrice, floorPrice);
@@ -177,7 +175,6 @@ contract Strategy is BaseStrategy, Ownable {
         override
         returns (uint256 _liquidatedAmount, uint256 _loss)
     {
-        // TODO: Do stuff here to free up to `_amountNeeded` from all positions back into `want`
         // NOTE: Maintain invariant `want.balanceOf(this) >= _liquidatedAmount`
         // NOTE: Maintain invariant `_liquidatedAmount + _loss <= _amountNeeded`
         uint256 totalAssets = want.balanceOf(address(this));
@@ -210,6 +207,8 @@ contract Strategy is BaseStrategy, Ownable {
      * liquidate all of the Strategy's positions back to the Vault.
      */
     function liquidateAllPositions() internal override returns (uint256 wantBalance) {
+        
+        if (newOffersEnabled) newOffersEnabled = false;
 
         NIFTYAPES.withdrawErc20(address(want), calculateDaiBalance());
         wantBalance = want.balanceOf(address(this));
@@ -272,7 +271,6 @@ contract Strategy is BaseStrategy, Ownable {
     //                                  NEW METHODS
     // ******************************************************************************
 
-    // TODO: create a seize / seize and sell
 
     function removeOffer() private {
         // Remove the outstanding offer if it's still live, as we are about
@@ -299,11 +297,14 @@ contract Strategy is BaseStrategy, Ownable {
 
     // NOTE: does not need to have access control as this contract will receive
     function seizeAsset(uint256 nftId) external {
+        // TODO: add erc721Receiver
         NIFTYAPES.seizeAsset(BAYC, nftId);
     }
     function withdrawSeizedAsset(address to, uint256 nftId) external onlyOwner {
         IERC721(BAYC).transferFrom(address(this), to, nftId);
     }
+
+    // TODO: create seize and sell
 
     function setExpirationWindow(uint32 _expirationWindow) external onlyOwner {
         require(_expirationWindow != expirationWindow, "Same window");
@@ -330,13 +331,18 @@ contract Strategy is BaseStrategy, Ownable {
 
     // thirtyDayProfitPotential should be calculated by finding the number of new loans in the last 30 days
     // And multiplying the interestRatePerSecond by the duration of the loan
-    function setThirtyDayProfitPotential(uint256 amount) public onlyAuthorized {
+    function setThirtyDayProfitPotential(uint256 amount) external onlyAuthorized {
         thirtyDayProfitPotential = amount;
     }
 
-    function setThirtyDayStrategyOffers(uint256 createAmount, uint256 removeAmount) public onlyAuthorized {
+    function setThirtyDayStrategyOffers(uint256 createAmount, uint256 removeAmount) external onlyAuthorized {
         offersInLastMonth = createAmount;
         removesInLastMonth = removeAmount;
+    }
+
+    // hardcoded setter to say how much debt there is outstanding
+    function setOutstandingLoans(uint256 amount) external onlyAuthorized {
+        outstandingLoans = amount;
     }
 
     function toggleNewOffersEnabled() external onlyAuthorized {
