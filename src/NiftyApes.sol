@@ -17,7 +17,6 @@ import "./interfaces/compound/ICERC20.sol";
 import "./interfaces/niftyapes/INiftyApes.sol";
 import "./lib/ECDSABridge.sol";
 import "./lib/Math.sol";
-import "./test/console.sol";
 
 /// @title Implemention of the INiftyApes interface
 contract NiftyApes is
