@@ -93,9 +93,9 @@ contract NiftyApes is
     function initialize() public initializer {
         EIP712Upgradeable.__EIP712_init("NiftyApes", "0.0.1");
 
-        protocolInterestBps = 50;
+        protocolInterestBps = 0;
         refinancePremiumLenderBps = 50;
-        refinancePremiumProtocolBps = 50;
+        refinancePremiumProtocolBps = 0;
 
         OwnableUpgradeable.__Ownable_init();
         PausableUpgradeable.__Pausable_init();
