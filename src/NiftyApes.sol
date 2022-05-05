@@ -1039,6 +1039,7 @@ contract NiftyApes is
         onlyOwner
     {
         require(newRegenCollectiveBpsOfRevenue <= MAX_FEE, "max fee");
+        require(newRegenCollectiveBpsOfRevenue >= regenCollectiveBpsOfRevenue, "must be greater");
         emit RegenCollectiveBpsOfRevenueUpdated(
             regenCollectiveBpsOfRevenue,
             newRegenCollectiveBpsOfRevenue
