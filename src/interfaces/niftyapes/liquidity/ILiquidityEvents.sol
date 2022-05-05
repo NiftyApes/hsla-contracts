@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity 0.8.13;
 
 /// @title Events emmited for changes in liquidity
 interface ILiquidityEvents {
@@ -60,4 +60,16 @@ interface ILiquidityEvents {
     /// @param amount The amount of ethereum that have been removed from be protocol
     /// @param cTokenAmount The amount of compound tokens that got removed
     event EthWithdrawn(address indexed liquidityProvider, uint256 amount, uint256 cTokenAmount);
+
+    /// @notice Emmited when the owner withdraws from the protocol.
+    /// @param liquidityProvider The address of the liquidity provider removing funds
+    /// @param asset The address of the token being removeid
+    /// @param tokenAmount The amount of tokens that have been removed from be protocol
+    /// @param cTokenAmount The amount of compound tokens that have been removed
+    event PercentForRegen(
+        address indexed liquidityProvider,
+        address indexed asset,
+        uint256 tokenAmount,
+        uint256 cTokenAmount
+    );
 }

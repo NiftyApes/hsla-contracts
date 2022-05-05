@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: Unlicensed
-pragma solidity ^0.8.13;
+pragma solidity 0.8.13;
 
-import "@openzeppelin/contracts/utils/cryptography/ECDSAUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/utils/cryptography/ECDSAUpgradeable.sol";
 
 /// @title Moves openzepplins ECDSA implementation into a seperate library to save
 ///        code size in the main contract.

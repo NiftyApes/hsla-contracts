@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity 0.8.13;
 
 import "./ILiquidityEvents.sol";
 import "./ILiquidityStructs.sol";
@@ -40,8 +40,8 @@ interface ILiquidity is ILiquidityEvents, ILiquidityStructs {
     function supplyEth() external payable returns (uint256);
 
     /// @notice Withdraw Eth from NiftyApes.
-    ///         Eth token is supplied to compound and users will be earning interest
-    ///         on it.
+    ///         This method withdraws tokens from compound and unwraps the ctoken returning
+    ///         the underlying asset to the user.
     /// @param amount The amount of eth to withdraw
     function withdrawEth(uint256 amount) external returns (uint256);
 

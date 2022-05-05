@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity 0.8.13;
 
-import "@openzeppelin/contracts/interfaces/IERC20Upgradeable.sol";
-import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/interfaces/IERC20Upgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 import "../../interfaces/compound/ICERC20.sol";
 import "../../interfaces/compound/ICEther.sol";
 import "../../NiftyApes.sol";
@@ -13,6 +13,8 @@ import "../mock/CERC20Mock.sol";
 import "../mock/CEtherMock.sol";
 import "../mock/ERC20Mock.sol";
 import "../mock/ERC721Mock.sol";
+import "../console.sol";
+
 
 contract LendingAuctionUnitTest is
     BaseTest,
@@ -3521,7 +3523,7 @@ contract LendingAuctionUnitTest is
         Offer memory offer = Offer({
             creator: LENDER_1,
             nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
+            interestRatePerSecond: 694444444444, // 1% interest on 6 eth for 86400 seconds
             fixedTerms: false,
             floorTerm: true,
             lenderOffer: true,
@@ -3554,7 +3556,7 @@ contract LendingAuctionUnitTest is
         Offer memory offer2 = Offer({
             creator: LENDER_2,
             nftContractAddress: address(mockNft),
-            interestRatePerSecond: 2,
+            interestRatePerSecond: 694444444442,
             fixedTerms: false,
             floorTerm: true,
             lenderOffer: true,
@@ -3593,11 +3595,11 @@ contract LendingAuctionUnitTest is
         assertEq(lendingAction.getCAssetBalance(address(this), address(cUSDCToken)), 0);
         assertEq(
             lendingAction.getCAssetBalance(LENDER_1, address(cUSDCToken)),
-            6000000000000001800 ether
+            6000069444444444400 ether
         );
         assertEq(
             lendingAction.getCAssetBalance(LENDER_2, address(cUSDCToken)),
-            3999999999999998200 ether
+            3999930555555555600 ether
         );
 
         LoanAuction memory loanAuction = lendingAction.getLoanAuction(address(mockNft), 1);
@@ -3605,15 +3607,14 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.nftOwner, address(this));
         assertEq(loanAuction.lender, LENDER_2);
         assertEq(loanAuction.asset, address(usdcToken));
-        assertEq(loanAuction.interestRatePerSecond, 2);
+        assertEq(loanAuction.interestRatePerSecond, 694444444442);
         assertTrue(!loanAuction.fixedTerms);
 
         assertEq(loanAuction.amount, 7 ether);
-        assertEq(loanAuction.loanEndTimestamp, block.timestamp + 3 days);
+        assertEq(loanAuction.loanEndTimestamp, loanAuction.loanBeginTimestamp + 3 days);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
         assertEq(loanAuction.accumulatedLenderInterest, 0);
-        assertEq(loanAuction.accumulatedProtocolInterest, 30000);
-        assertEq(loanAuction.amountDrawn, 6000000000000001800);
+        assertEq(loanAuction.accumulatedProtocolInterest, 0); // 0 fee set so 0 balance expected
     }
 
     function testCannotRefinanceByBorrowerSignature_fixed_terms() public {
@@ -4715,7 +4716,7 @@ contract LendingAuctionUnitTest is
         Offer memory offer = Offer({
             creator: LENDER_1,
             nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
+            interestRatePerSecond: 694444444444, // 1% interest on 6 eth for 86400 seconds
             fixedTerms: false,
             floorTerm: true,
             lenderOffer: true,
@@ -4748,7 +4749,7 @@ contract LendingAuctionUnitTest is
         Offer memory offer2 = Offer({
             creator: SIGNER_1,
             nftContractAddress: address(mockNft),
-            interestRatePerSecond: 2,
+            interestRatePerSecond: 694444444442,
             fixedTerms: false,
             floorTerm: true,
             lenderOffer: true,
@@ -4785,11 +4786,11 @@ contract LendingAuctionUnitTest is
         assertEq(lendingAction.getCAssetBalance(address(this), address(cUSDCToken)), 0);
         assertEq(
             lendingAction.getCAssetBalance(LENDER_1, address(cUSDCToken)),
-            6000000000000001800 ether
+            6000069444444444400 ether
         );
         assertEq(
             lendingAction.getCAssetBalance(SIGNER_1, address(cUSDCToken)),
-            3999999999999998200 ether
+            3999930555555555600 ether
         );
 
         LoanAuction memory loanAuction = lendingAction.getLoanAuction(address(mockNft), 1);
@@ -4797,15 +4798,14 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.nftOwner, address(this));
         assertEq(loanAuction.lender, SIGNER_1);
         assertEq(loanAuction.asset, address(usdcToken));
-        assertEq(loanAuction.interestRatePerSecond, 2);
+        assertEq(loanAuction.interestRatePerSecond, 694444444442);
         assertTrue(!loanAuction.fixedTerms);
 
         assertEq(loanAuction.amount, 7 ether);
-        assertEq(loanAuction.loanEndTimestamp, block.timestamp + 3 days);
+        assertEq(loanAuction.loanEndTimestamp, loanAuction.loanBeginTimestamp + 3 days);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
         assertEq(loanAuction.accumulatedLenderInterest, 0);
-        assertEq(loanAuction.accumulatedProtocolInterest, 30000);
-        assertEq(loanAuction.amountDrawn, 6000000000000001800);
+        assertEq(loanAuction.accumulatedProtocolInterest, 0); // 0 fee set so 0 balance expected
     }
 
     function testCannotRefinanceByLender_fixed_terms() public {
@@ -5489,12 +5489,12 @@ contract LendingAuctionUnitTest is
         );
         assertEq(
             lendingAction.getCAssetBalance(LENDER_2, address(cUSDCToken)),
-            940000000000000000 ether
+            970000000000000000 ether
         );
 
         assertEq(
             lendingAction.getCAssetBalance(OWNER, address(cUSDCToken)),
-            30000000000000000 ether
+            0 ether
         );
 
         LoanAuction memory loanAuction = lendingAction.getLoanAuction(address(mockNft), 1);
@@ -5582,7 +5582,7 @@ contract LendingAuctionUnitTest is
         Offer memory offer = Offer({
             creator: LENDER_1,
             nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
+            interestRatePerSecond: 6944444400000,
             fixedTerms: false,
             floorTerm: true,
             lenderOffer: true,
@@ -5615,7 +5615,7 @@ contract LendingAuctionUnitTest is
         Offer memory offer2 = Offer({
             creator: LENDER_2,
             nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
+            interestRatePerSecond: 6844444400000,
             fixedTerms: false,
             floorTerm: false,
             lenderOffer: true,
@@ -5642,7 +5642,7 @@ contract LendingAuctionUnitTest is
         Offer memory offer = Offer({
             creator: LENDER_1,
             nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
+            interestRatePerSecond: 694444444444,
             fixedTerms: false,
             floorTerm: true,
             lenderOffer: true,
@@ -5675,7 +5675,7 @@ contract LendingAuctionUnitTest is
         Offer memory offer2 = Offer({
             creator: LENDER_2,
             nftContractAddress: address(mockNft),
-            interestRatePerSecond: 2,
+            interestRatePerSecond: 694444444440,
             fixedTerms: false,
             floorTerm: false,
             lenderOffer: true,
@@ -5687,7 +5687,7 @@ contract LendingAuctionUnitTest is
         });
 
         hevm.warp(block.timestamp + 100);
-
+        
         lendingAction.refinanceByLender(offer2);
 
         assertEq(usdcToken.balanceOf(address(this)), 6 ether);
@@ -5708,16 +5708,16 @@ contract LendingAuctionUnitTest is
         assertEq(lendingAction.getCAssetBalance(address(this), address(cUSDCToken)), 0);
         assertEq(
             lendingAction.getCAssetBalance(LENDER_1, address(cUSDCToken)),
-            6030000000000001800 ether
+            6030069444444444400 ether
         );
         assertEq(
             lendingAction.getCAssetBalance(LENDER_2, address(cUSDCToken)),
-            3939999999999998200 ether
+            3969930555555555600 ether
         );
 
         assertEq(
             lendingAction.getCAssetBalance(OWNER, address(cUSDCToken)),
-            30000000000000000 ether
+            0 ether // premium at 0 so no balance expected
         );
 
         LoanAuction memory loanAuction = lendingAction.getLoanAuction(address(mockNft), 1);
@@ -5725,14 +5725,14 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.nftOwner, address(this));
         assertEq(loanAuction.lender, LENDER_2);
         assertEq(loanAuction.asset, address(usdcToken));
-        assertEq(loanAuction.interestRatePerSecond, 2);
+        assertEq(loanAuction.interestRatePerSecond, 694444444440);
         assertTrue(!loanAuction.fixedTerms);
 
         assertEq(loanAuction.amount, 7 ether);
-        assertEq(loanAuction.loanEndTimestamp, block.timestamp + 3 days);
+        assertEq(loanAuction.loanEndTimestamp, loanAuction.loanBeginTimestamp + 3 days);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
-        assertEq(loanAuction.accumulatedLenderInterest, 1800);
-        assertEq(loanAuction.accumulatedProtocolInterest, 30000);
+        assertEq(loanAuction.accumulatedLenderInterest, 69444444444400);
+        assertEq(loanAuction.accumulatedProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 6000000000000000000);
     }
 
@@ -5746,7 +5746,7 @@ contract LendingAuctionUnitTest is
         Offer memory offer = Offer({
             creator: LENDER_1,
             nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
+            interestRatePerSecond: 694444444444, // 1% interest on 6 eth for 86400 seconds
             fixedTerms: false,
             floorTerm: true,
             lenderOffer: true,
@@ -5779,7 +5779,7 @@ contract LendingAuctionUnitTest is
         Offer memory offer2 = Offer({
             creator: LENDER_1,
             nftContractAddress: address(mockNft),
-            interestRatePerSecond: 2,
+            interestRatePerSecond: 694444444442,
             fixedTerms: false,
             floorTerm: false,
             lenderOffer: true,
@@ -5819,16 +5819,18 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.nftOwner, address(this));
         assertEq(loanAuction.lender, LENDER_1);
         assertEq(loanAuction.asset, address(usdcToken));
-        assertEq(loanAuction.interestRatePerSecond, 2);
+        assertEq(loanAuction.interestRatePerSecond, 694444444442);
         assertTrue(!loanAuction.fixedTerms);
 
         assertEq(loanAuction.amount, 6 ether);
-        assertEq(loanAuction.loanEndTimestamp, block.timestamp + 3 days);
+        assertEq(loanAuction.loanEndTimestamp, loanAuction.loanBeginTimestamp + 3 days);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
-        assertEq(loanAuction.accumulatedLenderInterest, 1800);
-        assertEq(loanAuction.accumulatedProtocolInterest, 30000);
+        assertEq(loanAuction.accumulatedLenderInterest, 69444444444400);
+        assertEq(loanAuction.accumulatedProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 6 ether);
     }
+
+    // TODO (captnseagraves) create tests that set the protocolInterestBps and refinancePremiumProtocolBps to higher vlaues and test math
 
     function testRefinanceByLender_covers_interest_3_lenders() public {
         hevm.startPrank(LENDER_1);
@@ -5840,7 +5842,7 @@ contract LendingAuctionUnitTest is
         Offer memory offer = Offer({
             creator: LENDER_1,
             nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
+            interestRatePerSecond: 694444444444,
             fixedTerms: false,
             floorTerm: true,
             lenderOffer: true,
@@ -5873,7 +5875,7 @@ contract LendingAuctionUnitTest is
         Offer memory offer2 = Offer({
             creator: LENDER_2,
             nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
+            interestRatePerSecond: 694444444442,
             fixedTerms: false,
             floorTerm: false,
             lenderOffer: true,
@@ -5899,7 +5901,7 @@ contract LendingAuctionUnitTest is
         Offer memory offer3 = Offer({
             creator: LENDER_3,
             nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
+            interestRatePerSecond: 694444444440,
             fixedTerms: false,
             floorTerm: false,
             lenderOffer: true,
@@ -5935,21 +5937,21 @@ contract LendingAuctionUnitTest is
         assertEq(lendingAction.getCAssetBalance(address(this), address(cUSDCToken)), 0);
         assertEq(
             lendingAction.getCAssetBalance(LENDER_1, address(cUSDCToken)),
-            6030000000000001800 ether
+            6030069444444444400 ether
         );
         assertEq(
             lendingAction.getCAssetBalance(LENDER_2, address(cUSDCToken)),
-            9970000000000003600 ether
+            10000138888888888400 ether
         );
 
         assertEq(
             lendingAction.getCAssetBalance(LENDER_3, address(cUSDCToken)),
-            3939999999999994600 ether
+            3969791666666667200 ether
         );
 
         assertEq(
             lendingAction.getCAssetBalance(OWNER, address(cUSDCToken)),
-            60000000000000000 ether
+            0 ether // protocol premium is 0 so owner has no balance
         );
 
         LoanAuction memory loanAuction = lendingAction.getLoanAuction(address(mockNft), 1);
@@ -5957,14 +5959,14 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.nftOwner, address(this));
         assertEq(loanAuction.lender, LENDER_3);
         assertEq(loanAuction.asset, address(usdcToken));
-        assertEq(loanAuction.interestRatePerSecond, 3);
+        assertEq(loanAuction.interestRatePerSecond, 694444444440);
         assertTrue(!loanAuction.fixedTerms);
 
         assertEq(loanAuction.amount, 8 ether);
-        assertEq(loanAuction.loanEndTimestamp, block.timestamp + 3 days);
+        assertEq(loanAuction.loanEndTimestamp, loanAuction.loanBeginTimestamp + 3 days);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
-        assertEq(loanAuction.accumulatedLenderInterest, 5400);
-        assertEq(loanAuction.accumulatedProtocolInterest, 90000);
+        assertEq(loanAuction.accumulatedLenderInterest, 208333333332800);
+        assertEq(loanAuction.accumulatedProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 6000000000000000000);
     }
 
@@ -6294,8 +6296,8 @@ contract LendingAuctionUnitTest is
         hevm.warp(block.timestamp + 1 days);
 
         uint256 principal = 1 ether;
-        uint256 lenderInterest = (3 * 1 days * principal) / 1 ether;
-        uint256 protocolInterest = (50 * 1 days * principal) / 1 ether;
+
+        (uint256 lenderInterest, uint256 protocolInterest) = lendingAction.calculateInterestAccrued(offer.nftContractAddress, offer.nftId);
 
         uint256 repayAmount = principal + lenderInterest + protocolInterest;
 
@@ -6338,4 +6340,8 @@ contract LendingAuctionUnitTest is
     // TODO(dankurka): Tests missing for drawAmount
 
     // TODO(dankurka): Missing test for withdrawing someone elses signed offer
+
+    // TODO(captnseagraves): Missing tests for Seize and Sell
+    // TODO(captnseagraves): Missing tests for regen collective percentage
+
 }
