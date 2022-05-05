@@ -86,10 +86,10 @@ contract AdminUnitTest is BaseTest, INiftyApesAdminEvents {
     }
 
     function testUpdateProtocolInterestBps_owner() public {
-        assertEq(niftyApes.protocolInterestBps(), 50);
+        assertEq(niftyApes.protocolInterestBps(), 0);
         hevm.expectEmit(true, false, false, true);
 
-        emit ProtocolInterestBpsUpdated(50, 1);
+        emit ProtocolInterestBpsUpdated(0, 1);
         niftyApes.updateProtocolInterestBps(1);
         assertEq(niftyApes.protocolInterestBps(), 1);
     }
@@ -126,10 +126,10 @@ contract AdminUnitTest is BaseTest, INiftyApesAdminEvents {
     }
 
     function testUpdateRefinancePremiumProtocolFee_owner() public {
-        assertEq(niftyApes.refinancePremiumProtocolBps(), 50);
+        assertEq(niftyApes.refinancePremiumProtocolBps(), 0);
         hevm.expectEmit(true, false, false, true);
 
-        emit RefinancePremiumProtocolBpsUpdated(50, 1);
+        emit RefinancePremiumProtocolBpsUpdated(0, 1);
         niftyApes.updateRefinancePremiumProtocolBps(1);
         assertEq(niftyApes.refinancePremiumProtocolBps(), 1);
     }
