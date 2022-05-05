@@ -228,6 +228,8 @@ interface ILending is ILendingEvents, ILendingStructs {
     function ownerOf(address nftContractAddress, uint256 nftId) external view returns (address);
 
     /// @notice Returns interest since the last update to the loan
+    ///         This includes the accumulatedInterest over the life of loan paid to previous lenders to buy refinacne the loan
+    ///         and the interest from the current active interest period.
     /// @param nftContractAddress The address of the NFT collection
     /// @param nftId The id of the specified NFT
     function calculateInterestAccrued(address nftContractAddress, uint256 nftId)
