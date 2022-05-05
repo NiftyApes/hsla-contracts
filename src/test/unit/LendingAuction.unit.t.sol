@@ -3614,8 +3614,7 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.loanEndTimestamp, loanAuction.loanBeginTimestamp + 3 days);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
         assertEq(loanAuction.accumulatedLenderInterest, 0);
-        assertEq(loanAuction.accumulatedProtocolInterest, 34722222222200); // 0.5% interest on 6 eth for 86400 seconds
-        assertEq(loanAuction.amountDrawn, 6000069444444444400);
+        assertEq(loanAuction.accumulatedProtocolInterest, 0); // 0 fee set so 0 balance expected
     }
 
     function testCannotRefinanceByBorrowerSignature_fixed_terms() public {
@@ -4806,8 +4805,7 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.loanEndTimestamp, loanAuction.loanBeginTimestamp + 3 days);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
         assertEq(loanAuction.accumulatedLenderInterest, 0);
-        assertEq(loanAuction.accumulatedProtocolInterest, 34722222222200); // 0.5% interest on 6 eth for 86400 seconds
-        assertEq(loanAuction.amountDrawn, 6000069444444444400);
+        assertEq(loanAuction.accumulatedProtocolInterest, 0); // 0 fee set so 0 balance expected
     }
 
     function testCannotRefinanceByLender_fixed_terms() public {
@@ -5491,12 +5489,12 @@ contract LendingAuctionUnitTest is
         );
         assertEq(
             lendingAction.getCAssetBalance(LENDER_2, address(cUSDCToken)),
-            940000000000000000 ether
+            970000000000000000 ether
         );
 
         assertEq(
             lendingAction.getCAssetBalance(OWNER, address(cUSDCToken)),
-            30000000000000000 ether
+            0 ether
         );
 
         LoanAuction memory loanAuction = lendingAction.getLoanAuction(address(mockNft), 1);
@@ -5714,12 +5712,12 @@ contract LendingAuctionUnitTest is
         );
         assertEq(
             lendingAction.getCAssetBalance(LENDER_2, address(cUSDCToken)),
-            3939930555555555600 ether
+            3969930555555555600 ether
         );
 
         assertEq(
             lendingAction.getCAssetBalance(OWNER, address(cUSDCToken)),
-            30000000000000000 ether
+            0 ether // premium at 0 so no balance expected
         );
 
         LoanAuction memory loanAuction = lendingAction.getLoanAuction(address(mockNft), 1);
@@ -5734,7 +5732,7 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.loanEndTimestamp, loanAuction.loanBeginTimestamp + 3 days);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
         assertEq(loanAuction.accumulatedLenderInterest, 69444444444400);
-        assertEq(loanAuction.accumulatedProtocolInterest, 34722222222200);
+        assertEq(loanAuction.accumulatedProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 6000000000000000000);
     }
 
@@ -5828,9 +5826,11 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.loanEndTimestamp, loanAuction.loanBeginTimestamp + 3 days);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
         assertEq(loanAuction.accumulatedLenderInterest, 69444444444400);
-        assertEq(loanAuction.accumulatedProtocolInterest, 34722222222200); // 0.5% interest on 6 eth for 86400 seconds
+        assertEq(loanAuction.accumulatedProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 6 ether);
     }
+
+    // TODO (captnseagraves) create tests that set the protocolInterestBps and refinancePremiumProtocolBps to higher vlaues and test math
 
     function testRefinanceByLender_covers_interest_3_lenders() public {
         hevm.startPrank(LENDER_1);
@@ -5941,17 +5941,17 @@ contract LendingAuctionUnitTest is
         );
         assertEq(
             lendingAction.getCAssetBalance(LENDER_2, address(cUSDCToken)),
-            9970138888888888400 ether
+            10000138888888888400 ether
         );
 
         assertEq(
             lendingAction.getCAssetBalance(LENDER_3, address(cUSDCToken)),
-            3939791666666667200 ether
+            3969791666666667200 ether
         );
 
         assertEq(
             lendingAction.getCAssetBalance(OWNER, address(cUSDCToken)),
-            60000000000000000 ether
+            0 ether // protocol premium is 0 so owner has no balance
         );
 
         LoanAuction memory loanAuction = lendingAction.getLoanAuction(address(mockNft), 1);
@@ -5966,7 +5966,7 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.loanEndTimestamp, loanAuction.loanBeginTimestamp + 3 days);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
         assertEq(loanAuction.accumulatedLenderInterest, 208333333332800);
-        assertEq(loanAuction.accumulatedProtocolInterest, 104166666666600);
+        assertEq(loanAuction.accumulatedProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 6000000000000000000);
     }
 
