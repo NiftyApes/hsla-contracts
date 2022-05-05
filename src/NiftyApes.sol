@@ -7,6 +7,7 @@ import "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.
 import "@openzeppelin-upgradeable/contracts/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/token/ERC721/IERC721Upgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/utils/cryptography/draft-EIP712Upgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/utils/math/MathUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/utils/math/SafeCastUpgradeable.sol";
