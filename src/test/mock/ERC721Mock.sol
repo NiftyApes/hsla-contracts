@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721Upgradeable.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/token/ERC721/ERC721Upgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
 
 contract ERC721Mock is ERC721Upgradeable, ERC721EnumerableUpgradeable {
     function initialize(string memory name, string memory symbol) public initializer {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "@openzeppelin/contracts/interfaces/IERC20Upgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/interfaces/IERC20Upgradeable.sol";
 import "../../interfaces/compound/ICERC20.sol";
 import "../../interfaces/compound/ICEther.sol";
 import "../../NiftyApes.sol";

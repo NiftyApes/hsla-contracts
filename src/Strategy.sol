@@ -1,23 +1,41 @@
 // SPDX-License-Identifier: AGPL-3.0
 // Feel free to change the license, but this is what we use
 
-pragma solidity ^0.8.12;
+pragma solidity ^0.8.13;
 pragma experimental ABIEncoderV2;
 
 // These are the core Yearn libraries
 import {BaseStrategy, StrategyParams} from "@yearnvaults/contracts/BaseStrategy.sol";
-import "@openzeppelin/contracts/access/OwnableUpgradeable.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-import {AddressUpgradeable} from "@openzeppelin/contracts/utils/AddressUpgradeable.sol";
-import {IERC20Upgradeable} from "@openzeppelin/contracts/token/ERC20/IERC20Upgradeable.sol";
-import {SafeERC20Upgradeable} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 
 import "./interfaces/niftyapes/INiftyApes.sol";
 import "./interfaces/chainlink/IChainlinkOracle.sol";
 
-contract Strategy is BaseStrategy, OwnableUpgradeable {
-    using SafeERC20Upgradeable for IERC20Upgradeable;
-    using AddressUpgradeable for address;
+
+/*
+Assuptions from NIFTYAPES
+- NIFTYAPES contract implements `cAssetAmountToAssetAmount()`
+- NIFTYAPES contract implements `roughAssetAmountToCAssetAmount()` (as seen in this PR)
+- NIFTYAPES contract adds a return value to `createOffer()`
+
+Assumptions within this contract
+    - Constant `NIFTYAPES` is set
+    - maxReportDetaly, profitFactor, debtThreshold are set within constructor
+
+Stragegies used for reference
+https://yearn.watch/network/ethereum/vault/0xa354F35829Ae975e850e23e9615b11Da1B3dC4DE/strategy/0xbeddd783be73805febda2c40a2bf3881f04fd7cc
+https://yearn.watch/network/ethereum/vault/0xdA816459F1AB5631232FE5e97a05BBBb94970c95/strategy/0xa6d1c610b3000f143c18c75d84baa0ec22681185
+*/
+
+contract Strategy is BaseStrategy, Ownable, ERC721Holder {
+    using SafeERC20 for IERC20;
+    using Address for address;
 
     INiftyApes public constant NIFTYAPES = INiftyApes(address(0));
     address public constant BAYC = 0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D;
@@ -42,39 +60,14 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
     uint256 public thirtyDayProfitPotential;
     uint256 public offersInLastMonth;
     uint256 public removesInLastMonth;
+    uint256 public outstandingLoans; // DAI value of outstanding loans hardcoded by strategiest
     uint256 public removeOfferGas = 8374;
     uint256 public createOfferGas = 131110;
 
+    bool public newOffersEnabled;
     ILendingStructs.Offer public offer;
     bytes32 public offerHash;
 
-    function setExpirationWindow(uint32 _expirationWindow) external {
-        // if the new window is shorter - to remove active previous offers
-        // if new window is longer - no need to remove as we can always assume the most recent
-        // offer expiration is greater than an older offer
-        // NOTE: ^ is irrelevant w/ only one offer
-        require(_expirationWindow != expirationWindow, "Same window");
-        require(_expirationWindow > 1 days, "Too short of a window");
-        expirationWindow = _expirationWindow;
-    }
-
-
-    function setOffer(ILendingStructs.Offer memory _offer) external onlyOwner {
-        removeOffer();
-        _setOffer(_offer);
-    }
-
-    function _setOffer(ILendingStructs.Offer memory _offer) private {
-        offer.duration = _offer.duration;
-        offer.fixedTerms = _offer.fixedTerms;
-        offer.floorTerm = _offer.floorTerm;
-        offer.lenderOffer = _offer.lenderOffer;
-        offer.nftContractAddress = _offer.nftContractAddress;
-        offer.asset = _offer.asset;
-        offer.interestRatePerSecond = _offer.interestRatePerSecond;
-    }
-
-    // https://github.com/yearn/yearn-vaults/blob/main/contracts/BaseStrategy.sol
     constructor(
         address _vault,
         ILendingStructs.Offer memory _offer
@@ -83,7 +76,7 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
         // maxReportDelay = 6300;  // The maximum number of seconds between harvest calls
         // profitFactor = 100; // The minimum multiple that `callCost` must be above the credit/profit to be "justifiable";
         // debtThreshold = 0; // Use this to adjust the threshold at which running a debt causes harvest trigger
-        want = IERC20Upgradeable(DAI);
+        want = IERC20(DAI);
         offer.creator = address(this);
         _setOffer(_offer);
     }
@@ -108,11 +101,56 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
             uint256 _debtPayment
         )
     {
-        // TODO: Do stuff here to free up any returns back into `want`
         // NOTE: Return `_profit` which is value generated by all positions, priced in `want`
         // NOTE: Should try to free up at least `_debtOutstanding` of underlying position
 
-        // TODO: when loan is paid - how is that $ routed? to address of lender?
+        // see how much cDAI nifty apes has vs what the debt of cdai is worth
+        // TODO: implement this function
+        uint256 debtInCDai = NIFTYAPES.assetAmountToCAssetAmount(
+            address(want), _debtOutstanding
+        );
+        uint256 cDaiBalance = NIFTYAPES.getCAssetBalance(address(this), CDAI);
+
+        // Withdraw any cDAI that's in profit
+        if (cDaiBalance > debtInCDai) {
+            NIFTYAPES.withdrawCErc20(CDAI, cDaiBalance - debtInCDai);
+        }
+
+       // withdraw excess cDai
+        uint256 totalDebt = vault.strategies(address(this)).totalDebt;
+        uint256 totalAssets = want.balanceOf(address(this)) + outstandingLoans;
+        
+        if (totalAssets > totalDebt) {
+            // we have profit
+            _profit =  totalAssets - totalDebt;
+        }
+
+        // free funds to repay debt + profit to strategy
+        uint256 amountRequired = _debtOutstanding + _profit;
+        if (amountRequired > totalAssets) {
+            // we need to free funds
+            // TODO: how to liquidate when there are outstanding loans?
+            (totalAssets, ) = liquidatePosition(amountRequired);
+            if (totalAssets > amountRequired) {
+                _debtPayment = _debtOutstanding;
+                // profit remains unchanged unless there's not enough to pay for it
+                if (amountRequired - _debtPayment < _profit) _profit = amountRequired - _debtPayment;
+            } else {
+                // we were not able to free funds
+                if (totalAssets < _debtOutstanding) {
+                    // available funds are lower than the repayment we need to do
+                    _profit = 0;
+                    _debtPayment = totalAssets;
+                } else {
+                    _debtPayment = _debtOutstanding;
+                    _profit = totalAssets - _debtPayment;
+                }
+            }
+        } else {
+            _debtPayment = _debtOutstanding;
+            // profit remains unchanged unless there's not enough to pay for it
+                if (amountRequired - _debtPayment < _profit) _profit = amountRequired - _debtPayment;
+        }
     }
 
     function adjustPosition(uint256 _debtOutstanding) internal override {
@@ -121,9 +159,8 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
 
         // Deposit any additional want token into nifty apes
         uint256 daiToDeposit = want.balanceOf(address(this));
-        NIFTYAPES.supplyErc20(address(DAI), daiToDeposit);
+        if (daiToDeposit > 0) NIFTYAPES.supplyErc20(address(DAI), daiToDeposit);
 
-        // TODO: Do something to invest excess `want` tokens (from the Vault) into your positions
         // NOTE: Try to adjust positions so that `_debtOutstanding` can be freed up on *next* harvest (not immediately)
         uint256 floorPrice = calculateFloorPrice();
         uint256 delta = calculateDelta(lastFloorPrice, floorPrice);
@@ -138,10 +175,8 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
         override
         returns (uint256 _liquidatedAmount, uint256 _loss)
     {
-        // TODO: Do stuff here to free up to `_amountNeeded` from all positions back into `want`
         // NOTE: Maintain invariant `want.balanceOf(this) >= _liquidatedAmount`
         // NOTE: Maintain invariant `_liquidatedAmount + _loss <= _amountNeeded`
-
         uint256 totalAssets = want.balanceOf(address(this));
 
         if (_amountNeeded > totalAssets) {
@@ -172,17 +207,14 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
      * liquidate all of the Strategy's positions back to the Vault.
      */
     function liquidateAllPositions() internal override returns (uint256 wantBalance) {
+        
+        if (newOffersEnabled) newOffersEnabled = false;
 
         NIFTYAPES.withdrawErc20(address(want), calculateDaiBalance());
         wantBalance = want.balanceOf(address(this));
 
         removeOffer();
-
         // NOTE: needs to be re-called when outstanding loans expire
-        
-
-        // REQUIRED: Liquidate all positions and return the amount freed.
-        // return want.balanceOf(address(this));
     }
 
     // NOTE: Can override `tendTrigger` and `harvestTrigger` if necessary
@@ -190,6 +222,7 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
     function prepareMigration(address _newStrategy) internal override {
         // TODO: Transfer any non-`want` tokens to the new strategy
         // NOTE: `migrate` will automatically forward all `want` in this strategy to the new one
+        liquidateAllPositions();
     }
 
     // Override this to add all tokens/tokenized positions this contract manages
@@ -239,6 +272,83 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
     // ******************************************************************************
 
 
+    function removeOffer() private {
+        // Remove the outstanding offer if it's still live, as we are about
+        // to make a new offer
+        if (offer.expiration > block.timestamp && offer.expiration != 0) {
+            NIFTYAPES.removeOffer(BAYC, 0, offerHash, true);
+            // Reset expiriation so if remove offer is called again we don't 
+        }
+    }
+
+    function createOffer(
+        uint256 floorPrice
+    ) private {
+        require(newOffersEnabled, "!newOffersEnabled");
+        offer.expiration = uint32(block.timestamp) + expirationWindow;
+        offer.amount = uint128(floorPrice * collatRatio / PRECISION);
+        
+        NIFTYAPES.createOffer(offer); // TODO: have this return offer hash
+        offerHash = "";
+
+        lastFloorPrice = floorPrice;
+        lastOfferDate = block.timestamp;
+    }
+
+    // NOTE: does not need to have access control as this contract will receive
+    function seizeAsset(uint256 nftId) external {
+        // TODO: add erc721Receiver
+        NIFTYAPES.seizeAsset(BAYC, nftId);
+    }
+    function withdrawSeizedAsset(address to, uint256 nftId) external onlyOwner {
+        IERC721(BAYC).transferFrom(address(this), to, nftId);
+    }
+
+    // TODO: create seize and sell
+
+    function setExpirationWindow(uint32 _expirationWindow) external onlyOwner {
+        require(_expirationWindow != expirationWindow, "Same window");
+        require(_expirationWindow > 1 days, "Too short of a window");
+        expirationWindow = _expirationWindow;
+    }
+
+
+    function setOffer(ILendingStructs.Offer memory _offer) external onlyOwner {
+        removeOffer();
+        _setOffer(_offer);
+    }
+
+    function _setOffer(ILendingStructs.Offer memory _offer) private {
+        offer.duration = _offer.duration;
+        offer.fixedTerms = _offer.fixedTerms;
+        offer.floorTerm = _offer.floorTerm;
+        offer.lenderOffer = _offer.lenderOffer;
+        offer.nftContractAddress = _offer.nftContractAddress;
+        offer.asset = _offer.asset;
+        offer.interestRatePerSecond = _offer.interestRatePerSecond;
+    }
+
+
+    // thirtyDayProfitPotential should be calculated by finding the number of new loans in the last 30 days
+    // And multiplying the interestRatePerSecond by the duration of the loan
+    function setThirtyDayProfitPotential(uint256 amount) external onlyAuthorized {
+        thirtyDayProfitPotential = amount;
+    }
+
+    function setThirtyDayStrategyOffers(uint256 createAmount, uint256 removeAmount) external onlyAuthorized {
+        offersInLastMonth = createAmount;
+        removesInLastMonth = removeAmount;
+    }
+
+    // hardcoded setter to say how much debt there is outstanding
+    function setOutstandingLoans(uint256 amount) external onlyAuthorized {
+        outstandingLoans = amount;
+    }
+
+    function toggleNewOffersEnabled() external onlyAuthorized {
+        newOffersEnabled = !newOffersEnabled;
+    }
+
     function isProfitable() public view returns (bool) {
         return calculateProfitability() > 0;
     }
@@ -247,17 +357,6 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
     function calculateProfitability() public view returns (int256) {
         return int256(thirtyDayProfitPotential) - int256(calculateGasPerMonth());
 
-    }
-
-    // thirtyDayProfitPotential should be calculated by finding the number of new loans in the last 30 days
-    // And multiplying the interestRatePerSecond by the duration of the loan
-    function setThirtyDayProfitPotential(uint256 amount) public onlyAuthorized {
-        thirtyDayProfitPotential = amount;
-    }
-
-    function setThirtyDayStrategyOffers(uint256 createAmount, uint256 removeAmount) public onlyAuthorized {
-        offersInLastMonth = createAmount;
-        removesInLastMonth = removeAmount;
     }
 
     function calculateGasPerMonth() public view returns (uint256) {
@@ -275,8 +374,8 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
     function calculateFloorPrice() public view returns (uint256 floorPrice) {
         // Fetch current pool of sushi LP
         // balance of xBAYC
-        uint256 wethBalance = IERC20Upgradeable(WETH).balanceOf(SUSHILP);
-        uint256 xbaycBalance = IERC20Upgradeable(XBAYC).balanceOf(SUSHILP);
+        uint256 wethBalance = IERC20(WETH).balanceOf(SUSHILP);
+        uint256 xbaycBalance = IERC20(XBAYC).balanceOf(SUSHILP);
         uint256 floorInEth = PRECISION * wethBalance / xbaycBalance;
         uint256 ethPrice = uint256(ETHORACLE.latestAnswer()) / 1e8; // to get price in dollars
         floorPrice = floorInEth * ethPrice;
@@ -296,26 +395,6 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
         return delta > allowedDelta || block.timestamp > offer.expiration;
     }
 
-    function removeOffer() private {
-        // Remove the outstanding offer if it's still live, as we are about
-        // to make a new offer
-        if (offer.expiration > block.timestamp) {
-            NIFTYAPES.removeOffer(BAYC, 0, offerHash, true);
-        }
-    }
-
-    function createOffer(
-        uint256 floorPrice
-    ) private {
-        offer.expiration = uint32(block.timestamp) + expirationWindow;
-        offer.amount = uint128(floorPrice * collatRatio / PRECISION);
-        
-        NIFTYAPES.createOffer(offer); // TODO: have this return offer hash
-        offerHash = "";
-
-        lastFloorPrice = floorPrice;
-        lastOfferDate = block.timestamp;
-    }
 
     // Take the CDAI balance of this contract within NIFTY and convert to DAI
     function calculateDaiBalance() public view returns (uint256 daiBalance) {
@@ -324,29 +403,4 @@ contract Strategy is BaseStrategy, OwnableUpgradeable {
         // daiBalance = NIFTYAPES.cAssetAmountToAssetAmount(CDAI, cdaiBalance);
         daiBalance = 0;
     }
-
-    // TODO: to be CDAI?
-    function freeAmount(uint256 daiAmount) internal returns (uint256 freedAmount) {
-        // TODO: withdraw amount of balance to strategy
-    }
-
-
-
-    /*
-
-    // TODO: flash loans - can they be executed in a block, or only in a tx?    
-        - would a flash loan be able to impact the floor price when the keeper calls to refresh the offer?
-        - (?) put a price movement tolerance to see if price is stable -> if price is much different
-        - on this block vs. last - TWAP
-
-    - A strategiest would configure:
-        - Initial terms when strategy goes live
-        - constructor arguments
-
-    - Our "want" token to stack is DAI/USDC
-    
-    - can a keeper pass an argument into tend() - no
-    - can a keeper make an external API call
-    - can a k3pr handle an event
-    */
 }
