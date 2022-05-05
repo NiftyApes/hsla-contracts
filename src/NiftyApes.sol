@@ -80,6 +80,12 @@ contract NiftyApes is
     /// @inheritdoc ILending
     uint16 public refinancePremiumProtocolBps;
 
+    /// @inheritdoc ILending
+    uint16 public regenCollectiveBpsOfRevenue;
+
+    /// @dev @inheritdoc ILending
+    address public regenCollectiveAddress;
+
     /// @notice A bool to prevent external eth from being received and locked in the contract
     bool private _ethTransferable = false;
 
@@ -96,6 +102,9 @@ contract NiftyApes is
         protocolInterestBps = 0;
         refinancePremiumLenderBps = 50;
         refinancePremiumProtocolBps = 0;
+        regenCollectiveBpsOfRevenue = 100;
+        regenCollectiveAddress = address(0x252de94Ae0F07fb19112297F299f8c9Cc10E28a6);
+
 
         OwnableUpgradeable.__Ownable_init();
         PausableUpgradeable.__Pausable_init();
@@ -178,15 +187,20 @@ contract NiftyApes is
         address cAsset = getCAsset(asset);
         IERC20Upgradeable underlying = IERC20Upgradeable(asset);
 
-        uint256 cTokensBurnt = burnCErc20(asset, tokenAmount);
+        if (msg.sender == owner()) {
+            uint256 cTokensBurnt = ownerWithdraw(asset, cAsset);
+            return cTokensBurnt;
+        } else {
+            uint256 cTokensBurnt = burnCErc20(asset, tokenAmount);
 
-        withdrawCBalance(msg.sender, cAsset, cTokensBurnt);
+            withdrawCBalance(msg.sender, cAsset, cTokensBurnt);
 
-        underlying.safeTransfer(msg.sender, tokenAmount);
+            underlying.safeTransfer(msg.sender, tokenAmount);
 
-        emit Erc20Withdrawn(msg.sender, asset, tokenAmount, cTokensBurnt);
+            emit Erc20Withdrawn(msg.sender, asset, tokenAmount, cTokensBurnt);
 
-        return cTokensBurnt;
+            return cTokensBurnt;
+        }
     }
 
     /// @inheritdoc ILiquidity
@@ -235,6 +249,34 @@ contract NiftyApes is
 
         return cTokensBurnt;
     }
+
+    function ownerWithdraw(address asset, address cAsset) internal returns (uint256 cTokensBurnt) {
+        IERC20Upgradeable underlying = IERC20Upgradeable(asset);
+        uint256 ownerBalance = getCAssetBalance(owner(), cAsset);
+
+        uint256 ownerBalanceUnderlying = cAssetAmountToAssetAmount(cAsset, ownerBalance);
+
+        cTokensBurnt = burnCErc20(asset, ownerBalanceUnderlying);
+
+        uint256 bpsForRegen = (cTokensBurnt * regenCollectiveBpsOfRevenue) / MAX_BPS;
+
+        uint256 ownerBalanceMinusRegen = cTokensBurnt - bpsForRegen;
+
+        uint256 ownerAmountUnderlying = cAssetAmountToAssetAmount(cAsset, ownerBalanceMinusRegen);
+
+        uint256 regenAmountUnderlying = cAssetAmountToAssetAmount(cAsset, bpsForRegen);
+
+        withdrawCBalance(owner(), cAsset, cTokensBurnt);
+
+        underlying.safeTransfer(owner(), ownerAmountUnderlying);
+
+        underlying.safeTransfer(regenCollectiveAddress, regenAmountUnderlying);
+
+        emit PercentForRegen(regenCollectiveAddress, asset, regenAmountUnderlying, bpsForRegen);
+
+        emit Erc20Withdrawn(owner(), asset, ownerAmountUnderlying, ownerBalanceMinusRegen);
+    }
+
 
     /// @inheritdoc ILending
     function getLoanAuction(address nftContractAddress, uint256 nftId)
@@ -973,10 +1015,6 @@ contract NiftyApes is
     }
 
     function updateInterest(LoanAuction storage loanAuction) internal {
-        // if (loanAuction.protocolInterestBps > protocolInterestBps) {
-        //     loanAuction.protocolInterestBps = protocolInterestBps;
-        // }
-
         (uint256 lenderInterest, uint256 protocolInterest) = calculateInterestAccrued(loanAuction);
 
         loanAuction.accumulatedLenderInterest += SafeCastUpgradeable.toUint128(lenderInterest);
@@ -1038,6 +1076,26 @@ contract NiftyApes is
         require(newPremiumProtocolBps <= MAX_FEE, "max fee");
         emit RefinancePremiumProtocolBpsUpdated(refinancePremiumProtocolBps, newPremiumProtocolBps);
         refinancePremiumProtocolBps = newPremiumProtocolBps;
+    }
+
+    /// @inheritdoc INiftyApesAdmin
+    function updateRegenCollectiveBpsOfRevenue(uint16 newRegenCollectiveBpsOfRevenue)
+        external
+        onlyOwner
+    {
+        require(newRegenCollectiveBpsOfRevenue <= MAX_FEE, "max fee");
+        require(newRegenCollectiveBpsOfRevenue >= regenCollectiveBpsOfRevenue, "must be greater");
+        emit RegenCollectiveBpsOfRevenueUpdated(
+            regenCollectiveBpsOfRevenue,
+            newRegenCollectiveBpsOfRevenue
+        );
+        regenCollectiveBpsOfRevenue = newRegenCollectiveBpsOfRevenue;
+    }
+
+    /// @inheritdoc INiftyApesAdmin
+    function updateRegenCollectiveAddress(address newRegenCollectiveAddress) external onlyOwner {
+        emit RegenCollectiveAddressUpdated(newRegenCollectiveAddress);
+        regenCollectiveAddress = newRegenCollectiveAddress;
     }
 
     function markSignatureUsed(Offer memory offer, bytes memory signature) internal {
@@ -1310,6 +1368,7 @@ contract NiftyApes is
         return cTokenBalanceAfter - cTokenBalanceBefore;
     }
 
+    // @notice param amount is demoninated in the underlying asset, not cAsset
     function burnCErc20(address asset, uint256 amount) internal returns (uint256) {
         address cAsset = assetToCAsset[asset];
         ICERC20 cToken = ICERC20(cAsset);

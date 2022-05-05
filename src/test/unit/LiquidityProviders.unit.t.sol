@@ -22,6 +22,8 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents, INiftyApesAdm
 
     bool acceptEth;
 
+    address constant NOT_ADMIN = address(0x5050);
+
     receive() external payable {
         require(acceptEth, "acceptEth");
     }
@@ -195,30 +197,48 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents, INiftyApesAdm
         liquidityProviders.withdrawErc20(address(0x0000000000000000000000000000000000000001), 1);
     }
 
-    function testWithdrawErc20_works() public {
-        usdcToken.mint(address(this), 1);
+        function testWithdrawErc20_works() public {
+        hevm.startPrank(NOT_ADMIN);
+        usdcToken.mint(NOT_ADMIN, 1);
         usdcToken.approve(address(liquidityProviders), 1);
         liquidityProviders.supplyErc20(address(usdcToken), 1);
 
         uint256 cTokensBurnt = liquidityProviders.withdrawErc20(address(usdcToken), 1);
         assertEq(cTokensBurnt, 1 ether);
 
+        assertEq(liquidityProviders.getCAssetBalance(NOT_ADMIN, address(cUSDCToken)), 0);
+
+        assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
+        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 0);
+
+        assertEq(usdcToken.balanceOf(NOT_ADMIN), 1);
+    }
+
+    function testWithdrawErc20_works_owner() public {
+        usdcToken.mint(address(this), 100);
+        usdcToken.approve(address(liquidityProviders), 100);
+        liquidityProviders.supplyErc20(address(usdcToken), 100);
+
+        uint256 cTokensBurnt = liquidityProviders.withdrawErc20(address(usdcToken), 99);
+        assertEq(cTokensBurnt, 100 ether);
+
         assertEq(liquidityProviders.getCAssetBalance(address(this), address(cUSDCToken)), 0);
 
         assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
         assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 0);
 
-        assertEq(usdcToken.balanceOf(address(this)), 1);
+        assertEq(usdcToken.balanceOf(address(this)), 99);
     }
 
     function testWithdrawErc20_works_event() public {
-        usdcToken.mint(address(this), 1);
+        hevm.startPrank(NOT_ADMIN);
+        usdcToken.mint(NOT_ADMIN, 1);
         usdcToken.approve(address(liquidityProviders), 1);
         liquidityProviders.supplyErc20(address(usdcToken), 1);
 
         hevm.expectEmit(true, false, false, true);
 
-        emit Erc20Withdrawn(address(this), address(usdcToken), 1, 1 ether);
+        emit Erc20Withdrawn(NOT_ADMIN, address(usdcToken), 1, 1 ether);
 
         liquidityProviders.withdrawErc20(address(usdcToken), 1);
     }
@@ -236,9 +256,11 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents, INiftyApesAdm
     }
 
     function testCannotWithdrawErc20_withdraw_more_than_account_has() public {
-        usdcToken.mint(address(this), 1);
+        hevm.startPrank(NOT_ADMIN);
+        usdcToken.mint(NOT_ADMIN, 1);
         usdcToken.approve(address(liquidityProviders), 1);
         liquidityProviders.supplyErc20(address(usdcToken), 1);
+        hevm.stopPrank();
 
         // deposit some funds from a different address
         hevm.startPrank(
@@ -252,9 +274,11 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents, INiftyApesAdm
 
         hevm.stopPrank();
 
+        hevm.startPrank(NOT_ADMIN);
         hevm.expectRevert("Insufficient cToken balance");
 
         liquidityProviders.withdrawErc20(address(usdcToken), 2);
+        hevm.stopPrank();
     }
 
     function testCannotWithdrawErc20_underlying_transfer_fails() public {
