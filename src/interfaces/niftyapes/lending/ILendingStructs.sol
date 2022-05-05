@@ -18,14 +18,12 @@ interface ILendingStructs {
         // SLOT 1 START
         // The current lender of a loan
         address lender;
-        // TODO(captnseagraves) change to unit8
         // interest rate of loan in basis points
         uint96 interestRatePerSecond;
         // SLOT 2 START
-        // TODO(dankurka): replace this field with an enum rather than storing addresses over and over
-        // The asset in which the loan has been denominated
+        // the asset in which the loan has been denominated
         address asset;
-        // This fee is the rate of interest per second for the protocol
+        // beginning timestamp of loan
         uint32 loanBeginTimestamp;
         // SLOT 3 START
         // cumulative interest of varying rates paid by new lenders to buy out the loan auction
@@ -38,6 +36,7 @@ interface ILendingStructs {
         // amount withdrawn by the nftOwner. This is the amount they will pay interest on, with this value as minimum
         uint128 amountDrawn;
         // SLOT 5 START
+        // This fee is the rate of interest per second for the protocol
         uint96 protocolInterestRatePerSecond;
 
     }
@@ -68,8 +67,7 @@ interface ILendingStructs {
         // SLOT 4 START
         // offer loan amount
         uint128 amount;
-        // TODO(captnseagraves) type size and comment
-        // offer interest rate in basis points for the loan duration
+        // offer interest rate per second. (Amount * InterestRate) / MAX-BPS / Duration
         uint96 interestRatePerSecond;
     }
 }
