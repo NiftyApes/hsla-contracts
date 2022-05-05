@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/interfaces/IERC20Upgradeable.sol";
 import "../../interfaces/compound/ICERC20.sol";
@@ -70,7 +70,7 @@ contract AdminUnitTest is BaseTest, INiftyApesAdminEvents {
     }
 
     function testCannotSetCAddressMapping_can_not_be_set_by_non_owner() public {
-        niftyApes.renounceOwnership();
+        hevm.startPrank(NOT_ADMIN);
 
         hevm.expectRevert("Ownable: caller is not the owner");
         niftyApes.setCAssetAddress(
@@ -79,47 +79,19 @@ contract AdminUnitTest is BaseTest, INiftyApesAdminEvents {
         );
     }
 
-    function testCannotSetCAddressMapping_can_not_overwrite_mapping_asset() public {
-        niftyApes.setCAssetAddress(
-            address(0x0000000000000000000000000000000000000001),
-            address(0x0000000000000000000000000000000000000002)
-        );
-
-        hevm.expectRevert("asset already set");
-
-        niftyApes.setCAssetAddress(
-            address(0x0000000000000000000000000000000000000001),
-            address(0x0000000000000000000000000000000000000003)
-        );
-    }
-
-    function testCannotSetCAddressMapping_can_not_overwrite_mapping_casset() public {
-        niftyApes.setCAssetAddress(
-            address(0x0000000000000000000000000000000000000001),
-            address(0x0000000000000000000000000000000000000002)
-        );
-
-        hevm.expectRevert("casset already set");
-
-        niftyApes.setCAssetAddress(
-            address(0x0000000000000000000000000000000000000003),
-            address(0x0000000000000000000000000000000000000002)
-        );
-    }
-
-    function testCannotUpdateLoanDrawProtocolFee_not_owner() public {
+    function testCannotUpdateProtocolInterestBps_not_owner() public {
         hevm.startPrank(NOT_ADMIN);
         hevm.expectRevert("Ownable: caller is not the owner");
-        niftyApes.updateLoanDrawProtocolFeePerSecond(1);
+        niftyApes.updateProtocolInterestBps(1);
     }
 
-    function testUpdateLoanDrawProtocolFee_owner() public {
-        assertEq(niftyApes.loanDrawFeeProtocolPerSecond(), 50);
+    function testUpdateProtocolInterestBps_owner() public {
+        assertEq(niftyApes.protocolInterestBps(), 50);
         hevm.expectEmit(true, false, false, true);
 
-        emit LoanDrawProtocolFeeUpdated(50, 1);
-        niftyApes.updateLoanDrawProtocolFeePerSecond(1);
-        assertEq(niftyApes.loanDrawFeeProtocolPerSecond(), 1);
+        emit ProtocolInterestBpsUpdated(50, 1);
+        niftyApes.updateProtocolInterestBps(1);
+        assertEq(niftyApes.protocolInterestBps(), 1);
     }
 
     function testCannotUpdateRefinancePremiumLenderFee_not_owner() public {
@@ -133,7 +105,7 @@ contract AdminUnitTest is BaseTest, INiftyApesAdminEvents {
         niftyApes.updateRefinancePremiumLenderBps(1001);
     }
 
-    function testPpdateRefinancePremiumLenderFee_owner() public {
+    function testUpdateRefinancePremiumLenderFee_owner() public {
         assertEq(niftyApes.refinancePremiumLenderBps(), 50);
         hevm.expectEmit(true, false, false, true);
 

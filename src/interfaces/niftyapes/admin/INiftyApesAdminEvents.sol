@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity 0.8.13;
 
 /// @title Events emmited for admin changes in the contract.
 interface INiftyApesAdminEvents {
@@ -11,9 +11,9 @@ interface INiftyApesAdminEvents {
     /// @notice Emmited when the protocol interest fee is updated.
     ///         Interest is charged per second on a loan.
     ///         This is the fee that the protocol charges for facilitating the loan
-    /// @param oldInterestPersecond The old value denominated in tokens per second
-    /// @param newInterestPersecond The new value denominated in tokens per second
-    event LoanDrawProtocolFeeUpdated(uint96 oldInterestPersecond, uint96 newInterestPersecond);
+    /// @param oldProtocolInterestBps The old value denominated in tokens per second
+    /// @param newProtocolInterestBps The new value denominated in tokens per second
+    event ProtocolInterestBpsUpdated(uint96 oldProtocolInterestBps, uint96 newProtocolInterestBps);
 
     /// @notice Emmited when the premium that a lender is charged for refinancing a loan is changed
     /// @param oldPremiumLenderBps The old basis points denominated in parts of 10_000

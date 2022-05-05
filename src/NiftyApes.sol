@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: Unlicensed
-pragma solidity ^0.8.13;
+pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/security/PausableUpgradeable.sol";
@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Upgradeable.sol";
+import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712Upgradeable.sol";
 import "@openzeppelin/contracts/utils/math/MathUpgradeable.sol";
 import "@openzeppelin/contracts/utils/math/SafeCastUpgradeable.sol";
@@ -23,6 +24,7 @@ contract NiftyApes is
     PausableUpgradeable,
     ReentrancyGuardUpgradeable,
     EIP712Upgradeable,
+    ERC721HolderUpgradeable,
     INiftyApes
 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -70,13 +72,16 @@ contract NiftyApes is
     mapping(bytes => bool) private _cancelledOrFinalized;
 
     /// @inheritdoc ILending
-    uint96 public loanDrawFeeProtocolPerSecond;
+    uint96 public protocolInterestBps;
 
     /// @inheritdoc ILending
     uint16 public refinancePremiumLenderBps;
 
     /// @inheritdoc ILending
     uint16 public refinancePremiumProtocolBps;
+
+    /// @notice A bool to prevent external eth from being received and locked in the contract
+    bool private _ethTransferable = false;
 
     /// @dev This empty reserved space is put in place to allow future versions to add new
     /// variables without shifting storage.
@@ -88,9 +93,9 @@ contract NiftyApes is
     function initialize() public initializer {
         EIP712Upgradeable.__EIP712_init("NiftyApes", "0.0.1");
 
-        loanDrawFeeProtocolPerSecond = 50;
+        protocolInterestBps = 0;
         refinancePremiumLenderBps = 50;
-        refinancePremiumProtocolBps = 50;
+        refinancePremiumProtocolBps = 0;
 
         OwnableUpgradeable.__Ownable_init();
         PausableUpgradeable.__Pausable_init();
@@ -99,8 +104,6 @@ contract NiftyApes is
 
     /// @inheritdoc INiftyApesAdmin
     function setCAssetAddress(address asset, address cAsset) external onlyOwner {
-        require(assetToCAsset[asset] == address(0), "asset already set");
-        require(_cAssetToAsset[cAsset] == address(0), "casset already set");
         assetToCAsset[asset] = cAsset;
         _cAssetToAsset[cAsset] = asset;
 
@@ -221,6 +224,7 @@ contract NiftyApes is
     /// @inheritdoc ILiquidity
     function withdrawEth(uint256 amount) external whenNotPaused nonReentrant returns (uint256) {
         address cAsset = getCAsset(ETH_ADDRESS);
+
         uint256 cTokensBurnt = burnCErc20(ETH_ADDRESS, amount);
 
         withdrawCBalance(msg.sender, cAsset, cTokensBurnt);
@@ -255,17 +259,24 @@ contract NiftyApes is
             _hashTypedDataV4(
                 keccak256(
                     abi.encode(
-                        offer.creator,
-                        offer.nftContractAddress,
-                        offer.nftId,
-                        offer.asset,
-                        offer.amount,
-                        offer.interestRatePerSecond,
-                        offer.duration,
-                        offer.expiration,
-                        offer.fixedTerms,
-                        offer.floorTerm,
-                        offer.lenderOffer
+                        keccak256(
+                            "Offer(address creator,uint32 duration,uint32 expiration,bool fixedTerms,bool floorTerm,bool lenderOffer,address nftContractAddress,uint256 nftId,address asset,uint128 amount,uint96 interestRatePerSecond)"
+                        ),
+                        keccak256(
+                            abi.encode(
+                                offer.creator,
+                                offer.duration,
+                                offer.expiration,
+                                offer.fixedTerms,
+                                offer.floorTerm,
+                                offer.lenderOffer,
+                                offer.nftContractAddress,
+                                offer.nftId,
+                                offer.asset,
+                                offer.amount,
+                                offer.interestRatePerSecond
+                            )
+                        )
                     )
                 )
             );
@@ -292,6 +303,7 @@ contract NiftyApes is
         whenNotPaused
     {
         requireAvailableSignature(signature);
+        requireSignature65(signature);
 
         address signer = getOfferSigner(offer, signature);
 
@@ -332,7 +344,7 @@ contract NiftyApes is
     }
 
     /// @inheritdoc ILending
-    function createOffer(Offer memory offer) external whenNotPaused {
+    function createOffer(Offer memory offer) external whenNotPaused returns (bytes32 offerHash) {
         address cAsset = getCAsset(offer.asset);
 
         requireOfferCreator(offer.creator, msg.sender);
@@ -351,7 +363,7 @@ contract NiftyApes is
             offer.floorTerm
         );
 
-        bytes32 offerHash = getOfferHash(offer);
+        offerHash = getOfferHash(offer);
 
         offerBook[offerHash] = offer;
 
@@ -432,6 +444,7 @@ contract NiftyApes is
         uint256 nftId
     ) external payable whenNotPaused nonReentrant {
         requireAvailableSignature(signature);
+        requireSignature65(signature);
 
         address lender = getOfferSigner(offer, signature);
         requireOfferCreator(offer, lender);
@@ -471,6 +484,7 @@ contract NiftyApes is
         nonReentrant
     {
         requireAvailableSignature(signature);
+        requireSignature65(signature);
 
         address borrower = getOfferSigner(offer, signature);
         requireOfferCreator(offer, borrower);
@@ -520,7 +534,7 @@ contract NiftyApes is
         uint256 nftId,
         bool floorTerm,
         bytes32 offerHash
-    ) external payable whenNotPaused nonReentrant {
+    ) external whenNotPaused nonReentrant {
         Offer memory offer = getOffer(nftContractAddress, nftId, offerHash, floorTerm);
 
         if (!offer.floorTerm) {
@@ -538,11 +552,12 @@ contract NiftyApes is
         Offer memory offer,
         bytes memory signature,
         uint256 nftId
-    ) external payable whenNotPaused nonReentrant {
+    ) external whenNotPaused nonReentrant {
         address signer = getOfferSigner(offer, signature);
 
         requireOfferCreator(offer, signer);
         requireAvailableSignature(signature);
+        requireSignature65(signature);
 
         if (!offer.floorTerm) {
             requireMatchingNftId(offer, nftId);
@@ -584,7 +599,7 @@ contract NiftyApes is
         loanAuction.lender = newLender;
         loanAuction.amount = offer.amount;
         loanAuction.interestRatePerSecond = offer.interestRatePerSecond;
-        loanAuction.loanEndTimestamp = currentTimestamp() + offer.duration;
+        loanAuction.loanEndTimestamp = loanAuction.loanBeginTimestamp + offer.duration;
         loanAuction.amountDrawn = SafeCastUpgradeable.toUint128(fullAmount);
         loanAuction.accumulatedLenderInterest = 0;
         if (offer.fixedTerms) {
@@ -610,7 +625,7 @@ contract NiftyApes is
     }
 
     /// @inheritdoc ILending
-    function refinanceByLender(Offer memory offer) external payable whenNotPaused nonReentrant {
+    function refinanceByLender(Offer memory offer) external whenNotPaused nonReentrant {
         LoanAuction storage loanAuction = getLoanAuctionInternal(
             offer.nftContractAddress,
             offer.nftId
@@ -621,7 +636,6 @@ contract NiftyApes is
         requireLenderOffer(offer);
         requireLoanNotExpired(loanAuction);
         requireOfferParity(loanAuction, offer);
-        requireValidDurationUpdate(loanAuction, offer);
         requireNoFixedTerm(loanAuction);
         requireNoFloorTerms(offer);
         requireOfferNotExpired(offer);
@@ -635,7 +649,7 @@ contract NiftyApes is
         // update LoanAuction struct
         loanAuction.amount = offer.amount;
         loanAuction.interestRatePerSecond = offer.interestRatePerSecond;
-        loanAuction.loanEndTimestamp = currentTimestamp() + offer.duration;
+        loanAuction.loanEndTimestamp = loanAuction.loanBeginTimestamp + offer.duration;
 
         if (loanAuction.lender == offer.creator) {
             // If current lender is refinancing the loan they do not need to pay any fees or buy themselves out.
@@ -706,19 +720,24 @@ contract NiftyApes is
         requireFundsAvailable(loanAuction, drawAmount);
         requireLoanNotExpired(loanAuction);
 
-        updateInterest(loanAuction);
-        loanAuction.amountDrawn += SafeCastUpgradeable.toUint128(drawAmount);
+        uint256 slashedDrawAmount = slashUnsupportedAmount(loanAuction, drawAmount, cAsset);
 
-        uint256 cTokensBurnt = burnCErc20(loanAuction.asset, drawAmount);
-        withdrawCBalance(loanAuction.lender, cAsset, cTokensBurnt);
+        if (slashedDrawAmount > 0) {
+            updateInterest(loanAuction);
 
-        sendValue(loanAuction.asset, drawAmount, loanAuction.nftOwner);
+            loanAuction.amountDrawn += SafeCastUpgradeable.toUint128(slashedDrawAmount);
+
+            uint256 cTokensBurnt = burnCErc20(loanAuction.asset, slashedDrawAmount);
+            withdrawCBalance(loanAuction.lender, cAsset, cTokensBurnt);
+
+            sendValue(loanAuction.asset, slashedDrawAmount, loanAuction.nftOwner);
+        }
 
         emit AmountDrawn(
             msg.sender,
             nftContractAddress,
             nftId,
-            drawAmount,
+            slashedDrawAmount,
             loanAuction.amountDrawn
         );
     }
@@ -729,6 +748,7 @@ contract NiftyApes is
         payable
         override
         whenNotPaused
+        nonReentrant
     {
         RepayLoanStruct memory rls = RepayLoanStruct({
             nftContractAddress: nftContractAddress,
@@ -746,6 +766,7 @@ contract NiftyApes is
         payable
         override
         whenNotPaused
+        nonReentrant
     {
         RepayLoanStruct memory rls = RepayLoanStruct({
             nftContractAddress: nftContractAddress,
@@ -775,7 +796,7 @@ contract NiftyApes is
         _repayLoanAmount(rls);
     }
 
-    /// @dev Struct exitst since we ran out of stack space in _repayLoan
+    /// @dev Struct exists since we ran out of stack space in _repayLoan
     struct RepayLoanStruct {
         address nftContractAddress;
         uint256 nftId;
@@ -884,6 +905,27 @@ contract NiftyApes is
         emit AssetSeized(currentLender, currentBorrower, nftContractAddress, nftId);
     }
 
+    function slashUnsupportedAmount(
+        LoanAuction storage loanAuction,
+        uint256 drawAmount,
+        address cAsset
+    ) internal returns (uint256) {
+        uint256 lenderBalance = getCAssetBalance(loanAuction.lender, cAsset);
+        uint256 drawTokens = assetAmountToCAssetAmount(loanAuction.asset, drawAmount);
+
+        if (lenderBalance < drawTokens) {
+            uint256 balanceDelta = drawTokens - lenderBalance;
+
+            uint256 balanceDeltaUnderlying = cAssetAmountToAssetAmount(cAsset, balanceDelta);
+            loanAuction.amountDrawn -= SafeCastUpgradeable.toUint128(balanceDeltaUnderlying);
+
+            uint256 lenderBalanceUnderlying = cAssetAmountToAssetAmount(cAsset, lenderBalance);
+            drawAmount = lenderBalanceUnderlying;
+        }
+
+        return drawAmount;
+    }
+
     /// @inheritdoc ILending
     function seizeAssetAndSell(
         address nftContractAddress,
@@ -931,6 +973,10 @@ contract NiftyApes is
     }
 
     function updateInterest(LoanAuction storage loanAuction) internal {
+        // if (loanAuction.protocolInterestBps > protocolInterestBps) {
+        //     loanAuction.protocolInterestBps = protocolInterestBps;
+        // }
+
         (uint256 lenderInterest, uint256 protocolInterest) = calculateInterestAccrued(loanAuction);
 
         loanAuction.accumulatedLenderInterest += SafeCastUpgradeable.toUint128(lenderInterest);
@@ -952,25 +998,32 @@ contract NiftyApes is
         view
         returns (uint256 lenderInterest, uint256 protocolInterest)
     {
-        uint256 currentTime = currentTimestamp();
-        uint256 endTime = MathUpgradeable.min(currentTime, loanAuction.loanEndTimestamp);
-        uint256 timePassed = endTime - loanAuction.lastUpdatedTimestamp;
-        uint256 amountXTime = timePassed * loanAuction.amountDrawn;
+        uint256 timePassed = currentTimestamp() - loanAuction.lastUpdatedTimestamp;
 
-        lenderInterest = (amountXTime * loanAuction.interestRatePerSecond) / 1 ether;
-        protocolInterest = (amountXTime * loanAuction.loanDrawFeeProtocolPerSecond) / 1 ether;
+        lenderInterest = (timePassed * loanAuction.interestRatePerSecond);
+        protocolInterest = (timePassed * loanAuction.protocolInterestRatePerSecond);
+    }
+
+    function calculateLenderInterestPerSecond(
+        uint128 amount,
+        uint8 interestRateBps,
+        uint32 duration
+    ) public pure returns (uint96) {
+        return (SafeCastUpgradeable.toUint96(amount) * SafeCastUpgradeable.toUint96(interestRateBps)) / SafeCastUpgradeable.toUint96(MAX_BPS) / SafeCastUpgradeable.toUint96(duration);
+    }
+
+    function calculateProtocolInterestPerSecond(uint128 amount, uint32 duration)
+        public
+        view
+        returns (uint96)
+    {
+        return (SafeCastUpgradeable.toUint96(amount) * SafeCastUpgradeable.toUint96(protocolInterestBps)) / SafeCastUpgradeable.toUint96(MAX_BPS) / SafeCastUpgradeable.toUint96(duration);
     }
 
     /// @inheritdoc INiftyApesAdmin
-    function updateLoanDrawProtocolFeePerSecond(uint96 newLoanDrawFeeProtocolPerSecond)
-        external
-        onlyOwner
-    {
-        emit LoanDrawProtocolFeeUpdated(
-            loanDrawFeeProtocolPerSecond,
-            newLoanDrawFeeProtocolPerSecond
-        );
-        loanDrawFeeProtocolPerSecond = newLoanDrawFeeProtocolPerSecond;
+    function updateProtocolInterestBps(uint96 newProtocolInterestBps) external onlyOwner {
+        emit ProtocolInterestBpsUpdated(protocolInterestBps, newProtocolInterestBps);
+        protocolInterestBps = newProtocolInterestBps;
     }
 
     /// @inheritdoc INiftyApesAdmin
@@ -991,6 +1044,14 @@ contract NiftyApes is
         _cancelledOrFinalized[signature] = true;
 
         emit OfferSignatureUsed(offer.nftContractAddress, offer.nftId, offer, signature);
+    }
+
+    function requireEthTransferable() internal view {
+        require(_ethTransferable, "eth not transferable");
+    }
+
+    function requireSignature65(bytes memory signature) internal pure {
+        require(signature.length == 65, "signature unsupported");
     }
 
     function requireOfferPresent(Offer memory offer) internal pure {
@@ -1111,7 +1172,7 @@ contract NiftyApes is
         uint256 amount = loanAuction.amount;
         uint256 interestRatePerSecond = loanAuction.interestRatePerSecond;
         uint256 loanEndTime = loanAuction.loanEndTimestamp;
-        uint256 offerEndTime = currentTimestamp() + offer.duration;
+        uint256 offerEndTime = loanAuction.loanBeginTimestamp + offer.duration;
 
         // Better amount
         if (
@@ -1143,27 +1204,6 @@ contract NiftyApes is
         revert("not an improvement");
     }
 
-    function requireValidDurationUpdate(LoanAuction storage loanAuction, Offer memory offer)
-        internal
-        view
-    {
-        uint256 currentTime = currentTimestamp();
-
-        // If the only part that is updated is the duration we enfore that its been changed by
-        // at least one day
-        // This prevents lenders from refinancing loands with too small of a change
-        if (
-            offer.amount == loanAuction.amount &&
-            offer.interestRatePerSecond == loanAuction.interestRatePerSecond &&
-            currentTime + offer.duration > loanAuction.loanEndTimestamp
-        ) {
-            require(
-                currentTime + offer.duration >= (loanAuction.loanEndTimestamp + 1 days),
-                "24 hours min"
-            );
-        }
-    }
-
     function createLoan(
         LoanAuction storage loanAuction,
         Offer memory offer,
@@ -1174,12 +1214,19 @@ contract NiftyApes is
         loanAuction.lender = lender;
         loanAuction.asset = offer.asset;
         loanAuction.amount = offer.amount;
-        loanAuction.interestRatePerSecond = offer.interestRatePerSecond;
         loanAuction.loanEndTimestamp = currentTimestamp() + offer.duration;
+        loanAuction.loanBeginTimestamp = currentTimestamp();
         loanAuction.lastUpdatedTimestamp = currentTimestamp();
         loanAuction.amountDrawn = offer.amount;
         loanAuction.fixedTerms = offer.fixedTerms;
-        loanAuction.loanDrawFeeProtocolPerSecond = loanDrawFeeProtocolPerSecond;
+        loanAuction.interestRatePerSecond = offer.interestRatePerSecond;
+
+        uint96 protocolInterestRatePerSecond = calculateProtocolInterestPerSecond(
+            offer.amount,
+            offer.duration
+        );
+
+        loanAuction.protocolInterestRatePerSecond = protocolInterestRatePerSecond;
     }
 
     function transferNft(
@@ -1188,7 +1235,7 @@ contract NiftyApes is
         address from,
         address to
     ) internal {
-        IERC721Upgradeable(nftContractAddress).transferFrom(from, to, nftId);
+        IERC721Upgradeable(nftContractAddress).safeTransferFrom(from, to, nftId);
     }
 
     function sendValue(
@@ -1224,7 +1271,9 @@ contract NiftyApes is
 
     // This is needed to receive ETH when calling withdrawing ETH from compund
     // solhint-disable-next-line no-empty-blocks
-    receive() external payable {}
+    receive() external payable {
+        require(_ethTransferable, "eth not transferable");
+    }
 
     function requireMaxCAssetBalance(address cAsset) internal view {
         uint256 maxCAssetBalance = maxBalanceByCAsset[cAsset];
@@ -1266,7 +1315,9 @@ contract NiftyApes is
         ICERC20 cToken = ICERC20(cAsset);
 
         uint256 cTokenBalanceBefore = cToken.balanceOf(address(this));
+        _ethTransferable = true;
         require(cToken.redeemUnderlying(amount) == 0, "redeemUnderlying failed");
+        _ethTransferable = false;
         uint256 cTokenBalanceAfter = cToken.balanceOf(address(this));
         return cTokenBalanceBefore - cTokenBalanceAfter;
     }
@@ -1277,6 +1328,13 @@ contract NiftyApes is
 
         uint256 exchangeRateMantissa = cToken.exchangeRateCurrent();
         return Math.divScalarByExpTruncate(amount, exchangeRateMantissa);
+    }
+
+    function cAssetAmountToAssetAmount(address cAsset, uint256 amount) internal returns (uint256) {
+        ICERC20 cToken = ICERC20(cAsset);
+
+        uint256 exchangeRateMantissa = cToken.exchangeRateCurrent();
+        return Math.mulScalarTruncate(amount, exchangeRateMantissa);
     }
 
     function getCAsset(address asset) internal view returns (address) {
@@ -1301,4 +1359,6 @@ contract NiftyApes is
         requireCAssetBalance(account, cAsset, cTokenAmount);
         _balanceByAccountByAsset[account][cAsset].cAssetBalance -= cTokenAmount;
     }
+
+    function renounceOwnership() public override onlyOwner {}
 }
