@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: Unlicensed
-pragma solidity ^0.8.13;
+pragma solidity 0.8.13;
 
 /// @title A reimplementation of compounds math library
 ///        Currently we only need `divScalarByExpTruncate` which is implemented inefficiently and complex within
@@ -17,5 +17,15 @@ library Math {
         uint256 scaledNumerator = numerator * expScale;
         uint256 fraction = scaledNumerator / exponent;
         return fraction / expScale;
+    }
+
+    /// see compound Exponential#mulScalarTurncate
+    function mulScalarTruncate(uint256 scalar, uint256 exponent)
+        internal
+        pure
+        returns (uint256)
+    {
+        uint256 product = exponent * scalar;
+        return product / expScale;
     }
 }
