@@ -9,7 +9,7 @@ interface ILendingStructs {
         // If there is an active loan on an nft, nifty apes contracts become the holder (original owner)
         // of the underlying nft. This field tracks who to return the nft to if the loan gets repaid.
         address nftOwner;
-        // loan duration of loan in number of seconds
+        // end timestamp of loan
         uint32 loanEndTimestamp;
         /// Last timestamp this loan was updated
         uint32 lastUpdatedTimestamp;
@@ -18,14 +18,15 @@ interface ILendingStructs {
         // SLOT 1 START
         // The current lender of a loan
         address lender;
-        // This fee is the rate of interest per second
+        // TODO(captnseagraves) change to unit8
+        // interest rate of loan in basis points
         uint96 interestRatePerSecond;
         // SLOT 2 START
         // TODO(dankurka): replace this field with an enum rather than storing addresses over and over
         // The asset in which the loan has been denominated
         address asset;
         // This fee is the rate of interest per second for the protocol
-        uint96 loanDrawFeeProtocolPerSecond;
+        uint32 loanBeginTimestamp;
         // SLOT 3 START
         // cumulative interest of varying rates paid by new lenders to buy out the loan auction
         uint128 accumulatedLenderInterest;
@@ -36,6 +37,9 @@ interface ILendingStructs {
         uint128 amount;
         // amount withdrawn by the nftOwner. This is the amount they will pay interest on, with this value as minimum
         uint128 amountDrawn;
+        // SLOT 5 START
+        uint96 protocolInterestRatePerSecond;
+
     }
 
     struct Offer {
@@ -64,6 +68,7 @@ interface ILendingStructs {
         // SLOT 4 START
         // offer loan amount
         uint128 amount;
+        // TODO(captnseagraves) type size and comment
         // offer interest rate in basis points for the loan duration
         uint96 interestRatePerSecond;
     }
