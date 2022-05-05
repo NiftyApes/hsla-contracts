@@ -26,12 +26,6 @@ interface ILending is ILendingEvents, ILendingStructs {
     /// @notice Returns the address for the Regen Collective
     function regenCollectiveAddress() external view returns (address);
 
-    // TODO(dankurka): move
-    /// @notice Returns the owner of a given nft if there is a current loan on the NFT, otherwise zero.
-    /// @param nftContractAddress The address of the given nft contract
-    /// @param nftId The id of the given nft
-    function ownerOf(address nftContractAddress, uint256 nftId) external view returns (address);
-
     /// @notice Returns a loan aution identified by a given nft.
     /// @param nftContractAddress The address of the NFT collection
     /// @param nftId The id of a specified NFT
@@ -227,6 +221,11 @@ interface ILending is ILendingEvents, ILendingStructs {
         bytes calldata sellCallData,
         uint256 minAmount
     ) external;
+
+    /// @notice Returns the owner of a given nft if there is a current loan on the NFT, otherwise zero.
+    /// @param nftContractAddress The address of the given nft contract
+    /// @param nftId The id of the given nft
+    function ownerOf(address nftContractAddress, uint256 nftId) external view returns (address);
 
     /// @notice Returns interest since the last update to the loan
     /// @param nftContractAddress The address of the NFT collection
