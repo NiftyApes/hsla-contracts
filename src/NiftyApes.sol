@@ -927,6 +927,47 @@ contract NiftyApes is
     }
 
     /// @inheritdoc ILending
+    function seizeAssetAndSell(
+        address nftContractAddress,
+        uint256 nftId,
+        address sellAddress,
+        bytes calldata sellCallData,
+        uint256 minAmount
+    ) external whenNotPaused nonReentrant {
+        LoanAuction storage loanAuction = _loanAuctions[nftContractAddress][nftId];
+        getCAsset(loanAuction.asset); // Ensure asset mapping exists
+        requireOpenLoan(loanAuction);
+        requireLoanExpired(loanAuction);
+        requireLender(loanAuction.lender);
+
+        address asset = loanAuction.asset;
+        address currentLender = loanAuction.lender;
+        address currentBorrower = loanAuction.nftOwner;
+
+        delete _loanAuctions[nftContractAddress][nftId];
+
+        IERC721Upgradeable(nftContractAddress).approve(sellAddress, nftId);
+
+        uint256 balanceBefore = asset == ETH_ADDRESS
+            ? address(this).balance
+            : IERC20Upgradeable(asset).balanceOf(address(this));
+
+        AddressUpgradeable.functionCall(sellAddress, sellCallData);
+
+        uint256 balanceAfter = asset == ETH_ADDRESS
+            ? address(this).balance
+            : IERC20Upgradeable(asset).balanceOf(address(this));
+
+        uint256 balanceGained = balanceAfter - balanceBefore;
+
+        require(balanceGained >= minAmount, "too little");
+
+        sendValue(asset, balanceGained, currentLender);
+
+        emit AssetSeized(currentLender, currentBorrower, nftContractAddress, nftId);
+    }
+
+    /// @inheritdoc ILending
     function ownerOf(address nftContractAddress, uint256 nftId) public view returns (address) {
         return _loanAuctions[nftContractAddress][nftId].nftOwner;
     }
@@ -1071,6 +1112,12 @@ contract NiftyApes is
         address owner
     ) internal view {
         require(IERC721Upgradeable(nftContractAddress).ownerOf(nftId) == owner, "nft owner");
+    }
+
+    function requireLender(
+        address lender
+    ) internal view {
+        require(lender == msg.sender, "lender");
     }
 
     function requireMatchingAsset(address asset1, address asset2) internal pure {

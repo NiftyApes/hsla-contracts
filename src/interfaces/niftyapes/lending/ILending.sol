@@ -205,6 +205,22 @@ interface ILending is ILendingEvents, ILendingStructs {
     /// @param nftId The id of the specified NFT
     function seizeAsset(address nftContractAddress, uint256 nftId) external;
 
+    /// @notice If a loan has expired, allows a lender to sell an NFT and recieve the proceeds.
+    ///         This function can only be called by the lender as soon as the loan is expired without having been repaid.
+    ///         This function is limited to the lender to prevent malicious use of the arbitrary calldata function.
+    /// @param nftContractAddress The address of the NFT collection
+    /// @param nftId The id of the specified NFT
+    /// @param sellAddress The contract address of sell functionality
+    /// @param sellCallData The callData of sell functionality
+    /// @param minAmount The minimum amount the lender will accept for the sale
+    function seizeAssetAndSell(
+        address nftContractAddress,
+        uint256 nftId,
+        address sellAddress,
+        bytes calldata sellCallData,
+        uint256 minAmount
+    ) external;
+
     /// @notice Returns interest since the last update to the loan
     /// @param nftContractAddress The address of the NFT collection
     /// @param nftId The id of the specified NFT
