@@ -31,6 +31,10 @@ Assumptions within this contract
 Stragegies used for reference
 https://yearn.watch/network/ethereum/vault/0xa354F35829Ae975e850e23e9615b11Da1B3dC4DE/strategy/0xbeddd783be73805febda2c40a2bf3881f04fd7cc
 https://yearn.watch/network/ethereum/vault/0xdA816459F1AB5631232FE5e97a05BBBb94970c95/strategy/0xa6d1c610b3000f143c18c75d84baa0ec22681185
+
+This strategy is meant to enable a pool-based, passive strategy for loans on the NiftyApes Protocol. It requires minimal involvement from the strategist to ensure it is up to date with the market. 
+In a highly competitive loan auction the strategy will never lose money, but may not maintain an active loan and earn higher yield interest rates, instead it may default to the lower rate, passive yeild earned from Compound.
+The only way the strategy can lose money is if it seizes and selss and asset for less than it lent out, however this risk is highly mitigated by only offering a lower collateralization ratio. E.g. 25% of collection floor price. 
 */
 
 contract Strategy is BaseStrategy, Ownable, ERC721Holder {
@@ -38,11 +42,17 @@ contract Strategy is BaseStrategy, Ownable, ERC721Holder {
     using Address for address;
 
     INiftyApes public constant NIFTYAPES = INiftyApes(address(0));
+    // Bored Ape Yacht Club Collection address
     address public constant BAYC = 0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D;
+    // NFTX BAYC pool contract address
     address public constant XBAYC = 0xEA47B64e1BFCCb773A0420247C0aa0a3C1D2E5C5;
+    // WETH contract address
     address public constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+    // XBAYC token and WETH Sushi pool
     address public constant SUSHILP = 0xD829dE54877e0b66A2c3890b702fa5Df2245203E;
+    // CDAI contract address
     address public constant CDAI = 0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643;
+    // DAI contract address
     address public constant DAI = 0xC2e9F25Be6257c210d7Adf0D4Cd6E3E881ba25f8;
     IChainlinkOracle public constant ETHORACLE = IChainlinkOracle(0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419);
     IChainlinkOracle public constant GASORACLE = IChainlinkOracle(0x169E633A2D1E6c10dD91238Ba11c4A708dfEF37C);
@@ -56,13 +66,15 @@ contract Strategy is BaseStrategy, Ownable, ERC721Holder {
     uint256 public collatRatio = 25 * 1e16; // 25%
     uint96 public interestRatePerSecond = 1; // in basis points
 
-    // strategist should update the profit potential in order to keep the strategy up to date with the market
+    // strategist updates the these variables manually or via authorized chron job in order to keep the strategy up to date with the market
+    // This pattern allows the strategy to consume data that is available via events/the graph
     uint256 public thirtyDayProfitPotential;
     uint256 public offersInLastMonth;
     uint256 public removesInLastMonth;
-    uint256 public outstandingLoans; // DAI value of outstanding loans hardcoded by strategiest
-    uint256 public removeOfferGas = 8374;
-    uint256 public createOfferGas = 131110;
+    uint256 public outstandingLoans; // DAI value of outstanding loans
+
+    uint256 public removeOfferGas = 8374; // high end of function gas estimation by Forge test suite
+    uint256 public createOfferGas = 131110; // // high end of function gas estimation by Forge test suite
 
     bool public newOffersEnabled;
     ILendingStructs.Offer public offer;
@@ -72,7 +84,8 @@ contract Strategy is BaseStrategy, Ownable, ERC721Holder {
         address _vault,
         ILendingStructs.Offer memory _offer
     ) BaseStrategy(_vault) {
-        // You can set these parameters on deployment to whatever you want
+        // These parameters are set by the strategist on deployment
+
         // maxReportDelay = 6300;  // The maximum number of seconds between harvest calls
         // profitFactor = 100; // The minimum multiple that `callCost` must be above the credit/profit to be "justifiable";
         // debtThreshold = 0; // Use this to adjust the threshold at which running a debt causes harvest trigger
@@ -106,6 +119,7 @@ contract Strategy is BaseStrategy, Ownable, ERC721Holder {
 
         // see how much cDAI nifty apes has vs what the debt of cdai is worth
         // TODO: implement this function
+        //       @(carter) what function is needed to be implemented here? 
         uint256 debtInCDai = NIFTYAPES.assetAmountToCAssetAmount(
             address(want), _debtOutstanding
         );
@@ -130,7 +144,10 @@ contract Strategy is BaseStrategy, Ownable, ERC721Holder {
         if (amountRequired > totalAssets) {
             // we need to free funds
             // TODO: how to liquidate when there are outstanding loans?
+            //       @(carter) should there be a callback or state variable that informs the strategist chron when to call again? 
             (totalAssets, ) = liquidatePosition(amountRequired);
+
+            // TODO @(carter) this if statement will never be hit as it is nested in a counter statement
             if (totalAssets > amountRequired) {
                 _debtPayment = _debtOutstanding;
                 // profit remains unchanged unless there's not enough to pay for it
@@ -184,12 +201,16 @@ contract Strategy is BaseStrategy, Ownable, ERC721Holder {
             // Withdraw only amount needed if there's enough
             /// Otherwise remove all
             uint256 wantToWithdraw = calculateDaiBalance();
+            // TODO @(carter) something about this statement smells fishy
             if (totalAssets + wantToWithdraw > _amountNeeded) wantToWithdraw = _amountNeeded - totalAssets;
             NIFTYAPES.withdrawErc20(address(want), wantToWithdraw);
             // refresh total assets from withdrawal
             totalAssets = want.balanceOf(address(this));
+
+            //TODO @(carter) if additional funds are need we'll need to allow outstanding loans to resolve and set newOffersEnabled should be set to false. Perhaps offer should be remove. 
         }
 
+        // TODO @(carter) these if statements are redundant to the one above. Do we need them? 
         // NOTE: this logic is left as-is from template strategy
         if (_amountNeeded > totalAssets) {
             _liquidatedAmount = totalAssets;
@@ -215,6 +236,8 @@ contract Strategy is BaseStrategy, Ownable, ERC721Holder {
 
         removeOffer();
         // NOTE: needs to be re-called when outstanding loans expire
+        // TODO: @(carter) should this emit an event that informs the strategist chron when or how frequently it should send funds back to the vault? 
+        // TODO: @(carter) This function looks like it is missing the transfer function back to the vault. 
     }
 
     // NOTE: Can override `tendTrigger` and `harvestTrigger` if necessary
@@ -288,8 +311,7 @@ contract Strategy is BaseStrategy, Ownable, ERC721Holder {
         offer.expiration = uint32(block.timestamp) + expirationWindow;
         offer.amount = uint128(floorPrice * collatRatio / PRECISION);
         
-        NIFTYAPES.createOffer(offer); // TODO: have this return offer hash
-        offerHash = "";
+        offerHash = NIFTYAPES.createOffer(offer);
 
         lastFloorPrice = floorPrice;
         lastOfferDate = block.timestamp;
@@ -304,7 +326,10 @@ contract Strategy is BaseStrategy, Ownable, ERC721Holder {
         IERC721(BAYC).transferFrom(address(this), to, nftId);
     }
 
+    // TODO: @(carter) create a NFTLiquidate function, so if an nft is owned is can be liquidated to NFTX or other by strategist
+
     // TODO: create seize and sell
+
 
     function setExpirationWindow(uint32 _expirationWindow) external onlyOwner {
         require(_expirationWindow != expirationWindow, "Same window");
@@ -331,6 +356,7 @@ contract Strategy is BaseStrategy, Ownable, ERC721Holder {
 
     // thirtyDayProfitPotential should be calculated by finding the number of new loans in the last 30 days
     // And multiplying the interestRatePerSecond by the duration of the loan
+    // this strategy assumes that loans are not refinanced
     function setThirtyDayProfitPotential(uint256 amount) external onlyAuthorized {
         thirtyDayProfitPotential = amount;
     }
@@ -340,7 +366,7 @@ contract Strategy is BaseStrategy, Ownable, ERC721Holder {
         removesInLastMonth = removeAmount;
     }
 
-    // hardcoded setter to say how much debt there is outstanding
+    // hardcoded setter to say how much debt there is in outstanding loans
     function setOutstandingLoans(uint256 amount) external onlyAuthorized {
         outstandingLoans = amount;
     }
@@ -356,6 +382,7 @@ contract Strategy is BaseStrategy, Ownable, ERC721Holder {
     //  this could instead be supplied as setThirtyDayProfitPotential
     function calculateProfitability() public view returns (int256) {
         return int256(thirtyDayProfitPotential) - int256(calculateGasPerMonth());
+        // TODO: @(carter) this should check this the returned value above is within the profit threshold of the strategy. e.g. 5% of want held by strategy. 
 
     }
 
@@ -379,6 +406,8 @@ contract Strategy is BaseStrategy, Ownable, ERC721Holder {
         uint256 floorInEth = PRECISION * wethBalance / xbaycBalance;
         uint256 ethPrice = uint256(ETHORACLE.latestAnswer()) / 1e8; // to get price in dollars
         floorPrice = floorInEth * ethPrice;
+
+        // In the future we may wan to ingest other oracles and provide an average result
     }
 
     function calculateDelta(uint256 oldPrice, uint256 newPrice) private pure returns (uint256) {
@@ -399,8 +428,7 @@ contract Strategy is BaseStrategy, Ownable, ERC721Holder {
     // Take the CDAI balance of this contract within NIFTY and convert to DAI
     function calculateDaiBalance() public view returns (uint256 daiBalance) {
         uint256 cdaiBalance = NIFTYAPES.getCAssetBalance(address(this), CDAI);
-        // assume current implementation will add this func- TODO
-        // daiBalance = NIFTYAPES.cAssetAmountToAssetAmount(CDAI, cdaiBalance);
-        daiBalance = 0;
+        
+        daiBalance = NIFTYAPES.cAssetAmountToAssetAmount(CDAI, cdaiBalance);
     }
 }
