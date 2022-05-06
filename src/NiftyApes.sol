@@ -35,8 +35,8 @@ contract NiftyApes is
     /// @dev Internal address used for for ETH in our mappings
     address private constant ETH_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
 
-    /// @dev Constant address for the Chinalysis OFAC sanctions oracle
-    address constant SANCTIONS_CONTRACT = 0x40C57923924B5c5c5455c48D93317139ADDaC8fb;
+    /// @dev Internal constant address for the Chinalysis OFAC sanctions oracle
+    address private constant SANCTIONS_CONTRACT = 0x40C57923924B5c5c5455c48D93317139ADDaC8fb;
 
     /// @notice The maximum value that any fee on the protocol can be set to.
     ///         Fees on the protocol are denomimated in parts of 10_000.
