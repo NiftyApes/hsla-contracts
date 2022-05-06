@@ -15,8 +15,10 @@ import "@openzeppelin/contracts/utils/AddressUpgradeable.sol";
 import "./interfaces/compound/ICEther.sol";
 import "./interfaces/compound/ICERC20.sol";
 import "./interfaces/niftyapes/INiftyApes.sol";
+import "./interfaces/sanctions/SanctionsList.sol";
 import "./lib/ECDSABridge.sol";
 import "./lib/Math.sol";
+// import "./test/Console.sol";
 
 /// @title Implemention of the INiftyApes interface
 contract NiftyApes is
@@ -32,6 +34,9 @@ contract NiftyApes is
 
     /// @dev Internal address used for for ETH in our mappings
     address private constant ETH_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
+
+    /// @dev Internal constant address for the Chinalysis OFAC sanctions oracle
+    address private constant SANCTIONS_CONTRACT = 0x40C57923924B5c5c5455c48D93317139ADDaC8fb;
 
     /// @notice The maximum value that any fee on the protocol can be set to.
     ///         Fees on the protocol are denomimated in parts of 10_000.
@@ -148,6 +153,8 @@ contract NiftyApes is
     {
         address cAsset = getCAsset(asset);
 
+        requireIsNotSanctioned(msg.sender);
+
         uint256 cTokensMinted = mintCErc20(msg.sender, address(this), asset, tokenAmount);
 
         _balanceByAccountByAsset[msg.sender][cAsset].cAssetBalance += cTokensMinted;
@@ -167,6 +174,8 @@ contract NiftyApes is
     {
         getAsset(cAsset); // Ensures asset / cAsset is in the allow list
         IERC20Upgradeable cToken = IERC20Upgradeable(cAsset);
+
+        requireIsNotSanctioned(msg.sender);
 
         cToken.safeTransferFrom(msg.sender, address(this), cTokenAmount);
 
@@ -223,6 +232,8 @@ contract NiftyApes is
     /// @inheritdoc ILiquidity
     function supplyEth() external payable whenNotPaused nonReentrant returns (uint256) {
         address cAsset = getCAsset(ETH_ADDRESS);
+
+        requireIsNotSanctioned(msg.sender);
 
         uint256 cTokensMinted = mintCEth(msg.value);
 
@@ -545,6 +556,7 @@ contract NiftyApes is
         address borrower,
         uint256 nftId
     ) internal {
+        requireIsNotSanctioned(msg.sender);
         requireOfferPresent(offer);
 
         address cAsset = getCAsset(offer.asset);
@@ -615,6 +627,7 @@ contract NiftyApes is
         uint256 nftId
     ) internal {
         LoanAuction storage loanAuction = getLoanAuctionInternal(offer.nftContractAddress, nftId);
+        requireIsNotSanctioned(msg.sender);
         requireMatchingAsset(offer.asset, loanAuction.asset);
         requireNftOwner(loanAuction, msg.sender);
         requireNoFixedTerm(loanAuction);
@@ -673,6 +686,7 @@ contract NiftyApes is
             offer.nftId
         );
 
+        requireIsNotSanctioned(msg.sender);
         requireOpenLoan(loanAuction);
         requireOfferCreator(offer, msg.sender);
         requireLenderOffer(offer);
@@ -817,6 +831,8 @@ contract NiftyApes is
             paymentAmount: 0,
             checkMsgSender: false
         });
+
+        requireIsNotSanctioned(msg.sender);
 
         _repayLoanAmount(rls);
     }
@@ -1162,6 +1178,14 @@ contract NiftyApes is
 
     function requireNoFixTermOffer(Offer memory offer) internal pure {
         require(!offer.fixedTerms, "fixed term offer");
+    }
+
+    function requireIsNotSanctioned(
+        address addressToCheck
+    ) internal view {
+        SanctionsList sanctionsList = SanctionsList(SANCTIONS_CONTRACT);
+        bool isToSanctioned = sanctionsList.isSanctioned(addressToCheck);
+        require(!isToSanctioned, "sanctioned address");
     }
 
     function requireNftOwner(
