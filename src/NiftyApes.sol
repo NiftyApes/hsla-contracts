@@ -15,6 +15,7 @@ import "@openzeppelin/contracts/utils/AddressUpgradeable.sol";
 import "./interfaces/compound/ICEther.sol";
 import "./interfaces/compound/ICERC20.sol";
 import "./interfaces/niftyapes/INiftyApes.sol";
+import "./interfaces/sanctions/SanctionsList.sol";
 import "./lib/ECDSABridge.sol";
 import "./lib/Math.sol";
 
@@ -32,6 +33,9 @@ contract NiftyApes is
 
     /// @dev Internal address used for for ETH in our mappings
     address private constant ETH_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
+
+    /// @dev Constant address for the Chinalysis OFAC sanctions oracle
+    address constant SANCTIONS_CONTRACT = 0x40C57923924B5c5c5455c48D93317139ADDaC8fb;
 
     /// @notice The maximum value that any fee on the protocol can be set to.
     ///         Fees on the protocol are denomimated in parts of 10_000.
@@ -1162,6 +1166,14 @@ contract NiftyApes is
 
     function requireNoFixTermOffer(Offer memory offer) internal pure {
         require(!offer.fixedTerms, "fixed term offer");
+    }
+
+    function requireIsNotSanctioned(
+        address addressToCheck
+    ) internal view {
+        SanctionsList sanctionsList = SanctionsList(SANCTIONS_CONTRACT);
+        bool isToSanctioned = sanctionsList.isSanctioned(addressToCheck);
+        require(!isToSanctioned, "sanctioned address");
     }
 
     function requireNftOwner(
