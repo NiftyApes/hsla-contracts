@@ -13,7 +13,7 @@ import "../mock/CERC20Mock.sol";
 import "../mock/CEtherMock.sol";
 import "../mock/ERC20Mock.sol";
 import "../mock/ERC721Mock.sol";
-import "../console.sol";
+// import "../console.sol";
 
 
 contract LendingAuctionUnitTest is
@@ -6343,5 +6343,7 @@ contract LendingAuctionUnitTest is
 
     // TODO(captnseagraves): Missing tests for Seize and Sell
     // TODO(captnseagraves): Missing tests for regen collective percentage
+
+    // TODO(captnseagraves): Missing tests for Sanctions list
 
 }
