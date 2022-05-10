@@ -20,8 +20,7 @@ import "./interfaces/chainlink/IChainlinkOracle.sol";
 
 /*
 Assuptions from NIFTYAPES
-- NIFTYAPES contract implements `cAssetAmountToAssetAmount()`
-- NIFTYAPES contract implements `roughAssetAmountToCAssetAmount()` (as seen in this PR)
+- NIFTYAPES contract implements a public`assetAmountToAssetAmount()` view
 - NIFTYAPES contract adds a return value to `createOffer()`
 
 Assumptions within this contract
@@ -211,6 +210,7 @@ contract Strategy is BaseStrategy, Ownable, ERC721Holder {
         }
 
         // TODO @(carter) these if statements are redundant to the one above. Do we need them? 
+            // - yes, totalAssets would change from withdrawal of want above
         // NOTE: this logic is left as-is from template strategy
         if (_amountNeeded > totalAssets) {
             _liquidatedAmount = totalAssets;
@@ -238,12 +238,12 @@ contract Strategy is BaseStrategy, Ownable, ERC721Holder {
         // NOTE: needs to be re-called when outstanding loans expire
         // TODO: @(carter) should this emit an event that informs the strategist chron when or how frequently it should send funds back to the vault? 
         // TODO: @(carter) This function looks like it is missing the transfer function back to the vault. 
+        //  - This is done in `migrate()` which is inherited - transfers from the strategy to the new strategy
     }
 
     // NOTE: Can override `tendTrigger` and `harvestTrigger` if necessary
 
     function prepareMigration(address _newStrategy) internal override {
-        // TODO: Transfer any non-`want` tokens to the new strategy
         // NOTE: `migrate` will automatically forward all `want` in this strategy to the new one
         liquidateAllPositions();
     }
