@@ -705,7 +705,7 @@ contract NiftyApes is
         updateInterest(loanAuction);
 
         bool sufficientInterest = checkSufficientInterestAccumulated(loanAuction);
-        bool sufficientTerms = checkSufficientTerms(loanAuction, offer);
+        bool sufficientTerms = checkSufficientTerms(loanAuction, offer.amount, offer.interestRatePerSecond, offer.duration);
 
         // update LoanAuction struct
         loanAuction.amount = offer.amount;
@@ -1147,6 +1147,14 @@ contract NiftyApes is
         emit OfferSignatureUsed(offer.nftContractAddress, offer.nftId, offer, signature);
     }
 
+    /// @inheritdoc ILending
+    function checkSufficientInterestAccumulated(address nftContractAddress, uint256 nftId)
+        public
+        view
+        returns (bool)
+    {
+        return checkSufficientInterestAccumulated(getLoanAuctionInternal(nftContractAddress, nftId));
+    }
 
     // TODO (captnseagraves) create public function that enables lenders to call check
     function checkSufficientInterestAccumulated(LoanAuction storage loanAuction)
@@ -1163,20 +1171,29 @@ contract NiftyApes is
         return lenderInterest >= sufficientInterest ? true : false;
     }
 
-    function checkSufficientTerms(LoanAuction storage loanAuction, Offer memory offer)
+    /// @inheritdoc ILending
+    function checkSufficientTerms(address nftContractAddress, uint256 nftId, uint128 amount, uint96 interestRatePerSecond, uint32 duration)
+        public
+        view
+        returns (bool)
+    {
+        return checkSufficientTerms(getLoanAuctionInternal(nftContractAddress, nftId), amount, interestRatePerSecond, duration);
+    }
+
+    function checkSufficientTerms(LoanAuction storage loanAuction, uint128 amount, uint96 interestRatePerSecond, uint32 duration)
         internal
         view
         returns (bool)
     {
-        uint256 duration = loanAuction.loanEndTimestamp - loanAuction.loanBeginTimestamp;
+        uint256 loanDuration = loanAuction.loanEndTimestamp - loanAuction.loanBeginTimestamp;
 
         //TODO (captnseagraves) create view functions to enable lenders to check values
         // calculate the Bps improvement of each offer term
-        uint256 amountImprovement = ((offer.amount - loanAuction.amount) * MAX_BPS) /
+        uint256 amountImprovement = ((amount - loanAuction.amount) * MAX_BPS) /
             loanAuction.amount;
         uint256 interestImprovement = ((loanAuction.interestRatePerSecond -
-            offer.interestRatePerSecond) * MAX_BPS) / loanAuction.interestRatePerSecond;
-        uint256 durationImprovement = ((offer.duration - duration) * MAX_BPS) / duration;
+            interestRatePerSecond) * MAX_BPS) / loanAuction.interestRatePerSecond;
+        uint256 durationImprovement = ((duration - loanDuration) * MAX_BPS) / loanDuration;
 
         // sum improvements
         uint256 improvementSum = amountImprovement + interestImprovement + durationImprovement;
