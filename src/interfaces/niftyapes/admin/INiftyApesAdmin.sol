@@ -23,9 +23,14 @@ interface INiftyApesAdmin is INiftyApesAdminEvents {
     ///         Fees are denomiated in basis points, parts of 10_000
     function updateRefinancePremiumLenderBps(uint16 newPremiumLenderBps) external;
 
+    /// @notice Updates the premium that is paid to the protocol when a lender refinances before 
+    ///         the current lender has earned a reasonable amount of interest
+    ///         Fees are denomiated in basis points, parts of 10_000
+    function updateGasGriefingPremiumBps(uint16 newGasGriefingPremiumBps) external;
+
     /// @notice Updates the fee for refinancing a loan that is paid to the protocol
     ///         Fees are denomiated in basis points, parts of 10_000
-    function updateRefinancePremiumProtocolBps(uint16 newPremiumProtocolBps) external;
+    function updateTermGriefingPremiumBps(uint16 newTermGriefingPremiumBps) external;
 
     /// @notice Updates the bps of revenue sent to the Regen Collective
     ///         Fees are denomiated in basis points, parts of 10_000

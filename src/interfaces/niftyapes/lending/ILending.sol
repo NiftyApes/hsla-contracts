@@ -17,7 +17,12 @@ interface ILending is ILendingEvents, ILendingStructs {
 
     /// @notice Returns the fee for refinancing a loan that is paid to the protocol
     ///         Fees are denomiated in basis points, parts of 10_000
-    function refinancePremiumProtocolBps() external view returns (uint16);
+    function gasGriefingPremiumBps() external view returns (uint16);
+
+    /// TODO (captnseagraves) update comment
+    /// @notice Returns the fee for refinancing a loan that is paid to the protocol
+    ///         Fees are denomiated in basis points, parts of 10_000
+    function termGriefingPremiumBps() external view returns (uint16);
 
     /// @notice Returns the basis points of revenue sent to the Regen Collective
     ///         Denomiated in basis points, parts of 10_000

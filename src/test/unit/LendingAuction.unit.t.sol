@@ -5582,7 +5582,7 @@ contract LendingAuctionUnitTest is
         Offer memory offer = Offer({
             creator: LENDER_1,
             nftContractAddress: address(mockNft),
-            interestRatePerSecond: 6944444400000,
+            interestRatePerSecond: 6845444400000,
             fixedTerms: false,
             floorTerm: true,
             lenderOffer: true,
@@ -5621,8 +5621,8 @@ contract LendingAuctionUnitTest is
             lenderOffer: true,
             nftId: 1,
             asset: address(usdcToken),
-            amount: 7 ether,
-            duration: 1 days,
+            amount: 6 ether + 0.015 ether,
+            duration: 1 days + 3.7 minutes,
             expiration: uint32(block.timestamp + 1)
         });
         hevm.expectEmit(true, true, false, true);
@@ -6345,5 +6345,8 @@ contract LendingAuctionUnitTest is
     // TODO(captnseagraves): Missing tests for regen collective percentage
 
     // TODO(captnseagraves): Missing tests for Sanctions list
+    // TODO(captnseagraves): Tests for gas griefing
+    // TODO(captnseagraves): Tests for term griefing
+
 
 }
