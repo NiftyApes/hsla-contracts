@@ -1,42 +1,10 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "../lending/ILendingStructs.sol";
+import "../offers/IOffersStructs.sol";
 
 /// @title Events emmited by the lending part of the protocol.
 interface ILendingEvents {
-    /// @notice Emited when a new offer is stored on chain
-    /// @param creator The creator of the offer, this can either be a borrower or a lender (check boolean flag in the offer).
-    /// @param asset The asset in which the offer is denominated
-    /// @param nftContractAddress The nft contract address
-    /// @param nftId The nft id, this field can be meaningless if the offer is a floor term offer
-    /// @param offer The offer details
-    /// @param offerHash The offer hash
-    event NewOffer(
-        address indexed creator,
-        address asset,
-        address indexed nftContractAddress,
-        uint256 indexed nftId,
-        ILendingStructs.Offer offer,
-        bytes32 offerHash
-    );
-
-    /// @notice Emited when a offer is removed from chain
-    /// @param creator The creator of the offer, this can either be a borrower or a lender (check boolean flag in the offer).
-    /// @param asset The asset in which the offer is denominated
-    /// @param nftContractAddress The nft contract address
-    /// @param nftId The nft id, this field can be meaningless if the offer is a floor term offer
-    /// @param offer The offer details
-    /// @param offerHash The offer hash
-    event OfferRemoved(
-        address indexed creator,
-        address asset,
-        address indexed nftContractAddress,
-        uint256 indexed nftId,
-        ILendingStructs.Offer offer,
-        bytes32 offerHash
-    );
-
     /// @notice Emmited when a new loan is executed
     /// @param lender The lender of the loan
     /// @param asset The asset in which the offer is denominated
@@ -50,7 +18,7 @@ interface ILendingEvents {
         address borrower,
         address indexed nftContractAddress,
         uint256 indexed nftId,
-        ILendingStructs.Offer offer
+        IOffersStructs.Offer offer
     );
 
     /// @notice Emited when a loan is refinanced
@@ -66,19 +34,7 @@ interface ILendingEvents {
         address borrower,
         address indexed nftContractAddress,
         uint256 indexed nftId,
-        ILendingStructs.Offer offer
-    );
-
-    /// @notice Emitted when a offer signature gets has been used
-    /// @param nftContractAddress The nft contract address
-    /// @param nftId The nft id, this field can be meaningless if the offer is a floor term offer
-    /// @param offer The offer details
-    /// @param signature The signature that has been revoked
-    event OfferSignatureUsed(
-        address indexed nftContractAddress,
-        uint256 indexed nftId,
-        ILendingStructs.Offer offer,
-        bytes signature
+        IOffersStructs.Offer offer
     );
 
     /// @notice Emitted when a loan amount is drawn
