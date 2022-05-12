@@ -702,10 +702,10 @@ contract NiftyApes is
 
         address cAsset = getCAsset(offer.asset);
 
-        updateInterest(loanAuction);
-
         bool sufficientInterest = checkSufficientInterestAccumulated(loanAuction);
         bool sufficientTerms = checkSufficientTerms(loanAuction, offer.amount, offer.interestRatePerSecond, offer.duration);
+
+        updateInterest(loanAuction);
 
         // update LoanAuction struct
         loanAuction.amount = offer.amount;
@@ -1164,11 +1164,11 @@ contract NiftyApes is
     {
         (uint256 lenderInterest, ) = calculateInterestAccrued(loanAuction);
 
-        uint96 sufficientInterest = (SafeCastUpgradeable.toUint96(loanAuction.amount) *
+        uint96 sufficientInterest = (SafeCastUpgradeable.toUint96(loanAuction.amountDrawn) *
             SafeCastUpgradeable.toUint96(gasGriefingPremiumBps)) /
             SafeCastUpgradeable.toUint96(MAX_BPS);
 
-        return lenderInterest >= sufficientInterest ? true : false;
+        return lenderInterest > sufficientInterest ? true : false;
     }
 
     /// @inheritdoc ILending
@@ -1199,7 +1199,7 @@ contract NiftyApes is
         uint256 improvementSum = amountImprovement + interestImprovement + durationImprovement;
 
         // check and return if improvements are greate than 25 bps total
-        return improvementSum >= termGriefingPremiumBps ? true : false;
+        return improvementSum > termGriefingPremiumBps ? true : false;
     }
 
     function requireEthTransferable() internal view {

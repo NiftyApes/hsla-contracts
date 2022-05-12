@@ -126,10 +126,10 @@ contract AdminUnitTest is BaseTest, INiftyApesAdminEvents {
     }
 
     function testUpdateRefinancePremiumProtocolFee_owner() public {
-        assertEq(niftyApes.gasGriefingPremiumBps(), 0);
+        assertEq(niftyApes.gasGriefingPremiumBps(), 25);
         hevm.expectEmit(true, false, false, true);
 
-        emit GasGriefingPremiumBpsUpdated(0, 1);
+        emit GasGriefingPremiumBpsUpdated(25, 1);
         niftyApes.updateGasGriefingPremiumBps(1);
         assertEq(niftyApes.gasGriefingPremiumBps(), 1);
     }
