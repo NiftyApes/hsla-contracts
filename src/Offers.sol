@@ -1154,7 +1154,7 @@ contract NiftyApes is
 
     function requireOfferNotExpired(Offer memory offer) internal view {
         require(offer.expiration > currentTimestamp(), "offer expired");
-    }   
+    }
 
     function requireMinDurationForOffer(Offer memory offer) internal pure {
         require(offer.duration >= 1 days, "offer duration");

@@ -7,6 +7,6 @@ import "./liquidity/ILiquidity.sol";
 import "./offers/IOffers.sol";
 
 /// @title NiftyApes main interface
-interface INiftyApes is INiftyApesAdmin, ILending, ILiquidity, IOffers {
+interface INiftyApes is INiftyApesAdmin, ILending, ILiquidity {
 
 }
