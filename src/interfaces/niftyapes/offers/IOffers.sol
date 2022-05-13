@@ -3,12 +3,13 @@ pragma solidity 0.8.13;
 
 import "./IOffersEvents.sol";
 import "./IOffersStructs.sol";
+import "./IOffersAdmin.sol";
 import "../lending/ILendingStructs.sol";
 
 
 /// @title The Offers interface for Nifty Apes
 ///        This interface is intended to be used for interacting with offers on the protocol.
-interface IOffers is IOffersEvents, IOffersStructs, ILendingStructs {
+interface IOffers is IOffersEvents, IOffersStructs, IOffersAdmin, ILendingStructs {
     /// @notice Returns a loan aution identified by a given nft.
     /// @param nftContractAddress The address of the NFT collection
     /// @param nftId The id of a specified NFT
