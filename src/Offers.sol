@@ -12,6 +12,7 @@ import "@openzeppelin/contracts/utils/AddressUpgradeable.sol";
 import "./interfaces/compound/ICEther.sol";
 import "./interfaces/compound/ICERC20.sol";
 import "./interfaces/niftyapes/offers/IOffers.sol";
+import "./interfaces/niftyapes/INiftyApes.sol";
 import "./interfaces/sanctions/SanctionsList.sol";
 import "./lib/ECDSABridge.sol";
 import "./lib/Math.sol";
@@ -22,7 +23,8 @@ contract NiftyApesOffers is
     OwnableUpgradeable,
     PausableUpgradeable,
     EIP712Upgradeable,
-    IOffers
+    IOffers,
+    INiftyApes
 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using AddressUpgradeable for address payable;
@@ -163,7 +165,7 @@ contract NiftyApesOffers is
 
     /// @inheritdoc IOffers
     function createOffer(Offer memory offer) external whenNotPaused returns (bytes32 offerHash) {
-        address cAsset = getCAsset(offer.asset);
+        address cAsset = INiftyApes.getCAsset(offer.asset);
 
         requireOfferCreator(offer.creator, msg.sender);
 
