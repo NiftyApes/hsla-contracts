@@ -65,4 +65,17 @@ interface IOffers is IOffersEvents, IOffersStructs, IOffersAdmin, ILendingStruct
         bytes32 offerHash,
         bool floorTerm
     ) external;
+
+    /// @notice Checks that a signature has not been cancelled/withdrawn on chain
+    /// @param signature The signature of the offer
+    function requireAvailableSignature(bytes memory signature) external view;
+
+    /// @notice Checks that a signature has a length of 65 bytes
+    /// @param signature The signature of the offer
+    function requireSignature65(bytes memory signature) external pure;
+
+    /// @notice Checks that a signature has a length of 65 bytes
+    /// @param offer The details of the offer
+    /// @param signature The signature of the offer
+    function markSignatureUsed(Offer memory offer, bytes memory signature) external;
 }

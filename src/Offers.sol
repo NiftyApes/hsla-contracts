@@ -2,6 +2,7 @@
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/access/OwnableUpgradeable.sol";
+// TODO drop this
 import "@openzeppelin/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20Upgradeable.sol";
@@ -236,15 +237,12 @@ contract NiftyApesOffers is
 
         delete offerBook[offerHash];
     }
-
    
     function markSignatureUsed(Offer memory offer, bytes memory signature) internal {
         _cancelledOrFinalized[signature] = true;
 
         emit OfferSignatureUsed(offer.nftContractAddress, offer.nftId, offer, signature);
     }
-
-    
 
     function requireSignature65(bytes memory signature) internal pure {
         require(signature.length == 65, "signature unsupported");
@@ -270,7 +268,7 @@ contract NiftyApesOffers is
         require(IERC721Upgradeable(nftContractAddress).ownerOf(nftId) == owner, "nft owner");
     }
 
-    function requireAvailableSignature(bytes memory signature) internal view {
+    function requireAvailableSignature(bytes memory signature) external view {
         require(!_cancelledOrFinalized[signature], "signature not available");
     }
 

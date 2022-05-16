@@ -27,6 +27,14 @@ interface ILending is ILendingEvents, ILendingStructs, IOffersStructs {
     /// @notice Returns the address for the Regen Collective
     function regenCollectiveAddress() external view returns (address);
 
+    /// @notice Returns a loan aution identified by a given nft.
+    /// @param nftContractAddress The address of the NFT collection
+    /// @param nftId The id of a specified NFT
+    function getLoanAuction(address nftContractAddress, uint256 nftId)
+        external
+        view
+        returns (LoanAuction memory auction);
+
     /// @notice Start a loan as the borrower using an offer from the on chain offer book.
     ///         The caller of this method has to be the current owner of the NFT
     /// @param nftContractAddress The address of the NFT collection
@@ -34,6 +42,7 @@ interface ILending is ILendingEvents, ILendingStructs, IOffersStructs {
     /// @param offerHash The hash of all parameters in an offer
     /// @param floorTerm Indicates whether this is a floor or individual NFT offer.
     function executeLoanByBorrower(
+        address offersContract,
         address nftContractAddress,
         uint256 nftId,
         bytes32 offerHash,
@@ -48,6 +57,7 @@ interface ILending is ILendingEvents, ILendingStructs, IOffersStructs {
     /// @param signature A signed offerHash
     /// @param nftId The id of a specified NFT
     function executeLoanByBorrowerSignature(
+        address offersContract,
         Offer calldata offer,
         bytes memory signature,
         uint256 nftId
@@ -61,6 +71,7 @@ interface ILending is ILendingEvents, ILendingStructs, IOffersStructs {
     /// @param offerHash The hash of all parameters in an offer
     /// @param floorTerm Indicates whether this is a floor or individual NFT offer.
     function executeLoanByLender(
+        address offersContract,
         address nftContractAddress,
         uint256 nftId,
         bytes32 offerHash,
@@ -72,9 +83,11 @@ interface ILending is ILendingEvents, ILendingStructs, IOffersStructs {
     ///         execute these offers
     /// @param offer The details of the loan auction offer
     /// @param signature A signed offerHash
-    function executeLoanByLenderSignature(Offer calldata offer, bytes calldata signature)
-        external
-        payable;
+    function executeLoanByLenderSignature(
+        address offersContract,
+        Offer calldata offer,
+        bytes calldata signature
+    ) external payable;
 
     /// @notice Refinance a loan against the on chain offer book as the borrower.
     ///         The new offer has to cover all interest owed on the loan
@@ -83,6 +96,7 @@ interface ILending is ILendingEvents, ILendingStructs, IOffersStructs {
     /// @param floorTerm Indicates whether this is a floor or individual NFT offer.
     /// @param offerHash The hash of all parameters in an offer. This is used as the uniquge identifer of an offer.
     function refinanceByBorrower(
+        address offersContract,
         address nftContractAddress,
         uint256 nftId,
         bool floorTerm,
@@ -95,6 +109,7 @@ interface ILending is ILendingEvents, ILendingStructs, IOffersStructs {
     /// @param signature The signature for the offer
     /// @param nftId The id of a specified NFT
     function refinanceByBorrowerSignature(
+        address offersContract,
         Offer calldata offer,
         bytes memory signature,
         uint256 nftId
