@@ -984,6 +984,7 @@ contract NiftyApes is
         return drawAmount;
     }
 
+    // TODO: move to external contract/ yearn strategy
     /// @inheritdoc ILending
     function seizeAssetAndSell(
         address nftContractAddress,
@@ -1010,6 +1011,7 @@ contract NiftyApes is
             ? address(this).balance
             : IERC20Upgradeable(asset).balanceOf(address(this));
 
+        // TODO: (captnseagraves) dis a no no. arbitary call data could approve niftyapes.sol to approve all usdc for tranfer etc
         AddressUpgradeable.functionCall(sellAddress, sellCallData);
 
         uint256 balanceAfter = asset == ETH_ADDRESS
