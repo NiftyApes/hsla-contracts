@@ -48,4 +48,12 @@ interface IOffersEvents {
         IOffersStructs.Offer offer,
         bytes signature
     );
+
+    /// @notice Emmited when the associated lending contract address is changed
+    /// @param oldLendingContractAdress The old lending contract address
+    /// @param newLendingContractAdress The new lending contract address
+    event LendingContractAddressUpdated(
+        address oldLendingContractAdress,
+        address newLendingContractAdress
+    );
 }

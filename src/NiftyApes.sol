@@ -1239,7 +1239,8 @@ contract NiftyApes is
         return cTokenBalanceBefore - cTokenBalanceAfter;
     }
 
-    function assetAmountToCAssetAmount(address asset, uint256 amount) internal returns (uint256) {
+    /// @inheritdoc ILiquidity
+    function assetAmountToCAssetAmount(address asset, uint256 amount) public returns (uint256) {
         address cAsset = assetToCAsset[asset];
         ICERC20 cToken = ICERC20(cAsset);
 

@@ -49,6 +49,11 @@ interface ILiquidity is ILiquidityEvents, ILiquidityStructs {
     /// @param asset The assets address (e.g. USDC address)
     function assetToCAsset(address asset) external view returns (address);
 
+    /// @notice Returns the current amount of ctokens to be minted for a given amount of an underlying asset
+    /// @param asset The assets address (e.g. USDC address)
+    /// @param amount The amount of asset to convert to cAsset
+    function assetAmountToCAssetAmount(address asset, uint256 amount) external returns (uint256);
+
     /// @notice Returns an accounts balance in compound tokens.
     /// @param account The users account address
     /// @param cAsset The compound token address
@@ -57,4 +62,8 @@ interface ILiquidity is ILiquidityEvents, ILiquidityStructs {
     /// @notice Returns a maximum balance of compound tokens, if there is no limit returns zero.
     /// @param cAsset The compound token address
     function maxBalanceByCAsset(address cAsset) external view returns (uint256);
+
+    /// @notice Returns the whitelisted cAsset pair to the asset
+    /// @param asset The assets address (e.g. USDC address)
+    function getCAsset(address asset) external view returns (address);
 }

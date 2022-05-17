@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Upgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712Upgradeable.sol";
 import "@openzeppelin/contracts/utils/math/MathUpgradeable.sol";
 import "@openzeppelin/contracts/utils/math/SafeCastUpgradeable.sol";
@@ -13,7 +14,7 @@ import "@openzeppelin/contracts/utils/AddressUpgradeable.sol";
 import "./interfaces/compound/ICEther.sol";
 import "./interfaces/compound/ICERC20.sol";
 import "./interfaces/niftyapes/offers/IOffers.sol";
-import "./interfaces/niftyapes/INiftyApes.sol";
+import "./interfaces/niftyapes/liquidity/ILiquidity.sol";
 import "./interfaces/sanctions/SanctionsList.sol";
 import "./lib/ECDSABridge.sol";
 import "./lib/Math.sol";
@@ -25,7 +26,7 @@ contract NiftyApesOffers is
     PausableUpgradeable,
     EIP712Upgradeable,
     IOffers,
-    INiftyApes
+    ILiquidity
 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using AddressUpgradeable for address payable;
@@ -48,6 +49,8 @@ contract NiftyApesOffers is
     ///      The mapping allows users to withdraw offers that they made by signature.
     mapping(bytes => bool) private _cancelledOrFinalized;
 
+    address public lendingContractAddress;
+
     /// @dev This empty reserved space is put in place to allow future versions to add new
     /// variables without shifting storage.
     uint256[500] private __gap;
@@ -60,7 +63,6 @@ contract NiftyApesOffers is
 
         OwnableUpgradeable.__Ownable_init();
         PausableUpgradeable.__Pausable_init();
-        ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
     }
 
     /// @inheritdoc IOffersAdmin
@@ -131,7 +133,7 @@ contract NiftyApesOffers is
         requireSigner(signer, msg.sender);
         requireOfferCreator(offer, msg.sender);
 
-        markSignatureUsed(offer, signature);
+        _markSignatureUsed(offer, signature);
     }
 
     function getOfferBook(
@@ -165,14 +167,14 @@ contract NiftyApesOffers is
     }
 
     /// @inheritdoc IOffers
-    function createOffer(Offer memory offer) external whenNotPaused returns (bytes32 offerHash) {
-        address cAsset = INiftyApes.getCAsset(offer.asset);
+    function createOffer(Offer memory offer, address liquidityContract) external whenNotPaused returns (bytes32 offerHash) {
+        address cAsset = ILiquidity(liquidityContract).getCAsset(offer.asset);
 
         requireOfferCreator(offer.creator, msg.sender);
 
         if (offer.lenderOffer) {
-            uint256 offerTokens = assetAmountToCAssetAmount(offer.asset, offer.amount);
-            requireCAssetBalance(msg.sender, cAsset, offerTokens);
+            uint256 offerTokens = ILiquidity(liquidityContract).assetAmountToCAssetAmount(offer.asset, offer.amount);
+            requireCAssetBalance(msg.sender, cAsset, offerTokens, liquidityContract);
         } else {
             requireNftOwner(offer.nftContractAddress, offer.nftId, msg.sender);
             requireNoFloorTerms(offer);
@@ -237,14 +239,25 @@ contract NiftyApesOffers is
 
         delete offerBook[offerHash];
     }
+
+    /// @inheritdoc IOffersAdmin
+    function updateLendingContractAddress(address newLendingContractAddress) external onlyOwner {
+        emit LendingContractAddressUpdated(lendingContractAddress, newLendingContractAddress);
+        lendingContractAddress = newLendingContractAddress;
+    }
+
+    function markSignatureUsed(Offer memory offer, bytes memory signature) external {
+        require(msg.sender == lendingContractAddress, "not authorized");
+        _markSignatureUsed(offer, signature);
+    }
    
-    function markSignatureUsed(Offer memory offer, bytes memory signature) internal {
+    function _markSignatureUsed(Offer memory offer, bytes memory signature) internal {
         _cancelledOrFinalized[signature] = true;
 
         emit OfferSignatureUsed(offer.nftContractAddress, offer.nftId, offer, signature);
     }
 
-    function requireSignature65(bytes memory signature) internal pure {
+    function requireSignature65(bytes memory signature) public pure {
         require(signature.length == 65, "signature unsupported");
     }
 
@@ -268,7 +281,7 @@ contract NiftyApesOffers is
         require(IERC721Upgradeable(nftContractAddress).ownerOf(nftId) == owner, "nft owner");
     }
 
-    function requireAvailableSignature(bytes memory signature) external view {
+    function requireAvailableSignature(bytes memory signature) public view {
         require(!_cancelledOrFinalized[signature], "signature not available");
     }
 
@@ -287,19 +300,14 @@ contract NiftyApesOffers is
     function requireCAssetBalance(
         address account,
         address cAsset,
-        uint256 amount
-    ) internal view {
-        require(getCAssetBalance(account, cAsset) >= amount, "Insufficient cToken balance");
+        uint256 amount, 
+        address liquidityContract
+    ) internal {
+        require(ILiquidity(liquidityContract).getCAssetBalance(account, cAsset) >= amount, "Insufficient cToken balance");
     }
 
     function currentTimestamp() internal view returns (uint32) {
         return SafeCastUpgradeable.toUint32(block.timestamp);
-    }
-
-    // This is needed to receive ETH when calling withdrawing ETH from compund
-    // solhint-disable-next-line no-empty-blocks
-    receive() external payable {
-        require(_ethTransferable, "eth not transferable");
     }
 
     function renounceOwnership() public override onlyOwner {}
