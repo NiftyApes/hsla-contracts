@@ -6,7 +6,9 @@ import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 import "../../interfaces/compound/ICERC20.sol";
 import "../../interfaces/compound/ICEther.sol";
 import "../../NiftyApes.sol";
+import "../../Offers.sol";
 import "../../interfaces/niftyapes/lending/ILendingEvents.sol";
+import "../../interfaces/niftyapes/offers/IOffers.sol";
 
 import "../common/BaseTest.sol";
 import "../mock/CERC20Mock.sol";
@@ -20,9 +22,11 @@ contract LendingAuctionUnitTest is
     BaseTest,
     ILendingEvents,
     ILendingStructs,
+    IOffers,
     ERC721HolderUpgradeable
 {
     NiftyApes lendingAction;
+    NiftyApesOffers offers;
     ERC20Mock usdcToken;
     CERC20Mock cUSDCToken;
 
@@ -53,6 +57,11 @@ contract LendingAuctionUnitTest is
     function setUp() public {
         lendingAction = new NiftyApes();
         lendingAction.initialize();
+
+        offers = new NiftyApesOffers();
+        offers.initialize();
+
+        offers.updateLendingContractAddress(address(lendingAction));
 
         usdcToken = new ERC20Mock();
         usdcToken.initialize("USD Coin", "USDC");

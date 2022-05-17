@@ -7,6 +7,7 @@ import "../../interfaces/compound/ICERC20.sol";
 import "../../interfaces/compound/ICEther.sol";
 import "../../NiftyApes.sol";
 import "../../interfaces/niftyapes/lending/ILendingStructs.sol";
+import "../../interfaces/niftyapes/offers/IOffers.sol";
 
 import "../common/BaseTest.sol";
 import "../mock/CERC20Mock.sol";
@@ -14,7 +15,7 @@ import "../mock/CEtherMock.sol";
 import "../mock/ERC20Mock.sol";
 import "../mock/ERC721Mock.sol";
 
-contract NiftyApesPauseUnitTest is BaseTest, ILendingStructs, ERC721HolderUpgradeable {
+contract NiftyApesPauseUnitTest is BaseTest, ILendingStructs, IOffers, ERC721HolderUpgradeable {
     NiftyApes niftyApes;
     ERC20Mock usdcToken;
     CERC20Mock cUSDCToken;

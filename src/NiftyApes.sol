@@ -1255,7 +1255,7 @@ contract NiftyApes is
         return Math.mulScalarTruncate(amount, exchangeRateMantissa);
     }
 
-    function getCAsset(address asset) internal view returns (address) {
+    function getCAsset(address asset) public view returns (address) {
         address cAsset = assetToCAsset[asset];
         require(cAsset != address(0), "asset allow list");
         require(asset == _cAssetToAsset[cAsset], "non matching allow list");
