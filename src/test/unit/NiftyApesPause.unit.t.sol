@@ -6,8 +6,9 @@ import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 import "../../interfaces/compound/ICERC20.sol";
 import "../../interfaces/compound/ICEther.sol";
 import "../../NiftyApes.sol";
+import "../../Offers.sol";
 import "../../interfaces/niftyapes/lending/ILendingStructs.sol";
-import "../../interfaces/niftyapes/offers/IOffers.sol";
+import "../../interfaces/niftyapes/offers/IOffersStructs.sol";
 
 import "../common/BaseTest.sol";
 import "../mock/CERC20Mock.sol";
@@ -15,8 +16,9 @@ import "../mock/CEtherMock.sol";
 import "../mock/ERC20Mock.sol";
 import "../mock/ERC721Mock.sol";
 
-contract NiftyApesPauseUnitTest is BaseTest, ILendingStructs, IOffers, ERC721HolderUpgradeable {
+contract NiftyApesPauseUnitTest is BaseTest, ILendingStructs, IOffersStructs, ERC721HolderUpgradeable {
     NiftyApes niftyApes;
+    NiftyApesOffers offersContract;
     ERC20Mock usdcToken;
     CERC20Mock cUSDCToken;
 
@@ -40,6 +42,11 @@ contract NiftyApesPauseUnitTest is BaseTest, ILendingStructs, IOffers, ERC721Hol
     function setUp() public {
         niftyApes = new NiftyApes();
         niftyApes.initialize();
+
+        offersContract = new NiftyApesOffers();
+        offersContract.initialize();
+
+        offersContract.updateLendingContractAddress(address(niftyApes));
 
         usdcToken = new ERC20Mock();
         usdcToken.initialize("USD Coin", "USDC");
@@ -143,58 +150,40 @@ contract NiftyApesPauseUnitTest is BaseTest, ILendingStructs, IOffers, ERC721Hol
         niftyApes.withdrawEth(1);
     }
 
-    function testCannotWithdrawOfferSignature_paused() public {
-        hevm.expectRevert("Pausable: paused");
-
-        niftyApes.withdrawOfferSignature(getOffer(), "");
-    }
-
-    function testCannotCreateOffer_paused() public {
-        hevm.expectRevert("Pausable: paused");
-
-        niftyApes.createOffer(getOffer());
-    }
-
-    function testCannotRemoveOffer_paused() public {
-        hevm.expectRevert("Pausable: paused");
-
-        niftyApes.removeOffer(address(0), 1, bytes32(0), false);
-    }
-
     function testCannotExecuteLoanByBorrower_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        niftyApes.executeLoanByBorrower(address(0), 1, bytes32(0), false);
+        niftyApes.executeLoanByBorrower(address(offersContract), address(0), 1, bytes32(0), false);
     }
 
     function testCannotExecuteLoanByBorrowerSignature_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        niftyApes.executeLoanByBorrowerSignature(getOffer(), "", 0);
+        niftyApes.executeLoanByBorrowerSignature(address(offersContract), getOffer(), "", 0);
     }
 
     function testCannotExecuteLoanByLender_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        niftyApes.executeLoanByLender(address(0), 1, bytes32(0), false);
+        niftyApes.executeLoanByLender(address(offersContract), address(0), 1, bytes32(0), false);
     }
 
     function testCannotExecuteLoanByLenderSignature_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        niftyApes.executeLoanByLenderSignature(getOffer(), "");
+        niftyApes.executeLoanByLenderSignature(address(offersContract), getOffer(), "");
     }
 
     function testCannotRefinanceByBorrower_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        niftyApes.refinanceByBorrower(address(0), 1, false, bytes32(0));
+        niftyApes.refinanceByBorrower(address(offersContract), address(0), 1, false, bytes32(0));
     }
 
     function testCannotRefinanceByBorrowerSignature_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        niftyApes.refinanceByBorrowerSignature(getOffer(), "", 1);
+        niftyApes.refinanceByBorrowerSignature(address(offersContract), getOffer(), "", 1);
     }
 
     function testCannotRefinanceByLender_paused() public {

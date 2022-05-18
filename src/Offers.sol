@@ -25,8 +25,7 @@ contract NiftyApesOffers is
     OwnableUpgradeable,
     PausableUpgradeable,
     EIP712Upgradeable,
-    IOffers,
-    ILiquidity
+    IOffers
 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using AddressUpgradeable for address payable;
