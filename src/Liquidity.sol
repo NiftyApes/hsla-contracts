@@ -331,113 +331,10 @@ contract NiftyApesLiquidity is
         require(_ethTransferable, "eth not transferable");
     }
 
-    function requireSignature65(bytes memory signature) internal pure {
-        require(signature.length == 65, "signature unsupported");
-    }
-
-    function requireOfferPresent(Offer memory offer) internal pure {
-        require(offer.asset != address(0), "no offer");
-    }
-
-    function requireOfferAmount(Offer memory offer, uint256 amount) internal pure {
-        require(offer.amount >= amount, "offer amount");
-    }
-
-    function requireNoOpenLoan(LoanAuction storage loanAuction) internal view {
-        require(loanAuction.lastUpdatedTimestamp == 0, "Loan already open");
-    }
-
-    function requireOpenLoan(LoanAuction storage loanAuction) internal view {
-        require(loanAuction.lastUpdatedTimestamp != 0, "loan not active");
-    }
-
-    function requireLoanExpired(LoanAuction storage loanAuction) internal view {
-        require(currentTimestamp() >= loanAuction.loanEndTimestamp, "loan not expired");
-    }
-
-    function requireLoanNotExpired(LoanAuction storage loanAuction) internal view {
-        require(currentTimestamp() < loanAuction.loanEndTimestamp, "loan expired");
-    }
-
-    function requireOfferNotExpired(Offer memory offer) internal view {
-        require(offer.expiration > currentTimestamp(), "offer expired");
-    }
-
-    function requireMinDurationForOffer(Offer memory offer) internal pure {
-        require(offer.duration >= 1 days, "offer duration");
-    }
-
-    function requireLenderOffer(Offer memory offer) internal pure {
-        require(offer.lenderOffer, "lender offer");
-    }
-
-    function requireBorrowerOffer(Offer memory offer) internal pure {
-        require(!offer.lenderOffer, "borrower offer");
-    }
-
-    function requireNoFloorTerms(Offer memory offer) internal pure {
-        require(!offer.floorTerm, "floor term");
-    }
-
-    function requireNoFixedTerm(LoanAuction storage loanAuction) internal view {
-        require(!loanAuction.fixedTerms, "fixed term loan");
-    }
-
-    function requireNoFixTermOffer(Offer memory offer) internal pure {
-        require(!offer.fixedTerms, "fixed term offer");
-    }
-
     function requireIsNotSanctioned(address addressToCheck) internal view {
         SanctionsList sanctionsList = SanctionsList(SANCTIONS_CONTRACT);
         bool isToSanctioned = sanctionsList.isSanctioned(addressToCheck);
         require(!isToSanctioned, "sanctioned address");
-    }
-
-    function requireNftOwner(
-        address nftContractAddress,
-        uint256 nftId,
-        address owner
-    ) internal view {
-        require(IERC721Upgradeable(nftContractAddress).ownerOf(nftId) == owner, "nft owner");
-    }
-
-    function requireLender(address lender) internal view {
-        require(lender == msg.sender, "lender");
-    }
-
-    function requireMatchingAsset(address asset1, address asset2) internal pure {
-        require(asset1 == asset2, "asset mismatch");
-    }
-
-    function requireFundsAvailable(LoanAuction storage loanAuction, uint256 drawAmount)
-        internal
-        view
-    {
-        require((drawAmount + loanAuction.amountDrawn) <= loanAuction.amount, "funds overdrawn");
-    }
-
-    function requireNftOwner(LoanAuction storage loanAuction, address nftOwner) internal view {
-        require(nftOwner == loanAuction.nftOwner, "nft owner");
-    }
-
-    function requireMatchingNftId(Offer memory offer, uint256 nftId) internal pure {
-        require(nftId == offer.nftId, "offer nftId mismatch");
-    }
-
-    function requireMsgValue(uint256 amount) internal view {
-        require(amount == msg.value, "msg value");
-    }
-
-    function requireOfferCreator(Offer memory offer, address creator) internal pure {
-        require(creator == offer.creator, "offer creator mismatch");
-    }
-
-    function requireSigner(address signer, address expected) internal pure {
-        require(signer == expected, "signer");
-    }
-
-    function requireOfferCreator(address signer, address expected) internal pure {
-        require(signer == expected, "offer creator");
     }
 
     function requireCAssetBalance(
@@ -446,77 +343,6 @@ contract NiftyApesLiquidity is
         uint256 amount
     ) internal view {
         require(getCAssetBalance(account, cAsset) >= amount, "Insufficient cToken balance");
-    }
-
-    function requireOfferParity(LoanAuction storage loanAuction, Offer memory offer) internal view {
-        // Caching fields here for gas usage
-        uint256 amount = loanAuction.amount;
-        uint256 interestRatePerSecond = loanAuction.interestRatePerSecond;
-        uint256 loanEndTime = loanAuction.loanEndTimestamp;
-        uint256 offerEndTime = loanAuction.loanBeginTimestamp + offer.duration;
-
-        // Better amount
-        if (
-            offer.amount > amount &&
-            offer.interestRatePerSecond <= interestRatePerSecond &&
-            offerEndTime >= loanEndTime
-        ) {
-            return;
-        }
-
-        // Lower interest rate
-        if (
-            offer.amount >= amount &&
-            offer.interestRatePerSecond < interestRatePerSecond &&
-            offerEndTime >= loanEndTime
-        ) {
-            return;
-        }
-
-        // Longer duration
-        if (
-            offer.amount >= amount &&
-            offer.interestRatePerSecond <= interestRatePerSecond &&
-            offerEndTime > loanEndTime
-        ) {
-            return;
-        }
-
-        revert("not an improvement");
-    }
-
-    function createLoan(
-        LoanAuction storage loanAuction,
-        Offer memory offer,
-        address lender,
-        address borrower
-    ) internal {
-        loanAuction.nftOwner = borrower;
-        loanAuction.lender = lender;
-        loanAuction.asset = offer.asset;
-        loanAuction.amount = offer.amount;
-        loanAuction.loanEndTimestamp = currentTimestamp() + offer.duration;
-        loanAuction.loanBeginTimestamp = currentTimestamp();
-        loanAuction.lastUpdatedTimestamp = currentTimestamp();
-        loanAuction.amountDrawn = offer.amount;
-        loanAuction.fixedTerms = offer.fixedTerms;
-        loanAuction.interestRatePerSecond = offer.interestRatePerSecond;
-
-        uint96 protocolInterestRatePerSecond = calculateProtocolInterestPerSecond(
-            offer.amount,
-            offer.duration
-        );
-
-        loanAuction.protocolInterestRatePerSecond = protocolInterestRatePerSecond;
-    }
-
-    function transferNft(
-        address nftContractAddress,
-        uint256 nftId,
-        address from,
-        address to
-    ) internal {
-        IERC721Upgradeable(nftContractAddress).safeTransferFrom(from, to, nftId);
     }
 
     function sendValue(
@@ -546,14 +372,10 @@ contract NiftyApesLiquidity is
         _balanceByAccountByAsset[owner()][cAsset].cAssetBalance += cTokensToProtocol;
     }
 
-    function currentTimestamp() internal view returns (uint32) {
-        return SafeCastUpgradeable.toUint32(block.timestamp);
-    }
-
     // This is needed to receive ETH when calling withdrawing ETH from compund
     // solhint-disable-next-line no-empty-blocks
     receive() external payable {
-        require(_ethTransferable, "eth not transferable");
+        requireEthTransferable();
     }
 
     function requireMaxCAssetBalance(address cAsset) internal view {
