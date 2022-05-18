@@ -6431,7 +6431,6 @@ contract LendingAuctionUnitTest is
 
     // TODO(dankurka): Missing test for withdrawing someone elses signed offer
 
-    // TODO(captnseagraves): Missing tests for Seize and Sell
     // TODO(captnseagraves): Missing tests for regen collective percentage
 
     // TODO(captnseagraves): Missing tests for Sanctions list
