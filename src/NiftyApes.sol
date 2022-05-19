@@ -18,7 +18,7 @@ import "./interfaces/niftyapes/INiftyApes.sol";
 import "./interfaces/sanctions/SanctionsList.sol";
 import "./lib/ECDSABridge.sol";
 import "./lib/Math.sol";
-// import "./test/Console.sol";
+import "./test/Console.sol";
 
 /// @title Implemention of the INiftyApes interface
 contract NiftyApes is
@@ -83,7 +83,10 @@ contract NiftyApes is
     uint16 public refinancePremiumLenderBps;
 
     /// @inheritdoc ILending
-    uint16 public refinancePremiumProtocolBps;
+    uint16 public gasGriefingPremiumBps;
+
+    /// @inheritdoc ILending
+    uint16 public termGriefingPremiumBps;
 
     /// @inheritdoc ILending
     uint16 public regenCollectiveBpsOfRevenue;
@@ -106,10 +109,10 @@ contract NiftyApes is
 
         protocolInterestBps = 0;
         refinancePremiumLenderBps = 50;
-        refinancePremiumProtocolBps = 0;
+        gasGriefingPremiumBps = 25;
+        termGriefingPremiumBps = 25;
         regenCollectiveBpsOfRevenue = 100;
         regenCollectiveAddress = address(0x252de94Ae0F07fb19112297F299f8c9Cc10E28a6);
-
 
         OwnableUpgradeable.__Ownable_init();
         PausableUpgradeable.__Pausable_init();
@@ -287,7 +290,6 @@ contract NiftyApes is
 
         emit Erc20Withdrawn(owner(), asset, ownerAmountUnderlying, ownerBalanceMinusRegen);
     }
-
 
     /// @inheritdoc ILending
     function getLoanAuction(address nftContractAddress, uint256 nftId)
@@ -700,6 +702,9 @@ contract NiftyApes is
 
         address cAsset = getCAsset(offer.asset);
 
+        bool sufficientInterest = checkSufficientInterestAccumulated(loanAuction);
+        bool sufficientTerms = checkSufficientTerms(loanAuction, offer.amount, offer.interestRatePerSecond, offer.duration);
+
         updateInterest(loanAuction);
 
         // update LoanAuction struct
@@ -717,12 +722,20 @@ contract NiftyApes is
 
             require(getCAssetBalance(offer.creator, cAsset) >= additionalTokens, "lender balance");
         } else {
+            // TODO: (captnseagraves) re-examine the lenderPremium here, can a lender lose money here?
+            //        if a borrower pays back some and then the lender gets refinanced, do they lose money?
             // calculate interest earned
             uint256 interestAndPremiumOwedToCurrentLender = loanAuction.accumulatedLenderInterest +
                 ((loanAuction.amountDrawn * refinancePremiumLenderBps) / MAX_BPS);
 
-            uint256 protocolPremium = (loanAuction.amountDrawn * refinancePremiumProtocolBps) /
-                MAX_BPS;
+            uint256 protocolPremium = 0;
+            if (!sufficientInterest) {
+                protocolPremium += (loanAuction.amountDrawn * gasGriefingPremiumBps) / MAX_BPS;
+            }
+            if (!sufficientTerms) {
+                protocolPremium += (loanAuction.amountDrawn * termGriefingPremiumBps) / MAX_BPS;
+            }
+
             // calculate fullRefinanceAmount
             uint256 fullAmount = interestAndPremiumOwedToCurrentLender +
                 protocolPremium +
@@ -1063,7 +1076,10 @@ contract NiftyApes is
         uint8 interestRateBps,
         uint32 duration
     ) public pure returns (uint96) {
-        return (SafeCastUpgradeable.toUint96(amount) * SafeCastUpgradeable.toUint96(interestRateBps)) / SafeCastUpgradeable.toUint96(MAX_BPS) / SafeCastUpgradeable.toUint96(duration);
+        return
+            (SafeCastUpgradeable.toUint96(amount) * SafeCastUpgradeable.toUint96(interestRateBps)) /
+            SafeCastUpgradeable.toUint96(MAX_BPS) /
+            SafeCastUpgradeable.toUint96(duration);
     }
 
     function calculateProtocolInterestPerSecond(uint128 amount, uint32 duration)
@@ -1071,7 +1087,11 @@ contract NiftyApes is
         view
         returns (uint96)
     {
-        return (SafeCastUpgradeable.toUint96(amount) * SafeCastUpgradeable.toUint96(protocolInterestBps)) / SafeCastUpgradeable.toUint96(MAX_BPS) / SafeCastUpgradeable.toUint96(duration);
+        return
+            (SafeCastUpgradeable.toUint96(amount) *
+                SafeCastUpgradeable.toUint96(protocolInterestBps)) /
+            SafeCastUpgradeable.toUint96(MAX_BPS) /
+            SafeCastUpgradeable.toUint96(duration);
     }
 
     /// @inheritdoc INiftyApesAdmin
@@ -1088,10 +1108,17 @@ contract NiftyApes is
     }
 
     /// @inheritdoc INiftyApesAdmin
-    function updateRefinancePremiumProtocolBps(uint16 newPremiumProtocolBps) external onlyOwner {
-        require(newPremiumProtocolBps <= MAX_FEE, "max fee");
-        emit RefinancePremiumProtocolBpsUpdated(refinancePremiumProtocolBps, newPremiumProtocolBps);
-        refinancePremiumProtocolBps = newPremiumProtocolBps;
+    function updateGasGriefingPremiumBps(uint16 newGasGriefingPremiumBps) external onlyOwner {
+        require(newGasGriefingPremiumBps <= MAX_FEE, "max fee");
+        emit GasGriefingPremiumBpsUpdated(gasGriefingPremiumBps, newGasGriefingPremiumBps);
+        gasGriefingPremiumBps = newGasGriefingPremiumBps;
+    }
+
+    /// @inheritdoc INiftyApesAdmin
+    function updateTermGriefingPremiumBps(uint16 newTermGriefingPremiumBps) external onlyOwner {
+        require(newTermGriefingPremiumBps <= MAX_FEE, "max fee");
+        emit TermGriefingPremiumBpsUpdated(termGriefingPremiumBps, newTermGriefingPremiumBps);
+        termGriefingPremiumBps = newTermGriefingPremiumBps;
     }
 
     /// @inheritdoc INiftyApesAdmin
@@ -1118,6 +1145,61 @@ contract NiftyApes is
         _cancelledOrFinalized[signature] = true;
 
         emit OfferSignatureUsed(offer.nftContractAddress, offer.nftId, offer, signature);
+    }
+
+    /// @inheritdoc ILending
+    function checkSufficientInterestAccumulated(address nftContractAddress, uint256 nftId)
+        public
+        view
+        returns (bool)
+    {
+        return checkSufficientInterestAccumulated(getLoanAuctionInternal(nftContractAddress, nftId));
+    }
+
+    // TODO (captnseagraves) create public function that enables lenders to call check
+    function checkSufficientInterestAccumulated(LoanAuction storage loanAuction)
+        internal
+        view
+        returns (bool)
+    {
+        (uint256 lenderInterest, ) = calculateInterestAccrued(loanAuction);
+
+        uint96 sufficientInterest = (SafeCastUpgradeable.toUint96(loanAuction.amountDrawn) *
+            SafeCastUpgradeable.toUint96(gasGriefingPremiumBps)) /
+            SafeCastUpgradeable.toUint96(MAX_BPS);
+
+        return lenderInterest > sufficientInterest ? true : false;
+    }
+
+    /// @inheritdoc ILending
+    function checkSufficientTerms(address nftContractAddress, uint256 nftId, uint128 amount, uint96 interestRatePerSecond, uint32 duration)
+        public
+        view
+        returns (bool)
+    {
+        return checkSufficientTerms(getLoanAuctionInternal(nftContractAddress, nftId), amount, interestRatePerSecond, duration);
+    }
+
+    function checkSufficientTerms(LoanAuction storage loanAuction, uint128 amount, uint96 interestRatePerSecond, uint32 duration)
+        internal
+        view
+        returns (bool)
+    {
+        uint256 loanDuration = loanAuction.loanEndTimestamp - loanAuction.loanBeginTimestamp;
+
+        //TODO (captnseagraves) create view functions to enable lenders to check values
+        // calculate the Bps improvement of each offer term
+        uint256 amountImprovement = ((amount - loanAuction.amount) * MAX_BPS) /
+            loanAuction.amount;
+        uint256 interestImprovement = ((loanAuction.interestRatePerSecond -
+            interestRatePerSecond) * MAX_BPS) / loanAuction.interestRatePerSecond;
+        uint256 durationImprovement = ((duration - loanDuration) * MAX_BPS) / loanDuration;
+
+        // sum improvements
+        uint256 improvementSum = amountImprovement + interestImprovement + durationImprovement;
+
+        // check and return if improvements are greate than 25 bps total
+        return improvementSum > termGriefingPremiumBps ? true : false;
     }
 
     function requireEthTransferable() internal view {
@@ -1180,9 +1262,7 @@ contract NiftyApes is
         require(!offer.fixedTerms, "fixed term offer");
     }
 
-    function requireIsNotSanctioned(
-        address addressToCheck
-    ) internal view {
+    function requireIsNotSanctioned(address addressToCheck) internal view {
         SanctionsList sanctionsList = SanctionsList(SANCTIONS_CONTRACT);
         bool isToSanctioned = sanctionsList.isSanctioned(addressToCheck);
         require(!isToSanctioned, "sanctioned address");
@@ -1196,9 +1276,7 @@ contract NiftyApes is
         require(IERC721Upgradeable(nftContractAddress).ownerOf(nftId) == owner, "nft owner");
     }
 
-    function requireLender(
-        address lender
-    ) internal view {
+    function requireLender(address lender) internal view {
         require(lender == msg.sender, "lender");
     }
 

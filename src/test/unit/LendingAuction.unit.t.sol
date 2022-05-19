@@ -13,8 +13,8 @@ import "../mock/CERC20Mock.sol";
 import "../mock/CEtherMock.sol";
 import "../mock/ERC20Mock.sol";
 import "../mock/ERC721Mock.sol";
-// import "../console.sol";
 
+// import "../console.sol";
 
 contract LendingAuctionUnitTest is
     BaseTest,
@@ -5444,7 +5444,7 @@ contract LendingAuctionUnitTest is
         Offer memory offer = Offer({
             creator: LENDER_1,
             nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
+            interestRatePerSecond: 6844444400000,
             fixedTerms: false,
             floorTerm: true,
             lenderOffer: true,
@@ -5474,10 +5474,12 @@ contract LendingAuctionUnitTest is
 
         lendingAction.supplyErc20(address(usdcToken), 7 ether);
 
+        hevm.warp(block.timestamp + 12 hours);
+
         Offer memory offer2 = Offer({
             creator: LENDER_2,
             nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
+            interestRatePerSecond: 6844444400000,
             fixedTerms: false,
             floorTerm: false,
             lenderOffer: true,
@@ -5508,30 +5510,27 @@ contract LendingAuctionUnitTest is
         assertEq(lendingAction.getCAssetBalance(address(this), address(cUSDCToken)), 0);
         assertEq(
             lendingAction.getCAssetBalance(LENDER_1, address(cUSDCToken)),
-            6030000000000000000 ether
+            6325679998080000000 ether
         );
         assertEq(
             lendingAction.getCAssetBalance(LENDER_2, address(cUSDCToken)),
-            970000000000000000 ether
+            674320001920000000 ether
         );
 
-        assertEq(
-            lendingAction.getCAssetBalance(OWNER, address(cUSDCToken)),
-            0 ether
-        );
+        assertEq(lendingAction.getCAssetBalance(OWNER, address(cUSDCToken)), 0 ether);
 
         LoanAuction memory loanAuction = lendingAction.getLoanAuction(address(mockNft), 1);
 
         assertEq(loanAuction.nftOwner, address(this));
         assertEq(loanAuction.lender, LENDER_2);
         assertEq(loanAuction.asset, address(usdcToken));
-        assertEq(loanAuction.interestRatePerSecond, 3);
+        assertEq(loanAuction.interestRatePerSecond, 6844444400000);
         assertTrue(!loanAuction.fixedTerms);
 
         assertEq(loanAuction.amount, 7 ether);
-        assertEq(loanAuction.loanEndTimestamp, block.timestamp + 1 days);
+        assertEq(loanAuction.loanEndTimestamp, block.timestamp + 1 days - 12 hours);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
-        assertEq(loanAuction.accumulatedLenderInterest, 0);
+        assertEq(loanAuction.accumulatedLenderInterest, 295679998080000000);
         assertEq(loanAuction.accumulatedProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 6 ether);
     }
@@ -5605,7 +5604,7 @@ contract LendingAuctionUnitTest is
         Offer memory offer = Offer({
             creator: LENDER_1,
             nftContractAddress: address(mockNft),
-            interestRatePerSecond: 6944444400000,
+            interestRatePerSecond: 6845444400000,
             fixedTerms: false,
             floorTerm: true,
             lenderOffer: true,
@@ -5644,8 +5643,8 @@ contract LendingAuctionUnitTest is
             lenderOffer: true,
             nftId: 1,
             asset: address(usdcToken),
-            amount: 7 ether,
-            duration: 1 days,
+            amount: 6 ether + 0.015 ether,
+            duration: 1 days + 3.7 minutes,
             expiration: uint32(block.timestamp + 1)
         });
         hevm.expectEmit(true, true, false, true);
@@ -5695,6 +5694,8 @@ contract LendingAuctionUnitTest is
 
         lendingAction.supplyErc20(address(usdcToken), 10 ether);
 
+        hevm.warp(block.timestamp + 6 hours + 10 minutes);
+
         Offer memory offer2 = Offer({
             creator: LENDER_2,
             nftContractAddress: address(mockNft),
@@ -5709,8 +5710,6 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 200)
         });
 
-        hevm.warp(block.timestamp + 100);
-        
         lendingAction.refinanceByLender(offer2);
 
         assertEq(usdcToken.balanceOf(address(this)), 6 ether);
@@ -5731,11 +5730,11 @@ contract LendingAuctionUnitTest is
         assertEq(lendingAction.getCAssetBalance(address(this), address(cUSDCToken)), 0);
         assertEq(
             lendingAction.getCAssetBalance(LENDER_1, address(cUSDCToken)),
-            6030069444444444400 ether
+            6045416666666656800 ether
         );
         assertEq(
             lendingAction.getCAssetBalance(LENDER_2, address(cUSDCToken)),
-            3969930555555555600 ether
+            3954583333333343200 ether
         );
 
         assertEq(
@@ -5754,7 +5753,7 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.amount, 7 ether);
         assertEq(loanAuction.loanEndTimestamp, loanAuction.loanBeginTimestamp + 3 days);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
-        assertEq(loanAuction.accumulatedLenderInterest, 69444444444400);
+        assertEq(loanAuction.accumulatedLenderInterest, 15416666666656800);
         assertEq(loanAuction.accumulatedProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 6000000000000000000);
     }
@@ -5893,6 +5892,8 @@ contract LendingAuctionUnitTest is
 
         lendingAction.supplyErc20(address(usdcToken), 10 ether);
 
+        hevm.warp(block.timestamp + 6 hours + 10 minutes);
+
         Offer memory offer2 = Offer({
             creator: LENDER_2,
             nftContractAddress: address(mockNft),
@@ -5907,8 +5908,6 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 200)
         });
 
-        hevm.warp(block.timestamp + 100);
-
         lendingAction.refinanceByLender(offer2);
 
         hevm.stopPrank();
@@ -5918,6 +5917,8 @@ contract LendingAuctionUnitTest is
         usdcToken.approve(address(lendingAction), 10 ether);
 
         lendingAction.supplyErc20(address(usdcToken), 10 ether);
+
+        hevm.warp(block.timestamp + 6 hours + 10 minutes);
 
         Offer memory offer3 = Offer({
             creator: LENDER_3,
@@ -5932,8 +5933,6 @@ contract LendingAuctionUnitTest is
             duration: 3 days,
             expiration: uint32(block.timestamp + 400)
         });
-
-        hevm.warp(block.timestamp + 200);
 
         lendingAction.refinanceByLender(offer3);
 
@@ -5958,16 +5957,16 @@ contract LendingAuctionUnitTest is
         assertEq(lendingAction.getCAssetBalance(address(this), address(cUSDCToken)), 0);
         assertEq(
             lendingAction.getCAssetBalance(LENDER_1, address(cUSDCToken)),
-            6030069444444444400 ether
+            6045416666666656800 ether
         );
         assertEq(
             lendingAction.getCAssetBalance(LENDER_2, address(cUSDCToken)),
-            10000138888888888400 ether
+            10015416666666612400 ether
         );
 
         assertEq(
             lendingAction.getCAssetBalance(LENDER_3, address(cUSDCToken)),
-            3969791666666667200 ether
+            3939166666666730800 ether
         );
 
         assertEq(
@@ -5986,7 +5985,7 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.amount, 8 ether);
         assertEq(loanAuction.loanEndTimestamp, loanAuction.loanBeginTimestamp + 3 days);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
-        assertEq(loanAuction.accumulatedLenderInterest, 208333333332800);
+        assertEq(loanAuction.accumulatedLenderInterest, 30833333333269200);
         assertEq(loanAuction.accumulatedProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 6000000000000000000);
     }
@@ -6318,7 +6317,10 @@ contract LendingAuctionUnitTest is
 
         uint256 principal = 1 ether;
 
-        (uint256 lenderInterest, uint256 protocolInterest) = lendingAction.calculateInterestAccrued(offer.nftContractAddress, offer.nftId);
+        (uint256 lenderInterest, uint256 protocolInterest) = lendingAction.calculateInterestAccrued(
+            offer.nftContractAddress,
+            offer.nftId
+        );
 
         uint256 repayAmount = principal + lenderInterest + protocolInterest;
 

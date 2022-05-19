@@ -17,7 +17,12 @@ interface ILending is ILendingEvents, ILendingStructs {
 
     /// @notice Returns the fee for refinancing a loan that is paid to the protocol
     ///         Fees are denomiated in basis points, parts of 10_000
-    function refinancePremiumProtocolBps() external view returns (uint16);
+    function gasGriefingPremiumBps() external view returns (uint16);
+
+    /// TODO (captnseagraves) update comment
+    /// @notice Returns the fee for refinancing a loan that is paid to the protocol
+    ///         Fees are denomiated in basis points, parts of 10_000
+    function termGriefingPremiumBps() external view returns (uint16);
 
     /// @notice Returns the basis points of revenue sent to the Regen Collective
     ///         Denomiated in basis points, parts of 10_000
@@ -228,12 +233,27 @@ interface ILending is ILendingEvents, ILendingStructs {
     function ownerOf(address nftContractAddress, uint256 nftId) external view returns (address);
 
     /// @notice Returns interest since the last update to the loan
-    ///         This includes the accumulatedInterest over the life of loan paid to previous lenders to buy refinacne the loan
-    ///         and the interest from the current active interest period.
+    ///         This only includes the interest from the current active interest period.
     /// @param nftContractAddress The address of the NFT collection
     /// @param nftId The id of the specified NFT
     function calculateInterestAccrued(address nftContractAddress, uint256 nftId)
         external
         view
         returns (uint256, uint256);
+
+    /// @notice Returns whether interest has accumulated greater than the gas griefing premium requirement
+    /// @param nftContractAddress The address of the NFT collection
+    /// @param nftId The id of the specified NFT
+    function checkSufficientInterestAccumulated(address nftContractAddress, uint256 nftId)
+        external
+        view
+        returns (bool);
+
+    /// @notice Returns whether interest has accumulated greater than the gas griefing premium requirement
+    /// @param nftContractAddress The address of the NFT collection
+    /// @param nftId The id of the specified NFT
+    function checkSufficientTerms(address nftContractAddress, uint256 nftId, uint128 amount, uint96 interestRatePerSecond, uint32 duration)
+        external
+        view
+        returns (bool);
 }

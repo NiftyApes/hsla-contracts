@@ -20,12 +20,20 @@ interface INiftyApesAdminEvents {
     /// @param newPremiumLenderBps The new basis points denominated in parts of 10_000
     event RefinancePremiumLenderBpsUpdated(uint16 oldPremiumLenderBps, uint16 newPremiumLenderBps);
 
-    /// @notice Emmited when the premium that a lender is charged for refinancing a loan is changed
-    /// @param oldPremiumProtocolBps The old basis points denominated in parts of 10_000
-    /// @param newPremiumProtocolBps The new basis points denominated in parts of 10_000
-    event RefinancePremiumProtocolBpsUpdated(
-        uint16 oldPremiumProtocolBps,
-        uint16 newPremiumProtocolBps
+    /// @notice Emmited when the premium that a lender is charged to disincentivize gas griefing is changed
+    /// @param oldGasGriefingPremiumBps The old basis points denominated in parts of 10_000
+    /// @param newGasGriefingPremiumBps The new basis points denominated in parts of 10_000
+    event GasGriefingPremiumBpsUpdated(
+        uint16 oldGasGriefingPremiumBps,
+        uint16 newGasGriefingPremiumBps
+    );
+
+        /// @notice Emmited when the premium that a lender is charged to disincentivize gas griefing is changed
+    /// @param oldTermGriefingPremiumBps The old basis points denominated in parts of 10_000
+    /// @param newTermGriefingPremiumBps The new basis points denominated in parts of 10_000
+    event TermGriefingPremiumBpsUpdated(
+        uint16 oldTermGriefingPremiumBps,
+        uint16 newTermGriefingPremiumBps
     );
 
     /// @notice Emmited when the bps of reveneue sent to the Regen Collective is changed
