@@ -81,7 +81,7 @@ contract LendingAuctionUnitTest is
         lendingAction.transferOwnership(OWNER);
     }
 
-    // TODO(dankurka): Move to base
+    // TODO(miller): Move to base
     function signOffer(Offer memory offer) public returns (bytes memory) {
         // This is the EIP712 signed hash
         bytes32 encoded_offer = lendingAction.getOfferHash(offer);
@@ -127,6 +127,8 @@ contract LendingAuctionUnitTest is
         assertEq(offer.duration, 0);
         assertEq(offer.expiration, 0);
     }
+
+    // createOffer Tests
 
     function testCannotCreateOffer_asset_not_whitelisted() public {
         Offer memory offer = Offer({
@@ -268,6 +270,8 @@ contract LendingAuctionUnitTest is
         lendingAction.createOffer(offer);
     }
 
+    // removeOffer Tests
+
     function testCannotRemoveOffer_other_user() public {
         usdcToken.mint(address(this), 6);
         usdcToken.approve(address(lendingAction), 6);
@@ -397,9 +401,12 @@ contract LendingAuctionUnitTest is
         );
     }
 
+    // executeLoanByBorrower Tests
+
     function testCannotExecuteLoanByBorrower_asset_not_in_allow_list() public {
-        // TODO(dankurka): Can not write this test since we can not unlist
+        // TODO(miller): Can not write this test since we can not unlist
         // assets from the allow list and we need them to be in the list to add funds
+        // This test is now possible because we have enabled asset/cAsset to be relisted by owner
     }
 
     function testCannotExecuteLoanByBorrower_no_offer_present() public {
@@ -974,9 +981,12 @@ contract LendingAuctionUnitTest is
         );
     }
 
+    // executeLoanByBorrowerSignature Tests
+
     function testCannotExecuteLoanByBorrowerSignature_asset_not_in_allow_list() public {
-        // TODO(dankurka): Can not write this test since we can not unlist
+        // TODO(miller): Can not write this test since we can not unlist
         // assets from the allow list and we need them to be in the list to add funds
+        // this test can now be run as well
     }
 
     function testCannotExecuteLoanByBorrowerSignature_signature_blocked() public {
@@ -1469,9 +1479,12 @@ contract LendingAuctionUnitTest is
         lendingAction.executeLoanByBorrowerSignature(offer, signature, 1);
     }
 
+    // executeLoanByLender Tests
+
     function testCannotExecuteLoanByLender_asset_not_in_allow_list() public {
-        // TODO(dankurka): Can not write this test since we can not unlist
+        // TODO(miller): Can not write this test since we can not unlist
         // assets from the allow list and we need them to be in the list to add funds
+        // this one can now be written
     }
 
     function testCannotExecuteLoanByLender_no_offer_present() public {
@@ -1828,7 +1841,7 @@ contract LendingAuctionUnitTest is
 
         hevm.startPrank(LENDER_1);
 
-        // TODO
+        // TODO(miller): there was a TODO here, but not sure exactly what Daniel's intention with is was, some expected revert
         // hevm.expectRevert("foo");
 
         lendingAction.executeLoanByLender(
@@ -2013,9 +2026,12 @@ contract LendingAuctionUnitTest is
         );
     }
 
+    // executeLoanByLenderSignature Tests
+
     function testCannotExecuteLoanByLenderSignature_asset_not_in_allow_list() public {
-        // TODO(dankurka): Can not write this test since we can not unlist
+        // TODO(miller): Can not write this test since we can not unlist
         // assets from the allow list and we need them to be in the list to add funds
+        // this one can now be implemented
     }
 
     function testCannotExecuteLoanByLenderSignature_signature_blocked() public {
@@ -2284,8 +2300,9 @@ contract LendingAuctionUnitTest is
     }
 
     function testCannotExecuteLoanByLenderSignature_eth_payment_fails() public {
-        // TODO(dankurka): This is tough to test since we can not revert the signers
+        // TODO(miller): This is tough to test since we can not revert the signers
         //                 address on ETH transfers
+        // can you look into this? 
     }
 
     function testExecuteLoanByLenderSignature_works_not_floor_term() public {
@@ -2453,6 +2470,8 @@ contract LendingAuctionUnitTest is
 
         lendingAction.executeLoanByLenderSignature(offer, signature);
     }
+
+    // refinanceByBorrower Tests
 
     function testCannotRefinanceByBorrower_fixed_terms() public {
         hevm.startPrank(LENDER_1);
@@ -3616,6 +3635,8 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.accumulatedLenderInterest, 0);
         assertEq(loanAuction.accumulatedProtocolInterest, 0); // 0 fee set so 0 balance expected
     }
+
+    // refinanceByBorrowerSignature Tests
 
     function testCannotRefinanceByBorrowerSignature_fixed_terms() public {
         hevm.startPrank(LENDER_1);
@@ -4808,6 +4829,8 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.accumulatedProtocolInterest, 0); // 0 fee set so 0 balance expected
     }
 
+    // refinanceByLender Tests
+
     function testCannotRefinanceByLender_fixed_terms() public {
         hevm.startPrank(LENDER_1);
         usdcToken.mint(address(LENDER_1), 6);
@@ -5830,8 +5853,6 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.amountDrawn, 6 ether);
     }
 
-    // TODO (captnseagraves) create tests that set the protocolInterestBps and refinancePremiumProtocolBps to higher vlaues and test math
-
     function testRefinanceByLender_covers_interest_3_lenders() public {
         hevm.startPrank(LENDER_1);
         usdcToken.mint(address(LENDER_1), 6 ether);
@@ -5970,7 +5991,7 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.amountDrawn, 6000000000000000000);
     }
 
-    // TODO(dankurka): Missing test:
+    // TODO(miller): Missing test:
     //                 Refinance with different improvements same lender
     //                 Min duration update
 
@@ -6337,13 +6358,12 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.amountDrawn, 0);
     }
 
-    // TODO(dankurka): Tests missing for drawAmount
-
-    // TODO(dankurka): Missing test for withdrawing someone elses signed offer
-
-    // TODO(captnseagraves): Missing tests for Seize and Sell
-    // TODO(captnseagraves): Missing tests for regen collective percentage
-
-    // TODO(captnseagraves): Missing tests for Sanctions list
-
+    // TODO(miller): Tests missing for drawAmount
+    // TODO(miller): Missing test for withdrawing someone elses signed offer
+    // TODO(miller): Missing tests for regen collective percentage
+    // TODO(miller): Missing tests for Sanctions list
+    // TODO(miller): Tests for slashUnsupportedAmount
+    // TODO(miller): Tests for interest math and different gas greifing and term griefing premiums
+    // TODO(miller): Review existing tests for additional cases
+    // TODO(miller): Review contract functions and ensure there are tests for each function
 }
