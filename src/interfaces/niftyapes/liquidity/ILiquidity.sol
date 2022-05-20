@@ -121,6 +121,11 @@ interface ILiquidity is ILiquidityAdmin, ILiquidityEvents, ILiquidityStructs {
     /// @param amount The amount of asset to convert to cAsset
     function assetAmountToCAssetAmount(address asset, uint256 amount) external returns (uint256);
 
+    /// @notice Returns the current amount of tokens to be redeemed for a given amount of cTokens
+    /// @param cAsset The compound token address
+    /// @param amount The amount of asset to convert to cAsset
+    function cAssetAmountToAssetAmount(address cAsset, uint256 amount) external returns (uint256);
+
     /// @notice Returns an accounts balance in compound tokens.
     /// @param account The users account address
     /// @param cAsset The compound token address

@@ -427,7 +427,8 @@ contract NiftyApesLiquidity is
         return Math.divScalarByExpTruncate(amount, exchangeRateMantissa);
     }
 
-    function cAssetAmountToAssetAmount(address cAsset, uint256 amount) internal returns (uint256) {
+    /// @inheritdoc ILiquidity
+    function cAssetAmountToAssetAmount(address cAsset, uint256 amount) public returns (uint256) {
         ICERC20 cToken = ICERC20(cAsset);
 
         uint256 exchangeRateMantissa = cToken.exchangeRateCurrent();
@@ -436,8 +437,8 @@ contract NiftyApesLiquidity is
 
     function getCAsset(address asset) public view returns (address) {
         address cAsset = assetToCAsset[asset];
-        require(cAsset != address(0), "asset allow list");
-        require(asset == _cAssetToAsset[cAsset], "non matching allow list");
+        // require(cAsset != address(0), "asset allow list");
+        // require(asset == _cAssetToAsset[cAsset], "non matching allow list");
         return cAsset;
     }
 

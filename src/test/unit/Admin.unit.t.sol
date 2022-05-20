@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/interfaces/IERC20Upgradeable.sol";
 import "../../interfaces/compound/ICERC20.sol";
 import "../../interfaces/compound/ICEther.sol";
 import "../../Lending.sol";
+import "../../Liquidity.sol";
 import "../../interfaces/niftyapes/lending/ILendingEvents.sol";
 import "../../interfaces/niftyapes/liquidity/ILiquidityEvents.sol";
 import "../common/BaseTest.sol";
@@ -14,6 +15,7 @@ import "../mock/ERC20Mock.sol";
 
 contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
     NiftyApesLending niftyApes;
+    NiftyApesLiquidity liquidityProviders;
     ERC20Mock usdcToken;
     CERC20Mock cUSDCToken;
 
@@ -31,11 +33,14 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
         niftyApes = new NiftyApesLending();
         niftyApes.initialize();
 
+        liquidityProviders = new NiftyApesLiquidity();
+        liquidityProviders.initialize();
+
         usdcToken = new ERC20Mock();
         usdcToken.initialize("USD Coin", "USDC");
         cUSDCToken = new CERC20Mock();
         cUSDCToken.initialize(usdcToken);
-        niftyApes.setCAssetAddress(address(usdcToken), address(cUSDCToken));
+        liquidityProviders.setCAssetAddress(address(usdcToken), address(cUSDCToken));
 
         cEtherToken = new CEtherMock();
         cEtherToken.initialize();
@@ -45,7 +50,7 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
 
     function testSetCAddressMapping_returns_null_address() public {
         assertEq(
-            niftyApes.assetToCAsset(address(0x0000000000000000000000000000000000000001)),
+            liquidityProviders.assetToCAsset(address(0x0000000000000000000000000000000000000001)),
             address(0x0000000000000000000000000000000000000000)
         );
     }
@@ -58,13 +63,13 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
             address(0x0000000000000000000000000000000000000002)
         );
 
-        niftyApes.setCAssetAddress(
+        liquidityProviders.setCAssetAddress(
             address(0x0000000000000000000000000000000000000001),
             address(0x0000000000000000000000000000000000000002)
         );
 
         assertEq(
-            niftyApes.assetToCAsset(address(0x0000000000000000000000000000000000000001)),
+            liquidityProviders.assetToCAsset(address(0x0000000000000000000000000000000000000001)),
             address(0x0000000000000000000000000000000000000002)
         );
     }
@@ -73,7 +78,7 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
         hevm.startPrank(NOT_ADMIN);
 
         hevm.expectRevert("Ownable: caller is not the owner");
-        niftyApes.setCAssetAddress(
+        liquidityProviders.setCAssetAddress(
             address(0x0000000000000000000000000000000000000001),
             address(0x0000000000000000000000000000000000000002)
         );

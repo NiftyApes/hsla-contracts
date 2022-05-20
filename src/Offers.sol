@@ -18,7 +18,7 @@ import "./interfaces/niftyapes/liquidity/ILiquidity.sol";
 import "./interfaces/sanctions/SanctionsList.sol";
 import "./lib/ECDSABridge.sol";
 import "./lib/Math.sol";
-// import "./test/Console.sol";
+import "./test/Console.sol";
 
 /// @title Implemention of the IOffers interface
 contract NiftyApesOffers is
@@ -171,14 +171,16 @@ contract NiftyApesOffers is
     function createOffer(Offer memory offer) external whenNotPaused returns (bytes32 offerHash) {
         address cAsset = ILiquidity(liquidityContractAddress).getCAsset(offer.asset);
 
-        requireOfferCreator(offer.creator, msg.sender);
+        console.log("msg.sender", msg.sender);
+
+        // requireOfferCreator(offer.creator, msg.sender);
 
         if (offer.lenderOffer) {
             uint256 offerTokens = ILiquidity(liquidityContractAddress).assetAmountToCAssetAmount(offer.asset, offer.amount);
-            requireCAssetBalance(msg.sender, cAsset, offerTokens);
+            // requireCAssetBalance(msg.sender, cAsset, offerTokens);
         } else {
-            requireNftOwner(offer.nftContractAddress, offer.nftId, msg.sender);
-            requireNoFloorTerms(offer);
+            // requireNftOwner(offer.nftContractAddress, offer.nftId, msg.sender);
+            // requireNoFloorTerms(offer);
         }
 
         mapping(bytes32 => Offer) storage offerBook = getOfferBook(
