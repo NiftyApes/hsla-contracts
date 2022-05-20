@@ -116,7 +116,7 @@ contract NiftyApesLiquidity is
 
         requireIsNotSanctioned(msg.sender);
 
-        uint256 cTokensMinted = mintCErc20(msg.sender, address(this), asset, tokenAmount);
+        uint256 cTokensMinted = _mintCErc20(msg.sender, address(this), asset, tokenAmount);
 
         _balanceByAccountByAsset[msg.sender][cAsset].cAssetBalance += cTokensMinted;
 
@@ -161,9 +161,9 @@ contract NiftyApesLiquidity is
             uint256 cTokensBurnt = ownerWithdraw(asset, cAsset);
             return cTokensBurnt;
         } else {
-            uint256 cTokensBurnt = burnCErc20(asset, tokenAmount);
+            uint256 cTokensBurnt = _burnCErc20(asset, tokenAmount);
 
-            withdrawCBalance(msg.sender, cAsset, cTokensBurnt);
+            _withdrawCBalance(msg.sender, cAsset, cTokensBurnt);
 
             underlying.safeTransfer(msg.sender, tokenAmount);
 
@@ -183,7 +183,7 @@ contract NiftyApesLiquidity is
         getAsset(cAsset);
         IERC20Upgradeable cToken = IERC20Upgradeable(cAsset);
 
-        withdrawCBalance(msg.sender, cAsset, cTokenAmount);
+        _withdrawCBalance(msg.sender, cAsset, cTokenAmount);
 
         cToken.safeTransfer(msg.sender, cTokenAmount);
 
@@ -196,7 +196,7 @@ contract NiftyApesLiquidity is
 
         requireIsNotSanctioned(msg.sender);
 
-        uint256 cTokensMinted = mintCEth(msg.value);
+        uint256 cTokensMinted = _mintCEth(msg.value);
 
         _balanceByAccountByAsset[msg.sender][cAsset].cAssetBalance += cTokensMinted;
 
@@ -211,9 +211,9 @@ contract NiftyApesLiquidity is
     function withdrawEth(uint256 amount) external whenNotPaused nonReentrant returns (uint256) {
         address cAsset = getCAsset(ETH_ADDRESS);
 
-        uint256 cTokensBurnt = burnCErc20(ETH_ADDRESS, amount);
+        uint256 cTokensBurnt = _burnCErc20(ETH_ADDRESS, amount);
 
-        withdrawCBalance(msg.sender, cAsset, cTokensBurnt);
+        _withdrawCBalance(msg.sender, cAsset, cTokensBurnt);
 
         payable(msg.sender).sendValue(amount);
 
@@ -228,7 +228,7 @@ contract NiftyApesLiquidity is
 
         uint256 ownerBalanceUnderlying = cAssetAmountToAssetAmount(cAsset, ownerBalance);
 
-        cTokensBurnt = burnCErc20(asset, ownerBalanceUnderlying);
+        cTokensBurnt = _burnCErc20(asset, ownerBalanceUnderlying);
 
         uint256 bpsForRegen = (cTokensBurnt * regenCollectiveBpsOfRevenue) / 10_000;
 
@@ -238,7 +238,7 @@ contract NiftyApesLiquidity is
 
         uint256 regenAmountUnderlying = cAssetAmountToAssetAmount(cAsset, bpsForRegen);
 
-        withdrawCBalance(owner(), cAsset, cTokensBurnt);
+        _withdrawCBalance(owner(), cAsset, cTokensBurnt);
 
         underlying.safeTransfer(owner(), ownerAmountUnderlying);
 
@@ -269,15 +269,21 @@ contract NiftyApesLiquidity is
         regenCollectiveAddress = newRegenCollectiveAddress;
     }
 
-        /// @inheritdoc ILiquidityAdmin
+    /// @inheritdoc ILiquidityAdmin
     function updateLendingContractAddress(address newLendingContractAddress) external onlyOwner {
-        emit LiquidityXLendingContractAddressUpdated(lendingContractAddress, newLendingContractAddress);
+        emit LiquidityXLendingContractAddressUpdated(
+            lendingContractAddress,
+            newLendingContractAddress
+        );
         lendingContractAddress = newLendingContractAddress;
     }
 
-        /// @inheritdoc ILiquidityAdmin
+    /// @inheritdoc ILiquidityAdmin
     function updateOffersContractAddress(address newOffersContractAddress) external onlyOwner {
-        emit LiquidityXOffersContractAddressUpdated(offersContractAddress, newOffersContractAddress);
+        emit LiquidityXOffersContractAddressUpdated(
+            offersContractAddress,
+            newOffersContractAddress
+        );
         offersContractAddress = newOffersContractAddress;
     }
 
@@ -303,6 +309,15 @@ contract NiftyApesLiquidity is
         address asset,
         uint256 amount,
         address to
+    ) public {
+        requireLendingContract();
+        _sendValue(asset, amount, to);
+    }
+
+    function _sendValue(
+        address asset,
+        uint256 amount,
+        address to
     ) internal {
         if (asset == ETH_ADDRESS) {
             payable(to).sendValue(amount);
@@ -324,7 +339,17 @@ contract NiftyApesLiquidity is
         }
     }
 
+    /// @inheritdoc ILiquidity
     function mintCErc20(
+        address from,
+        address to,
+        address asset,
+        uint256 amount) public returns (uint256) {
+        requireLendingContract();
+        return _mintCErc20(from, to, asset, amount);
+    }
+
+    function _mintCErc20(
         address from,
         address to,
         address asset,
@@ -343,7 +368,13 @@ contract NiftyApesLiquidity is
         return cTokenBalanceAfter - cTokenBalanceBefore;
     }
 
-    function mintCEth(uint256 amount) internal returns (uint256) {
+    /// @inheritdoc ILiquidity
+    function mintCEth(uint256 amount) public returns (uint256) {
+        requireLendingContract();
+        return _mintCEth(amount);
+    }
+
+    function _mintCEth(uint256 amount) internal returns (uint256) {
         address cAsset = assetToCAsset[ETH_ADDRESS];
         ICEther cToken = ICEther(cAsset);
         uint256 cTokenBalanceBefore = cToken.balanceOf(address(this));
@@ -352,8 +383,18 @@ contract NiftyApesLiquidity is
         return cTokenBalanceAfter - cTokenBalanceBefore;
     }
 
+    function requireLendingContract() internal view {
+        require(msg.sender == lendingContractAddress, "not authorized");
+    }
+
+    /// @inheritdoc ILiquidity
+    function burnCErc20(address asset, uint256 amount) public returns (uint256) {
+        requireLendingContract();
+        return _burnCErc20(asset, amount);
+    }
+
     // @notice param amount is demoninated in the underlying asset, not cAsset
-    function burnCErc20(address asset, uint256 amount) internal returns (uint256) {
+    function _burnCErc20(address asset, uint256 amount) internal returns (uint256) {
         address cAsset = assetToCAsset[asset];
         ICERC20 cToken = ICERC20(cAsset);
 
@@ -363,6 +404,18 @@ contract NiftyApesLiquidity is
         _ethTransferable = false;
         uint256 cTokenBalanceAfter = cToken.balanceOf(address(this));
         return cTokenBalanceBefore - cTokenBalanceAfter;
+    }
+
+    /// @inheritdoc ILiquidity
+    function addToCAssetBalance(address account, address cAsset, uint256 amount) public {
+        requireLendingContract();
+        _balanceByAccountByAsset[account][cAsset].cAssetBalance += amount;  
+    }
+
+    /// @inheritdoc ILiquidity
+    function subFromCAssetBalance(address account, address cAsset, uint256 amount) public {
+        requireLendingContract();
+        _balanceByAccountByAsset[account][cAsset].cAssetBalance -= amount;  
     }
 
     /// @inheritdoc ILiquidity
@@ -396,6 +449,15 @@ contract NiftyApesLiquidity is
     }
 
     function withdrawCBalance(
+        address account,
+        address cAsset,
+        uint256 cTokenAmount
+    ) public {
+        requireLendingContract();
+        _withdrawCBalance(account, cAsset, cTokenAmount);
+    }
+
+    function _withdrawCBalance(
         address account,
         address cAsset,
         uint256 cTokenAmount

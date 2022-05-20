@@ -77,7 +77,7 @@ contract NiftyApesLending is
         protocolInterestBps = 0;
         refinancePremiumLenderBps = 50;
         refinancePremiumProtocolBps = 0;
-    
+
         OwnableUpgradeable.__Ownable_init();
         PausableUpgradeable.__Pausable_init();
         ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
@@ -92,7 +92,6 @@ contract NiftyApesLending is
     function unpause() external onlyOwner {
         _unpause();
     }
-
 
     /// @inheritdoc ILending
     function getLoanAuction(address nftContractAddress, uint256 nftId)
@@ -131,7 +130,12 @@ contract NiftyApesLending is
         // We can only do this for non floor offers since
         // a floor offer can be used for multiple nfts
         if (!floorTerm) {
-            IOffers(offersContractAddress).removeOffer(nftContractAddress, nftId, offerHash, floorTerm);
+            IOffers(offersContractAddress).removeOffer(
+                nftContractAddress,
+                nftId,
+                offerHash,
+                floorTerm
+            );
         }
         _executeLoanInternal(offer, offer.creator, msg.sender, nftId);
     }
@@ -181,10 +185,12 @@ contract NiftyApesLending is
     }
 
     /// @inheritdoc ILending
-    function executeLoanByLenderSignature(
-        Offer memory offer,
-        bytes memory signature
-    ) external payable whenNotPaused nonReentrant {
+    function executeLoanByLenderSignature(Offer memory offer, bytes memory signature)
+        external
+        payable
+        whenNotPaused
+        nonReentrant
+    {
         IOffers(offersContractAddress).requireAvailableSignature(signature);
         requireSignature65(signature);
 
@@ -221,7 +227,10 @@ contract NiftyApesLending is
 
         transferNft(offer.nftContractAddress, nftId, borrower, address(this));
 
-        uint256 cTokensBurned = ILiquidity(liquidityContractAddress).burnCErc20(offer.asset, offer.amount);
+        uint256 cTokensBurned = ILiquidity(liquidityContractAddress).burnCErc20(
+            offer.asset,
+            offer.amount
+        );
         ILiquidity(liquidityContractAddress).withdrawCBalance(lender, cAsset, cTokensBurned);
 
         ILiquidity(liquidityContractAddress).sendValue(offer.asset, offer.amount, borrower);
@@ -249,7 +258,12 @@ contract NiftyApesLending is
             requireMatchingNftId(offer, nftId);
             // Only removing the offer if its not a floor term offer
             // Floor term offers can be used for multiple nfts
-            IOffers(offersContractAddress).removeOffer(nftContractAddress, nftId, offerHash, floorTerm);
+            IOffers(offersContractAddress).removeOffer(
+                nftContractAddress,
+                nftId,
+                offerHash,
+                floorTerm
+            );
         }
 
         _refinanceByBorrower(offer, offer.creator, nftId);
@@ -299,10 +313,17 @@ contract NiftyApesLending is
 
         requireOfferAmount(offer, fullAmount);
 
-        uint256 fullCTokenAmount = ILiquidity(liquidityContractAddress).assetAmountToCAssetAmount(offer.asset, fullAmount);
+        uint256 fullCTokenAmount = ILiquidity(liquidityContractAddress).assetAmountToCAssetAmount(
+            offer.asset,
+            fullAmount
+        );
 
         ILiquidity(liquidityContractAddress).withdrawCBalance(newLender, cAsset, fullCTokenAmount);
-        ILiquidity(liquidityContractAddress)._balanceByAccountByAsset[loanAuction.lender][cAsset].cAssetBalance += fullCTokenAmount;
+        ILiquidity(liquidityContractAddress).addToCAssetBalance(
+            loanAuction.lender,
+            cAsset,
+            fullCTokenAmount
+        );
 
         // update Loan state
         loanAuction.lender = newLender;
@@ -364,12 +385,14 @@ contract NiftyApesLending is
         if (loanAuction.lender == offer.creator) {
             // If current lender is refinancing the loan they do not need to pay any fees or buy themselves out.
             // require prospective lender has sufficient available balance to refinance loan
-            uint256 additionalTokens = ILiquidity(liquidityContractAddress).assetAmountToCAssetAmount(
-                offer.asset,
-                offer.amount - loanAuction.amountDrawn
-            );
+            uint256 additionalTokens = ILiquidity(liquidityContractAddress)
+                .assetAmountToCAssetAmount(offer.asset, offer.amount - loanAuction.amountDrawn);
 
-            require(ILiquidity(liquidityContractAddress).getCAssetBalance(offer.creator, cAsset) >= additionalTokens, "lender balance");
+            require(
+                ILiquidity(liquidityContractAddress).getCAssetBalance(offer.creator, cAsset) >=
+                    additionalTokens,
+                "lender balance"
+            );
         } else {
             // calculate interest earned
             uint256 interestAndPremiumOwedToCurrentLender = loanAuction.accumulatedLenderInterest +
@@ -383,26 +406,39 @@ contract NiftyApesLending is
                 loanAuction.amountDrawn;
 
             // If refinancing is done by another lender they must buy out the loan and pay fees
-            uint256 fullCTokenAmount = ILiquidity(liquidityContractAddress).assetAmountToCAssetAmount(offer.asset, fullAmount);
+            uint256 fullCTokenAmount = ILiquidity(liquidityContractAddress)
+                .assetAmountToCAssetAmount(offer.asset, fullAmount);
 
             // require prospective lender has sufficient available balance to refinance loan
-            require(ILiquidity(liquidityContractAddress).getCAssetBalance(offer.creator, cAsset) >= fullCTokenAmount, "lender balance");
-
-            uint256 protocolPremimuimInCtokens = ILiquidity(liquidityContractAddress).assetAmountToCAssetAmount(
-                offer.asset,
-                protocolPremium
+            require(
+                ILiquidity(liquidityContractAddress).getCAssetBalance(offer.creator, cAsset) >=
+                    fullCTokenAmount,
+                "lender balance"
             );
+
+            uint256 protocolPremimuimInCtokens = ILiquidity(liquidityContractAddress)
+                .assetAmountToCAssetAmount(offer.asset, protocolPremium);
 
             address currentlender = loanAuction.lender;
 
             // update LoanAuction lender
             loanAuction.lender = offer.creator;
 
-            ILiquidity(liquidityContractAddress)._balanceByAccountByAsset[currentlender][cAsset].cAssetBalance +=
-                fullCTokenAmount -
-                protocolPremimuimInCtokens;
-            ILiquidity(liquidityContractAddress)._balanceByAccountByAsset[offer.creator][cAsset].cAssetBalance -= fullCTokenAmount;
-            ILiquidity(liquidityContractAddress)._balanceByAccountByAsset[owner()][cAsset].cAssetBalance += protocolPremimuimInCtokens;
+            ILiquidity(liquidityContractAddress).addToCAssetBalance(
+                currentlender,
+                cAsset,
+                (fullCTokenAmount - protocolPremimuimInCtokens)
+            );
+            ILiquidity(liquidityContractAddress).subFromCAssetBalance(
+                offer.creator,
+                cAsset,
+                fullCTokenAmount
+            );
+            ILiquidity(liquidityContractAddress).addToCAssetBalance(
+                owner(),
+                cAsset,
+                protocolPremimuimInCtokens
+            );
         }
 
         emit Refinance(
@@ -437,10 +473,21 @@ contract NiftyApesLending is
 
             loanAuction.amountDrawn += SafeCastUpgradeable.toUint128(slashedDrawAmount);
 
-            uint256 cTokensBurnt = ILiquidity(liquidityContractAddress).burnCErc20(loanAuction.asset, slashedDrawAmount);
-            ILiquidity(liquidityContractAddress).withdrawCBalance(loanAuction.lender, cAsset, cTokensBurnt);
+            uint256 cTokensBurnt = ILiquidity(liquidityContractAddress).burnCErc20(
+                loanAuction.asset,
+                slashedDrawAmount
+            );
+            ILiquidity(liquidityContractAddress).withdrawCBalance(
+                loanAuction.lender,
+                cAsset,
+                cTokensBurnt
+            );
 
-            ILiquidity(liquidityContractAddress).sendValue(loanAuction.asset, slashedDrawAmount, loanAuction.nftOwner);
+            ILiquidity(liquidityContractAddress).sendValue(
+                loanAuction.asset,
+                slashedDrawAmount,
+                loanAuction.nftOwner
+            );
         }
 
         emit AmountDrawn(
@@ -591,7 +638,13 @@ contract NiftyApesLending is
             }
             return cTokensMinted;
         } else {
-            return ILiquidity(liquidityContractAddress).mintCErc20(msg.sender, address(this), loanAuction.asset, payment);
+            return
+                ILiquidity(liquidityContractAddress).mintCErc20(
+                    msg.sender,
+                    address(this),
+                    loanAuction.asset,
+                    payment
+                );
         }
     }
 
@@ -622,22 +675,30 @@ contract NiftyApesLending is
         uint256 drawAmount,
         address cAsset
     ) internal returns (uint256) {
-        uint256 lenderBalance = ILiquidity(liquidityContractAddress).getCAssetBalance(loanAuction.lender, cAsset);
-        uint256 drawTokens = ILiquidity(liquidityContractAddress).assetAmountToCAssetAmount(loanAuction.asset, drawAmount);
+        uint256 lenderBalance = ILiquidity(liquidityContractAddress).getCAssetBalance(
+            loanAuction.lender,
+            cAsset
+        );
+        uint256 drawTokens = ILiquidity(liquidityContractAddress).assetAmountToCAssetAmount(
+            loanAuction.asset,
+            drawAmount
+        );
 
         if (lenderBalance < drawTokens) {
             uint256 balanceDelta = drawTokens - lenderBalance;
 
-            uint256 balanceDeltaUnderlying = ILiquidity(liquidityContractAddress).cAssetAmountToAssetAmount(cAsset, balanceDelta);
+            uint256 balanceDeltaUnderlying = ILiquidity(liquidityContractAddress)
+                .cAssetAmountToAssetAmount(cAsset, balanceDelta);
             loanAuction.amountDrawn -= SafeCastUpgradeable.toUint128(balanceDeltaUnderlying);
 
-            uint256 lenderBalanceUnderlying = ILiquidity(liquidityContractAddress).cAssetAmountToAssetAmount(cAsset, lenderBalance);
+            uint256 lenderBalanceUnderlying = ILiquidity(liquidityContractAddress)
+                .cAssetAmountToAssetAmount(cAsset, lenderBalance);
             drawAmount = lenderBalanceUnderlying;
         }
 
         return drawAmount;
     }
-    
+
     /// @inheritdoc ILending
     function ownerOf(address nftContractAddress, uint256 nftId) public view returns (address) {
         return _loanAuctions[nftContractAddress][nftId].nftOwner;
@@ -714,15 +775,21 @@ contract NiftyApesLending is
         refinancePremiumProtocolBps = newPremiumProtocolBps;
     }
 
-        /// @inheritdoc ILendingAdmin
+    /// @inheritdoc ILendingAdmin
     function updateOffersContractAddress(address newOffersContractAddress) external onlyOwner {
         emit LendingXOffersContractAddressUpdated(offersContractAddress, newOffersContractAddress);
         offersContractAddress = newOffersContractAddress;
     }
 
-        /// @inheritdoc ILendingAdmin
-    function updateLiquidityContractAddress(address newLiquidityContractAddress) external onlyOwner {
-        emit LendingXLiquidityContractAddressUpdated(liquidityContractAddress, newLiquidityContractAddress);
+    /// @inheritdoc ILendingAdmin
+    function updateLiquidityContractAddress(address newLiquidityContractAddress)
+        external
+        onlyOwner
+    {
+        emit LendingXLiquidityContractAddressUpdated(
+            liquidityContractAddress,
+            newLiquidityContractAddress
+        );
         liquidityContractAddress = newLiquidityContractAddress;
     }
 
@@ -913,8 +980,12 @@ contract NiftyApesLending is
         uint256 cTokensToProtocol = (totalCTokens * loanAuction.accumulatedProtocolInterest) /
             totalPayment;
 
-        ILiquidity(liquidityContractAddress)._balanceByAccountByAsset[loanAuction.lender][cAsset].cAssetBalance += cTokensToLender;
-        ILiquidity(liquidityContractAddress)._balanceByAccountByAsset[owner()][cAsset].cAssetBalance += cTokensToProtocol;
+        ILiquidity(liquidityContractAddress).addToCAssetBalance(
+            loanAuction.lender,
+            cAsset,
+            cTokensToLender
+        );
+        ILiquidity(liquidityContractAddress).addToCAssetBalance(owner(), cAsset, cTokensToProtocol);
     }
 
     function currentTimestamp() internal view returns (uint32) {
