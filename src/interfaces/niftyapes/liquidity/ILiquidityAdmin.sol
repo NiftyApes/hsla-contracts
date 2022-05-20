@@ -1,10 +1,10 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "./ILiquidityAdminEvents.sol";
+import "./ILiquidityEvents.sol";
 
 /// @title NiftyApes interface for the admin role.
-interface ILiquidityAdmin is ILiquidityAdminEvents {
+interface ILiquidityAdmin is ILiquidityEvents {
     /// @notice Allows the owner of the contract to add an asset to the allow list
     ///         All assets on NiftyApes have to have a mapping present from asset to cAsset,
     ///         The asset is a token like USDC while the cAsset is the corresponding token in compound cUSDC.
@@ -21,6 +21,12 @@ interface ILiquidityAdmin is ILiquidityAdminEvents {
 
      /// @notice Updates the address for the Regen Collective
     function updateRegenCollectiveAddress(address newRegenCollectiveAddress) external;
+
+    /// @notice Updates the associated lending contract address
+    function updateLendingContractAddress(address newLendingContractAddress) external;
+
+    /// @notice Updates the associated offers contract address
+    function updateOffersContractAddress(address newOffersContractAddress) external;
 
     /// @notice Pauses all interactions with the contract.
     ///         This is intended to be used as an emergency measure to avoid loosing funds.

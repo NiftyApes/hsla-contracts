@@ -1,11 +1,11 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "./ILiquidityEvents.sol";
+import "./ILiquidityAdmin.sol";
 import "./ILiquidityStructs.sol";
 
 /// @title NiftyApes interface for managing liquidity.
-interface ILiquidity is ILiquidityEvents, ILiquidityStructs {
+interface ILiquidity is ILiquidityAdmin, ILiquidityStructs {
     /// @notice Supply a given ERC20 token.
     ///         The ERC20 token is supplied to compound and users will be earning interest
     ///         on the token.

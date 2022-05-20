@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/interfaces/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 import "../../interfaces/compound/ICERC20.sol";
 import "../../interfaces/compound/ICEther.sol";
-import "../../NiftyApes.sol";
+import "../../Lending.sol";
 import "../../Offers.sol";
 import "../../interfaces/niftyapes/lending/ILendingStructs.sol";
 import "../../interfaces/niftyapes/offers/IOffersStructs.sol";
@@ -17,7 +17,7 @@ import "../mock/ERC20Mock.sol";
 import "../mock/ERC721Mock.sol";
 
 contract NiftyApesPauseUnitTest is BaseTest, ILendingStructs, IOffersStructs, ERC721HolderUpgradeable {
-    NiftyApes niftyApes;
+    NiftyApesLending niftyApes;
     NiftyApesOffers offersContract;
     ERC20Mock usdcToken;
     CERC20Mock cUSDCToken;

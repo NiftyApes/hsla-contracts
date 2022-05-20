@@ -4,8 +4,8 @@ pragma solidity 0.8.13;
 import "@openzeppelin/contracts/interfaces/IERC20Upgradeable.sol";
 import "../../interfaces/compound/ICERC20.sol";
 import "../../interfaces/compound/ICEther.sol";
-import "../../NiftyApes.sol";
-import "../../interfaces/niftyapes/admin/INiftyApesAdminEvents.sol";
+import "../../Lending.sol";
+import "../../Liquidity.sol";
 import "../../interfaces/niftyapes/liquidity/ILiquidityEvents.sol";
 
 import "../common/BaseTest.sol";
@@ -13,7 +13,7 @@ import "../mock/CERC20Mock.sol";
 import "../mock/CEtherMock.sol";
 import "../mock/ERC20Mock.sol";
 
-contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents, INiftyApesAdminEvents {
+contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
     NiftyApes liquidityProviders;
     ERC20Mock usdcToken;
     CERC20Mock cUSDCToken;

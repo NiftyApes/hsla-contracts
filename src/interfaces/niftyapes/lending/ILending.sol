@@ -1,13 +1,14 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
+import "./ILendingAdmin.sol";
 import "./ILendingEvents.sol";
 import "./ILendingStructs.sol";
 import "../offers/IOffersStructs.sol";
 
 /// @title The lending interface for Nifty Apes
 ///        This interface is intended to be used for interacting with loans on the protocol.
-interface ILending is ILendingEvents, ILendingStructs, IOffersStructs {
+interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStructs {
     /// @notice Returns the fee that computes protocol interest
     ///         This fee is the basis points in order to calculate interest per second
     function protocolInterestBps() external view returns (uint96);

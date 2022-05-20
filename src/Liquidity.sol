@@ -11,7 +11,8 @@ import "@openzeppelin/contracts/utils/math/SafeCastUpgradeable.sol";
 import "@openzeppelin/contracts/utils/AddressUpgradeable.sol";
 import "./interfaces/compound/ICEther.sol";
 import "./interfaces/compound/ICERC20.sol";
-import "./interfaces/niftyapes/INiftyApes.sol";
+import "./interfaces/niftyapes/liquidity/ILiquidity.sol";
+import "./interfaces/niftyapes/lending/ILending.sol";
 import "./interfaces/niftyapes/offers/IOffers.sol";
 import "./interfaces/sanctions/SanctionsList.sol";
 import "./lib/ECDSABridge.sol";
@@ -47,14 +48,9 @@ contract NiftyApesLiquidity is
     /// @inheritdoc ILiquidity
     mapping(address => uint256) public override maxBalanceByCAsset;
 
-    /// @inheritdoc ILending
-    uint96 public protocolInterestBps;
+    address public offersContractAddress;
 
-    /// @inheritdoc ILending
-    uint16 public refinancePremiumLenderBps;
-
-    /// @inheritdoc ILending
-    uint16 public refinancePremiumProtocolBps;
+    address public lendingContractAddress;
 
     /// @inheritdoc ILending
     uint16 public regenCollectiveBpsOfRevenue;
@@ -81,7 +77,7 @@ contract NiftyApesLiquidity is
         ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
     }
 
-    /// @inheritdoc INiftyApesAdmin
+    /// @inheritdoc ILiquidityAdmin
     function setCAssetAddress(address asset, address cAsset) external onlyOwner {
         assetToCAsset[asset] = cAsset;
         _cAssetToAsset[cAsset] = asset;
@@ -89,17 +85,17 @@ contract NiftyApesLiquidity is
         emit NewAssetListed(asset, cAsset);
     }
 
-    /// @inheritdoc INiftyApesAdmin
+    /// @inheritdoc ILiquidityAdmin
     function setMaxCAssetBalance(address asset, uint256 maxBalance) external onlyOwner {
         maxBalanceByCAsset[getCAsset(asset)] = maxBalance;
     }
 
-    /// @inheritdoc INiftyApesAdmin
+    /// @inheritdoc ILiquidityAdmin
     function pause() external onlyOwner {
         _pause();
     }
 
-    /// @inheritdoc INiftyApesAdmin
+    /// @inheritdoc ILiquidityAdmin
     function unpause() external onlyOwner {
         _unpause();
     }
@@ -234,7 +230,7 @@ contract NiftyApesLiquidity is
 
         cTokensBurnt = burnCErc20(asset, ownerBalanceUnderlying);
 
-        uint256 bpsForRegen = (cTokensBurnt * regenCollectiveBpsOfRevenue) / MAX_BPS;
+        uint256 bpsForRegen = (cTokensBurnt * regenCollectiveBpsOfRevenue) / 10_000;
 
         uint256 ownerBalanceMinusRegen = cTokensBurnt - bpsForRegen;
 
@@ -253,66 +249,12 @@ contract NiftyApesLiquidity is
         emit Erc20Withdrawn(owner(), asset, ownerAmountUnderlying, ownerBalanceMinusRegen);
     }
 
-    /// @dev Struct exists since we ran out of stack space in _repayLoan
-    struct RepayLoanStruct {
-        address nftContractAddress;
-        uint256 nftId;
-        bool repayFull;
-        uint256 paymentAmount;
-        bool checkMsgSender;
-    }
-
-
-
-    function handleLoanPayment(
-        RepayLoanStruct memory rls,
-        LoanAuction storage loanAuction,
-        uint256 payment
-    ) internal returns (uint256) {
-        if (loanAuction.asset == ETH_ADDRESS) {
-            if (rls.repayFull) {
-                require(msg.value >= payment, "msg.value too low");
-            }
-
-            uint256 cTokensMinted = mintCEth(payment);
-
-            // If the caller has overpaid we send the extra ETH back
-            if (payment < msg.value) {
-                payable(msg.sender).sendValue(msg.value - payment);
-            }
-            return cTokensMinted;
-        } else {
-            return mintCErc20(msg.sender, address(this), loanAuction.asset, payment);
-        }
-    }
-
-    function slashUnsupportedAmount(
-        LoanAuction storage loanAuction,
-        uint256 drawAmount,
-        address cAsset
-    ) internal returns (uint256) {
-        uint256 lenderBalance = getCAssetBalance(loanAuction.lender, cAsset);
-        uint256 drawTokens = assetAmountToCAssetAmount(loanAuction.asset, drawAmount);
-
-        if (lenderBalance < drawTokens) {
-            uint256 balanceDelta = drawTokens - lenderBalance;
-
-            uint256 balanceDeltaUnderlying = cAssetAmountToAssetAmount(cAsset, balanceDelta);
-            loanAuction.amountDrawn -= SafeCastUpgradeable.toUint128(balanceDeltaUnderlying);
-
-            uint256 lenderBalanceUnderlying = cAssetAmountToAssetAmount(cAsset, lenderBalance);
-            drawAmount = lenderBalanceUnderlying;
-        }
-
-        return drawAmount;
-    }
-
-    /// @inheritdoc INiftyApesAdmin
+    /// @inheritdoc ILiquidityAdmin
     function updateRegenCollectiveBpsOfRevenue(uint16 newRegenCollectiveBpsOfRevenue)
         external
         onlyOwner
     {
-        require(newRegenCollectiveBpsOfRevenue <= MAX_FEE, "max fee");
+        require(newRegenCollectiveBpsOfRevenue <= 1_000, "max fee");
         require(newRegenCollectiveBpsOfRevenue >= regenCollectiveBpsOfRevenue, "must be greater");
         emit RegenCollectiveBpsOfRevenueUpdated(
             regenCollectiveBpsOfRevenue,
@@ -321,10 +263,22 @@ contract NiftyApesLiquidity is
         regenCollectiveBpsOfRevenue = newRegenCollectiveBpsOfRevenue;
     }
 
-    /// @inheritdoc INiftyApesAdmin
+    /// @inheritdoc ILiquidityAdmin
     function updateRegenCollectiveAddress(address newRegenCollectiveAddress) external onlyOwner {
         emit RegenCollectiveAddressUpdated(newRegenCollectiveAddress);
         regenCollectiveAddress = newRegenCollectiveAddress;
+    }
+
+        /// @inheritdoc ILiquidityAdmin
+    function updateLendingContractAddress(address newLendingContractAddress) external onlyOwner {
+        emit LendingContractAddressUpdated(lendingContractAddress, newLendingContractAddress);
+        lendingContractAddress = newLendingContractAddress;
+    }
+
+        /// @inheritdoc ILiquidityAdmin
+    function updateOffersContractAddress(address newOffersContractAddress) external onlyOwner {
+        emit OffersContractAddressUpdated(offersContractAddress, newOffersContractAddress);
+        offersContractAddress = newOffersContractAddress;
     }
 
     function requireEthTransferable() internal view {
@@ -355,21 +309,6 @@ contract NiftyApesLiquidity is
         } else {
             IERC20Upgradeable(asset).safeTransfer(to, amount);
         }
-    }
-
-    function payoutCTokenBalances(
-        LoanAuction storage loanAuction,
-        address cAsset,
-        uint256 totalCTokens,
-        uint256 totalPayment
-    ) internal {
-        uint256 cTokensToLender = (totalCTokens *
-            (loanAuction.amountDrawn + loanAuction.accumulatedLenderInterest)) / totalPayment;
-        uint256 cTokensToProtocol = (totalCTokens * loanAuction.accumulatedProtocolInterest) /
-            totalPayment;
-
-        _balanceByAccountByAsset[loanAuction.lender][cAsset].cAssetBalance += cTokensToLender;
-        _balanceByAccountByAsset[owner()][cAsset].cAssetBalance += cTokensToProtocol;
     }
 
     // This is needed to receive ETH when calling withdrawing ETH from compund

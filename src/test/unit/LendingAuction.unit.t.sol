@@ -5,7 +5,8 @@ import "@openzeppelin/contracts/interfaces/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 import "../../interfaces/compound/ICERC20.sol";
 import "../../interfaces/compound/ICEther.sol";
-import "../../NiftyApes.sol";
+import "../../Lending.sol";
+import "../../Liquidity.sol";
 import "../../Offers.sol";
 import "../../interfaces/niftyapes/lending/ILendingEvents.sol";
 import "../../interfaces/niftyapes/offers/IOffersEvents.sol";
@@ -6434,5 +6435,9 @@ contract LendingAuctionUnitTest is
     // TODO(captnseagraves): Missing tests for regen collective percentage
 
     // TODO(captnseagraves): Missing tests for Sanctions list
+
+    // TODO updateLendingContractAddress test
+
+    // TODO updateLiquidityContractAddress test
 
 }

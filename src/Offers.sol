@@ -50,6 +50,8 @@ contract NiftyApesOffers is
 
     address public lendingContractAddress;
 
+    address public liquidityContractAddress;
+
     /// @dev This empty reserved space is put in place to allow future versions to add new
     /// variables without shifting storage.
     uint256[500] private __gap;
@@ -166,14 +168,14 @@ contract NiftyApesOffers is
     }
 
     /// @inheritdoc IOffers
-    function createOffer(Offer memory offer, address liquidityContract) external whenNotPaused returns (bytes32 offerHash) {
-        address cAsset = ILiquidity(liquidityContract).getCAsset(offer.asset);
+    function createOffer(Offer memory offer) external whenNotPaused returns (bytes32 offerHash) {
+        address cAsset = ILiquidity(liquidityContractAddress).getCAsset(offer.asset);
 
         requireOfferCreator(offer.creator, msg.sender);
 
         if (offer.lenderOffer) {
-            uint256 offerTokens = ILiquidity(liquidityContract).assetAmountToCAssetAmount(offer.asset, offer.amount);
-            requireCAssetBalance(msg.sender, cAsset, offerTokens, liquidityContract);
+            uint256 offerTokens = ILiquidity(liquidityContractAddress).assetAmountToCAssetAmount(offer.asset, offer.amount);
+            requireCAssetBalance(msg.sender, cAsset, offerTokens);
         } else {
             requireNftOwner(offer.nftContractAddress, offer.nftId, msg.sender);
             requireNoFloorTerms(offer);
@@ -245,6 +247,12 @@ contract NiftyApesOffers is
         lendingContractAddress = newLendingContractAddress;
     }
 
+        /// @inheritdoc IOffersAdmin
+    function updateLiquidityContractAddress(address newLiquidityContractAddress) external onlyOwner {
+        emit LiquidityContractAddressUpdated(liquidityContractAddress, newLiquidityContractAddress);
+        liquidityContractAddress = newLiquidityContractAddress;
+    }
+
     function markSignatureUsed(Offer memory offer, bytes memory signature) external {
         require(msg.sender == lendingContractAddress, "not authorized");
         _markSignatureUsed(offer, signature);
@@ -299,10 +307,9 @@ contract NiftyApesOffers is
     function requireCAssetBalance(
         address account,
         address cAsset,
-        uint256 amount, 
-        address liquidityContract
-    ) internal {
-        require(ILiquidity(liquidityContract).getCAssetBalance(account, cAsset) >= amount, "Insufficient cToken balance");
+        uint256 amount
+    ) internal view {
+        require(ILiquidity(liquidityContractAddress).getCAssetBalance(account, cAsset) >= amount, "Insufficient cToken balance");
     }
 
     function currentTimestamp() internal view returns (uint32) {

@@ -22,4 +22,20 @@ interface ILendingAdminEvents {
         uint16 oldPremiumProtocolBps,
         uint16 newPremiumProtocolBps
     );
+
+    /// @notice Emmited when the associated offers contract address is changed
+    /// @param oldOffersContractAdress The old offers contract address
+    /// @param newOffersContractAdress The new offers contract address
+    event OffersContractAddressUpdated(
+        address oldOffersContractAdress,
+        address newOffersContractAdress
+    );
+
+        /// @notice Emmited when the associated liquidity contract address is changed
+    /// @param oldLiquidityContractAdress The old liquidity contract address
+    /// @param newLiquidityContractAdress The new liquidity contract address
+    event LiquidityContractAddressUpdated(
+        address oldLiquidityContractAdress,
+        address newLiquidityContractAdress
+    );
 } 

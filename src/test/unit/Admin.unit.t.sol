@@ -4,16 +4,15 @@ pragma solidity 0.8.13;
 import "@openzeppelin/contracts/interfaces/IERC20Upgradeable.sol";
 import "../../interfaces/compound/ICERC20.sol";
 import "../../interfaces/compound/ICEther.sol";
-import "../../NiftyApes.sol";
-import "../../interfaces/niftyapes/admin/INiftyApesAdminEvents.sol";
-
+import "../../Lending.sol";
+import "../../interfaces/niftyapes/lending/ILendingAdminEvents.sol";
 import "../common/BaseTest.sol";
 import "../mock/CERC20Mock.sol";
 import "../mock/CEtherMock.sol";
 import "../mock/ERC20Mock.sol";
 
-contract AdminUnitTest is BaseTest, INiftyApesAdminEvents {
-    NiftyApes niftyApes;
+contract AdminUnitTest is BaseTest, ILendingAdminEvents {
+    NiftyApesLending niftyApes;
     ERC20Mock usdcToken;
     CERC20Mock cUSDCToken;
 
@@ -28,7 +27,7 @@ contract AdminUnitTest is BaseTest, INiftyApesAdminEvents {
     }
 
     function setUp() public {
-        niftyApes = new NiftyApes();
+        niftyApes = new NiftyApesLending();
         niftyApes.initialize();
 
         usdcToken = new ERC20Mock();

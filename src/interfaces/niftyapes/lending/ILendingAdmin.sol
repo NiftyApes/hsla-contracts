@@ -27,6 +27,12 @@ interface ILendingAdmin is ILendingAdminEvents {
     ///         Fees are denomiated in basis points, parts of 10_000
     function updateRefinancePremiumProtocolBps(uint16 newPremiumProtocolBps) external;
 
+    /// @notice Updates the associated offers contract address
+    function updateOffersContractAddress(address newOffersContractAddress) external;
+
+    /// @notice Updates the associated liquidity contract address
+    function updateLiquidityContractAddress(address newLiquidityContractAddress) external;
+
     /// @notice Updates the bps of revenue sent to the Regen Collective
     ///         Fees are denomiated in basis points, parts of 10_000
     function updateRegenCollectiveBpsOfRevenue(uint16 newRegenCollectiveBpsOfRevenue) external;
