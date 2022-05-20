@@ -40,7 +40,7 @@ contract NiftyApesPauseUnitTest is BaseTest, ILendingStructs, IOffersStructs, ER
     }
 
     function setUp() public {
-        niftyApes = new NiftyApes();
+        niftyApes = new NiftyApesLending();
         niftyApes.initialize();
 
         offersContract = new NiftyApesOffers();

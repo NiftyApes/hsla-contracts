@@ -27,7 +27,7 @@ contract LendingAuctionUnitTest is
     IOffersStructs,
     ERC721HolderUpgradeable
 {
-    NiftyApes lendingAuction;
+    NiftyApesLending lendingAuction;
     NiftyApesOffers offersContract;
     ERC20Mock usdcToken;
     CERC20Mock cUSDCToken;
@@ -57,7 +57,7 @@ contract LendingAuctionUnitTest is
     }
 
     function setUp() public {
-        lendingAuction = new NiftyApes();
+        lendingAuction = new NiftyApesLending();
         lendingAuction.initialize();
 
         offersContract = new NiftyApesOffers();

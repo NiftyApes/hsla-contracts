@@ -52,7 +52,7 @@ interface IOffersEvents {
     /// @notice Emmited when the associated lending contract address is changed
     /// @param oldLendingContractAdress The old lending contract address
     /// @param newLendingContractAdress The new lending contract address
-    event LendingContractAddressUpdated(
+    event OffersXLendingContractAddressUpdated(
         address oldLendingContractAdress,
         address newLendingContractAdress
     );
@@ -60,7 +60,7 @@ interface IOffersEvents {
         /// @notice Emmited when the associated liquidity contract address is changed
     /// @param oldLiquidityContractAdress The old liquidity contract address
     /// @param newLiquidityContractAdress The new liquidity contract address
-    event LiquidityContractAddressUpdated(
+    event OffersXLiquidityContractAddressUpdated(
         address oldLiquidityContractAdress,
         address newLiquidityContractAdress
     );

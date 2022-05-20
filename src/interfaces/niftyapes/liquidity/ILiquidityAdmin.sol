@@ -1,10 +1,8 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "./ILiquidityEvents.sol";
-
 /// @title NiftyApes interface for the admin role.
-interface ILiquidityAdmin is ILiquidityEvents {
+interface ILiquidityAdmin {
     /// @notice Allows the owner of the contract to add an asset to the allow list
     ///         All assets on NiftyApes have to have a mapping present from asset to cAsset,
     ///         The asset is a token like USDC while the cAsset is the corresponding token in compound cUSDC.

@@ -716,13 +716,13 @@ contract NiftyApesLending is
 
         /// @inheritdoc ILendingAdmin
     function updateOffersContractAddress(address newOffersContractAddress) external onlyOwner {
-        emit OffersContractAddressUpdated(offersContractAddress, newOffersContractAddress);
+        emit LendingXOffersContractAddressUpdated(offersContractAddress, newOffersContractAddress);
         offersContractAddress = newOffersContractAddress;
     }
 
         /// @inheritdoc ILendingAdmin
     function updateLiquidityContractAddress(address newLiquidityContractAddress) external onlyOwner {
-        emit LiquidityContractAddressUpdated(liquidityContractAddress, newLiquidityContractAddress);
+        emit LendingXLiquidityContractAddressUpdated(liquidityContractAddress, newLiquidityContractAddress);
         liquidityContractAddress = newLiquidityContractAddress;
     }
 

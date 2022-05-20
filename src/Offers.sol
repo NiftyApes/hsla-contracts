@@ -2,7 +2,7 @@
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/access/OwnableUpgradeable.sol";
-// TODO drop this
+// TODO:(captnseagraves) drop this
 import "@openzeppelin/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20Upgradeable.sol";
@@ -243,13 +243,13 @@ contract NiftyApesOffers is
 
     /// @inheritdoc IOffersAdmin
     function updateLendingContractAddress(address newLendingContractAddress) external onlyOwner {
-        emit LendingContractAddressUpdated(lendingContractAddress, newLendingContractAddress);
+        emit OffersXLendingContractAddressUpdated(lendingContractAddress, newLendingContractAddress);
         lendingContractAddress = newLendingContractAddress;
     }
 
         /// @inheritdoc IOffersAdmin
     function updateLiquidityContractAddress(address newLiquidityContractAddress) external onlyOwner {
-        emit LiquidityContractAddressUpdated(liquidityContractAddress, newLiquidityContractAddress);
+        emit OffersXLiquidityContractAddressUpdated(liquidityContractAddress, newLiquidityContractAddress);
         liquidityContractAddress = newLiquidityContractAddress;
     }
 

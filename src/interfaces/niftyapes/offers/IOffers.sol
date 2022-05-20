@@ -1,15 +1,15 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
+import "./IOffersAdmin.sol";
 import "./IOffersEvents.sol";
 import "./IOffersStructs.sol";
-import "./IOffersAdmin.sol";
 import "../lending/ILendingStructs.sol";
 
 
 /// @title The Offers interface for Nifty Apes
 ///        This interface is intended to be used for interacting with offers on the protocol.
-interface IOffers is IOffersEvents, IOffersStructs, IOffersAdmin, ILendingStructs {
+interface IOffers is IOffersAdmin, IOffersEvents, IOffersStructs, ILendingStructs {
 
     /// @notice Returns an EIP712 standard compatiable hash for a given offer
     ///         This hash can be signed to create a valid offer.

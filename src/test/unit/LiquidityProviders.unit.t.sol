@@ -14,7 +14,7 @@ import "../mock/CEtherMock.sol";
 import "../mock/ERC20Mock.sol";
 
 contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
-    NiftyApes liquidityProviders;
+    NiftyApesLiquidity liquidityProviders;
     ERC20Mock usdcToken;
     CERC20Mock cUSDCToken;
 
@@ -29,7 +29,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
     }
 
     function setUp() public {
-        liquidityProviders = new NiftyApes();
+        liquidityProviders = new NiftyApesLiquidity();
         liquidityProviders.initialize();
 
         usdcToken = new ERC20Mock();

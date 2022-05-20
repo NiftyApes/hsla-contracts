@@ -2,10 +2,18 @@
 pragma solidity 0.8.13;
 
 import "./ILiquidityAdmin.sol";
+import "./ILiquidityEvents.sol";
 import "./ILiquidityStructs.sol";
 
 /// @title NiftyApes interface for managing liquidity.
-interface ILiquidity is ILiquidityAdmin, ILiquidityStructs {
+interface ILiquidity is ILiquidityAdmin, ILiquidityEvents, ILiquidityStructs {
+    /// @notice Returns the basis points of revenue sent to the Regen Collective
+    ///         Denomiated in basis points, parts of 10_000
+    function regenCollectiveBpsOfRevenue() external view returns (uint16);
+
+    /// @notice Returns the address for the Regen Collective
+    function regenCollectiveAddress() external view returns (address);
+    
     /// @notice Supply a given ERC20 token.
     ///         The ERC20 token is supplied to compound and users will be earning interest
     ///         on the token.

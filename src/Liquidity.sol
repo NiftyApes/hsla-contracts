@@ -52,10 +52,10 @@ contract NiftyApesLiquidity is
 
     address public lendingContractAddress;
 
-    /// @inheritdoc ILending
+    /// @inheritdoc ILiquidity
     uint16 public regenCollectiveBpsOfRevenue;
 
-    /// @dev @inheritdoc ILending
+    /// @dev @inheritdoc ILiquidity
     address public regenCollectiveAddress;
 
     /// @notice A bool to prevent external eth from being received and locked in the contract
@@ -271,13 +271,13 @@ contract NiftyApesLiquidity is
 
         /// @inheritdoc ILiquidityAdmin
     function updateLendingContractAddress(address newLendingContractAddress) external onlyOwner {
-        emit LendingContractAddressUpdated(lendingContractAddress, newLendingContractAddress);
+        emit LiquidityXLendingContractAddressUpdated(lendingContractAddress, newLendingContractAddress);
         lendingContractAddress = newLendingContractAddress;
     }
 
         /// @inheritdoc ILiquidityAdmin
     function updateOffersContractAddress(address newOffersContractAddress) external onlyOwner {
-        emit OffersContractAddressUpdated(offersContractAddress, newOffersContractAddress);
+        emit LiquidityXOffersContractAddressUpdated(offersContractAddress, newOffersContractAddress);
         offersContractAddress = newOffersContractAddress;
     }
 
