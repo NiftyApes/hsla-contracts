@@ -169,38 +169,39 @@ contract NiftyApesOffers is
 
     /// @inheritdoc IOffers
     function createOffer(Offer memory offer) external whenNotPaused returns (bytes32 offerHash) {
-        address cAsset = ILiquidity(liquidityContractAddress).getCAsset(offer.asset);
+        // address cAsset = ILiquidity(liquidityContractAddress).getCAsset(offer.asset);
 
-        console.log("msg.sender", msg.sender);
+        // console.log("cAsset 2", cAsset);
+        console.log("msg.sender 2", msg.sender);
 
         // requireOfferCreator(offer.creator, msg.sender);
 
-        if (offer.lenderOffer) {
-            uint256 offerTokens = ILiquidity(liquidityContractAddress).assetAmountToCAssetAmount(offer.asset, offer.amount);
-            // requireCAssetBalance(msg.sender, cAsset, offerTokens);
-        } else {
-            // requireNftOwner(offer.nftContractAddress, offer.nftId, msg.sender);
-            // requireNoFloorTerms(offer);
-        }
+        // if (offer.lenderOffer) {
+        //     uint256 offerTokens = ILiquidity(liquidityContractAddress).assetAmountToCAssetAmount(offer.asset, offer.amount);
+        //     // requireCAssetBalance(msg.sender, cAsset, offerTokens);
+        // } else {
+        //     // requireNftOwner(offer.nftContractAddress, offer.nftId, msg.sender);
+        //     // requireNoFloorTerms(offer);
+        // }
 
-        mapping(bytes32 => Offer) storage offerBook = getOfferBook(
-            offer.nftContractAddress,
-            offer.nftId,
-            offer.floorTerm
-        );
+        // mapping(bytes32 => Offer) storage offerBook = getOfferBook(
+        //     offer.nftContractAddress,
+        //     offer.nftId,
+        //     offer.floorTerm
+        // );
 
         offerHash = getOfferHash(offer);
 
-        offerBook[offerHash] = offer;
+        // offerBook[offerHash] = offer;
 
-        emit NewOffer(
-            offer.creator,
-            offer.asset,
-            offer.nftContractAddress,
-            offer.nftId,
-            offer,
-            offerHash
-        );
+        // emit NewOffer(
+        //     offer.creator,
+        //     offer.asset,
+        //     offer.nftContractAddress,
+        //     offer.nftId,
+        //     offer,
+        //     offerHash
+        // );
     }
 
     /// @inheritdoc IOffers

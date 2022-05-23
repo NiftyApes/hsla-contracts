@@ -5672,7 +5672,7 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 1)
         });
 
-        console.log("msg.sender", msg.sender);
+        console.log("msg.sender 1", msg.sender);
 
         offersContract.createOffer(offer);
 
