@@ -179,8 +179,6 @@ contract NiftyApesLending is
         requireBorrowerOffer(offer);
         requireNoFloorTerms(offer);
 
-        console.log("msg.sender 1", msg.sender);
-
         IOffers(offersContractAddress).removeOffer(nftContractAddress, nftId, offerHash, floorTerm);
 
         _executeLoanInternal(offer, msg.sender, offer.creator, nftId);
@@ -643,7 +641,7 @@ contract NiftyApesLending is
             return
                 ILiquidity(liquidityContractAddress).mintCErc20(
                     msg.sender,
-                    address(this),
+                    liquidityContractAddress,
                     loanAuction.asset,
                     payment
                 );

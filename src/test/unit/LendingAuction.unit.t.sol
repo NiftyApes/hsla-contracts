@@ -1766,8 +1766,6 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 1)
         });
 
-        console.log("msg.sender -1", msg.sender);
-
         offersContract.createOffer(offer);
 
         hevm.stopPrank();
@@ -1779,8 +1777,6 @@ contract LendingAuctionUnitTest is
         hevm.expectRevert("Address: unable to send value, recipient may have reverted");
 
         hevm.startPrank(LENDER_1);
-
-        console.log("msg.sender 0", msg.sender);
 
         lendingAuction.executeLoanByLender(
             offer.nftContractAddress,

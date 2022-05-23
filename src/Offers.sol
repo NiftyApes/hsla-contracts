@@ -210,9 +210,6 @@ contract NiftyApesOffers is
     ) external whenNotPaused {
         Offer memory offer = getOffer(nftContractAddress, nftId, offerHash, floorTerm);
 
-        console.log("offer.creator", offer.creator);
-        console.log("msg.sender 2", msg.sender);
-
         requireOfferCreator(offer.creator, msg.sender);
 
         doRemoveOffer(nftContractAddress, nftId, offerHash, floorTerm);
