@@ -21,7 +21,7 @@ import "./interfaces/sanctions/SanctionsList.sol";
 import "./lib/ECDSABridge.sol";
 import "./lib/Math.sol";
 
-// import "./test/Console.sol";
+import "./test/Console.sol";
 
 /// @title Implemention of the INiftyApes interface
 contract NiftyApesLending is
@@ -178,6 +178,8 @@ contract NiftyApesLending is
 
         requireBorrowerOffer(offer);
         requireNoFloorTerms(offer);
+
+        console.log("msg.sender 1", msg.sender);
 
         IOffers(offersContractAddress).removeOffer(nftContractAddress, nftId, offerHash, floorTerm);
 
@@ -980,12 +982,10 @@ contract NiftyApesLending is
         uint256 cTokensToProtocol = (totalCTokens * loanAuction.accumulatedProtocolInterest) /
             totalPayment;
 
-        ILiquidity(liquidityContractAddress).addToCAssetBalance(
-            loanAuction.lender,
-            cAsset,
-            cTokensToLender
-        );
-        ILiquidity(liquidityContractAddress).addToCAssetBalance(owner(), cAsset, cTokensToProtocol);
+        ILiquidity(liquidityContractAddress)
+        .addToCAssetBalance(loanAuction.lender, cAsset, cTokensToLender);
+        ILiquidity(liquidityContractAddress)
+        .addToCAssetBalance(owner(), cAsset, cTokensToProtocol);
     }
 
     function currentTimestamp() internal view returns (uint32) {

@@ -436,14 +436,9 @@ contract NiftyApesLiquidity is
     }
 
     function getCAsset(address asset) public view returns (address) {
-        console.log("here");
-
         address cAsset = assetToCAsset[asset];
-
-        console.log("cAsset 1", cAsset);
-
-        // require(cAsset != address(0), "asset allow list");
-        // require(asset == _cAssetToAsset[cAsset], "non matching allow list");
+        require(cAsset != address(0), "asset allow list");
+        require(asset == _cAssetToAsset[cAsset], "non matching allow list");
         return cAsset;
     }
 
