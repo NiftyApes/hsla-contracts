@@ -786,7 +786,7 @@ contract LendingAuctionUnitTest is
         assertEq(cUSDCToken.balanceOf(address(LENDER_1)), 0);
 
         assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
-        assertEq(cUSDCToken.balanceOf(address(lendingAuction)), 0);
+        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 0);
 
         assertEq(mockNft.ownerOf(1), address(lendingAuction));
         assertEq(lendingAuction.ownerOf(address(mockNft), 1), address(this));
@@ -866,7 +866,7 @@ contract LendingAuctionUnitTest is
         assertEq(cUSDCToken.balanceOf(address(LENDER_1)), 0);
 
         assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
-        assertEq(cUSDCToken.balanceOf(address(lendingAuction)), 0);
+        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 0);
 
         assertEq(mockNft.ownerOf(1), address(lendingAuction));
         assertEq(lendingAuction.ownerOf(address(mockNft), 1), address(this));
@@ -1318,7 +1318,7 @@ contract LendingAuctionUnitTest is
         assertEq(cUSDCToken.balanceOf(address(LENDER_1)), 0);
 
         assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
-        assertEq(cUSDCToken.balanceOf(address(lendingAuction)), 6 ether);
+        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 6 ether);
 
         assertEq(mockNft.ownerOf(1), address(lendingAuction));
         assertEq(lendingAuction.ownerOf(address(mockNft), 1), address(this));
@@ -1379,7 +1379,7 @@ contract LendingAuctionUnitTest is
         assertEq(cUSDCToken.balanceOf(address(SIGNER_1)), 0);
 
         assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
-        assertEq(cUSDCToken.balanceOf(address(lendingAuction)), 6 ether);
+        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 6 ether);
 
         assertEq(mockNft.ownerOf(1), address(lendingAuction));
         assertEq(lendingAuction.ownerOf(address(mockNft), 1), address(this));
@@ -1901,7 +1901,7 @@ contract LendingAuctionUnitTest is
         assertEq(cUSDCToken.balanceOf(address(LENDER_1)), 0);
 
         assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
-        assertEq(cUSDCToken.balanceOf(address(lendingAuction)), 0);
+        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 0);
 
         assertEq(mockNft.ownerOf(1), address(lendingAuction));
         assertEq(lendingAuction.ownerOf(address(mockNft), 1), address(this));
@@ -2350,7 +2350,7 @@ contract LendingAuctionUnitTest is
         assertEq(cUSDCToken.balanceOf(address(SIGNER_1)), 0);
 
         assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
-        assertEq(cUSDCToken.balanceOf(address(lendingAuction)), 0);
+        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 0);
 
         assertEq(mockNft.ownerOf(1), address(lendingAuction));
         assertEq(lendingAuction.ownerOf(address(mockNft), 1), SIGNER_1);
@@ -3274,7 +3274,7 @@ contract LendingAuctionUnitTest is
         assertEq(cUSDCToken.balanceOf(address(LENDER_2)), 0);
 
         assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
-        assertEq(cUSDCToken.balanceOf(address(lendingAuction)), 6 ether);
+        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 6 ether);
 
         assertEq(mockNft.ownerOf(1), address(lendingAuction));
         assertEq(lendingAuction.ownerOf(address(mockNft), 1), address(this));
@@ -3371,7 +3371,7 @@ contract LendingAuctionUnitTest is
         assertEq(cUSDCToken.balanceOf(address(LENDER_2)), 0);
 
         assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
-        assertEq(cUSDCToken.balanceOf(address(lendingAuction)), 6 ether);
+        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 6 ether);
 
         assertEq(mockNft.ownerOf(1), address(lendingAuction));
         assertEq(lendingAuction.ownerOf(address(mockNft), 1), address(this));
@@ -4371,7 +4371,7 @@ contract LendingAuctionUnitTest is
         assertEq(cUSDCToken.balanceOf(address(SIGNER_1)), 0);
 
         assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
-        assertEq(cUSDCToken.balanceOf(address(lendingAuction)), 6 ether);
+        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 6 ether);
 
         assertEq(mockNft.ownerOf(1), address(lendingAuction));
         assertEq(lendingAuction.ownerOf(address(mockNft), 1), address(this));
@@ -4469,7 +4469,7 @@ contract LendingAuctionUnitTest is
         assertEq(cUSDCToken.balanceOf(address(SIGNER_1)), 0);
 
         assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
-        assertEq(cUSDCToken.balanceOf(address(lendingAuction)), 6 ether);
+        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 6 ether);
 
         assertEq(mockNft.ownerOf(1), address(lendingAuction));
         assertEq(lendingAuction.ownerOf(address(mockNft), 1), address(this));
@@ -4566,7 +4566,7 @@ contract LendingAuctionUnitTest is
         assertEq(cUSDCToken.balanceOf(address(SIGNER_1)), 0);
 
         assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
-        assertEq(cUSDCToken.balanceOf(address(lendingAuction)), 6 ether);
+        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 6 ether);
 
         assertEq(mockNft.ownerOf(1), address(lendingAuction));
         assertEq(lendingAuction.ownerOf(address(mockNft), 1), address(this));
@@ -5496,7 +5496,7 @@ contract LendingAuctionUnitTest is
         assertEq(cUSDCToken.balanceOf(address(LENDER_2)), 0);
 
         assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
-        assertEq(cUSDCToken.balanceOf(address(lendingAuction)), 7 ether * 10**18);
+        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 7 ether * 10**18);
 
         assertEq(mockNft.ownerOf(1), address(lendingAuction));
         assertEq(lendingAuction.ownerOf(address(mockNft), 1), address(this));
@@ -5708,11 +5708,6 @@ contract LendingAuctionUnitTest is
         hevm.warp(block.timestamp + 100);
         
         lendingAuction.refinanceByLender(offer2);
-
-        console.log("address(this)", address(this));
-        console.log("LENDER_1", LENDER_1);
-        console.log("LENDER_2", LENDER_2);
-        console.log("liquidityProviders", address(liquidityProviders));
 
         // address(this) is the borrower and that is why it has this balance
         assertEq(usdcToken.balanceOf(address(this)), 6 ether);
@@ -6333,12 +6328,7 @@ contract LendingAuctionUnitTest is
         assertEq(usdcToken.balanceOf(address(this)), 0);
         assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
         assertEq(
-            cUSDCToken.balanceOf(address(lendingAuction)),
-            (6 ether + lenderInterest + protocolInterest) * 1 ether
-        );
-
-        assertEq(
-            cUSDCToken.balanceOf(address(lendingAuction)),
+            cUSDCToken.balanceOf(address(liquidityProviders)),
             (6 ether + lenderInterest + protocolInterest) * 1 ether
         );
 
