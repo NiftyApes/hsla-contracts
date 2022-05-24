@@ -45,6 +45,9 @@ contract LendingAuctionUnitTest is
     uint256 immutable SIGNER_PRIVATE_KEY_1 =
         0x60b919c82f0b4791a5b7c6a7275970ace1748759ebdaa4076d7eeed9dbcff3c3;
     address immutable SIGNER_1 = 0x503408564C50b43208529faEf9bdf9794c015d52;
+    address immutable SIGNER_2 = 0x4a3A70D6Be2290f5F57Ac7E64b9A1B7695f5b0B3;
+
+    address constant SANCTIONED_ADDRESS = address(0x7FF9cFad3877F21d41Da833E2F775dB0569eE3D9);
 
     receive() external payable {
         require(acceptEth, "acceptEth");
@@ -1020,6 +1023,39 @@ contract LendingAuctionUnitTest is
         hevm.expectRevert("signature not available");
 
         lendingAuction.executeLoanByBorrowerSignature(offer, signature, 4);
+    }
+
+    function testCannotwithdrawOfferSignature_others_signature() public {
+        hevm.startPrank(SIGNER_1);
+
+        usdcToken.mint(SIGNER_1, 6);
+        usdcToken.approve(address(lendingAuction), 6);
+
+        lendingAuction.supplyErc20(address(usdcToken), 6);
+
+        Offer memory offer = Offer({
+            creator: SIGNER_1,
+            nftContractAddress: address(0x0000000000000000000000000000000000000002),
+            interestRatePerSecond: 3,
+            fixedTerms: true,
+            floorTerm: true,
+            lenderOffer: true,
+            nftId: 4,
+            asset: address(usdcToken),
+            amount: 6,
+            duration: 7,
+            expiration: 8
+        });
+
+        bytes memory signature = signOffer(offer);
+
+        hevm.stopPrank();
+
+        hevm.prank(SIGNER_2);
+
+        hevm.expectRevert("signer");
+
+        lendingAuction.withdrawOfferSignature(offer, signature);
     }
 
     function testCannotExecuteLoanByBorrowerSignature_wrong_signer() public {
@@ -5434,6 +5470,72 @@ contract LendingAuctionUnitTest is
         lendingAuction.refinanceByLender(offer2);
     }
 
+    function testCannotRefinanceByLender_if_sanctioned() public {
+        hevm.startPrank(LENDER_1);
+        usdcToken.mint(address(LENDER_1), 6);
+        usdcToken.approve(address(lendingAuction), 6);
+
+        lendingAuction.supplyErc20(address(usdcToken), 6);
+
+        Offer memory offer = Offer({
+            creator: LENDER_1,
+            nftContractAddress: address(mockNft),
+            interestRatePerSecond: 3,
+            fixedTerms: false,
+            floorTerm: true,
+            lenderOffer: true,
+            nftId: 1,
+            asset: address(usdcToken),
+            amount: 6,
+            duration: 1 days,
+            expiration: uint32(block.timestamp + 1)
+        });
+
+        lendingAuction.createOffer(offer);
+
+        hevm.stopPrank();
+
+        bytes32 offerHash = lendingAuction.getOfferHash(offer);
+
+        lendingAuction.executeLoanByBorrower(
+            offer.nftContractAddress,
+            offer.nftId,
+            offerHash,
+            offer.floorTerm
+        );
+
+        hevm.startPrank(SANCTIONED_ADDRESS);
+        usdcToken.mint(address(SANCTIONED_ADDRESS), 6);
+        usdcToken.approve(address(lendingAuction), 6);
+
+        // Cannot supplyErc20 as a sanctioned address.
+        // This would actually revert here.
+        // We can actually run this test without supplying any liquidity
+        // because currently the sanctions check occurs before
+        // checking to make sure the lender has sufficient balance
+        // for the refinance offer.
+
+        // lendingAuction.supplyErc20(address(usdcToken), 6);
+
+        Offer memory offer2 = Offer({
+            creator: SANCTIONED_ADDRESS,
+            nftContractAddress: address(mockNft),
+            interestRatePerSecond: 1,
+            fixedTerms: false,
+            floorTerm: false,
+            lenderOffer: true,
+            nftId: 1,
+            asset: address(usdcToken),
+            amount: 6,
+            duration: 1 days,
+            expiration: uint32(block.timestamp + 1)
+        });
+
+        hevm.expectRevert("sanctioned address");
+
+        lendingAuction.refinanceByLender(offer2);
+    }
+
     function testRefinanceByBorrower_works_different_lender() public {
         hevm.startPrank(LENDER_1);
         usdcToken.mint(address(LENDER_1), 6 ether);
@@ -6358,6 +6460,148 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.amountDrawn, 0);
     }
 
+    function testDrawLoanAmount_works() public {
+        hevm.startPrank(LENDER_1);
+        usdcToken.mint(address(LENDER_1), 6 ether);
+        usdcToken.approve(address(lendingAuction), 6 ether);
+
+        lendingAuction.supplyErc20(address(usdcToken), 6 ether);
+
+        Offer memory offer = Offer({
+            creator: LENDER_1,
+            nftContractAddress: address(mockNft),
+            interestRatePerSecond: 6844444400000,
+            fixedTerms: false,
+            floorTerm: true,
+            lenderOffer: true,
+            nftId: 1,
+            asset: address(usdcToken),
+            amount: 6 ether,
+            duration: 1 days,
+            expiration: uint32(block.timestamp + 1)
+        });
+
+        lendingAuction.createOffer(offer);
+
+        hevm.stopPrank();
+
+        bytes32 offerHash = lendingAuction.getOfferHash(offer);
+
+        lendingAuction.executeLoanByBorrower(
+            offer.nftContractAddress,
+            offer.nftId,
+            offerHash,
+            offer.floorTerm
+        );
+
+        hevm.startPrank(LENDER_2);
+        usdcToken.mint(address(LENDER_2), 7 ether);
+        usdcToken.approve(address(lendingAuction), 7 ether);
+
+        lendingAuction.supplyErc20(address(usdcToken), 7 ether);
+
+        hevm.warp(block.timestamp + 12 hours);
+
+        Offer memory offer2 = Offer({
+            creator: LENDER_2,
+            nftContractAddress: address(mockNft),
+            interestRatePerSecond: 6844444400000,
+            fixedTerms: false,
+            floorTerm: false,
+            lenderOffer: true,
+            nftId: 1,
+            asset: address(usdcToken),
+            amount: 7 ether,
+            duration: 1 days,
+            expiration: uint32(block.timestamp + 1)
+        });
+
+        lendingAuction.refinanceByLender(offer2);
+
+        hevm.stopPrank();
+
+        LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
+
+        assertEq(loanAuction.amountDrawn, 6 ether);
+
+        lendingAuction.drawLoanAmount(address(mockNft), 1, 5 * 10**17);
+
+        assertEq(usdcToken.balanceOf(address(this)), 6.5 ether);
+
+        loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
+
+        assertEq(loanAuction.amountDrawn, 6.5 ether);
+    }
+
+    function testCannotDrawLoanAmount_funds_overdrawn() public {
+        hevm.startPrank(LENDER_1);
+        usdcToken.mint(address(LENDER_1), 6 ether);
+        usdcToken.approve(address(lendingAuction), 6 ether);
+
+        lendingAuction.supplyErc20(address(usdcToken), 6 ether);
+
+        Offer memory offer = Offer({
+            creator: LENDER_1,
+            nftContractAddress: address(mockNft),
+            interestRatePerSecond: 6844444400000,
+            fixedTerms: false,
+            floorTerm: true,
+            lenderOffer: true,
+            nftId: 1,
+            asset: address(usdcToken),
+            amount: 6 ether,
+            duration: 1 days,
+            expiration: uint32(block.timestamp + 1)
+        });
+
+        lendingAuction.createOffer(offer);
+
+        hevm.stopPrank();
+
+        bytes32 offerHash = lendingAuction.getOfferHash(offer);
+
+        lendingAuction.executeLoanByBorrower(
+            offer.nftContractAddress,
+            offer.nftId,
+            offerHash,
+            offer.floorTerm
+        );
+
+        hevm.startPrank(LENDER_2);
+        usdcToken.mint(address(LENDER_2), 7 ether);
+        usdcToken.approve(address(lendingAuction), 7 ether);
+
+        lendingAuction.supplyErc20(address(usdcToken), 7 ether);
+
+        hevm.warp(block.timestamp + 12 hours);
+
+        Offer memory offer2 = Offer({
+            creator: LENDER_2,
+            nftContractAddress: address(mockNft),
+            interestRatePerSecond: 6844444400000,
+            fixedTerms: false,
+            floorTerm: false,
+            lenderOffer: true,
+            nftId: 1,
+            asset: address(usdcToken),
+            amount: 7 ether,
+            duration: 1 days,
+            expiration: uint32(block.timestamp + 1)
+        });
+
+        lendingAuction.refinanceByLender(offer2);
+
+        hevm.stopPrank();
+
+        LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
+
+        assertEq(loanAuction.amountDrawn, 6 ether);
+
+        hevm.expectRevert("funds overdrawn");
+
+        lendingAuction.drawLoanAmount(address(mockNft), 1, 2 * 10**18);
+    }
+
     // TODO(miller): Tests missing for drawAmount
     // TODO(miller): Missing test for withdrawing someone elses signed offer
     // TODO(miller): Missing tests for regen collective percentage
@@ -6366,4 +6610,5 @@ contract LendingAuctionUnitTest is
     // TODO(miller): Tests for interest math and different gas greifing and term griefing premiums
     // TODO(miller): Review existing tests for additional cases
     // TODO(miller): Review contract functions and ensure there are tests for each function
+    // TODO(miller): repayLoanForAccount (including sanctions test)
 }

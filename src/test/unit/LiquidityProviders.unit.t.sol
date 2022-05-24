@@ -23,6 +23,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents, INiftyApesAdm
     bool acceptEth;
 
     address constant NOT_ADMIN = address(0x5050);
+    address constant SANCTIONED_ADDRESS = address(0x7FF9cFad3877F21d41Da833E2F775dB0569eE3D9);
 
     receive() external payable {
         require(acceptEth, "acceptEth");
@@ -132,6 +133,17 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents, INiftyApesAdm
         liquidityProviders.supplyErc20(address(usdcToken), 1);
     }
 
+    function testCannotSupplyErc20_if_sanctioned() public {
+        usdcToken.mint(address(this), 1);
+        usdcToken.approve(address(liquidityProviders), 1);
+
+        hevm.expectRevert("sanctioned address");
+
+        hevm.startPrank(SANCTIONED_ADDRESS);
+
+        liquidityProviders.supplyErc20(address(usdcToken), 1);
+    }
+
     function testCannotSupplyCErc20_asset_not_whitelisted() public {
         hevm.expectRevert("cAsset allow list");
         liquidityProviders.supplyCErc20(address(0x0000000000000000000000000000000000000001), 1);
@@ -192,12 +204,25 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents, INiftyApesAdm
         liquidityProviders.supplyCErc20(address(cUSDCToken), 1);
     }
 
+    function testCannotSupplyCErc20_if_sanctioned() public {
+        usdcToken.mint(address(this), 1);
+
+        cUSDCToken.mint(1);
+        cUSDCToken.approve(address(liquidityProviders), 1);
+
+        hevm.expectRevert("sanctioned address");
+
+        hevm.startPrank(SANCTIONED_ADDRESS);
+
+        liquidityProviders.supplyCErc20(address(cUSDCToken), 1);
+    }
+
     function testCannotWithdrawErc20_asset_not_whitelisted() public {
         hevm.expectRevert("asset allow list");
         liquidityProviders.withdrawErc20(address(0x0000000000000000000000000000000000000001), 1);
     }
 
-        function testWithdrawErc20_works() public {
+    function testWithdrawErc20_works() public {
         hevm.startPrank(NOT_ADMIN);
         usdcToken.mint(NOT_ADMIN, 1);
         usdcToken.approve(address(liquidityProviders), 1);
@@ -444,6 +469,19 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents, INiftyApesAdm
         cEtherToken.setMintFail(true);
 
         hevm.expectRevert("cToken mint");
+
+        liquidityProviders.supplyEth{ value: 1 }();
+    }
+
+    function testCannotSupplyEth_if_sanctioned() public {
+        liquidityProviders.setCAssetAddress(
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
+            address(cEtherToken)
+        );
+
+        hevm.expectRevert("sanctioned address");
+
+        hevm.startPrank(SANCTIONED_ADDRESS);
 
         liquidityProviders.supplyEth{ value: 1 }();
     }
