@@ -5493,6 +5493,8 @@ contract LendingAuctionUnitTest is
 
         liquidityProviders.supplyErc20(address(usdcToken), 7 ether);
 
+        hevm.warp(block.timestamp + 12 hours);
+
         Offer memory offer2 = Offer({
             creator: LENDER_2,
             nftContractAddress: address(mockNft),
@@ -5527,11 +5529,11 @@ contract LendingAuctionUnitTest is
         assertEq(liquidityProviders.getCAssetBalance(address(this), address(cUSDCToken)), 0);
         assertEq(
             liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken)),
-            6030000000000000000 ether
+            6325679998080000000 ether
         );
         assertEq(
             liquidityProviders.getCAssetBalance(LENDER_2, address(cUSDCToken)),
-            970000000000000000 ether
+            674320001920000000 ether
         );
 
         assertEq(
@@ -5714,6 +5716,8 @@ contract LendingAuctionUnitTest is
 
         liquidityProviders.supplyErc20(address(usdcToken), 10 ether);
 
+        hevm.warp(block.timestamp + 6 hours + 10 minutes);
+
         Offer memory offer2 = Offer({
             creator: LENDER_2,
             nftContractAddress: address(mockNft),
@@ -5728,11 +5732,8 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 200)
         });
 
-        hevm.warp(block.timestamp + 100);
-        
         lendingAuction.refinanceByLender(offer2);
 
-        // address(this) is the borrower and that is why it has this balance
         assertEq(usdcToken.balanceOf(address(this)), 6 ether);
         assertEq(cUSDCToken.balanceOf(address(this)), 0);
 
@@ -5751,11 +5752,11 @@ contract LendingAuctionUnitTest is
         assertEq(liquidityProviders.getCAssetBalance(address(this), address(cUSDCToken)), 0);
         assertEq(
             liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken)),
-            6030069444444444400 ether
+            6045416666666656800 ether
         );
         assertEq(
             liquidityProviders.getCAssetBalance(LENDER_2, address(cUSDCToken)),
-            3969930555555555600 ether
+            3954583333333343200 ether
         );
 
         assertEq(
@@ -5913,6 +5914,8 @@ contract LendingAuctionUnitTest is
 
         liquidityProviders.supplyErc20(address(usdcToken), 10 ether);
 
+        hevm.warp(block.timestamp + 6 hours + 10 minutes);
+
         Offer memory offer2 = Offer({
             creator: LENDER_2,
             nftContractAddress: address(mockNft),
@@ -5927,8 +5930,6 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 200)
         });
 
-        hevm.warp(block.timestamp + 100);
-
         lendingAuction.refinanceByLender(offer2);
 
         hevm.stopPrank();
@@ -5938,6 +5939,8 @@ contract LendingAuctionUnitTest is
         usdcToken.approve(address(liquidityProviders), 10 ether);
 
         liquidityProviders.supplyErc20(address(usdcToken), 10 ether);
+
+        hevm.warp(block.timestamp + 6 hours + 10 minutes);
 
         Offer memory offer3 = Offer({
             creator: LENDER_3,
@@ -5952,8 +5955,6 @@ contract LendingAuctionUnitTest is
             duration: 3 days,
             expiration: uint32(block.timestamp + 400)
         });
-
-        hevm.warp(block.timestamp + 200);
 
         lendingAuction.refinanceByLender(offer3);
 
@@ -5978,16 +5979,16 @@ contract LendingAuctionUnitTest is
         assertEq(liquidityProviders.getCAssetBalance(address(this), address(cUSDCToken)), 0);
         assertEq(
             liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken)),
-            6030069444444444400 ether
+            6045416666666656800 ether
         );
         assertEq(
             liquidityProviders.getCAssetBalance(LENDER_2, address(cUSDCToken)),
-            10000138888888888400 ether
+            10015416666666612400 ether
         );
 
         assertEq(
             liquidityProviders.getCAssetBalance(LENDER_3, address(cUSDCToken)),
-            3969791666666667200 ether
+            3939166666666730800 ether
         );
 
         assertEq(
