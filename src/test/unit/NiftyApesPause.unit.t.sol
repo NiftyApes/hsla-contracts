@@ -67,6 +67,8 @@ contract NiftyApesPauseUnitTest is BaseTest, ILendingStructs, IOffersStructs, ER
         );
 
         niftyApes.pause();
+        liquidityProviders.pause();
+        offersContract.pause();
 
         acceptEth = true;
 

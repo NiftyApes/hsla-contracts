@@ -369,6 +369,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
             address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
             address(cEtherToken)
         );
+        hevm.deal(address(liquidityProviders), 0);
 
         uint256 startingBalance = address(this).balance;
         assertEq(cEtherToken.balanceOf(address(this)), 0);
@@ -458,6 +459,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
             address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
             address(cEtherToken)
         );
+        hevm.deal(address(liquidityProviders), 0);
 
         uint256 startingBalance = address(this).balance;
 
