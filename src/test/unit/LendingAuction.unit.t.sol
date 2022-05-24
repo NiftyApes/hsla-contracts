@@ -100,7 +100,7 @@ contract LendingAuctionUnitTest is
         lendingAuction.transferOwnership(OWNER);
     }
 
-    // TODO(dankurka): Move to base
+    // TODO(miller): Move to base
     function signOffer(Offer memory offer) public returns (bytes memory) {
         // This is the EIP712 signed hash
         bytes32 encoded_offer = offersContract.getOfferHash(offer);
@@ -146,6 +146,8 @@ contract LendingAuctionUnitTest is
         assertEq(offer.duration, 0);
         assertEq(offer.expiration, 0);
     }
+
+    // createOffer Tests
 
     function testCannotCreateOffer_asset_not_whitelisted() public {
         Offer memory offer = Offer({
@@ -287,6 +289,8 @@ contract LendingAuctionUnitTest is
         offersContract.createOffer(offer);
     }
 
+    // removeOffer Tests
+
     function testCannotRemoveOffer_other_user() public {
         usdcToken.mint(address(this), 6);
         usdcToken.approve(address(liquidityProviders), 6);
@@ -416,9 +420,12 @@ contract LendingAuctionUnitTest is
         );
     }
 
+    // executeLoanByBorrower Tests
+
     function testCannotExecuteLoanByBorrower_asset_not_in_allow_list() public {
-        // TODO(dankurka): Can not write this test since we can not unlist
+        // TODO(miller): Can not write this test since we can not unlist
         // assets from the allow list and we need them to be in the list to add funds
+        // This test is now possible because we have enabled asset/cAsset to be relisted by owner
     }
 
     function testCannotExecuteLoanByBorrower_no_offer_present() public {
@@ -993,9 +1000,12 @@ contract LendingAuctionUnitTest is
         );
     }
 
+    // executeLoanByBorrowerSignature Tests
+
     function testCannotExecuteLoanByBorrowerSignature_asset_not_in_allow_list() public {
-        // TODO(dankurka): Can not write this test since we can not unlist
+        // TODO(miller): Can not write this test since we can not unlist
         // assets from the allow list and we need them to be in the list to add funds
+        // this test can now be run as well
     }
 
     function testCannotExecuteLoanByBorrowerSignature_signature_blocked() public {
@@ -1488,9 +1498,12 @@ contract LendingAuctionUnitTest is
         lendingAuction.executeLoanByBorrowerSignature(offer, signature, 1);
     }
 
+    // executeLoanByLender Tests
+
     function testCannotExecuteLoanByLender_asset_not_in_allow_list() public {
-        // TODO(dankurka): Can not write this test since we can not unlist
+        // TODO(miller): Can not write this test since we can not unlist
         // assets from the allow list and we need them to be in the list to add funds
+        // this one can now be written
     }
 
     function testCannotExecuteLoanByLender_no_offer_present() public {
@@ -1847,7 +1860,7 @@ contract LendingAuctionUnitTest is
 
         hevm.startPrank(LENDER_1);
 
-        // TODO
+        // TODO(miller): there was a TODO here, but not sure exactly what Daniel's intention with is was, some expected revert
         // hevm.expectRevert("foo");
 
         lendingAuction.executeLoanByLender(
@@ -2032,9 +2045,12 @@ contract LendingAuctionUnitTest is
         );
     }
 
+    // executeLoanByLenderSignature Tests
+
     function testCannotExecuteLoanByLenderSignature_asset_not_in_allow_list() public {
-        // TODO(dankurka): Can not write this test since we can not unlist
+        // TODO(miller): Can not write this test since we can not unlist
         // assets from the allow list and we need them to be in the list to add funds
+        // this one can now be implemented
     }
 
     function testCannotExecuteLoanByLenderSignature_signature_blocked() public {
@@ -2303,8 +2319,9 @@ contract LendingAuctionUnitTest is
     }
 
     function testCannotExecuteLoanByLenderSignature_eth_payment_fails() public {
-        // TODO(dankurka): This is tough to test since we can not revert the signers
+        // TODO(miller): This is tough to test since we can not revert the signers
         //                 address on ETH transfers
+        // can you look into this?
     }
 
     function testExecuteLoanByLenderSignature_works_not_floor_term() public {
@@ -2472,6 +2489,8 @@ contract LendingAuctionUnitTest is
 
         lendingAuction.executeLoanByLenderSignature(offer, signature);
     }
+
+    // refinanceByBorrower Tests
 
     function testCannotRefinanceByBorrower_fixed_terms() public {
         hevm.startPrank(LENDER_1);
@@ -3635,6 +3654,8 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.accumulatedLenderInterest, 0);
         assertEq(loanAuction.accumulatedProtocolInterest, 0); // 0 fee set so 0 balance expected
     }
+
+    // refinanceByBorrowerSignature Tests
 
     function testCannotRefinanceByBorrowerSignature_fixed_terms() public {
         hevm.startPrank(LENDER_1);
@@ -4827,6 +4848,8 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.accumulatedProtocolInterest, 0); // 0 fee set so 0 balance expected
     }
 
+    // refinanceByLender Tests
+
     function testCannotRefinanceByLender_fixed_terms() public {
         hevm.startPrank(LENDER_1);
         usdcToken.mint(address(LENDER_1), 6);
@@ -5440,7 +5463,7 @@ contract LendingAuctionUnitTest is
         Offer memory offer = Offer({
             creator: LENDER_1,
             nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
+            interestRatePerSecond: 6844444400000,
             fixedTerms: false,
             floorTerm: true,
             lenderOffer: true,
@@ -5473,7 +5496,7 @@ contract LendingAuctionUnitTest is
         Offer memory offer2 = Offer({
             creator: LENDER_2,
             nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
+            interestRatePerSecond: 6844444400000,
             fixedTerms: false,
             floorTerm: false,
             lenderOffer: true,
@@ -5521,13 +5544,13 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.nftOwner, address(this));
         assertEq(loanAuction.lender, LENDER_2);
         assertEq(loanAuction.asset, address(usdcToken));
-        assertEq(loanAuction.interestRatePerSecond, 3);
+        assertEq(loanAuction.interestRatePerSecond, 6844444400000);
         assertTrue(!loanAuction.fixedTerms);
 
         assertEq(loanAuction.amount, 7 ether);
-        assertEq(loanAuction.loanEndTimestamp, block.timestamp + 1 days);
+        assertEq(loanAuction.loanEndTimestamp, block.timestamp + 1 days - 12 hours);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
-        assertEq(loanAuction.accumulatedLenderInterest, 0);
+        assertEq(loanAuction.accumulatedLenderInterest, 295679998080000000);
         assertEq(loanAuction.accumulatedProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 6 ether);
     }
@@ -5601,7 +5624,7 @@ contract LendingAuctionUnitTest is
         Offer memory offer = Offer({
             creator: LENDER_1,
             nftContractAddress: address(mockNft),
-            interestRatePerSecond: 6944444400000,
+            interestRatePerSecond: 6845444400000,
             fixedTerms: false,
             floorTerm: true,
             lenderOffer: true,
@@ -5640,8 +5663,8 @@ contract LendingAuctionUnitTest is
             lenderOffer: true,
             nftId: 1,
             asset: address(usdcToken),
-            amount: 7 ether,
-            duration: 1 days,
+            amount: 6 ether + 0.015 ether,
+            duration: 1 days + 3.7 minutes,
             expiration: uint32(block.timestamp + 1)
         });
         hevm.expectEmit(true, true, false, true);
@@ -5751,7 +5774,7 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.amount, 7 ether);
         assertEq(loanAuction.loanEndTimestamp, loanAuction.loanBeginTimestamp + 3 days);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
-        assertEq(loanAuction.accumulatedLenderInterest, 69444444444400);
+        assertEq(loanAuction.accumulatedLenderInterest, 15416666666656800);
         assertEq(loanAuction.accumulatedProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 6000000000000000000);
     }
@@ -5983,12 +6006,12 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.amount, 8 ether);
         assertEq(loanAuction.loanEndTimestamp, loanAuction.loanBeginTimestamp + 3 days);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
-        assertEq(loanAuction.accumulatedLenderInterest, 208333333332800);
+        assertEq(loanAuction.accumulatedLenderInterest, 30833333333269200);
         assertEq(loanAuction.accumulatedProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 6000000000000000000);
     }
 
-    // TODO(dankurka): Missing test:
+    // TODO(miller): Missing test:
     //                 Refinance with different improvements same lender
     //                 Min duration update
 
