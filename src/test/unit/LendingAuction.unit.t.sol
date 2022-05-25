@@ -1048,7 +1048,7 @@ contract LendingAuctionUnitTest is
         hevm.startPrank(SIGNER_1);
 
         usdcToken.mint(SIGNER_1, 6);
-        usdcToken.approve(address(lendingAuction), 6);
+        usdcToken.approve(address(liquidityProviders), 6);
 
         liquidityProviders.supplyErc20(address(usdcToken), 6);
 
@@ -5492,7 +5492,7 @@ contract LendingAuctionUnitTest is
     function testCannotRefinanceByLender_if_sanctioned() public {
         hevm.startPrank(LENDER_1);
         usdcToken.mint(address(LENDER_1), 6);
-        usdcToken.approve(address(lendingAuction), 6);
+        usdcToken.approve(address(liquidityProviders), 6);
 
         liquidityProviders.supplyErc20(address(usdcToken), 6);
 
@@ -5525,7 +5525,7 @@ contract LendingAuctionUnitTest is
 
         hevm.startPrank(SANCTIONED_ADDRESS);
         usdcToken.mint(address(SANCTIONED_ADDRESS), 6);
-        usdcToken.approve(address(lendingAuction), 6);
+        usdcToken.approve(address(liquidityProviders), 6);
 
         // Cannot supplyErc20 as a sanctioned address.
         // This would actually revert here.
@@ -6477,7 +6477,7 @@ contract LendingAuctionUnitTest is
     function testDrawLoanAmount_works() public {
         hevm.startPrank(LENDER_1);
         usdcToken.mint(address(LENDER_1), 6 ether);
-        usdcToken.approve(address(lendingAuction), 6 ether);
+        usdcToken.approve(address(liquidityProviders), 6 ether);
 
         liquidityProviders.supplyErc20(address(usdcToken), 6 ether);
 
@@ -6510,7 +6510,7 @@ contract LendingAuctionUnitTest is
 
         hevm.startPrank(LENDER_2);
         usdcToken.mint(address(LENDER_2), 7 ether);
-        usdcToken.approve(address(lendingAuction), 7 ether);
+        usdcToken.approve(address(liquidityProviders), 7 ether);
 
         liquidityProviders.supplyErc20(address(usdcToken), 7 ether);
 
@@ -6550,7 +6550,7 @@ contract LendingAuctionUnitTest is
     function testCannotDrawLoanAmount_funds_overdrawn() public {
         hevm.startPrank(LENDER_1);
         usdcToken.mint(address(LENDER_1), 6 ether);
-        usdcToken.approve(address(lendingAuction), 6 ether);
+        usdcToken.approve(address(liquidityProviders), 6 ether);
 
         liquidityProviders.supplyErc20(address(usdcToken), 6 ether);
 
@@ -6583,7 +6583,7 @@ contract LendingAuctionUnitTest is
 
         hevm.startPrank(LENDER_2);
         usdcToken.mint(address(LENDER_2), 7 ether);
-        usdcToken.approve(address(lendingAuction), 7 ether);
+        usdcToken.approve(address(liquidityProviders), 7 ether);
 
         liquidityProviders.supplyErc20(address(usdcToken), 7 ether);
 
@@ -6619,7 +6619,7 @@ contract LendingAuctionUnitTest is
     function testCannotDrawLoanAmount_no_open_loan() public {
         hevm.startPrank(LENDER_1);
         usdcToken.mint(address(LENDER_1), 6 ether);
-        usdcToken.approve(address(lendingAuction), 6 ether);
+        usdcToken.approve(address(liquidityProviders), 6 ether);
 
         liquidityProviders.supplyErc20(address(usdcToken), 6 ether);
 
@@ -6652,7 +6652,7 @@ contract LendingAuctionUnitTest is
 
         hevm.startPrank(LENDER_2);
         usdcToken.mint(address(LENDER_2), 7 ether);
-        usdcToken.approve(address(lendingAuction), 7 ether);
+        usdcToken.approve(address(liquidityProviders), 7 ether);
 
         liquidityProviders.supplyErc20(address(usdcToken), 7 ether);
 
@@ -6677,7 +6677,7 @@ contract LendingAuctionUnitTest is
         hevm.stopPrank();
 
         usdcToken.mint(address(this), 1001 ether);
-        usdcToken.approve(address(lendingAuction), 1000 ether);
+        usdcToken.approve(address(liquidityProviders), 1000 ether);
 
         lendingAuction.repayLoan(address(mockNft), 1);
 
@@ -6691,7 +6691,7 @@ contract LendingAuctionUnitTest is
     function testCannotDrawLoanAmount_not_your_loan() public {
         hevm.startPrank(LENDER_1);
         usdcToken.mint(address(LENDER_1), 6 ether);
-        usdcToken.approve(address(lendingAuction), 6 ether);
+        usdcToken.approve(address(liquidityProviders), 6 ether);
 
         liquidityProviders.supplyErc20(address(usdcToken), 6 ether);
 
@@ -6724,7 +6724,7 @@ contract LendingAuctionUnitTest is
 
         hevm.startPrank(LENDER_2);
         usdcToken.mint(address(LENDER_2), 7 ether);
-        usdcToken.approve(address(lendingAuction), 7 ether);
+        usdcToken.approve(address(liquidityProviders), 7 ether);
 
         liquidityProviders.supplyErc20(address(usdcToken), 7 ether);
 
@@ -6758,7 +6758,7 @@ contract LendingAuctionUnitTest is
     function testCannotDrawLoanAmount_loan_expired() public {
         hevm.startPrank(LENDER_1);
         usdcToken.mint(address(LENDER_1), 6 ether);
-        usdcToken.approve(address(lendingAuction), 6 ether);
+        usdcToken.approve(address(liquidityProviders), 6 ether);
 
         liquidityProviders.supplyErc20(address(usdcToken), 6 ether);
 
@@ -6791,7 +6791,7 @@ contract LendingAuctionUnitTest is
 
         hevm.startPrank(LENDER_2);
         usdcToken.mint(address(LENDER_2), 7 ether);
-        usdcToken.approve(address(lendingAuction), 7 ether);
+        usdcToken.approve(address(liquidityProviders), 7 ether);
 
         liquidityProviders.supplyErc20(address(usdcToken), 7 ether);
 
