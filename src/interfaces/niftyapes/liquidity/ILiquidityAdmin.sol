@@ -23,9 +23,6 @@ interface ILiquidityAdmin {
     /// @notice Updates the associated lending contract address
     function updateLendingContractAddress(address newLendingContractAddress) external;
 
-    /// @notice Updates the associated offers contract address
-    function updateOffersContractAddress(address newOffersContractAddress) external;
-
     /// @notice Pauses all interactions with the contract.
     ///         This is intended to be used as an emergency measure to avoid loosing funds.
     function pause() external;
