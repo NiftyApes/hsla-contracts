@@ -4,7 +4,8 @@ pragma solidity 0.8.13;
 import "@openzeppelin/contracts/interfaces/IERC20Upgradeable.sol";
 import "../../interfaces/compound/ICERC20.sol";
 import "../../interfaces/compound/ICEther.sol";
-import "../../NiftyApes.sol";
+import "../../Lending.sol";
+import "../../Liquidity.sol";
 import "../interfaces/IUniswapV2Router.sol";
 import "../interfaces/IWETH.sol";
 import "../mock/ERC721Mock.sol";
@@ -23,7 +24,8 @@ contract TestLendingAuctionIntegrationTest is BaseTest, ERC721HolderUpgradeable 
     IERC20Upgradeable DAI;
     ICERC20 cDAI;
     ICEther cETH;
-    NiftyApes LA;
+    NiftyApesLending LA;
+    NiftyApesLiquidity liquidityProviders;
     uint256 immutable pk = 0x60b919c82f0b4791a5b7c6a7275970ace1748759ebdaa4076d7eeed9dbcff3c3;
     address immutable signer = 0x503408564C50b43208529faEf9bdf9794c015d52;
 
@@ -73,10 +75,14 @@ contract TestLendingAuctionIntegrationTest is BaseTest, ERC721HolderUpgradeable 
         cDAI.mint(500000 ether);
 
         // Setup the liquidity providers contract
-        LA = new NiftyApes();
+        LA = new NiftyApesLending();
+
+        liquidityProviders = new NiftyApesLiquidity();
+        liquidityProviders.initialize();
+
         // Allow assets for testing
-        LA.setCAssetAddress(address(DAI), address(cDAI));
-        LA.setCAssetAddress(address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE), address(cETH));
+        liquidityProviders.setCAssetAddress(address(DAI), address(cDAI));
+        liquidityProviders.setCAssetAddress(address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE), address(cETH));
         uint256 max = type(uint256).max;
 
         // Setup mock NFT
@@ -99,9 +105,9 @@ contract TestLendingAuctionIntegrationTest is BaseTest, ERC721HolderUpgradeable 
         cETH.approve(address(LA), max);
 
         // Supply to 200k DAI contract
-        LA.supplyErc20(address(DAI), 200000 ether);
+        liquidityProviders.supplyErc20(address(DAI), 200000 ether);
         // Supply 10 ether to contract
-        LA.supplyEth{ value: 10 ether }();
+        liquidityProviders.supplyEth{ value: 10 ether }();
     }
 
     // Test Cases

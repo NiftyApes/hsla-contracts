@@ -4,8 +4,8 @@ pragma solidity 0.8.13;
 import "@openzeppelin/contracts/interfaces/IERC20Upgradeable.sol";
 import "../../interfaces/compound/ICERC20.sol";
 import "../../interfaces/compound/ICEther.sol";
-import "../../NiftyApes.sol";
-import "../../interfaces/niftyapes/admin/INiftyApesAdminEvents.sol";
+import "../../Lending.sol";
+import "../../Liquidity.sol";
 import "../../interfaces/niftyapes/liquidity/ILiquidityEvents.sol";
 
 import "../common/BaseTest.sol";
@@ -13,8 +13,8 @@ import "../mock/CERC20Mock.sol";
 import "../mock/CEtherMock.sol";
 import "../mock/ERC20Mock.sol";
 
-contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents, INiftyApesAdminEvents {
-    NiftyApes liquidityProviders;
+contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
+    NiftyApesLiquidity liquidityProviders;
     ERC20Mock usdcToken;
     CERC20Mock cUSDCToken;
 
@@ -30,7 +30,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents, INiftyApesAdm
     }
 
     function setUp() public {
-        liquidityProviders = new NiftyApes();
+        liquidityProviders = new NiftyApesLiquidity();
         liquidityProviders.initialize();
 
         usdcToken = new ERC20Mock();
@@ -394,6 +394,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents, INiftyApesAdm
             address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
             address(cEtherToken)
         );
+        hevm.deal(address(liquidityProviders), 0);
 
         uint256 startingBalance = address(this).balance;
         assertEq(cEtherToken.balanceOf(address(this)), 0);
@@ -496,6 +497,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents, INiftyApesAdm
             address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
             address(cEtherToken)
         );
+        hevm.deal(address(liquidityProviders), 0);
 
         uint256 startingBalance = address(this).balance;
 
