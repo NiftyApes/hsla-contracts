@@ -99,12 +99,4 @@ interface ILiquidityEvents {
         address oldLendingContractAdress,
         address newLendingContractAdress
     );
-
-        /// @notice Emmited when the associated offers contract address is changed
-    /// @param oldOffersContractAdress The old offers contract address
-    /// @param newOffersContractAdress The new offers contract address
-    event LiquidityXOffersContractAddressUpdated(
-        address oldOffersContractAdress,
-        address newOffersContractAdress
-    );
 }
