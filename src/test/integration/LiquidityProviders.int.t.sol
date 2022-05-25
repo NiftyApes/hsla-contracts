@@ -4,7 +4,7 @@ pragma solidity 0.8.13;
 import "@openzeppelin/contracts/interfaces/IERC20Upgradeable.sol";
 import "../../interfaces/compound/ICERC20.sol";
 import "../../interfaces/compound/ICEther.sol";
-import "../../NiftyApes.sol";
+import "../../Liquidity.sol";
 import "../interfaces/IUniswapV2Router.sol";
 import "../interfaces/IWETH.sol";
 import "../common/BaseTest.sol";
@@ -17,7 +17,7 @@ contract LiquidityProvidersIntegrationTest is BaseTest {
     IERC20Upgradeable DAI;
     ICERC20 cDAI;
     ICEther cETH;
-    NiftyApes liquidityProviders;
+    NiftyApesLiquidity liquidityProviders;
 
     // This is needed to receive ETH when calling `withdrawEth`
     receive() external payable {}
@@ -66,7 +66,7 @@ contract LiquidityProvidersIntegrationTest is BaseTest {
         cDAI.mint(50000 ether);
 
         // Setup the liquidity providers contract
-        liquidityProviders = new NiftyApes();
+        liquidityProviders = new NiftyApesLiquidity();
         // Allow assets for testing
         liquidityProviders.setCAssetAddress(address(DAI), address(cDAI));
         liquidityProviders.setCAssetAddress(

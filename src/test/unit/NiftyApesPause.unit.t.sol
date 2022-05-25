@@ -5,8 +5,11 @@ import "@openzeppelin/contracts/interfaces/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 import "../../interfaces/compound/ICERC20.sol";
 import "../../interfaces/compound/ICEther.sol";
-import "../../NiftyApes.sol";
+import "../../Lending.sol";
+import "../../Liquidity.sol";
+import "../../Offers.sol";
 import "../../interfaces/niftyapes/lending/ILendingStructs.sol";
+import "../../interfaces/niftyapes/offers/IOffersStructs.sol";
 
 import "../common/BaseTest.sol";
 import "../mock/CERC20Mock.sol";
@@ -14,8 +17,10 @@ import "../mock/CEtherMock.sol";
 import "../mock/ERC20Mock.sol";
 import "../mock/ERC721Mock.sol";
 
-contract NiftyApesPauseUnitTest is BaseTest, ILendingStructs, ERC721HolderUpgradeable {
-    NiftyApes niftyApes;
+contract NiftyApesPauseUnitTest is BaseTest, ILendingStructs, IOffersStructs, ERC721HolderUpgradeable {
+    NiftyApesLending niftyApes;
+    NiftyApesOffers offersContract;
+    NiftyApesLiquidity liquidityProviders;
     ERC20Mock usdcToken;
     CERC20Mock cUSDCToken;
 
@@ -37,23 +42,33 @@ contract NiftyApesPauseUnitTest is BaseTest, ILendingStructs, ERC721HolderUpgrad
     }
 
     function setUp() public {
-        niftyApes = new NiftyApes();
+        niftyApes = new NiftyApesLending();
         niftyApes.initialize();
+
+        liquidityProviders = new NiftyApesLiquidity();
+        liquidityProviders.initialize();
+
+        offersContract = new NiftyApesOffers();
+        offersContract.initialize();
+
+        offersContract.updateLendingContractAddress(address(niftyApes));
 
         usdcToken = new ERC20Mock();
         usdcToken.initialize("USD Coin", "USDC");
         cUSDCToken = new CERC20Mock();
         cUSDCToken.initialize(usdcToken);
-        niftyApes.setCAssetAddress(address(usdcToken), address(cUSDCToken));
+        liquidityProviders.setCAssetAddress(address(usdcToken), address(cUSDCToken));
 
         cEtherToken = new CEtherMock();
         cEtherToken.initialize();
-        niftyApes.setCAssetAddress(
+        liquidityProviders.setCAssetAddress(
             address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
             address(cEtherToken)
         );
 
         niftyApes.pause();
+        liquidityProviders.pause();
+        offersContract.pause();
 
         acceptEth = true;
 
@@ -103,61 +118,43 @@ contract NiftyApesPauseUnitTest is BaseTest, ILendingStructs, ERC721HolderUpgrad
     function testCannotsupplyErc20_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        niftyApes.supplyErc20(address(usdcToken), 1);
+        liquidityProviders.supplyErc20(address(usdcToken), 1);
     }
 
     function testCannotSupplyErc20_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        niftyApes.supplyErc20(address(usdcToken), 1);
+        liquidityProviders.supplyErc20(address(usdcToken), 1);
     }
 
     function testCannotSupplyCErc20_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        niftyApes.supplyCErc20(address(cUSDCToken), 1);
+        liquidityProviders.supplyCErc20(address(cUSDCToken), 1);
     }
 
     function testCannotWithdrawErc20_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        niftyApes.withdrawErc20(address(usdcToken), 1);
+        liquidityProviders.withdrawErc20(address(usdcToken), 1);
     }
 
     function testCannotwithdrawCErc20_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        niftyApes.withdrawCErc20(address(cUSDCToken), 1);
+        liquidityProviders.withdrawCErc20(address(cUSDCToken), 1);
     }
 
     function testCannotSupplyEth_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        niftyApes.supplyEth();
+        liquidityProviders.supplyEth();
     }
 
     function testCannotWithdrawEth_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        niftyApes.withdrawEth(1);
-    }
-
-    function testCannotWithdrawOfferSignature_paused() public {
-        hevm.expectRevert("Pausable: paused");
-
-        niftyApes.withdrawOfferSignature(getOffer(), "");
-    }
-
-    function testCannotCreateOffer_paused() public {
-        hevm.expectRevert("Pausable: paused");
-
-        niftyApes.createOffer(getOffer());
-    }
-
-    function testCannotRemoveOffer_paused() public {
-        hevm.expectRevert("Pausable: paused");
-
-        niftyApes.removeOffer(address(0), 1, bytes32(0), false);
+        liquidityProviders.withdrawEth(1);
     }
 
     function testCannotExecuteLoanByBorrower_paused() public {

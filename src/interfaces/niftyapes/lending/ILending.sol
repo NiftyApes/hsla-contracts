@@ -1,12 +1,14 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
+import "./ILendingAdmin.sol";
 import "./ILendingEvents.sol";
 import "./ILendingStructs.sol";
+import "../offers/IOffersStructs.sol";
 
 /// @title The lending interface for Nifty Apes
 ///        This interface is intended to be used for interacting with loans on the protocol.
-interface ILending is ILendingEvents, ILendingStructs {
+interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStructs {
     /// @notice Returns the fee that computes protocol interest
     ///         This fee is the basis points in order to calculate interest per second
     function protocolInterestBps() external view returns (uint96);
@@ -24,13 +26,6 @@ interface ILending is ILendingEvents, ILendingStructs {
     ///         Fees are denomiated in basis points, parts of 10_000
     function termGriefingPremiumBps() external view returns (uint16);
 
-    /// @notice Returns the basis points of revenue sent to the Regen Collective
-    ///         Denomiated in basis points, parts of 10_000
-    function regenCollectiveBpsOfRevenue() external view returns (uint16);
-
-    /// @notice Returns the address for the Regen Collective
-    function regenCollectiveAddress() external view returns (address);
-
     /// @notice Returns a loan aution identified by a given nft.
     /// @param nftContractAddress The address of the NFT collection
     /// @param nftId The id of a specified NFT
@@ -38,54 +33,6 @@ interface ILending is ILendingEvents, ILendingStructs {
         external
         view
         returns (LoanAuction memory auction);
-
-    /// @notice Returns an EIP712 standard compatiable hash for a given offer
-    ///         This hash can be signed to create a valid offer.
-    /// @param offer The offer to compute the hash for
-    function getOfferHash(Offer memory offer) external view returns (bytes32);
-
-    /// @notice Returns the signer of an offer or throws an error.
-    /// @param offer The offer to use for retrieving the signer
-    /// @param signature The signature to use for retrieving the signer
-    function getOfferSigner(Offer memory offer, bytes memory signature) external returns (address);
-
-    /// @notice Returns true if a given signature has been revoked otherwise false
-    /// @param signature The signature to check
-    function getOfferSignatureStatus(bytes calldata signature) external view returns (bool status);
-
-    /// @notice Withdraw a given offer
-    ///         Calling this method allows users to withdraw a given offer by cancelling their signature on chain
-    /// @param offer The offer to withdraw
-    /// @param signature The signature of the offer
-    function withdrawOfferSignature(Offer memory offer, bytes calldata signature) external;
-
-    /// @notice Returns an offer from the on-chain offer books
-    /// @param nftContractAddress The address of the NFT collection
-    /// @param nftId The id of the specified NFT
-    /// @param offerHash The hash of all parameters in an offer
-    /// @param floorTerm Indicates whether this is a floor or individual NFT offer.
-    function getOffer(
-        address nftContractAddress,
-        uint256 nftId,
-        bytes32 offerHash,
-        bool floorTerm
-    ) external view returns (Offer memory offer);
-
-    /// @notice Creates an offer on the on chain offer book
-    /// @param offer The details of offer
-    function createOffer(Offer calldata offer) external returns (bytes32);
-
-    /// @notice Removes an offer from the on-chain offer book
-    /// @param nftContractAddress The address of the NFT collection
-    /// @param nftId The id of the specified NFT
-    /// @param offerHash The hash of all parameters in an offer
-    /// @param floorTerm Indicates whether this is a floor or individual NFT offer.
-    function removeOffer(
-        address nftContractAddress,
-        uint256 nftId,
-        bytes32 offerHash,
-        bool floorTerm
-    ) external;
 
     /// @notice Start a loan as the borrower using an offer from the on chain offer book.
     ///         The caller of this method has to be the current owner of the NFT
@@ -132,9 +79,10 @@ interface ILending is ILendingEvents, ILendingStructs {
     ///         execute these offers
     /// @param offer The details of the loan auction offer
     /// @param signature A signed offerHash
-    function executeLoanByLenderSignature(Offer calldata offer, bytes calldata signature)
-        external
-        payable;
+    function executeLoanByLenderSignature(
+        Offer calldata offer,
+        bytes calldata signature
+    ) external payable;
 
     /// @notice Refinance a loan against the on chain offer book as the borrower.
     ///         The new offer has to cover all interest owed on the loan
@@ -210,22 +158,6 @@ interface ILending is ILendingEvents, ILendingStructs {
     /// @param nftContractAddress The address of the NFT collection
     /// @param nftId The id of the specified NFT
     function seizeAsset(address nftContractAddress, uint256 nftId) external;
-
-    /// @notice If a loan has expired, allows a lender to sell an NFT and recieve the proceeds.
-    ///         This function can only be called by the lender as soon as the loan is expired without having been repaid.
-    ///         This function is limited to the lender to prevent malicious use of the arbitrary calldata function.
-    /// @param nftContractAddress The address of the NFT collection
-    /// @param nftId The id of the specified NFT
-    /// @param sellAddress The contract address of sell functionality
-    /// @param sellCallData The callData of sell functionality
-    /// @param minAmount The minimum amount the lender will accept for the sale
-    function seizeAssetAndSell(
-        address nftContractAddress,
-        uint256 nftId,
-        address sellAddress,
-        bytes calldata sellCallData,
-        uint256 minAmount
-    ) external;
 
     /// @notice Returns the owner of a given nft if there is a current loan on the NFT, otherwise zero.
     /// @param nftContractAddress The address of the given nft contract
