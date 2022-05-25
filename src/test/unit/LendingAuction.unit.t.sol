@@ -129,6 +129,12 @@ contract LendingAuctionUnitTest is
         return signature;
     }
 
+    // LENDER_1 makes an offer on mockNft #1, owned by address(this)
+    // address(this) executes loan
+    // LENDER_2 makes a better offer with a greater amount offered
+    // LENDER_2 initiates refinance
+    // Useful for testing drawLoanAmount functionality
+    // which requires a lender-initiated refinance for a greater amount
     function setupRefinance() public {
         hevm.startPrank(LENDER_1);
         usdcToken.mint(address(LENDER_1), 6 ether);
