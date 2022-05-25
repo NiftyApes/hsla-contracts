@@ -6676,8 +6676,8 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        usdcToken.mint(address(this), 1001 ether);
-        usdcToken.approve(address(liquidityProviders), 1000 ether);
+        usdcToken.mint(address(this), 10 ether);
+        usdcToken.approve(address(liquidityProviders), 10 ether);
 
         lendingAuction.repayLoan(address(mockNft), 1);
 
