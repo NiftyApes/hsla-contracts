@@ -492,6 +492,7 @@ contract NiftyApesLending is
             updateInterest(loanAuction);
 
             loanAuction.amountDrawn += SafeCastUpgradeable.toUint128(slashedDrawAmount);
+            loanAuction.amount = loanAuction.amountDrawn;
 
             uint256 cTokensBurnt = ILiquidity(liquidityContractAddress).burnCErc20(
                 loanAuction.asset,
