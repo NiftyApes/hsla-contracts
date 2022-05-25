@@ -48,8 +48,6 @@ contract NiftyApesLiquidity is
     /// @inheritdoc ILiquidity
     mapping(address => uint256) public override maxBalanceByCAsset;
 
-    address public offersContractAddress;
-
     address public lendingContractAddress;
 
     /// @inheritdoc ILiquidity
@@ -276,15 +274,6 @@ contract NiftyApesLiquidity is
             newLendingContractAddress
         );
         lendingContractAddress = newLendingContractAddress;
-    }
-
-    /// @inheritdoc ILiquidityAdmin
-    function updateOffersContractAddress(address newOffersContractAddress) external onlyOwner {
-        emit LiquidityXOffersContractAddressUpdated(
-            offersContractAddress,
-            newOffersContractAddress
-        );
-        offersContractAddress = newOffersContractAddress;
     }
 
     function requireEthTransferable() internal view {

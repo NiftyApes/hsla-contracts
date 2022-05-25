@@ -68,7 +68,6 @@ contract LendingAuctionUnitTest is
         lendingAuction.updateLiquidityContractAddress(address(liquidityProviders));
 
         liquidityProviders.updateLendingContractAddress(address(lendingAuction));
-        liquidityProviders.updateOffersContractAddress(address(offersContract));
 
         offersContract.updateLendingContractAddress(address(lendingAuction));
         offersContract.updateLiquidityContractAddress(address(liquidityProviders));
