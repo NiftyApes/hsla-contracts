@@ -1050,7 +1050,7 @@ contract LendingAuctionUnitTest is
         usdcToken.mint(SIGNER_1, 6);
         usdcToken.approve(address(lendingAuction), 6);
 
-        lendingAuction.supplyErc20(address(usdcToken), 6);
+        liquidityProviders.supplyErc20(address(usdcToken), 6);
 
         Offer memory offer = Offer({
             creator: SIGNER_1,
@@ -1074,7 +1074,7 @@ contract LendingAuctionUnitTest is
 
         hevm.expectRevert("signer");
 
-        lendingAuction.withdrawOfferSignature(offer, signature);
+        offersContract.withdrawOfferSignature(offer, signature);
     }
 
     function testCannotExecuteLoanByBorrowerSignature_wrong_signer() public {
@@ -5494,7 +5494,7 @@ contract LendingAuctionUnitTest is
         usdcToken.mint(address(LENDER_1), 6);
         usdcToken.approve(address(lendingAuction), 6);
 
-        lendingAuction.supplyErc20(address(usdcToken), 6);
+        liquidityProviders.supplyErc20(address(usdcToken), 6);
 
         Offer memory offer = Offer({
             creator: LENDER_1,
@@ -5510,11 +5510,11 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 1)
         });
 
-        lendingAuction.createOffer(offer);
+        offersContract.createOffer(offer);
 
         hevm.stopPrank();
 
-        bytes32 offerHash = lendingAuction.getOfferHash(offer);
+        bytes32 offerHash = offersContract.getOfferHash(offer);
 
         lendingAuction.executeLoanByBorrower(
             offer.nftContractAddress,
@@ -6479,7 +6479,7 @@ contract LendingAuctionUnitTest is
         usdcToken.mint(address(LENDER_1), 6 ether);
         usdcToken.approve(address(lendingAuction), 6 ether);
 
-        lendingAuction.supplyErc20(address(usdcToken), 6 ether);
+        liquidityProviders.supplyErc20(address(usdcToken), 6 ether);
 
         Offer memory offer = Offer({
             creator: LENDER_1,
@@ -6495,11 +6495,11 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 1)
         });
 
-        lendingAuction.createOffer(offer);
+        offersContract.createOffer(offer);
 
         hevm.stopPrank();
 
-        bytes32 offerHash = lendingAuction.getOfferHash(offer);
+        bytes32 offerHash = offersContract.getOfferHash(offer);
 
         lendingAuction.executeLoanByBorrower(
             offer.nftContractAddress,
@@ -6512,7 +6512,7 @@ contract LendingAuctionUnitTest is
         usdcToken.mint(address(LENDER_2), 7 ether);
         usdcToken.approve(address(lendingAuction), 7 ether);
 
-        lendingAuction.supplyErc20(address(usdcToken), 7 ether);
+        liquidityProviders.supplyErc20(address(usdcToken), 7 ether);
 
         hevm.warp(block.timestamp + 12 hours);
 
@@ -6552,7 +6552,7 @@ contract LendingAuctionUnitTest is
         usdcToken.mint(address(LENDER_1), 6 ether);
         usdcToken.approve(address(lendingAuction), 6 ether);
 
-        lendingAuction.supplyErc20(address(usdcToken), 6 ether);
+        liquidityProviders.supplyErc20(address(usdcToken), 6 ether);
 
         Offer memory offer = Offer({
             creator: LENDER_1,
@@ -6568,11 +6568,11 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 1)
         });
 
-        lendingAuction.createOffer(offer);
+        offersContract.createOffer(offer);
 
         hevm.stopPrank();
 
-        bytes32 offerHash = lendingAuction.getOfferHash(offer);
+        bytes32 offerHash = offersContract.getOfferHash(offer);
 
         lendingAuction.executeLoanByBorrower(
             offer.nftContractAddress,
@@ -6585,7 +6585,7 @@ contract LendingAuctionUnitTest is
         usdcToken.mint(address(LENDER_2), 7 ether);
         usdcToken.approve(address(lendingAuction), 7 ether);
 
-        lendingAuction.supplyErc20(address(usdcToken), 7 ether);
+        liquidityProviders.supplyErc20(address(usdcToken), 7 ether);
 
         hevm.warp(block.timestamp + 12 hours);
 
@@ -6621,7 +6621,7 @@ contract LendingAuctionUnitTest is
         usdcToken.mint(address(LENDER_1), 6 ether);
         usdcToken.approve(address(lendingAuction), 6 ether);
 
-        lendingAuction.supplyErc20(address(usdcToken), 6 ether);
+        liquidityProviders.supplyErc20(address(usdcToken), 6 ether);
 
         Offer memory offer = Offer({
             creator: LENDER_1,
@@ -6637,11 +6637,11 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 1)
         });
 
-        lendingAuction.createOffer(offer);
+        offersContract.createOffer(offer);
 
         hevm.stopPrank();
 
-        bytes32 offerHash = lendingAuction.getOfferHash(offer);
+        bytes32 offerHash = offersContract.getOfferHash(offer);
 
         lendingAuction.executeLoanByBorrower(
             offer.nftContractAddress,
@@ -6654,7 +6654,7 @@ contract LendingAuctionUnitTest is
         usdcToken.mint(address(LENDER_2), 7 ether);
         usdcToken.approve(address(lendingAuction), 7 ether);
 
-        lendingAuction.supplyErc20(address(usdcToken), 7 ether);
+        liquidityProviders.supplyErc20(address(usdcToken), 7 ether);
 
         hevm.warp(block.timestamp + 12 hours);
 
@@ -6693,7 +6693,7 @@ contract LendingAuctionUnitTest is
         usdcToken.mint(address(LENDER_1), 6 ether);
         usdcToken.approve(address(lendingAuction), 6 ether);
 
-        lendingAuction.supplyErc20(address(usdcToken), 6 ether);
+        liquidityProviders.supplyErc20(address(usdcToken), 6 ether);
 
         Offer memory offer = Offer({
             creator: LENDER_1,
@@ -6709,11 +6709,11 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 1)
         });
 
-        lendingAuction.createOffer(offer);
+        offersContract.createOffer(offer);
 
         hevm.stopPrank();
 
-        bytes32 offerHash = lendingAuction.getOfferHash(offer);
+        bytes32 offerHash = offersContract.getOfferHash(offer);
 
         lendingAuction.executeLoanByBorrower(
             offer.nftContractAddress,
@@ -6726,7 +6726,7 @@ contract LendingAuctionUnitTest is
         usdcToken.mint(address(LENDER_2), 7 ether);
         usdcToken.approve(address(lendingAuction), 7 ether);
 
-        lendingAuction.supplyErc20(address(usdcToken), 7 ether);
+        liquidityProviders.supplyErc20(address(usdcToken), 7 ether);
 
         hevm.warp(block.timestamp + 12 hours);
 
@@ -6760,7 +6760,7 @@ contract LendingAuctionUnitTest is
         usdcToken.mint(address(LENDER_1), 6 ether);
         usdcToken.approve(address(lendingAuction), 6 ether);
 
-        lendingAuction.supplyErc20(address(usdcToken), 6 ether);
+        liquidityProviders.supplyErc20(address(usdcToken), 6 ether);
 
         Offer memory offer = Offer({
             creator: LENDER_1,
@@ -6776,11 +6776,11 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 1)
         });
 
-        lendingAuction.createOffer(offer);
+        offersContract.createOffer(offer);
 
         hevm.stopPrank();
 
-        bytes32 offerHash = lendingAuction.getOfferHash(offer);
+        bytes32 offerHash = offersContract.getOfferHash(offer);
 
         lendingAuction.executeLoanByBorrower(
             offer.nftContractAddress,
@@ -6793,7 +6793,7 @@ contract LendingAuctionUnitTest is
         usdcToken.mint(address(LENDER_2), 7 ether);
         usdcToken.approve(address(lendingAuction), 7 ether);
 
-        lendingAuction.supplyErc20(address(usdcToken), 7 ether);
+        liquidityProviders.supplyErc20(address(usdcToken), 7 ether);
 
         hevm.warp(block.timestamp + 12 hours);
 
