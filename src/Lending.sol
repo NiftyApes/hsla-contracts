@@ -330,9 +330,7 @@ contract NiftyApesLending is
         );
 
         // update Loan state
-        if (loanAuction.lenderRefi) {
-            loanAuction.lenderRefi = false;
-        }
+        loanAuction.lenderRefi = false;
         loanAuction.lender = newLender;
         loanAuction.amount = offer.amount;
         loanAuction.interestRatePerSecond = offer.interestRatePerSecond;
@@ -490,9 +488,7 @@ contract NiftyApesLending is
         requireFundsAvailable(loanAuction, drawAmount);
         requireLoanNotExpired(loanAuction);
 
-        if (loanAuction.lenderRefi) {
-            loanAuction.lenderRefi = false;
-        }
+        loanAuction.lenderRefi = false;
 
         uint256 slashedDrawAmount = slashUnsupportedAmount(loanAuction, drawAmount, cAsset);
 
@@ -635,9 +631,7 @@ contract NiftyApesLending is
 
             delete _loanAuctions[rls.nftContractAddress][rls.nftId];
         } else {
-            if (loanAuction.lenderRefi) {
-                loanAuction.lenderRefi = false;
-            }
+            loanAuction.lenderRefi = false;
             loanAuction.amountDrawn -= SafeCastUpgradeable.toUint128(payment);
 
             emit PartialRepayment(
@@ -717,8 +711,13 @@ contract NiftyApesLending is
             );
 
             if (lenderBalance < drawTokens) {
-                // setting lastUpdatedTimestamp to currentTimestamp eliminates profit for lender for the latest period
+                uint256 lenderBalanceUnderlying = ILiquidity(liquidityContractAddress)
+                    .cAssetAmountToAssetAmount(cAsset, lenderBalance);
+                drawAmount = lenderBalanceUnderlying;
+
+                // setting lastUpdatedTimestamp to currentTimestamp eliminates lender profit for the latest period
                 loanAuction.lastUpdatedTimestamp = currentTimestamp();
+                loanAuction.amount = loanAuction.amountDrawn + SafeCastUpgradeable.toUint128(drawAmount);
             }
         }
 
