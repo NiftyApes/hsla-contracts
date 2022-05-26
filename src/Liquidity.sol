@@ -323,9 +323,7 @@ contract NiftyApesLiquidity is
 
     function requireMaxCAssetBalance(address cAsset) internal view {
         uint256 maxCAssetBalance = maxBalanceByCAsset[cAsset];
-        if (maxCAssetBalance != 0) {
             require(maxCAssetBalance >= ICERC20(cAsset).balanceOf(address(this)), "max casset");
-        }
     }
 
     /// @inheritdoc ILiquidity
