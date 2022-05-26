@@ -330,6 +330,7 @@ contract NiftyApesLending is
         );
 
         // update Loan state
+        loanAuction.lenderRefi = false;
         loanAuction.lender = newLender;
         loanAuction.amount = offer.amount;
         loanAuction.interestRatePerSecond = offer.interestRatePerSecond;
@@ -393,6 +394,7 @@ contract NiftyApesLending is
         loanAuction.amount = offer.amount;
         loanAuction.interestRatePerSecond = offer.interestRatePerSecond;
         loanAuction.loanEndTimestamp = loanAuction.loanBeginTimestamp + offer.duration;
+        loanAuction.lenderRefi = true;
 
         if (loanAuction.lender == offer.creator) {
             // If current lender is refinancing the loan they do not need to pay any fees or buy themselves out.
@@ -485,6 +487,8 @@ contract NiftyApesLending is
         requireNftOwner(loanAuction, msg.sender);
         requireFundsAvailable(loanAuction, drawAmount);
         requireLoanNotExpired(loanAuction);
+
+        loanAuction.lenderRefi = false;
 
         uint256 slashedDrawAmount = slashUnsupportedAmount(loanAuction, drawAmount, cAsset);
 
@@ -627,6 +631,7 @@ contract NiftyApesLending is
 
             delete _loanAuctions[rls.nftContractAddress][rls.nftId];
         } else {
+            loanAuction.lenderRefi = false;
             loanAuction.amountDrawn -= SafeCastUpgradeable.toUint128(payment);
 
             emit PartialRepayment(
@@ -695,25 +700,27 @@ contract NiftyApesLending is
         uint256 drawAmount,
         address cAsset
     ) internal returns (uint256) {
-        uint256 lenderBalance = ILiquidity(liquidityContractAddress).getCAssetBalance(
-            loanAuction.lender,
-            cAsset
-        );
-        uint256 drawTokens = ILiquidity(liquidityContractAddress).assetAmountToCAssetAmount(
-            loanAuction.asset,
-            drawAmount
-        );
+        if (loanAuction.lenderRefi) {
+            uint256 lenderBalance = ILiquidity(liquidityContractAddress).getCAssetBalance(
+                loanAuction.lender,
+                cAsset
+            );
+            uint256 drawTokens = ILiquidity(liquidityContractAddress).assetAmountToCAssetAmount(
+                loanAuction.asset,
+                drawAmount
+            );
 
-        if (lenderBalance < drawTokens) {
-            uint256 balanceDelta = drawTokens - lenderBalance;
+            if (lenderBalance < drawTokens) {
+                uint256 balanceDelta = drawTokens - lenderBalance;
 
-            uint256 balanceDeltaUnderlying = ILiquidity(liquidityContractAddress)
-                .cAssetAmountToAssetAmount(cAsset, balanceDelta);
-            loanAuction.amountDrawn -= SafeCastUpgradeable.toUint128(balanceDeltaUnderlying);
+                uint256 balanceDeltaUnderlying = ILiquidity(liquidityContractAddress)
+                    .cAssetAmountToAssetAmount(cAsset, balanceDelta);
+                loanAuction.amountDrawn -= SafeCastUpgradeable.toUint128(balanceDeltaUnderlying);
 
-            uint256 lenderBalanceUnderlying = ILiquidity(liquidityContractAddress)
-                .cAssetAmountToAssetAmount(cAsset, lenderBalance);
-            drawAmount = lenderBalanceUnderlying;
+                uint256 lenderBalanceUnderlying = ILiquidity(liquidityContractAddress)
+                    .cAssetAmountToAssetAmount(cAsset, lenderBalance);
+                drawAmount = lenderBalanceUnderlying;
+            }
         }
 
         return drawAmount;
@@ -830,7 +837,6 @@ contract NiftyApesLending is
             checkSufficientInterestAccumulated(getLoanAuctionInternal(nftContractAddress, nftId));
     }
 
-    // TODO (captnseagraves) create public function that enables lenders to call check
     function checkSufficientInterestAccumulated(LoanAuction storage loanAuction)
         internal
         view
