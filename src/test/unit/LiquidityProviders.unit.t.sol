@@ -38,6 +38,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         cUSDCToken = new CERC20Mock();
         cUSDCToken.initialize(usdcToken);
         liquidityProviders.setCAssetAddress(address(usdcToken), address(cUSDCToken));
+        liquidityProviders.setMaxCAssetBalance(address(usdcToken), 2**256-1);
 
         cEtherToken = new CEtherMock();
         cEtherToken.initialize();
@@ -389,11 +390,13 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         liquidityProviders.supplyEth{ value: 1 }();
     }
 
-    function testSupplyEth20_supply_eth() public {
+    function testSupplyEth_supply_eth() public {
         liquidityProviders.setCAssetAddress(
             address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
             address(cEtherToken)
         );
+        liquidityProviders.setMaxCAssetBalance(address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE), 2**256-1);
+        
         hevm.deal(address(liquidityProviders), 0);
 
         uint256 startingBalance = address(this).balance;
@@ -413,11 +416,12 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         assertEq(cEtherToken.balanceOf(address(liquidityProviders)), 1 ether);
     }
 
-    function testSupplyEth20_with_event() public {
+    function testSupplyEth_with_event() public {
         liquidityProviders.setCAssetAddress(
             address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
             address(cEtherToken)
         );
+        liquidityProviders.setMaxCAssetBalance(address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE), 2**256-1);
 
         hevm.expectEmit(true, false, false, true);
 
@@ -444,11 +448,13 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         liquidityProviders.supplyEth{ value: 1 }();
     }
 
-    function testSupplyEth20_different_exchange_rate() public {
+    function testSupplyEth_different_exchange_rate() public {
         liquidityProviders.setCAssetAddress(
             address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
             address(cEtherToken)
         );
+        liquidityProviders.setMaxCAssetBalance(address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE), 2**256-1);
+
         cEtherToken.setExchangeRateCurrent(2);
 
         uint256 cTokensMinted = liquidityProviders.supplyEth{ value: 1 }();
@@ -467,6 +473,8 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
             address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
             address(cEtherToken)
         );
+        liquidityProviders.setMaxCAssetBalance(address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE), 2**256-1);
+
         cEtherToken.setMintFail(true);
 
         hevm.expectRevert("cToken mint");
@@ -479,6 +487,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
             address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
             address(cEtherToken)
         );
+        liquidityProviders.setMaxCAssetBalance(address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE), 2**256-1);
 
         hevm.expectRevert("sanctioned address");
 
@@ -497,6 +506,8 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
             address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
             address(cEtherToken)
         );
+        liquidityProviders.setMaxCAssetBalance(address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE), 2**256-1);
+
         hevm.deal(address(liquidityProviders), 0);
 
         uint256 startingBalance = address(this).balance;
@@ -519,6 +530,8 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
             address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
             address(cEtherToken)
         );
+        liquidityProviders.setMaxCAssetBalance(address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE), 2**256-1);
+
         liquidityProviders.supplyEth{ value: 1 }();
 
         hevm.expectEmit(true, false, false, true);
@@ -533,6 +546,8 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
             address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
             address(cEtherToken)
         );
+        liquidityProviders.setMaxCAssetBalance(address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE), 2**256-1);
+
         liquidityProviders.supplyEth{ value: 1 }();
 
         cEtherToken.setRedeemUnderlyingFail(true);
@@ -547,6 +562,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
             address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
             address(cEtherToken)
         );
+        liquidityProviders.setMaxCAssetBalance(address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE), 2**256-1);
 
         liquidityProviders.supplyEth{ value: 1 }();
 
@@ -570,6 +586,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
             address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
             address(cEtherToken)
         );
+        liquidityProviders.setMaxCAssetBalance(address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE), 2**256-1);
 
         liquidityProviders.supplyEth{ value: 1 }();
 
