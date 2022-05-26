@@ -21,7 +21,7 @@ import "./interfaces/sanctions/SanctionsList.sol";
 import "./lib/ECDSABridge.sol";
 import "./lib/Math.sol";
 
-// import "./test/Console.sol";
+import "./test/Console.sol";
 
 /// @title Implemention of the INiftyApes interface
 contract NiftyApesLending is
@@ -492,6 +492,10 @@ contract NiftyApesLending is
             updateInterest(loanAuction);
 
             loanAuction.amountDrawn += SafeCastUpgradeable.toUint128(slashedDrawAmount);
+
+            uint256 interestRate = (MAX_BPS * (loanAuction.loanEndTimestamp - loanAuction.loanBeginTimestamp) * loanAuction.interestRatePerSecond) / loanAuction.amountDrawn;
+
+            console.log("interestRate", interestRate);
 
             uint256 cTokensBurnt = ILiquidity(liquidityContractAddress).burnCErc20(
                 loanAuction.asset,

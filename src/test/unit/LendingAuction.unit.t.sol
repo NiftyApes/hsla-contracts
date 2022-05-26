@@ -6373,6 +6373,114 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.amountDrawn, 0);
     }
 
+        function testDrawLoanAmount_works() public {
+        hevm.startPrank(LENDER_1);
+        usdcToken.mint(address(LENDER_1), 6 ether);
+        usdcToken.approve(address(liquidityProviders), 6 ether);
+
+        liquidityProviders.supplyErc20(address(usdcToken), 6 ether);
+
+        Offer memory offer = Offer({
+            creator: LENDER_1,
+            nftContractAddress: address(mockNft),
+            interestRatePerSecond: 694444444444,
+            fixedTerms: false,
+            floorTerm: true,
+            lenderOffer: true,
+            nftId: 1,
+            asset: address(usdcToken),
+            amount: 6 ether,
+            duration: 1 days,
+            expiration: uint32(block.timestamp + 1)
+        });
+
+        offersContract.createOffer(offer);
+
+        hevm.stopPrank();
+
+        bytes32 offerHash = offersContract.getOfferHash(offer);
+
+        lendingAuction.executeLoanByBorrower(
+            offer.nftContractAddress,
+            offer.nftId,
+            offerHash,
+            offer.floorTerm
+        );
+
+        hevm.startPrank(LENDER_2);
+        usdcToken.mint(address(LENDER_2), 10 ether);
+        usdcToken.approve(address(liquidityProviders), 10 ether);
+
+        liquidityProviders.supplyErc20(address(usdcToken), 10 ether);
+
+        hevm.warp(block.timestamp + 6 hours + 10 minutes);
+
+        Offer memory offer2 = Offer({
+            creator: LENDER_2,
+            nftContractAddress: address(mockNft),
+            interestRatePerSecond: 694444444440,
+            fixedTerms: false,
+            floorTerm: false,
+            lenderOffer: true,
+            nftId: 1,
+            asset: address(usdcToken),
+            amount: 7 ether,
+            duration: 3 days,
+            expiration: uint32(block.timestamp + 200)
+        });
+
+        lendingAuction.refinanceByLender(offer2);
+
+        hevm.stopPrank();
+
+        lendingAuction.drawLoanAmount(offer2.nftContractAddress, offer2.nftId, 0.5 ether);
+
+        assertEq(usdcToken.balanceOf(address(this)), 6.5 ether);
+        assertEq(cUSDCToken.balanceOf(address(this)), 0);
+
+        assertEq(usdcToken.balanceOf(address(LENDER_1)), 0);
+        assertEq(cUSDCToken.balanceOf(address(LENDER_1)), 0);
+
+        assertEq(usdcToken.balanceOf(address(LENDER_2)), 0);
+        assertEq(cUSDCToken.balanceOf(address(LENDER_2)), 0);
+
+        assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
+        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 9.5 ether * 10**18);
+
+        assertEq(mockNft.ownerOf(1), address(lendingAuction));
+        assertEq(lendingAuction.ownerOf(address(mockNft), 1), address(this));
+
+        assertEq(liquidityProviders.getCAssetBalance(address(this), address(cUSDCToken)), 0);
+        assertEq(
+            liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken)),
+            6045416666666656800 ether
+        );
+        assertEq(
+            liquidityProviders.getCAssetBalance(LENDER_2, address(cUSDCToken)),
+            3454583333333343200 ether
+        );
+
+        assertEq(
+            liquidityProviders.getCAssetBalance(OWNER, address(cUSDCToken)),
+            0 ether // premium at 0 so no balance expected
+        );
+
+        LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
+
+        assertEq(loanAuction.nftOwner, address(this));
+        assertEq(loanAuction.lender, LENDER_2);
+        assertEq(loanAuction.asset, address(usdcToken));
+        assertEq(loanAuction.interestRatePerSecond, 694444444440);
+        assertTrue(!loanAuction.fixedTerms);
+
+        assertEq(loanAuction.amount, 7 ether);
+        assertEq(loanAuction.loanEndTimestamp, loanAuction.loanBeginTimestamp + 3 days);
+        assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
+        assertEq(loanAuction.accumulatedLenderInterest, 15416666666656800);
+        assertEq(loanAuction.accumulatedProtocolInterest, 0);
+        assertEq(loanAuction.amountDrawn, 6500000000000000000);
+    }
+
     // TODO(dankurka): Tests missing for drawAmount
 
     // TODO(dankurka): Missing test for withdrawing someone elses signed offer
