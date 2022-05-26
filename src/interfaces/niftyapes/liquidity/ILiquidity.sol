@@ -40,7 +40,7 @@ interface ILiquidity is ILiquidityAdmin, ILiquidityEvents, ILiquidityStructs {
     ///         This method returns compound tokens directly to the user without returning the underlying
     /// @param cAsset The address of the compund ERC20 token
     /// @param amount The number of tokens to withdraw
-    function withdrawCErc20(address cAsset, uint256 amount) external;
+    function withdrawCErc20(address cAsset, uint256 amount) external returns (uint256);
 
     /// @notice Supply Eth to NiftyApes.
     ///         Eth token is supplied to compound and users will be earning interest

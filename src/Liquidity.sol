@@ -156,7 +156,7 @@ contract NiftyApesLiquidity is
         IERC20Upgradeable underlying = IERC20Upgradeable(asset);
 
         if (msg.sender == owner()) {
-            uint256 cTokensBurnt = ownerWithdrawErc20(asset, cAsset);
+            uint256 cTokensBurnt = ownerWithdrawUnderlying(asset, cAsset);
             return cTokensBurnt;
         } else {
             uint256 cTokensBurnt = _burnCErc20(asset, tokenAmount);
@@ -176,13 +176,14 @@ contract NiftyApesLiquidity is
         external
         whenNotPaused
         nonReentrant
+        returns (uint256)
     {
         // Making sure a mapping for cAsset exists
         getAsset(cAsset);
         IERC20Upgradeable cToken = IERC20Upgradeable(cAsset);
 
         if (msg.sender == owner()) {
-            uint256 cTokensBurnt = ownerWithdrawCErc20(cAsset);
+            uint256 cTokensBurnt = ownerWithdrawCToken(cAsset);
             return cTokensBurnt;
         } else {
             _withdrawCBalance(msg.sender, cAsset, cTokenAmount);
@@ -190,6 +191,8 @@ contract NiftyApesLiquidity is
             cToken.safeTransfer(msg.sender, cTokenAmount);
 
             emit CErc20Withdrawn(msg.sender, cAsset, cTokenAmount);
+
+            return cTokenAmount;
         }
     }
 
@@ -213,20 +216,24 @@ contract NiftyApesLiquidity is
     /// @inheritdoc ILiquidity
     function withdrawEth(uint256 amount) external whenNotPaused nonReentrant returns (uint256) {
         address cAsset = getCAsset(ETH_ADDRESS);
+        
+        if (msg.sender == owner()) {
+            uint256 cTokensBurnt = ownerWithdrawUnderlying(ETH_ADDRESS, cAsset);
+            return cTokensBurnt;
+        } else {
+            uint256 cTokensBurnt = _burnCErc20(ETH_ADDRESS, amount);
 
-        uint256 cTokensBurnt = _burnCErc20(ETH_ADDRESS, amount);
+            _withdrawCBalance(msg.sender, cAsset, cTokensBurnt);
 
-        _withdrawCBalance(msg.sender, cAsset, cTokensBurnt);
+            payable(msg.sender).sendValue(amount);
 
-        payable(msg.sender).sendValue(amount);
+            emit EthWithdrawn(msg.sender, amount, cTokensBurnt);
 
-        emit EthWithdrawn(msg.sender, amount, cTokensBurnt);
-
-        return cTokensBurnt;
+            return cTokensBurnt;
+        }
     }
 
-    function ownerWithdrawErc20(address asset, address cAsset) internal returns (uint256 cTokensBurnt) {
-        IERC20Upgradeable underlying = IERC20Upgradeable(asset);
+    function ownerWithdrawUnderlying(address asset, address cAsset) internal returns (uint256 cTokensBurnt) {
         uint256 ownerBalance = getCAssetBalance(owner(), cAsset);
 
         uint256 ownerBalanceUnderlying = cAssetAmountToAssetAmount(cAsset, ownerBalance);
@@ -243,18 +250,20 @@ contract NiftyApesLiquidity is
 
         _withdrawCBalance(owner(), cAsset, cTokensBurnt);
 
-        underlying.safeTransfer(owner(), ownerAmountUnderlying);
+        sendValue(asset, ownerAmountUnderlying, owner());
 
-        underlying.safeTransfer(regenCollectiveAddress, regenAmountUnderlying);
+        sendValue(asset, regenAmountUnderlying, regenCollectiveAddress);
 
         emit PercentForRegen(regenCollectiveAddress, asset, regenAmountUnderlying, bpsForRegen);
 
-        emit Erc20Withdrawn(owner(), asset, ownerAmountUnderlying, ownerBalanceMinusRegen);
+        if(asset == ETH_ADDRESS) {
+            emit EthWithdrawn(owner(), ownerAmountUnderlying, ownerBalanceMinusRegen);
+        } else {
+            emit Erc20Withdrawn(owner(), asset, ownerAmountUnderlying, ownerBalanceMinusRegen);
+        }
     }
 
-    function ownerWithdrawCErc20(address cAsset) internal returns (uint256 cTokensBurnt) {
-        IERC20Upgradeable cToken = IERC20Upgradeable(cAsset);   
-
+    function ownerWithdrawCToken(address cAsset) internal returns (uint256) {
         uint256 ownerBalance = getCAssetBalance(owner(), cAsset);
 
         uint256 bpsForRegen = (ownerBalance * regenCollectiveBpsOfRevenue) / 10_000;
@@ -263,13 +272,15 @@ contract NiftyApesLiquidity is
 
         _withdrawCBalance(owner(), cAsset, ownerBalance);
 
-        cToken.safeTransfer(owner(), ownerBalance);
+        sendValue(cAsset, ownerBalanceMinusRegen, owner());
 
-        cToken.safeTransfer(regenCollectiveAddress, bpsForRegen);
+        sendValue(cAsset, bpsForRegen, regenCollectiveAddress);
 
         emit PercentForRegen(regenCollectiveAddress, cAsset, bpsForRegen, bpsForRegen);
 
         emit CErc20Withdrawn(owner(), cAsset, ownerBalanceMinusRegen);
+
+        return ownerBalance;
     }
 
     /// @inheritdoc ILiquidityAdmin
