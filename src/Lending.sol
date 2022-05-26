@@ -717,8 +717,13 @@ contract NiftyApesLending is
             );
 
             if (lenderBalance < drawTokens) {
-                // setting lastUpdatedTimestamp to currentTimestamp eliminates profit for lender for the latest period
+                uint256 lenderBalanceUnderlying = ILiquidity(liquidityContractAddress)
+                    .cAssetAmountToAssetAmount(cAsset, lenderBalance);
+                drawAmount = lenderBalanceUnderlying;
+
+                // setting lastUpdatedTimestamp to currentTimestamp eliminates lender profit for the latest period
                 loanAuction.lastUpdatedTimestamp = currentTimestamp();
+                loanAuction.amount = loanAuction.amountDrawn + SafeCastUpgradeable.toUint128(drawAmount);
             }
         }
 
