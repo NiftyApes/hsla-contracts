@@ -330,7 +330,9 @@ contract NiftyApesLending is
         );
 
         // update Loan state
-        loanAuction.lenderRefi = false;
+        if (loanAuction.lenderRefi) {
+            loanAuction.lenderRefi = false;
+        }
         loanAuction.lender = newLender;
         loanAuction.amount = offer.amount;
         loanAuction.interestRatePerSecond = offer.interestRatePerSecond;
@@ -488,7 +490,9 @@ contract NiftyApesLending is
         requireFundsAvailable(loanAuction, drawAmount);
         requireLoanNotExpired(loanAuction);
 
-        loanAuction.lenderRefi = false;
+        if (loanAuction.lenderRefi) {
+            loanAuction.lenderRefi = false;
+        }
 
         uint256 slashedDrawAmount = slashUnsupportedAmount(loanAuction, drawAmount, cAsset);
 
@@ -631,7 +635,9 @@ contract NiftyApesLending is
 
             delete _loanAuctions[rls.nftContractAddress][rls.nftId];
         } else {
-            loanAuction.lenderRefi = false;
+            if (loanAuction.lenderRefi) {
+                loanAuction.lenderRefi = false;
+            }
             loanAuction.amountDrawn -= SafeCastUpgradeable.toUint128(payment);
 
             emit PartialRepayment(
@@ -711,15 +717,8 @@ contract NiftyApesLending is
             );
 
             if (lenderBalance < drawTokens) {
-                uint256 balanceDelta = drawTokens - lenderBalance;
-
-                uint256 balanceDeltaUnderlying = ILiquidity(liquidityContractAddress)
-                    .cAssetAmountToAssetAmount(cAsset, balanceDelta);
-                loanAuction.amountDrawn -= SafeCastUpgradeable.toUint128(balanceDeltaUnderlying);
-
-                uint256 lenderBalanceUnderlying = ILiquidity(liquidityContractAddress)
-                    .cAssetAmountToAssetAmount(cAsset, lenderBalance);
-                drawAmount = lenderBalanceUnderlying;
+                // setting lastUpdatedTimestamp to currentTimestamp eliminates profit for lender for the latest period
+                loanAuction.lastUpdatedTimestamp = currentTimestamp();
             }
         }
 
