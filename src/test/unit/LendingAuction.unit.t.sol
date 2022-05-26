@@ -80,6 +80,8 @@ contract LendingAuctionUnitTest is
         cUSDCToken = new CERC20Mock();
         cUSDCToken.initialize(usdcToken);
         liquidityProviders.setCAssetAddress(address(usdcToken), address(cUSDCToken));
+        liquidityProviders.setMaxCAssetBalance(address(usdcToken), 2**256-1);
+
 
         cEtherToken = new CEtherMock();
         cEtherToken.initialize();
@@ -87,6 +89,8 @@ contract LendingAuctionUnitTest is
             address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
             address(cEtherToken)
         );
+        liquidityProviders.setMaxCAssetBalance(address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE), 2**256-1);
+
 
         acceptEth = true;
 
