@@ -580,5 +580,26 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         liquidityProviders.withdrawEth(1);
     }
 
+    function testWithdrawEth_regen_collective_event_emits_when_owner() public {
+        usdcToken.mint(address(this), 1);
+        usdcToken.approve(address(liquidityProviders), 1);
+        liquidityProviders.supplyErc20(address(usdcToken), 1);
+
+        hevm.warp(block.timestamp + 1 weeks);
+
+        hevm.expectEmit(true, true, true, true);
+
+        emit PercentForRegen(
+            liquidityProviders.regenCollectiveAddress(),
+            address(usdcToken),
+            0,
+            10000000000000000
+        );
+
+        hevm.startPrank(liquidityProviders.owner());
+
+        liquidityProviders.withdrawErc20(address(usdcToken), 100);
+    }
+
     // TODO(miller): Missing unit tests for max c asset balance
 }
