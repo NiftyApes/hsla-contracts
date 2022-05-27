@@ -21,7 +21,7 @@ import "./interfaces/sanctions/SanctionsList.sol";
 import "./lib/ECDSABridge.sol";
 import "./lib/Math.sol";
 
-// import "./test/Console.sol";
+import "./test/Console.sol";
 
 /// @title Implemention of the INiftyApes interface
 contract NiftyApesLending is
@@ -499,7 +499,18 @@ contract NiftyApesLending is
         if (slashedDrawAmount > 0) {
             updateInterest(loanAuction);
 
+            uint128 currentAmountDrawn = loanAuction.amountDrawn;
             loanAuction.amountDrawn += SafeCastUpgradeable.toUint128(slashedDrawAmount);
+           
+            if (loanAuction.interestRatePerSecond > 0) {
+                uint256 interestPerSecond = currentAmountDrawn / loanAuction.interestRatePerSecond;
+                loanAuction.interestRatePerSecond = SafeCastUpgradeable.toUint96(loanAuction.amountDrawn) / SafeCastUpgradeable.toUint96(interestPerSecond);
+            }
+
+            if (loanAuction.protocolInterestRatePerSecond > 0) {
+                uint256 protocolInterestPerSecond = currentAmountDrawn / loanAuction.protocolInterestRatePerSecond;
+                loanAuction.protocolInterestRatePerSecond = SafeCastUpgradeable.toUint96(loanAuction.amountDrawn) / SafeCastUpgradeable.toUint96(protocolInterestPerSecond);
+            }           
 
             uint256 cTokensBurnt = ILiquidity(liquidityContractAddress).burnCErc20(
                 loanAuction.asset,
@@ -765,7 +776,7 @@ contract NiftyApesLending is
 
     function calculateLenderInterestPerSecond(
         uint128 amount,
-        uint8 interestRateBps,
+        uint96 interestRateBps,
         uint32 duration
     ) public pure returns (uint96) {
         return
