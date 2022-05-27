@@ -499,10 +499,18 @@ contract NiftyApesLending is
         if (slashedDrawAmount > 0) {
             updateInterest(loanAuction);
 
-            uint256 interestPerSecond = loanAuction.amountDrawn / loanAuction.interestRatePerSecond;
-
+            uint128 currentAmountDrawn = loanAuction.amountDrawn;
             loanAuction.amountDrawn += SafeCastUpgradeable.toUint128(slashedDrawAmount);
-            loanAuction.interestRatePerSecond = SafeCastUpgradeable.toUint96(loanAuction.amountDrawn) / SafeCastUpgradeable.toUint96(interestPerSecond);
+           
+            if (loanAuction.interestRatePerSecond > 0) {
+                uint256 interestPerSecond = currentAmountDrawn / loanAuction.interestRatePerSecond;
+                loanAuction.interestRatePerSecond = SafeCastUpgradeable.toUint96(loanAuction.amountDrawn) / SafeCastUpgradeable.toUint96(interestPerSecond);
+            }
+
+            if (loanAuction.protocolInterestRatePerSecond > 0) {
+                uint256 protocolInterestPerSecond = currentAmountDrawn / loanAuction.protocolInterestRatePerSecond;
+                loanAuction.protocolInterestRatePerSecond = SafeCastUpgradeable.toUint96(loanAuction.amountDrawn) / SafeCastUpgradeable.toUint96(protocolInterestPerSecond);
+            }           
 
             uint256 cTokensBurnt = ILiquidity(liquidityContractAddress).burnCErc20(
                 loanAuction.asset,
