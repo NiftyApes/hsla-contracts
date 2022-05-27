@@ -179,7 +179,7 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     function checkSufficientInterestAccumulated(address nftContractAddress, uint256 nftId)
         external
         view
-        returns (bool);
+        returns (bool, uint256, uint96);
 
     /// @notice Returns whether interest has accumulated greater than the gas griefing premium requirement
     /// @param nftContractAddress The address of the NFT collection

@@ -382,7 +382,7 @@ contract NiftyApesLending is
 
         address cAsset = ILiquidity(liquidityContractAddress).getCAsset(offer.asset);
 
-        bool sufficientInterest = checkSufficientInterestAccumulated(loanAuction);
+        (bool sufficientInterest, uint256 lenderInterest, uint96 interestThreshold) = checkSufficientInterestAccumulated(loanAuction);
         bool sufficientTerms = checkSufficientTerms(
             loanAuction,
             offer.amount,
@@ -415,10 +415,11 @@ contract NiftyApesLending is
             // calculate interest earned
             uint256 interestAndPremiumOwedToCurrentLender = loanAuction.accumulatedLenderInterest +
                 ((loanAuction.amountDrawn * refinancePremiumLenderBps) / MAX_BPS);
-
             uint256 protocolPremium = 0;
+
             if (!sufficientInterest) {
-                protocolPremium += (loanAuction.amountDrawn * gasGriefingPremiumBps) / MAX_BPS;
+                interestAndPremiumOwedToCurrentLender += interestThreshold - lenderInterest;
+                protocolPremium += lenderInterest;
             }
             if (!sufficientTerms) {
                 protocolPremium += (loanAuction.amountDrawn * termGriefingPremiumBps) / MAX_BPS;
@@ -857,7 +858,7 @@ contract NiftyApesLending is
     function checkSufficientInterestAccumulated(address nftContractAddress, uint256 nftId)
         public
         view
-        returns (bool)
+        returns (bool, uint256, uint96)
     {
         return
             checkSufficientInterestAccumulated(getLoanAuctionInternal(nftContractAddress, nftId));
@@ -866,15 +867,15 @@ contract NiftyApesLending is
     function checkSufficientInterestAccumulated(LoanAuction storage loanAuction)
         internal
         view
-        returns (bool)
+        returns (bool, uint256, uint96)
     {
         (uint256 lenderInterest, ) = calculateInterestAccrued(loanAuction);
 
-        uint96 sufficientInterest = (SafeCastUpgradeable.toUint96(loanAuction.amountDrawn) *
+        uint96 interestThreshold = (SafeCastUpgradeable.toUint96(loanAuction.amountDrawn) *
             SafeCastUpgradeable.toUint96(gasGriefingPremiumBps)) /
             SafeCastUpgradeable.toUint96(MAX_BPS);
 
-        return lenderInterest > sufficientInterest ? true : false;
+        return (lenderInterest > interestThreshold ? true : false, lenderInterest, interestThreshold);
     }
 
     /// @inheritdoc ILending
@@ -912,7 +913,7 @@ contract NiftyApesLending is
         // sum improvements
         uint256 improvementSum = amountImprovement + interestImprovement + durationImprovement;
 
-        // check and return if improvements are greate than 25 bps total
+        // check and return if improvements are greater than 25 bps total
         return improvementSum > termGriefingPremiumBps ? true : false;
     }
 
