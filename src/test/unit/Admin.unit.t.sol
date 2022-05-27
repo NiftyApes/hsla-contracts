@@ -102,21 +102,21 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
     function testCannotUpdateRefinancePremiumLenderFee_not_owner() public {
         hevm.startPrank(NOT_ADMIN);
         hevm.expectRevert("Ownable: caller is not the owner");
-        niftyApes.updateRefinancePremiumLenderBps(1);
+        niftyApes.updateOriginationPremiumLenderBps(1);
     }
 
     function testCannotUpdateRefinancePremiumLenderFee_max_fee() public {
         hevm.expectRevert("max fee");
-        niftyApes.updateRefinancePremiumLenderBps(1001);
+        niftyApes.updateOriginationPremiumLenderBps(1001);
     }
 
     function testUpdateRefinancePremiumLenderFee_owner() public {
-        assertEq(niftyApes.refinancePremiumLenderBps(), 50);
+        assertEq(niftyApes.originationPremiumBps(), 50);
         hevm.expectEmit(true, false, false, true);
 
-        emit RefinancePremiumLenderBpsUpdated(50, 1);
-        niftyApes.updateRefinancePremiumLenderBps(1);
-        assertEq(niftyApes.refinancePremiumLenderBps(), 1);
+        emit OriginationPremiumBpsUpdated(50, 1);
+        niftyApes.updateOriginationPremiumLenderBps(1);
+        assertEq(niftyApes.originationPremiumBps(), 1);
     }
 
     function testCannotUpdateRefinancePremiumProtocolFee_not_owner() public {
