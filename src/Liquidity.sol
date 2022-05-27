@@ -250,9 +250,9 @@ contract NiftyApesLiquidity is
 
         _withdrawCBalance(owner(), cAsset, cTokensBurnt);
 
-        sendValue(asset, ownerAmountUnderlying, owner());
+        _sendValue(asset, ownerAmountUnderlying, owner());
 
-        sendValue(asset, regenAmountUnderlying, regenCollectiveAddress);
+        _sendValue(asset, regenAmountUnderlying, regenCollectiveAddress);
 
         emit PercentForRegen(regenCollectiveAddress, asset, regenAmountUnderlying, bpsForRegen);
 
@@ -272,9 +272,9 @@ contract NiftyApesLiquidity is
 
         _withdrawCBalance(owner(), cAsset, ownerBalance);
 
-        sendValue(cAsset, ownerBalanceMinusRegen, owner());
+        _sendValue(cAsset, ownerBalanceMinusRegen, owner());
 
-        sendValue(cAsset, bpsForRegen, regenCollectiveAddress);
+        _sendValue(cAsset, bpsForRegen, regenCollectiveAddress);
 
         emit PercentForRegen(regenCollectiveAddress, cAsset, bpsForRegen, bpsForRegen);
 

@@ -270,7 +270,8 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
     }
 
     function testCannotWithdrawErc20_redeemUnderlyingFails() public {
-        usdcToken.mint(address(this), 1);
+        hevm.startPrank(NOT_ADMIN);
+        usdcToken.mint(NOT_ADMIN, 1);
         usdcToken.approve(address(liquidityProviders), 1);
         liquidityProviders.supplyErc20(address(usdcToken), 1);
 
@@ -308,7 +309,8 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
     }
 
     function testCannotWithdrawErc20_underlying_transfer_fails() public {
-        usdcToken.mint(address(this), 1);
+        hevm.startPrank(NOT_ADMIN);
+        usdcToken.mint(NOT_ADMIN, 1);
         usdcToken.approve(address(liquidityProviders), 1);
         liquidityProviders.supplyErc20(address(usdcToken), 1);
 
@@ -325,36 +327,40 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
     }
 
     function testWithdrawCErc20_works() public {
-        usdcToken.mint(address(this), 1);
+        hevm.startPrank(NOT_ADMIN);
+        usdcToken.mint(NOT_ADMIN, 1);
         usdcToken.approve(address(liquidityProviders), 1);
         liquidityProviders.supplyErc20(address(usdcToken), 1);
 
         liquidityProviders.withdrawCErc20(address(cUSDCToken), 1 ether);
 
-        assertEq(liquidityProviders.getCAssetBalance(address(this), address(cUSDCToken)), 0);
+        assertEq(liquidityProviders.getCAssetBalance(NOT_ADMIN, address(cUSDCToken)), 0);
 
         assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
         assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 0);
 
-        assertEq(cUSDCToken.balanceOf(address(this)), 1 ether);
+        assertEq(cUSDCToken.balanceOf(NOT_ADMIN), 1 ether);
     }
 
     function testWithdrawCErc20_works_event() public {
-        usdcToken.mint(address(this), 1);
+        hevm.startPrank(NOT_ADMIN);
+        usdcToken.mint(NOT_ADMIN, 1);
         usdcToken.approve(address(liquidityProviders), 1);
         liquidityProviders.supplyErc20(address(usdcToken), 1);
 
         hevm.expectEmit(true, false, false, true);
 
-        emit CErc20Withdrawn(address(this), address(cUSDCToken), 1 ether);
+        emit CErc20Withdrawn(NOT_ADMIN, address(cUSDCToken), 1 ether);
 
         liquidityProviders.withdrawCErc20(address(cUSDCToken), 1 ether);
     }
 
     function testCannotWithdrawCErc20_withdraw_more_than_account_has() public {
-        usdcToken.mint(address(this), 1);
+        hevm.startPrank(NOT_ADMIN);
+        usdcToken.mint(NOT_ADMIN, 1);
         usdcToken.approve(address(liquidityProviders), 1);
         liquidityProviders.supplyErc20(address(usdcToken), 1);
+        hevm.stopPrank();
 
         // deposit some funds from a different address
         hevm.startPrank(
@@ -366,15 +372,14 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         usdcToken.approve(address(liquidityProviders), 1);
         liquidityProviders.supplyErc20(address(usdcToken), 1);
 
-        hevm.stopPrank();
-
         hevm.expectRevert("Insufficient cToken balance");
 
         liquidityProviders.withdrawCErc20(address(cUSDCToken), 2 ether);
     }
 
     function testCannotWithdrawCErc20_transfer_fails() public {
-        usdcToken.mint(address(this), 1);
+        hevm.startPrank(NOT_ADMIN);
+        usdcToken.mint(NOT_ADMIN, 1);
         usdcToken.approve(address(liquidityProviders), 1);
         liquidityProviders.supplyErc20(address(usdcToken), 1);
 
@@ -508,21 +513,24 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         );
         liquidityProviders.setMaxCAssetBalance(address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE), 2**256-1);
 
-        hevm.deal(address(liquidityProviders), 0);
+        hevm.startPrank(NOT_ADMIN);
 
-        uint256 startingBalance = address(this).balance;
+        hevm.deal(address(liquidityProviders), 0);
+        hevm.deal(address(NOT_ADMIN), 1);
+
+        uint256 startingBalance = NOT_ADMIN.balance;
 
         liquidityProviders.supplyEth{ value: 1 }();
 
         uint256 cTokensBurnt = liquidityProviders.withdrawEth(1);
         assertEq(cTokensBurnt, 1 ether);
 
-        assertEq(liquidityProviders.getCAssetBalance(address(this), address(cEtherToken)), 0);
+        assertEq(liquidityProviders.getCAssetBalance(NOT_ADMIN, address(cEtherToken)), 0);
 
         assertEq(address(liquidityProviders).balance, 0);
         assertEq(cEtherToken.balanceOf(address(liquidityProviders)), 0);
 
-        assertEq(address(this).balance, startingBalance);
+        assertEq(NOT_ADMIN.balance, startingBalance);
     }
 
     function testWithdrawEth_works_event() public {
@@ -532,11 +540,14 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         );
         liquidityProviders.setMaxCAssetBalance(address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE), 2**256-1);
 
+        hevm.startPrank(NOT_ADMIN);
+        hevm.deal(address(NOT_ADMIN), 1);
+
         liquidityProviders.supplyEth{ value: 1 }();
 
         hevm.expectEmit(true, false, false, true);
 
-        emit EthWithdrawn(address(this), 1, 1 ether);
+        emit EthWithdrawn(NOT_ADMIN, 1, 1 ether);
 
         liquidityProviders.withdrawEth(1);
     }
@@ -548,6 +559,9 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         );
         liquidityProviders.setMaxCAssetBalance(address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE), 2**256-1);
 
+        hevm.startPrank(NOT_ADMIN);
+        hevm.deal(address(NOT_ADMIN), 1);
+        
         liquidityProviders.supplyEth{ value: 1 }();
 
         cEtherToken.setRedeemUnderlyingFail(true);
@@ -564,7 +578,12 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         );
         liquidityProviders.setMaxCAssetBalance(address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE), 2**256-1);
 
+        hevm.startPrank(NOT_ADMIN);
+        hevm.deal(address(NOT_ADMIN), 1);
+        
         liquidityProviders.supplyEth{ value: 1 }();
+
+        hevm.stopPrank();
 
         // deposit some funds from a different address
         hevm.startPrank(
@@ -574,27 +593,9 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
 
         liquidityProviders.supplyEth{ value: 1 }();
 
-        hevm.stopPrank();
-
         hevm.expectRevert("Insufficient cToken balance");
 
         liquidityProviders.withdrawEth(2);
-    }
-
-    function testCannotWithdrawEth_underlying_transfer_fails() public {
-        liquidityProviders.setCAssetAddress(
-            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
-            address(cEtherToken)
-        );
-        liquidityProviders.setMaxCAssetBalance(address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE), 2**256-1);
-
-        liquidityProviders.supplyEth{ value: 1 }();
-
-        acceptEth = false;
-
-        hevm.expectRevert("Address: unable to send value, recipient may have reverted");
-
-        liquidityProviders.withdrawEth(1);
     }
 
     // TODO(miller): Missing unit tests for max c asset balance
