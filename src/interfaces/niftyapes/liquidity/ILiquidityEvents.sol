@@ -63,7 +63,7 @@ interface ILiquidityEvents {
 
     /// @notice Emmited when the owner withdraws from the protocol.
     /// @param liquidityProvider The address of the liquidity provider removing funds
-    /// @param asset The address of the token being removeid
+    /// @param asset The address of the token being removed
     /// @param tokenAmount The amount of tokens that have been removed from be protocol
     /// @param cTokenAmount The amount of compound tokens that have been removed
     event PercentForRegen(
