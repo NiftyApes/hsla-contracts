@@ -427,10 +427,14 @@ contract NiftyApesLending is
 
             if (!sufficientInterest) {
                 interestAndPremiumOwedToCurrentLender += interestThreshold - lenderInterest;
-                protocolPremium += lenderInterest;
+                protocolPremium += (lenderInterest * gasGriefingProtocolPremiumBps) / MAX_BPS;
             }
             if (!sufficientTerms) {
                 protocolPremium += (loanAuction.amountDrawn * termGriefingPremiumBps) / MAX_BPS;
+            }
+
+            if (block.timestamp > loanAuction.loanEndTimestamp - 1 hours) {
+                protocolPremium += (loanAuction.amountDrawn * defaultRefinancePremiumBps) / MAX_BPS;
             }
 
             // calculate fullRefinanceAmount
