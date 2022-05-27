@@ -61,13 +61,19 @@ contract NiftyApesLending is
     uint96 public protocolInterestBps;
 
     /// @inheritdoc ILending
-    uint16 public refinancePremiumLenderBps;
+    uint16 public originationPremiumBps;
 
     /// @inheritdoc ILending
     uint16 public gasGriefingPremiumBps;
 
     /// @inheritdoc ILending
+    uint16 public gasGriefingProtocolPremiumBps;
+
+    /// @inheritdoc ILending
     uint16 public termGriefingPremiumBps;
+
+    /// @inheritdoc ILending
+    uint16 public defaultRefinancePremiumBps;
 
     /// @dev This empty reserved space is put in place to allow future versions to add new
     /// variables without shifting storage.
@@ -78,9 +84,11 @@ contract NiftyApesLending is
     ///         its state outsize of a constructor.
     function initialize() public initializer {
         protocolInterestBps = 0;
-        refinancePremiumLenderBps = 50;
+        originationPremiumBps = 50;
         gasGriefingPremiumBps = 25;
+        gasGriefingProtocolPremiumBps = 0;
         termGriefingPremiumBps = 25;
+        defaultRefinancePremiumBps = 25;
 
         OwnableUpgradeable.__Ownable_init();
         PausableUpgradeable.__Pausable_init();
@@ -382,7 +390,7 @@ contract NiftyApesLending is
 
         address cAsset = ILiquidity(liquidityContractAddress).getCAsset(offer.asset);
 
-        bool sufficientInterest = checkSufficientInterestAccumulated(loanAuction);
+        (bool sufficientInterest, uint256 lenderInterest, uint96 interestThreshold) = checkSufficientInterestAccumulated(loanAuction);
         bool sufficientTerms = checkSufficientTerms(
             loanAuction,
             offer.amount,
@@ -414,14 +422,19 @@ contract NiftyApesLending is
             //        if a borrower pays back some and then the lender gets refinanced, do they lose money?
             // calculate interest earned
             uint256 interestAndPremiumOwedToCurrentLender = loanAuction.accumulatedLenderInterest +
-                ((loanAuction.amountDrawn * refinancePremiumLenderBps) / MAX_BPS);
-
+                ((loanAuction.amountDrawn * originationPremiumBps) / MAX_BPS);
             uint256 protocolPremium = 0;
+
             if (!sufficientInterest) {
-                protocolPremium += (loanAuction.amountDrawn * gasGriefingPremiumBps) / MAX_BPS;
+                interestAndPremiumOwedToCurrentLender += interestThreshold - lenderInterest;
+                protocolPremium += (lenderInterest * gasGriefingProtocolPremiumBps) / MAX_BPS;
             }
             if (!sufficientTerms) {
                 protocolPremium += (loanAuction.amountDrawn * termGriefingPremiumBps) / MAX_BPS;
+            }
+
+            if (block.timestamp > loanAuction.loanEndTimestamp - 1 hours) {
+                protocolPremium += (loanAuction.amountDrawn * defaultRefinancePremiumBps) / MAX_BPS;
             }
 
             // calculate fullRefinanceAmount
@@ -815,10 +828,10 @@ contract NiftyApesLending is
     }
 
     /// @inheritdoc ILendingAdmin
-    function updateRefinancePremiumLenderBps(uint16 newPremiumLenderBps) external onlyOwner {
-        require(newPremiumLenderBps <= MAX_FEE, "max fee");
-        emit RefinancePremiumLenderBpsUpdated(refinancePremiumLenderBps, newPremiumLenderBps);
-        refinancePremiumLenderBps = newPremiumLenderBps;
+    function updateOriginationPremiumLenderBps(uint16 newOriginationPremiumBps) external onlyOwner {
+        require(newOriginationPremiumBps <= MAX_FEE, "max fee");
+        emit OriginationPremiumBpsUpdated(originationPremiumBps, newOriginationPremiumBps);
+        originationPremiumBps = newOriginationPremiumBps;
     }
 
     /// @inheritdoc ILendingAdmin
@@ -826,6 +839,20 @@ contract NiftyApesLending is
         require(newGasGriefingPremiumBps <= MAX_FEE, "max fee");
         emit GasGriefingPremiumBpsUpdated(gasGriefingPremiumBps, newGasGriefingPremiumBps);
         gasGriefingPremiumBps = newGasGriefingPremiumBps;
+    }
+
+    /// @inheritdoc ILendingAdmin
+    function updateGasGriefingProtocolPremiumBps(uint16 newGasGriefingProtocolPremiumBps) external onlyOwner {
+        require(newGasGriefingProtocolPremiumBps <= MAX_FEE, "max fee");
+        emit GasGriefingProtocolPremiumBpsUpdated(gasGriefingProtocolPremiumBps, newGasGriefingProtocolPremiumBps);
+        gasGriefingProtocolPremiumBps = newGasGriefingProtocolPremiumBps;
+    }
+
+    /// @inheritdoc ILendingAdmin
+    function updateDefaultRefinancePremiumBps(uint16 newDefaultRefinancePremiumBps) external onlyOwner {
+        require(newDefaultRefinancePremiumBps <= MAX_FEE, "max fee");
+        emit DefaultRefinancePremiumBpsUpdated(defaultRefinancePremiumBps, newDefaultRefinancePremiumBps);
+        defaultRefinancePremiumBps = newDefaultRefinancePremiumBps;
     }
 
     /// @inheritdoc ILendingAdmin
@@ -857,7 +884,7 @@ contract NiftyApesLending is
     function checkSufficientInterestAccumulated(address nftContractAddress, uint256 nftId)
         public
         view
-        returns (bool)
+        returns (bool, uint256, uint96)
     {
         return
             checkSufficientInterestAccumulated(getLoanAuctionInternal(nftContractAddress, nftId));
@@ -866,15 +893,15 @@ contract NiftyApesLending is
     function checkSufficientInterestAccumulated(LoanAuction storage loanAuction)
         internal
         view
-        returns (bool)
+        returns (bool, uint256, uint96)
     {
         (uint256 lenderInterest, ) = calculateInterestAccrued(loanAuction);
 
-        uint96 sufficientInterest = (SafeCastUpgradeable.toUint96(loanAuction.amountDrawn) *
+        uint96 interestThreshold = (SafeCastUpgradeable.toUint96(loanAuction.amountDrawn) *
             SafeCastUpgradeable.toUint96(gasGriefingPremiumBps)) /
             SafeCastUpgradeable.toUint96(MAX_BPS);
 
-        return lenderInterest > sufficientInterest ? true : false;
+        return (lenderInterest > interestThreshold ? true : false, lenderInterest, interestThreshold);
     }
 
     /// @inheritdoc ILending
@@ -912,7 +939,7 @@ contract NiftyApesLending is
         // sum improvements
         uint256 improvementSum = amountImprovement + interestImprovement + durationImprovement;
 
-        // check and return if improvements are greate than 25 bps total
+        // check and return if improvements are greater than 25 bps total
         return improvementSum > termGriefingPremiumBps ? true : false;
     }
 
