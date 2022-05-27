@@ -649,8 +649,19 @@ contract NiftyApesLending is
             if (loanAuction.lenderRefi) {
                 loanAuction.lenderRefi = false;
             }
+            uint128 currentAmountDrawn = loanAuction.amountDrawn;
             loanAuction.amountDrawn -= SafeCastUpgradeable.toUint128(payment);
+           
+            if (loanAuction.interestRatePerSecond > 0) {
+                uint256 interestPerSecond = currentAmountDrawn / loanAuction.interestRatePerSecond;
+                loanAuction.interestRatePerSecond = SafeCastUpgradeable.toUint96(loanAuction.amountDrawn) / SafeCastUpgradeable.toUint96(interestPerSecond);
+            }
 
+            if (loanAuction.protocolInterestRatePerSecond > 0) {
+                uint256 protocolInterestPerSecond = currentAmountDrawn / loanAuction.protocolInterestRatePerSecond;
+                loanAuction.protocolInterestRatePerSecond = SafeCastUpgradeable.toUint96(loanAuction.amountDrawn) / SafeCastUpgradeable.toUint96(protocolInterestPerSecond);
+            }           
+            
             emit PartialRepayment(
                 loanAuction.lender,
                 loanAuction.nftOwner,
