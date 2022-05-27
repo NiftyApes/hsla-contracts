@@ -499,11 +499,10 @@ contract NiftyApesLending is
         if (slashedDrawAmount > 0) {
             updateInterest(loanAuction);
 
+            uint256 interestPerSecond = loanAuction.amountDrawn / loanAuction.interestRatePerSecond;
+
             loanAuction.amountDrawn += SafeCastUpgradeable.toUint128(slashedDrawAmount);
-
-            uint256 interestRate = (MAX_BPS * (loanAuction.loanEndTimestamp - loanAuction.loanBeginTimestamp) * loanAuction.interestRatePerSecond) / loanAuction.amountDrawn;
-
-            console.log("interestRate", interestRate);
+            loanAuction.interestRatePerSecond = SafeCastUpgradeable.toUint96(loanAuction.amountDrawn) / SafeCastUpgradeable.toUint96(interestPerSecond);
 
             uint256 cTokensBurnt = ILiquidity(liquidityContractAddress).burnCErc20(
                 loanAuction.asset,
@@ -769,7 +768,7 @@ contract NiftyApesLending is
 
     function calculateLenderInterestPerSecond(
         uint128 amount,
-        uint8 interestRateBps,
+        uint96 interestRateBps,
         uint32 duration
     ) public pure returns (uint96) {
         return
