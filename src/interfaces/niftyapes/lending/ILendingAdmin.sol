@@ -11,7 +11,7 @@ interface ILendingAdmin {
 
     /// @notice Updates the fee for refinancing a loan that the new lender has to pay
     ///         Fees are denomiated in basis points, parts of 10_000
-    function updateRefinancePremiumLenderBps(uint16 newPremiumLenderBps) external;
+    function updateOriginationPremiumLenderBps(uint16 newOriginationPremiumBps) external;
 
     /// @notice Updates the fee for refinancing a loan that is paid to the protocol
     ///         Fees are denomiated in basis points, parts of 10_000
@@ -19,7 +19,15 @@ interface ILendingAdmin {
 
     /// @notice Updates the fee for refinancing a loan that is paid to the protocol
     ///         Fees are denomiated in basis points, parts of 10_000
+    function updateGasGriefingProtocolPremiumBps(uint16 newGasGriefingProtocolPremiumBps) external;
+
+    /// @notice Updates the fee for refinancing a loan that is paid to the protocol
+    ///         Fees are denomiated in basis points, parts of 10_000
     function updateTermGriefingPremiumBps(uint16 newTermGriefingPremiumBps) external;
+    
+    /// @notice Updates the fee for refinancing a loan that is paid to the protocol
+    ///         Fees are denomiated in basis points, parts of 10_000
+    function updateDefaultRefinancePremiumBps(uint16 newDefaultRefinancePremiumBps) external;
 
     /// @notice Updates the associated offers contract address
     function updateOffersContractAddress(address newOffersContractAddress) external;
