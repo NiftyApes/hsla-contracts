@@ -9,23 +9,23 @@ interface ILendingAdmin {
     ///         Interest is charged per second on a loan.
     function updateProtocolInterestBps(uint96 newProtocolInterestBps) external;
 
-    /// @notice Updates the fee for refinancing a loan that the new lender has to pay
+    /// @notice Updates the bps premium for refinancing a loan that the new lender has to pay
     ///         Fees are denomiated in basis points, parts of 10_000
     function updateOriginationPremiumLenderBps(uint16 newOriginationPremiumBps) external;
 
-    /// @notice Updates the fee for refinancing a loan that is paid to the protocol
+    /// @notice Updates the bps premium for refinancing a loan before the current lender has earned the equivalent amount of interest
     ///         Fees are denomiated in basis points, parts of 10_000
     function updateGasGriefingPremiumBps(uint16 newGasGriefingPremiumBps) external;
 
-    /// @notice Updates the fee for refinancing a loan that is paid to the protocol
+    /// @notice Updates the bps premium paid to the protocol for refinancing a loan before the current lender has earned the equivalent amount of interest
     ///         Fees are denomiated in basis points, parts of 10_000
     function updateGasGriefingProtocolPremiumBps(uint16 newGasGriefingProtocolPremiumBps) external;
 
-    /// @notice Updates the fee for refinancing a loan that is paid to the protocol
+    /// @notice Updates the bps premium paid to the protocol for refinancing a loan with terms that do not improve the cumulative terms of the loan by the equivalant basis points 
     ///         Fees are denomiated in basis points, parts of 10_000
     function updateTermGriefingPremiumBps(uint16 newTermGriefingPremiumBps) external;
     
-    /// @notice Updates the fee for refinancing a loan that is paid to the protocol
+    /// @notice Updates the bps premium paid to the protocol for refinancing a loan within 1 hour of default
     ///         Fees are denomiated in basis points, parts of 10_000
     function updateDefaultRefinancePremiumBps(uint16 newDefaultRefinancePremiumBps) external;
 

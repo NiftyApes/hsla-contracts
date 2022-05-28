@@ -13,25 +13,33 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     ///         This fee is the basis points in order to calculate interest per second
     function protocolInterestBps() external view returns (uint96);
 
-    /// @notice Returns the fee for refinancing a loan that the new lender has to pay
+    /// @notice Returns the bps premium for refinancing a loan that the new lender has to pay
+    ///         This premium is to compensate lenders for the work of originating a loan
     ///         Fees are denomiated in basis points, parts of 10_000
     function originationPremiumBps() external view returns (uint16);
 
-    /// @notice Returns the fee for refinancing a loan that is paid to the protocol
+    /// @notice Returns the bps premium for refinancing a loan before the current lender has earned the equivalent amount of interest
+    ///         The amount paid decreases as the current lender earns interest
+    ///         The maximum amount paid is the value of gasGriefingPremiumBps
+    ///         For example, if the value of gasGriefingPremiumBps is 25 and 10 bps of interest has been earned, the premium will be 15 bps paid to the current lender
     ///         Fees are denomiated in basis points, parts of 10_000
     function gasGriefingPremiumBps() external view returns (uint16);
 
-    /// @notice Returns the fee for refinancing a loan that is paid to the protocol
+    /// @notice Returns the bps premium paid to the protocol for refinancing a loan before the current lender has earned the equivalent amount of interest
+    ///         This value represents the percentage of the gas griefing premium taken by the protocol. 
+    ///         For example, if the value of gasGriefingPremiumBps is 25 and 10 bps of interest has been earned, the premium will be 15 bps paid to the current lender
+    ///         This premium is a percentage of the delta from the gasGriefingPremium. In effect, it is an additional percentage paid equivalent to the ineterest earned X the gasGriefingProtocol premium
     ///         Fees are denomiated in basis points, parts of 10_000
     function gasGriefingProtocolPremiumBps() external view returns (uint16);
 
-    /// TODO (captnseagraves) update comment
-    /// @notice Returns the fee for refinancing a loan that is paid to the protocol
+    /// @notice Returns the bps premium paid to the protocol for refinancing a loan with terms that do not improve the cumulative terms of the loan by the equivalant basis points 
+    ///         For example, if termGriefingPremiumBps is 25 then the cumulative improvement of amount, interestRatePerSecond, and duration must be more than 25 bps
+    ///         If the amount is 8 bps better, interestRatePerSecond is 7 bps better, and duration is 10 bps better, then no premium is paid
+    ///         If any one of those terms is worse then a full preimum is paid
     ///         Fees are denomiated in basis points, parts of 10_000
     function termGriefingPremiumBps() external view returns (uint16);
 
-    /// TODO (captnseagraves) update comment
-    /// @notice Returns the fee for refinancing a loan that is paid to the protocol
+    /// @notice Returns the bps premium paid to the protocol for refinancing a loan within 1 hour of default
     ///         Fees are denomiated in basis points, parts of 10_000
     function defaultRefinancePremiumBps() external view returns (uint16);
 
