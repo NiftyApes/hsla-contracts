@@ -25,6 +25,8 @@ interface ILendingStructs {
         address asset;
         // beginning timestamp of loan
         uint32 loanBeginTimestamp;
+        // refinanceByLender was last action, enables slashing
+        bool lenderRefi;
         // SLOT 3 START
         // cumulative interest of varying rates paid by new lenders to buy out the loan auction
         uint128 accumulatedLenderInterest;
