@@ -15,16 +15,25 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
 
     /// @notice Returns the fee for refinancing a loan that the new lender has to pay
     ///         Fees are denomiated in basis points, parts of 10_000
-    function refinancePremiumLenderBps() external view returns (uint16);
+    function originationPremiumBps() external view returns (uint16);
 
     /// @notice Returns the fee for refinancing a loan that is paid to the protocol
     ///         Fees are denomiated in basis points, parts of 10_000
     function gasGriefingPremiumBps() external view returns (uint16);
 
+    /// @notice Returns the fee for refinancing a loan that is paid to the protocol
+    ///         Fees are denomiated in basis points, parts of 10_000
+    function gasGriefingProtocolPremiumBps() external view returns (uint16);
+
     /// TODO (captnseagraves) update comment
     /// @notice Returns the fee for refinancing a loan that is paid to the protocol
     ///         Fees are denomiated in basis points, parts of 10_000
     function termGriefingPremiumBps() external view returns (uint16);
+
+    /// TODO (captnseagraves) update comment
+    /// @notice Returns the fee for refinancing a loan that is paid to the protocol
+    ///         Fees are denomiated in basis points, parts of 10_000
+    function defaultRefinancePremiumBps() external view returns (uint16);
 
     /// @notice Returns a loan aution identified by a given nft.
     /// @param nftContractAddress The address of the NFT collection
@@ -179,7 +188,7 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     function checkSufficientInterestAccumulated(address nftContractAddress, uint256 nftId)
         external
         view
-        returns (bool);
+        returns (bool, uint256, uint96);
 
     /// @notice Returns whether interest has accumulated greater than the gas griefing premium requirement
     /// @param nftContractAddress The address of the NFT collection

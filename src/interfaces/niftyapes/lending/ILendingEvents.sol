@@ -103,9 +103,9 @@ interface ILendingEvents {
     event ProtocolInterestBpsUpdated(uint96 oldProtocolInterestBps, uint96 newProtocolInterestBps);
 
     /// @notice Emmited when the premium that a lender is charged for refinancing a loan is changed
-    /// @param oldPremiumLenderBps The old basis points denominated in parts of 10_000
-    /// @param newPremiumLenderBps The new basis points denominated in parts of 10_000
-    event RefinancePremiumLenderBpsUpdated(uint16 oldPremiumLenderBps, uint16 newPremiumLenderBps);
+    /// @param oldOriginationPremiumBps The old basis points denominated in parts of 10_000
+    /// @param newOriginationPremiumBps The new basis points denominated in parts of 10_000
+    event OriginationPremiumBpsUpdated(uint16 oldOriginationPremiumBps, uint16 newOriginationPremiumBps);
 
     /// @notice Emmited when the premium that a lender is charged for refinancing a loan is changed
     /// @param oldGasGriefingPremiumBps The old basis points denominated in parts of 10_000
@@ -116,11 +116,27 @@ interface ILendingEvents {
     );
 
     /// @notice Emmited when the premium that a lender is charged for refinancing a loan is changed
+    /// @param oldGasGriefingProtocolPremiumBps The old basis points denominated in parts of 10_000
+    /// @param newGasGriefingProtocolPremiumBps The new basis points denominated in parts of 10_000
+    event GasGriefingProtocolPremiumBpsUpdated(
+        uint16 oldGasGriefingProtocolPremiumBps,
+        uint16 newGasGriefingProtocolPremiumBps
+    );
+
+    /// @notice Emmited when the premium that a lender is charged for refinancing a loan is changed
     /// @param oldTermGriefingPremiumBps The old basis points denominated in parts of 10_000
     /// @param newTermGriefingPremiumBps The new basis points denominated in parts of 10_000
     event TermGriefingPremiumBpsUpdated(
         uint16 oldTermGriefingPremiumBps,
         uint16 newTermGriefingPremiumBps
+    );
+
+    /// @notice Emmited when the premium that a lender is charged for refinancing a loan is changed
+    /// @param oldDefaultRefinancePremiumBps The old basis points denominated in parts of 10_000
+    /// @param newDefaultRefinancePremiumBps The new basis points denominated in parts of 10_000
+    event DefaultRefinancePremiumBpsUpdated(
+        uint16 oldDefaultRefinancePremiumBps,
+        uint16 newDefaultRefinancePremiumBps
     );
 
     /// @notice Emmited when the associated offers contract address is changed

@@ -164,7 +164,7 @@ contract LendingAuctionUnitTest is
         Offer memory offer = Offer({
             creator: LENDER_1,
             nftContractAddress: address(mockNft),
-            interestRatePerSecond: 6844444400000,
+            interestRatePerSecond: 694444444444,
             fixedTerms: false,
             floorTerm: true,
             lenderOffer: true,
@@ -199,14 +199,14 @@ contract LendingAuctionUnitTest is
         Offer memory offer2 = Offer({
             creator: LENDER_2,
             nftContractAddress: address(mockNft),
-            interestRatePerSecond: 6844444400000,
+            interestRatePerSecond: 694444444444,
             fixedTerms: false,
             floorTerm: false,
             lenderOffer: true,
             nftId: 1,
             asset: address(usdcToken),
             amount: 7 ether,
-            duration: 1 days,
+            duration: 3 days,
             expiration: uint32(block.timestamp + 1)
         });
 
@@ -6615,7 +6615,7 @@ contract LendingAuctionUnitTest is
     function testCannotDrawLoanAmount_loan_expired() public {
         setupRefinance();
 
-        hevm.warp(block.timestamp + 2 days);
+        hevm.warp(block.timestamp + 3 days);
 
         hevm.expectRevert("loan expired");
 
