@@ -102,12 +102,12 @@ interface ILendingEvents {
     /// @param newProtocolInterestBps The new value denominated in tokens per second
     event ProtocolInterestBpsUpdated(uint96 oldProtocolInterestBps, uint96 newProtocolInterestBps);
 
-    /// @notice Emmited when the premium that a lender is charged for refinancing a loan is changed
+    /// @notice Emmited when the the bps premium for refinancing a loan that the new lender has to pay is changed
     /// @param oldOriginationPremiumBps The old basis points denominated in parts of 10_000
     /// @param newOriginationPremiumBps The new basis points denominated in parts of 10_000
     event OriginationPremiumBpsUpdated(uint16 oldOriginationPremiumBps, uint16 newOriginationPremiumBps);
 
-    /// @notice Emmited when the premium that a lender is charged for refinancing a loan is changed
+    /// @notice Emmited when the bps premium for refinancing a loan before the current lender has earned the equivalent amount of interest has changed
     /// @param oldGasGriefingPremiumBps The old basis points denominated in parts of 10_000
     /// @param newGasGriefingPremiumBps The new basis points denominated in parts of 10_000
     event GasGriefingPremiumBpsUpdated(
@@ -115,7 +115,7 @@ interface ILendingEvents {
         uint16 newGasGriefingPremiumBps
     );
 
-    /// @notice Emmited when the premium that a lender is charged for refinancing a loan is changed
+    /// @notice Emmited when the bps premium paid to the protocol for refinancing a loan before the current lender has earned the equivalent amount of interest is changed
     /// @param oldGasGriefingProtocolPremiumBps The old basis points denominated in parts of 10_000
     /// @param newGasGriefingProtocolPremiumBps The new basis points denominated in parts of 10_000
     event GasGriefingProtocolPremiumBpsUpdated(
@@ -123,7 +123,7 @@ interface ILendingEvents {
         uint16 newGasGriefingProtocolPremiumBps
     );
 
-    /// @notice Emmited when the premium that a lender is charged for refinancing a loan is changed
+    /// @notice Emmited when the bps premium paid to the protocol for refinancing a loan with terms that do not improve the cumulative terms of the loan by the equivalant basis points is changed
     /// @param oldTermGriefingPremiumBps The old basis points denominated in parts of 10_000
     /// @param newTermGriefingPremiumBps The new basis points denominated in parts of 10_000
     event TermGriefingPremiumBpsUpdated(
@@ -131,7 +131,7 @@ interface ILendingEvents {
         uint16 newTermGriefingPremiumBps
     );
 
-    /// @notice Emmited when the premium that a lender is charged for refinancing a loan is changed
+    /// @notice Emmited when the bps premium paid to the protocol for refinancing a loan within 1 hour of default is changed
     /// @param oldDefaultRefinancePremiumBps The old basis points denominated in parts of 10_000
     /// @param newDefaultRefinancePremiumBps The new basis points denominated in parts of 10_000
     event DefaultRefinancePremiumBpsUpdated(
