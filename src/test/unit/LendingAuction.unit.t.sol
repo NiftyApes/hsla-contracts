@@ -51,7 +51,7 @@ contract LendingAuctionUnitTest is
     address immutable SIGNER_1 = 0x503408564C50b43208529faEf9bdf9794c015d52;
     address immutable SIGNER_2 = 0x4a3A70D6Be2290f5F57Ac7E64b9A1B7695f5b0B3;
 
-    address constant SANCTIONED_ADDRESS = address(0x7FF9cFad3877F21d41Da833E2F775dB0569eE3D9);
+    address constant SANCTIONED_ADDRESS = 0x7FF9cFad3877F21d41Da833E2F775dB0569eE3D9;
 
     receive() external payable {
         require(acceptEth, "acceptEth");
@@ -106,31 +106,46 @@ contract LendingAuctionUnitTest is
         lendingAuction.transferOwnership(OWNER);
     }
 
-    // TODO(miller): Move to base
-    function signOffer(Offer memory offer) public returns (bytes memory) {
+    function signOffer(uint256 signerPrivateKey, Offer memory offer) public returns (bytes memory) {
         // This is the EIP712 signed hash
-        bytes32 encoded_offer = offersContract.getOfferHash(offer);
+        bytes32 offerHash = offersContract.getOfferHash(offer);
 
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-        (v, r, s) = hevm.sign(SIGNER_PRIVATE_KEY_1, encoded_offer);
+        return sign(signerPrivateKey, offerHash);
+    }
 
-        bytes memory signature = "";
+    function setupLoan() public {
+        hevm.startPrank(LENDER_1);
+        usdcToken.mint(address(LENDER_1), 6 ether);
+        usdcToken.approve(address(liquidityProviders), 6 ether);
 
-        // case 65: r,s,v signature (standard)
-        assembly {
-            // Logical shift left of the value
-            mstore(add(signature, 0x20), r)
-            mstore(add(signature, 0x40), s)
-            mstore(add(signature, 0x60), shl(248, v))
-            // 65 bytes long
-            mstore(signature, 0x41)
-            // Update free memory pointer
-            mstore(0x40, add(signature, 0x80))
-        }
+        liquidityProviders.supplyErc20(address(usdcToken), 6 ether);
 
-        return signature;
+        Offer memory offer = Offer({
+            creator: LENDER_1,
+            nftContractAddress: address(mockNft),
+            interestRatePerSecond: 3,
+            fixedTerms: false,
+            floorTerm: true,
+            lenderOffer: true,
+            nftId: 1,
+            asset: address(usdcToken),
+            amount: 1 ether,
+            duration: 1 days,
+            expiration: uint32(block.timestamp + 1)
+        });
+
+        offersContract.createOffer(offer);
+
+        hevm.stopPrank();
+
+        bytes32 offerHash = offersContract.getOfferHash(offer);
+
+        lendingAuction.executeLoanByBorrower(
+            offer.nftContractAddress,
+            offer.nftId,
+            offerHash,
+            offer.floorTerm
+        );
     }
 
     // LENDER_1 makes an offer on mockNft #1, owned by address(this)
@@ -1103,7 +1118,7 @@ contract LendingAuctionUnitTest is
             expiration: 8
         });
 
-        bytes memory signature = signOffer(offer);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
         offersContract.withdrawOfferSignature(offer, signature);
 
@@ -1136,7 +1151,7 @@ contract LendingAuctionUnitTest is
             expiration: 8
         });
 
-        bytes memory signature = signOffer(offer);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
         hevm.stopPrank();
 
@@ -1169,7 +1184,7 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 1)
         });
 
-        bytes memory signature = signOffer(offer);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
         hevm.stopPrank();
 
@@ -1200,7 +1215,7 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 1)
         });
 
-        bytes memory signature = signOffer(offer);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
         hevm.stopPrank();
 
@@ -1231,7 +1246,7 @@ contract LendingAuctionUnitTest is
             expiration: 8
         });
 
-        bytes memory signature = signOffer(offer);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
         hevm.stopPrank();
 
@@ -1262,7 +1277,7 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 1)
         });
 
-        bytes memory signature = signOffer(offer);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
         hevm.stopPrank();
 
@@ -1296,7 +1311,7 @@ contract LendingAuctionUnitTest is
         hevm.stopPrank();
 
         mockNft.transferFrom(address(this), address(0x0000000000000000000000000000000000000001), 1);
-        bytes memory signature = signOffer(offer);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
         hevm.expectRevert("nft owner");
 
@@ -1327,7 +1342,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        bytes memory signature = signOffer(offer);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
         hevm.expectRevert("ERC20: burn amount exceeds balance");
 
@@ -1358,7 +1373,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        bytes memory signature = signOffer(offer);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
         usdcToken.setTransferFail(true);
 
@@ -1390,7 +1405,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        bytes memory signature = signOffer(offer);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
         acceptEth = false;
 
@@ -1423,7 +1438,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        bytes memory signature = signOffer(offer);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
         lendingAuction.executeLoanByBorrowerSignature(offer, signature, 1);
 
@@ -1484,7 +1499,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        bytes memory signature = signOffer(offer);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
         lendingAuction.executeLoanByBorrowerSignature(offer, signature, 1);
 
@@ -1547,7 +1562,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        bytes memory signature = signOffer(offer);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
         uint256 borrowerEthBalanceBefore = address(this).balance;
         uint256 lenderEthBalanceBefore = address(SIGNER_1).balance;
@@ -1591,7 +1606,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        bytes memory signature = signOffer(offer);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
         hevm.expectEmit(true, true, true, true);
 
@@ -2181,7 +2196,7 @@ contract LendingAuctionUnitTest is
             expiration: 8
         });
 
-        bytes memory signature = signOffer(offer);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
         hevm.stopPrank();
         hevm.startPrank(SIGNER_1);
@@ -2215,7 +2230,7 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 1)
         });
 
-        bytes memory signature = signOffer(offer);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
         hevm.expectRevert("offer creator mismatch");
 
@@ -2244,7 +2259,7 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 1)
         });
 
-        bytes memory signature = signOffer(offer);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
         hevm.stopPrank();
 
@@ -2275,7 +2290,7 @@ contract LendingAuctionUnitTest is
             expiration: 8
         });
 
-        bytes memory signature = signOffer(offer);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
         hevm.stopPrank();
 
@@ -2306,7 +2321,7 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 1)
         });
 
-        bytes memory signature = signOffer(offer);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
         hevm.stopPrank();
 
@@ -2337,7 +2352,7 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 1)
         });
 
-        bytes memory signature = signOffer(offer);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
         hevm.expectRevert("nft owner");
 
@@ -2376,7 +2391,7 @@ contract LendingAuctionUnitTest is
 
         hevm.startPrank(LENDER_1);
 
-        bytes memory signature = signOffer(offer);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
         hevm.expectRevert("ERC20: burn amount exceeds balance");
 
@@ -2415,7 +2430,7 @@ contract LendingAuctionUnitTest is
 
         hevm.startPrank(LENDER_1);
 
-        bytes memory signature = signOffer(offer);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
         usdcToken.setTransferFail(true);
 
@@ -2462,7 +2477,7 @@ contract LendingAuctionUnitTest is
 
         hevm.startPrank(LENDER_1);
 
-        bytes memory signature = signOffer(offer);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
         lendingAuction.executeLoanByLenderSignature(offer, signature);
 
@@ -2531,7 +2546,7 @@ contract LendingAuctionUnitTest is
 
         hevm.startPrank(LENDER_1);
 
-        bytes memory signature = signOffer(offer);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
         uint256 borrowerEthBalanceBefore = address(SIGNER_1).balance;
         uint256 lenderEthBalanceBefore = address(LENDER_1).balance;
@@ -2583,7 +2598,7 @@ contract LendingAuctionUnitTest is
 
         hevm.startPrank(LENDER_1);
 
-        bytes memory signature = signOffer(offer);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
         hevm.expectEmit(true, true, true, true);
 
@@ -3817,7 +3832,7 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 1)
         });
 
-        bytes memory signature = signOffer(offer2);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
 
         hevm.stopPrank();
 
@@ -3880,7 +3895,7 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 1)
         });
 
-        bytes memory signature = signOffer(offer2);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
 
         offersContract.withdrawOfferSignature(offer2, signature);
 
@@ -3945,7 +3960,7 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 1)
         });
 
-        bytes memory signature = signOffer(offer2);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
 
         hevm.stopPrank();
 
@@ -4009,7 +4024,7 @@ contract LendingAuctionUnitTest is
         });
         hevm.stopPrank();
 
-        bytes memory signature = signOffer(offer2);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
 
         hevm.expectRevert("lender offer");
 
@@ -4072,7 +4087,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        bytes memory signature = signOffer(offer2);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
 
         hevm.expectRevert("offer nftId mismatch");
 
@@ -4135,7 +4150,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        bytes memory signature = signOffer(offer2);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
 
         hevm.startPrank(BORROWER_1);
 
@@ -4167,7 +4182,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        bytes memory signature = signOffer(offer2);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
 
         mockNft.transferFrom(address(this), address(0x1), 1);
         hevm.expectRevert("asset mismatch");
@@ -4231,7 +4246,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        bytes memory signature = signOffer(offer2);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
 
         hevm.expectRevert("asset mismatch");
 
@@ -4294,7 +4309,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        bytes memory signature = signOffer(offer2);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
 
         hevm.expectRevert("offer nftId mismatch");
 
@@ -4357,7 +4372,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        bytes memory signature = signOffer(offer2);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
 
         hevm.expectRevert("asset mismatch");
 
@@ -4420,7 +4435,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        bytes memory signature = signOffer(offer2);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
 
         hevm.warp(block.timestamp + 2);
         hevm.expectRevert("offer expired");
@@ -4484,7 +4499,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        bytes memory signature = signOffer(offer2);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
 
         lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
 
@@ -4582,7 +4597,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        bytes memory signature = signOffer(offer2);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
 
         lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
 
@@ -4679,7 +4694,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        bytes memory signature = signOffer(offer2);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
 
         lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
 
@@ -4774,7 +4789,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        bytes memory signature = signOffer(offer2);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
 
         hevm.expectEmit(true, true, true, true);
 
@@ -4843,7 +4858,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        bytes memory signature = signOffer(offer2);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
 
         hevm.expectRevert("offer amount");
 
@@ -4908,7 +4923,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        bytes memory signature = signOffer(offer2);
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
 
         hevm.warp(block.timestamp + 100);
 
@@ -6607,15 +6622,33 @@ contract LendingAuctionUnitTest is
         lendingAuction.drawLoanAmount(address(mockNft), 1, 5 * 10**17);
     }
 
-    // TODO(miller): Tests missing for drawAmount
-    // TODO(miller): Missing test for withdrawing someone elses signed offer
-    // TODO(miller): Missing tests for regen collective percentage
-    // TODO(miller): Missing tests for Sanctions list
+    function testRepayLoanForAccount_works() public {
+        setupLoan();
+
+        hevm.prank(SIGNER_1);
+        usdcToken.mint(address(SIGNER_1), 1000 ether);
+        usdcToken.approve(address(liquidityProviders), 1000 ether);
+
+        lendingAuction.repayLoanForAccount(address(mockNft), 1);
+    }
+
+    function testCannotRepayLoanForAccount_if_sanctioned() public {
+        setupLoan();
+
+        hevm.startPrank(SANCTIONED_ADDRESS);
+        usdcToken.mint(address(SANCTIONED_ADDRESS), 1000 ether);
+        usdcToken.approve(address(liquidityProviders), 1000 ether);
+
+        hevm.expectRevert("sanctioned address");
+
+        lendingAuction.repayLoanForAccount(address(mockNft), 1);
+    }
+
+    // TODO(miller): More tests for regen collective percentage
     // TODO(miller): Tests for slashUnsupportedAmount
     // TODO(miller): Tests for interest math and different gas greifing and term griefing premiums
     // TODO(miller): Review existing tests for additional cases
     // TODO(miller): Review contract functions and ensure there are tests for each function
-    // TODO(miller): repayLoanForAccount (including sanctions test)
     // TODO updateLendingContractAddress test
     // TODO updateLiquidityContractAddress test
 }

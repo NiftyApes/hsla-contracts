@@ -216,7 +216,7 @@ contract NiftyApesLiquidity is
     /// @inheritdoc ILiquidity
     function withdrawEth(uint256 amount) external whenNotPaused nonReentrant returns (uint256) {
         address cAsset = getCAsset(ETH_ADDRESS);
-        
+
         if (msg.sender == owner()) {
             uint256 cTokensBurnt = ownerWithdrawUnderlying(ETH_ADDRESS, cAsset);
             return cTokensBurnt;
@@ -233,7 +233,10 @@ contract NiftyApesLiquidity is
         }
     }
 
-    function ownerWithdrawUnderlying(address asset, address cAsset) internal returns (uint256 cTokensBurnt) {
+    function ownerWithdrawUnderlying(address asset, address cAsset)
+        internal
+        returns (uint256 cTokensBurnt)
+    {
         uint256 ownerBalance = getCAssetBalance(owner(), cAsset);
 
         uint256 ownerBalanceUnderlying = cAssetAmountToAssetAmount(cAsset, ownerBalance);
@@ -256,7 +259,7 @@ contract NiftyApesLiquidity is
 
         emit PercentForRegen(regenCollectiveAddress, asset, regenAmountUnderlying, bpsForRegen);
 
-        if(asset == ETH_ADDRESS) {
+        if (asset == ETH_ADDRESS) {
             emit EthWithdrawn(owner(), ownerAmountUnderlying, ownerBalanceMinusRegen);
         } else {
             emit Erc20Withdrawn(owner(), asset, ownerAmountUnderlying, ownerBalanceMinusRegen);
@@ -359,7 +362,8 @@ contract NiftyApesLiquidity is
 
     function requireMaxCAssetBalance(address cAsset) internal view {
         uint256 maxCAssetBalance = maxBalanceByCAsset[cAsset];
-            require(maxCAssetBalance >= ICERC20(cAsset).balanceOf(address(this)), "max casset");
+
+        require(maxCAssetBalance >= ICERC20(cAsset).balanceOf(address(this)), "max casset");
     }
 
     /// @inheritdoc ILiquidity
@@ -367,7 +371,8 @@ contract NiftyApesLiquidity is
         address from,
         address to,
         address asset,
-        uint256 amount) public returns (uint256) {
+        uint256 amount
+    ) public returns (uint256) {
         requireLendingContract();
         return _mintCErc20(from, to, asset, amount);
     }
@@ -430,15 +435,23 @@ contract NiftyApesLiquidity is
     }
 
     /// @inheritdoc ILiquidity
-    function addToCAssetBalance(address account, address cAsset, uint256 amount) public {
+    function addToCAssetBalance(
+        address account,
+        address cAsset,
+        uint256 amount
+    ) public {
         requireLendingContract();
-        _balanceByAccountByAsset[account][cAsset].cAssetBalance += amount;  
+        _balanceByAccountByAsset[account][cAsset].cAssetBalance += amount;
     }
 
     /// @inheritdoc ILiquidity
-    function subFromCAssetBalance(address account, address cAsset, uint256 amount) public {
+    function subFromCAssetBalance(
+        address account,
+        address cAsset,
+        uint256 amount
+    ) public {
         requireLendingContract();
-        _balanceByAccountByAsset[account][cAsset].cAssetBalance -= amount;  
+        _balanceByAccountByAsset[account][cAsset].cAssetBalance -= amount;
     }
 
     /// @inheritdoc ILiquidity
