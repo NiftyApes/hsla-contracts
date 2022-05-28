@@ -511,6 +511,8 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
 
         hevm.expectRevert("sanctioned address");
 
+        hevm.deal(SANCTIONED_ADDRESS, 1);
+
         hevm.startPrank(SANCTIONED_ADDRESS);
 
         liquidityProviders.supplyEth{ value: 1 }();
