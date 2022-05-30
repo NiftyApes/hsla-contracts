@@ -61,8 +61,8 @@ contract NiftyApesLiquidity is
     uint256[500] private __gap;
 
     /// @notice The initializer for the NiftyApes protocol.
-    ///         Nifty Apes is intended to be deployed behind a proxy amd thus needs to initialize
-    ///         its state outsize of a constructor.
+    ///         NiftyApes is intended to be deployed behind a proxy and thus needs to initialize
+    ///         its state outside of a constructor.
     function initialize() public initializer {
         regenCollectiveBpsOfRevenue = 100;
         regenCollectiveAddress = address(0x252de94Ae0F07fb19112297F299f8c9Cc10E28a6);

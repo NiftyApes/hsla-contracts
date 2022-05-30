@@ -43,7 +43,7 @@ interface ILiquidity is ILiquidityAdmin, ILiquidityEvents, ILiquidityStructs {
     function supplyErc20(address asset, uint256 amount) external returns (uint256);
 
     /// @notice Supply a given compound token.
-    ///         This method allows users who have already supplied tokens into compounds to directly
+    ///         This method allows users who have already supplied tokens to compound to directly
     ///         supply their compound tokens to NiftyApes.
     /// @param cAsset The address of the compound ERC20 token
     /// @param amount The number of tokens to supply
