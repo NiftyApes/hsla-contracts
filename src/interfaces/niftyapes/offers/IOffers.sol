@@ -65,7 +65,7 @@ interface IOffers is IOffersAdmin, IOffersEvents, IOffersStructs, ILendingStruct
         bool floorTerm
     ) external;
 
-    /// @notice Checks that a signature has a length of 65 bytes
+    /// @notice Can only be called by the lendingContractAddress
     /// @param offer The details of the offer
     /// @param signature The signature of the offer
     function markSignatureUsed(Offer memory offer, bytes memory signature) external;

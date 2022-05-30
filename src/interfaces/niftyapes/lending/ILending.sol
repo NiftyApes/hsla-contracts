@@ -9,6 +9,12 @@ import "../offers/IOffersStructs.sol";
 /// @title The lending interface for Nifty Apes
 ///        This interface is intended to be used for interacting with loans on the protocol.
 interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStructs {
+    /// @notice Returns the address for the associated offers contract
+    function offersContractAddress() external view returns (address);
+
+    /// @notice Returns the address for the associated liquidity contract
+    function liquidityContractAddress() external view returns (address);
+    
     /// @notice Returns the fee that computes protocol interest
     ///         This fee is the basis points in order to calculate interest per second
     function protocolInterestBps() external view returns (uint96);
@@ -35,7 +41,7 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     /// @notice Returns the bps premium paid to the protocol for refinancing a loan with terms that do not improve the cumulative terms of the loan by the equivalant basis points 
     ///         For example, if termGriefingPremiumBps is 25 then the cumulative improvement of amount, interestRatePerSecond, and duration must be more than 25 bps
     ///         If the amount is 8 bps better, interestRatePerSecond is 7 bps better, and duration is 10 bps better, then no premium is paid
-    ///         If any one of those terms is worse then a full preimum is paid
+    ///         If any one of those terms is worse then a full premimum is paid
     ///         Fees are denomiated in basis points, parts of 10_000
     function termGriefingPremiumBps() external view returns (uint16);
 
@@ -102,7 +108,7 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     ) external payable;
 
     /// @notice Refinance a loan against the on chain offer book as the borrower.
-    ///         The new offer has to cover all interest owed on the loan
+    ///         The new offer has to cover the principle remaining and all lender interest owed on the loan
     /// @param nftContractAddress The address of the NFT collection
     /// @param nftId The id of the specified NFT
     /// @param floorTerm Indicates whether this is a floor or individual NFT offer.
@@ -115,7 +121,7 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     ) external;
 
     /// @notice Refinance a loan against an off chain signed offer as the borrower.
-    ///         The new offer has to cover all interest owed on the loan
+    ///         The new offer has to cover the principle remaining and all lender interest owed on the loan
     /// @param offer The details of the loan auction offer
     /// @param signature The signature for the offer
     /// @param nftId The id of a specified NFT
@@ -126,12 +132,20 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     ) external;
 
     /// @notice Refinance a loan against a new offer.
-    ///         The new offer has to improve conditions for the borrower
+    ///         The new offer must improve terms for the borrower
+    ///         Lender must improve terms by a cumulative 25 bps or pay a 25 bps premium
+    ///         For example, if termGriefingPremiumBps is 25 then the cumulative improvement of amount, interestRatePerSecond, and duration must be more than 25 bps
+    ///         If the amount is 8 bps better, interestRatePerSecond is 7 bps better, and duration is 10 bps better, then no premium is paid
+    ///         If any one of those terms is worse then a full premimum is paid 
+    ///         The Lender must allow 25 bps on interest to accrue or pay a gas greifing premium to the current lender
+    ///         This premium is equal to gasGreifingPremiumBps - interestEarned
     /// @param offer The details of the loan auction offer
     function refinanceByLender(Offer calldata offer) external;
 
-    /// @notice Allows borrowers to draw a higher balance on their loan if it has been refiance with a higher maximum amount.
+    /// @notice Allows borrowers to draw a higher balance on their loan if it has been refianced with a higher maximum amount
     ///         Drawing down value increases the maximum loan pay back amount and so is not automatically imposed on a refinance by lender, hence this function.
+    ///         If a lender does not have liquidity to support a refinanced amount the borrower will draw whatever amount is available,
+    ///         the lender's interest earned so far is slashed, and the loan amount is set to the amount currently drawn
     /// @param nftContractAddress The address of the NFT collection
     /// @param nftId The id of the specified NFT
     /// @param drawAmount The amount of value to draw and add to the loan amountDrawn
@@ -153,13 +167,13 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     ///         The reason this is broken into another function is to make it harder to accidentally
     ///         be repaying someone elses loan.
     ///         Unless you are intending to repay someone elses loan you should be using #repayLoan instead
+    ///         The main use case for this function is to have a bot repay a loan on behalf of a borrower
     /// @param nftContractAddress The address of the NFT collection
     /// @param nftId The id of the specified NFT
     function repayLoanForAccount(address nftContractAddress, uint256 nftId) external payable;
 
-    /// @notice Repay parts of an open loan.
-    ///         Repaying parts of a loan will change interest accumulation for the repaid part and thus some borrors may
-    ///         prefer to repay parts earlier to save on overall payments.
+    /// @notice Repay part of an open loan.
+    ///         Repaying part of a loan will lower the remaining interest accumulated
     /// @param nftContractAddress The address of the NFT collection
     /// @param nftId The id of the specified NFT
     /// @param amount The amount of value to pay down on the principle of the loan
@@ -169,7 +183,7 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         uint256 amount
     ) external payable;
 
-    /// @notice Seizes an asset if the loan has expired.
+    /// @notice Seizes an asset if the loan has expired and sends it to the lender
     ///         This function can be called by anyone as soon as the loan is expired without having been repaid in full.
     ///         This function allows anyone to call it so that an automated bot may seize the asset on behalf of a lender.
     /// @param nftContractAddress The address of the NFT collection
@@ -189,6 +203,25 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         external
         view
         returns (uint256, uint256);
+
+    /// @notice Returns the interestRatePerSecond for a given set of terms
+    /// @param amount The amount of the loan
+    /// @param interestRateBps The interest of the loan in bps
+    /// @param duration The duration of the loan
+    function calculateLenderInterestPerSecond(
+        uint128 amount,
+        uint96 interestRateBps,
+        uint32 duration
+    ) external pure returns (uint96);
+
+    /// @notice Returns the protocolInterestRatePerSecond for a given set of terms
+    ///         There is a set protocolInterestRateBps so no interestBps value is provided
+    /// @param amount The amount of the loan
+    /// @param duration The duration of the loan
+    function calculateProtocolInterestPerSecond(uint128 amount, uint32 duration)
+        external
+        view
+        returns (uint96);
 
     /// @notice Returns whether interest has accumulated greater than the gas griefing premium requirement
     /// @param nftContractAddress The address of the NFT collection
