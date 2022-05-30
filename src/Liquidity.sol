@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts/utils/math/MathUpgradeable.sol";
-import "@openzeppelin/contracts/utils/math/SafeCastUpgradeable.sol";
 import "@openzeppelin/contracts/utils/AddressUpgradeable.sol";
 import "./interfaces/compound/ICEther.sol";
 import "./interfaces/compound/ICERC20.sol";
@@ -15,12 +14,9 @@ import "./interfaces/niftyapes/liquidity/ILiquidity.sol";
 import "./interfaces/niftyapes/lending/ILending.sol";
 import "./interfaces/niftyapes/offers/IOffers.sol";
 import "./interfaces/sanctions/SanctionsList.sol";
-import "./lib/ECDSABridge.sol";
 import "./lib/Math.sol";
 
-import "./test/Console.sol";
-
-/// @title Implemention of the INiftyApes interface
+/// @title Implemention of the ILiquidity interface
 contract NiftyApesLiquidity is
     OwnableUpgradeable,
     PausableUpgradeable,
@@ -48,6 +44,7 @@ contract NiftyApesLiquidity is
     /// @inheritdoc ILiquidity
     mapping(address => uint256) public override maxBalanceByCAsset;
 
+    /// @inheritdoc ILiquidity
     address public lendingContractAddress;
 
     /// @inheritdoc ILiquidity
@@ -89,6 +86,35 @@ contract NiftyApesLiquidity is
     }
 
     /// @inheritdoc ILiquidityAdmin
+    function updateLendingContractAddress(address newLendingContractAddress) external onlyOwner {
+        emit LiquidityXLendingContractAddressUpdated(
+            lendingContractAddress,
+            newLendingContractAddress
+        );
+        lendingContractAddress = newLendingContractAddress;
+    }
+
+    /// @inheritdoc ILiquidityAdmin
+    function updateRegenCollectiveBpsOfRevenue(uint16 newRegenCollectiveBpsOfRevenue)
+        external
+        onlyOwner
+    {
+        require(newRegenCollectiveBpsOfRevenue <= 1_000, "max fee");
+        require(newRegenCollectiveBpsOfRevenue >= regenCollectiveBpsOfRevenue, "must be greater");
+        emit RegenCollectiveBpsOfRevenueUpdated(
+            regenCollectiveBpsOfRevenue,
+            newRegenCollectiveBpsOfRevenue
+        );
+        regenCollectiveBpsOfRevenue = newRegenCollectiveBpsOfRevenue;
+    }
+
+    /// @inheritdoc ILiquidityAdmin
+    function updateRegenCollectiveAddress(address newRegenCollectiveAddress) external onlyOwner {
+        emit RegenCollectiveAddressUpdated(newRegenCollectiveAddress);
+        regenCollectiveAddress = newRegenCollectiveAddress;
+    }
+
+    /// @inheritdoc ILiquidityAdmin
     function pause() external onlyOwner {
         _pause();
     }
@@ -101,6 +127,21 @@ contract NiftyApesLiquidity is
     /// @inheritdoc ILiquidity
     function getCAssetBalance(address account, address cAsset) public view returns (uint256) {
         return _balanceByAccountByAsset[account][cAsset].cAssetBalance;
+    }
+
+    /// @inheritdoc ILiquidity
+    function getCAsset(address asset) public view returns (address) {
+        address cAsset = assetToCAsset[asset];
+        require(cAsset != address(0), "asset allow list");
+        require(asset == _cAssetToAsset[cAsset], "non matching allow list");
+        return cAsset;
+    }
+
+    function getAsset(address cAsset) internal view returns (address) {
+        address asset = _cAssetToAsset[cAsset];
+        require(asset != address(0), "cAsset allow list");
+        require(cAsset == assetToCAsset[asset], "non matching allow list");
+        return asset;
     }
 
     /// @inheritdoc ILiquidity
@@ -233,6 +274,34 @@ contract NiftyApesLiquidity is
         }
     }
 
+    function requireEthTransferable() internal view {
+        require(_ethTransferable, "eth not transferable");
+    }
+
+    function requireIsNotSanctioned(address addressToCheck) internal view {
+        SanctionsList sanctionsList = SanctionsList(SANCTIONS_CONTRACT);
+        bool isToSanctioned = sanctionsList.isSanctioned(addressToCheck);
+        require(!isToSanctioned, "sanctioned address");
+    }
+
+    function requireMaxCAssetBalance(address cAsset) internal view {
+        uint256 maxCAssetBalance = maxBalanceByCAsset[cAsset];
+
+        require(maxCAssetBalance >= ICERC20(cAsset).balanceOf(address(this)), "max casset");
+    }
+
+    function requireCAssetBalance(
+        address account,
+        address cAsset,
+        uint256 amount
+    ) internal view {
+        require(getCAssetBalance(account, cAsset) >= amount, "Insufficient cToken balance");
+    }
+
+    function requireLendingContract() internal view {
+        require(msg.sender == lendingContractAddress, "not authorized");
+    }
+
     function ownerWithdrawUnderlying(address asset, address cAsset)
         internal
         returns (uint256 cTokensBurnt)
@@ -286,53 +355,6 @@ contract NiftyApesLiquidity is
         return ownerBalance;
     }
 
-    /// @inheritdoc ILiquidityAdmin
-    function updateRegenCollectiveBpsOfRevenue(uint16 newRegenCollectiveBpsOfRevenue)
-        external
-        onlyOwner
-    {
-        require(newRegenCollectiveBpsOfRevenue <= 1_000, "max fee");
-        require(newRegenCollectiveBpsOfRevenue >= regenCollectiveBpsOfRevenue, "must be greater");
-        emit RegenCollectiveBpsOfRevenueUpdated(
-            regenCollectiveBpsOfRevenue,
-            newRegenCollectiveBpsOfRevenue
-        );
-        regenCollectiveBpsOfRevenue = newRegenCollectiveBpsOfRevenue;
-    }
-
-    /// @inheritdoc ILiquidityAdmin
-    function updateRegenCollectiveAddress(address newRegenCollectiveAddress) external onlyOwner {
-        emit RegenCollectiveAddressUpdated(newRegenCollectiveAddress);
-        regenCollectiveAddress = newRegenCollectiveAddress;
-    }
-
-    /// @inheritdoc ILiquidityAdmin
-    function updateLendingContractAddress(address newLendingContractAddress) external onlyOwner {
-        emit LiquidityXLendingContractAddressUpdated(
-            lendingContractAddress,
-            newLendingContractAddress
-        );
-        lendingContractAddress = newLendingContractAddress;
-    }
-
-    function requireEthTransferable() internal view {
-        require(_ethTransferable, "eth not transferable");
-    }
-
-    function requireIsNotSanctioned(address addressToCheck) internal view {
-        SanctionsList sanctionsList = SanctionsList(SANCTIONS_CONTRACT);
-        bool isToSanctioned = sanctionsList.isSanctioned(addressToCheck);
-        require(!isToSanctioned, "sanctioned address");
-    }
-
-    function requireCAssetBalance(
-        address account,
-        address cAsset,
-        uint256 amount
-    ) internal view {
-        require(getCAssetBalance(account, cAsset) >= amount, "Insufficient cToken balance");
-    }
-
     function sendValue(
         address asset,
         uint256 amount,
@@ -352,18 +374,6 @@ contract NiftyApesLiquidity is
         } else {
             IERC20Upgradeable(asset).safeTransfer(to, amount);
         }
-    }
-
-    // This is needed to receive ETH when calling withdrawing ETH from compund
-    // solhint-disable-next-line no-empty-blocks
-    receive() external payable {
-        requireEthTransferable();
-    }
-
-    function requireMaxCAssetBalance(address cAsset) internal view {
-        uint256 maxCAssetBalance = maxBalanceByCAsset[cAsset];
-
-        require(maxCAssetBalance >= ICERC20(cAsset).balanceOf(address(this)), "max casset");
     }
 
     /// @inheritdoc ILiquidity
@@ -411,10 +421,6 @@ contract NiftyApesLiquidity is
         return cTokenBalanceAfter - cTokenBalanceBefore;
     }
 
-    function requireLendingContract() internal view {
-        require(msg.sender == lendingContractAddress, "not authorized");
-    }
-
     /// @inheritdoc ILiquidity
     function burnCErc20(address asset, uint256 amount) public returns (uint256) {
         requireLendingContract();
@@ -432,6 +438,25 @@ contract NiftyApesLiquidity is
         _ethTransferable = false;
         uint256 cTokenBalanceAfter = cToken.balanceOf(address(this));
         return cTokenBalanceBefore - cTokenBalanceAfter;
+    }
+
+    /// @inheritdoc ILiquidity
+    function withdrawCBalance(
+        address account,
+        address cAsset,
+        uint256 cTokenAmount
+    ) public {
+        requireLendingContract();
+        _withdrawCBalance(account, cAsset, cTokenAmount);
+    }
+
+    function _withdrawCBalance(
+        address account,
+        address cAsset,
+        uint256 cTokenAmount
+    ) internal {
+        requireCAssetBalance(account, cAsset, cTokenAmount);
+        _balanceByAccountByAsset[account][cAsset].cAssetBalance -= cTokenAmount;
     }
 
     /// @inheritdoc ILiquidity
@@ -471,37 +496,11 @@ contract NiftyApesLiquidity is
         return Math.mulScalarTruncate(amount, exchangeRateMantissa);
     }
 
-    function getCAsset(address asset) public view returns (address) {
-        address cAsset = assetToCAsset[asset];
-        require(cAsset != address(0), "asset allow list");
-        require(asset == _cAssetToAsset[cAsset], "non matching allow list");
-        return cAsset;
-    }
-
-    function getAsset(address cAsset) internal view returns (address) {
-        address asset = _cAssetToAsset[cAsset];
-        require(asset != address(0), "cAsset allow list");
-        require(cAsset == assetToCAsset[asset], "non matching allow list");
-        return asset;
-    }
-
-    function withdrawCBalance(
-        address account,
-        address cAsset,
-        uint256 cTokenAmount
-    ) public {
-        requireLendingContract();
-        _withdrawCBalance(account, cAsset, cTokenAmount);
-    }
-
-    function _withdrawCBalance(
-        address account,
-        address cAsset,
-        uint256 cTokenAmount
-    ) internal {
-        requireCAssetBalance(account, cAsset, cTokenAmount);
-        _balanceByAccountByAsset[account][cAsset].cAssetBalance -= cTokenAmount;
-    }
-
+    // solhint-disable-next-line no-empty-blocks
     function renounceOwnership() public override onlyOwner {}
+
+    // This is needed to receive ETH when calling withdrawing ETH from compund
+    receive() external payable {
+        requireEthTransferable();
+    }
 }
