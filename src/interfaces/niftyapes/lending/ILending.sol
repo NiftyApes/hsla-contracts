@@ -231,7 +231,7 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         view
         returns (bool, uint256, uint96);
 
-    /// @notice Returns whether interest has accumulated greater than the gas griefing premium requirement
+    /// @notice Returns whether the lender has provided sufficient terms to not be charged a term griefing premium
     /// @param nftContractAddress The address of the NFT collection
     /// @param nftId The id of the specified NFT
     function checkSufficientTerms(address nftContractAddress, uint256 nftId, uint128 amount, uint96 interestRatePerSecond, uint32 duration)
