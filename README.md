@@ -6,7 +6,7 @@ Testing is done with forge. Prettier, solhint, slither, can be used to perform f
 
 ## Running the tests
 
-`forge update` and then `forge test --optimize --fork-url $ETH_RPC_URL`
+`forge update`, `forge clean`, and then `forge test --optimize --fork-url $ETH_RPC_URL`
 
 ## Linting
 
@@ -18,8 +18,10 @@ Testing is done with forge. Prettier, solhint, slither, can be used to perform f
 
 ## Design
 
-`LiquidityProviders.sol` exposes interfaces for lenders to manage cToken liquidity by depositing and withdrawing, 
-wrapping and unwrapping either `cTokens`, or `ERC20` tokens which are approved for use on the protocol.
+The NiftyApes protocol is made up of three core contracts `Liquidity.sol`, `Offers.sol`, and `Lending.sol`. Each is deployed as a seperate contract with references to each other as via interfaces needed. 
 
-`SignatureLendingAuction.sol` inherits from `LiquidityProviders` and adds interfaces for a signature based lending 
-auction between lenders and NFT holders.
+`Liquidity.sol` allows for lenders to manage cToken liquidity by depositing and withdrawing, wrapping and unwrapping either `cTokens`, or `ERC20` tokens which are approved for use on the protocol.
+
+`Offers.sol` allows for lenders and borrowers to make lending offers on any asset or collection in existence. This contract manages the NiftyApes on-chain offer book. 
+
+`Lending.sol` allows for lenders and borrowers to execute and refinance loans based on the liquidity and offers in the other two contracts. 

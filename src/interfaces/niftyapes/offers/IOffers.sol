@@ -1,4 +1,4 @@
-//SPDX-License-Identifier: MIT
+//SPDX-License-Identifier: Unlicensed
 pragma solidity 0.8.13;
 
 import "./IOffersAdmin.sol";
@@ -7,10 +7,16 @@ import "./IOffersStructs.sol";
 import "../lending/ILendingStructs.sol";
 
 
-/// @title The Offers interface for Nifty Apes
-///        This interface is intended to be used for interacting with offers on the protocol.
+/// @title The Offers interface for NiftyApes
+///        This interface is intended to be used for interacting with offers on the protocol
 interface IOffers is IOffersAdmin, IOffersEvents, IOffersStructs, ILendingStructs {
 
+    /// @notice Returns the address for the associated lending contract
+    function lendingContractAddress() external view returns (address);
+
+    /// @notice Returns the address for the associated liquidity contract
+    function liquidityContractAddress() external view returns (address);
+    
     /// @notice Returns an EIP712 standard compatiable hash for a given offer
     ///         This hash can be signed to create a valid offer.
     /// @param offer The offer to compute the hash for
@@ -43,7 +49,7 @@ interface IOffers is IOffersAdmin, IOffersEvents, IOffersStructs, ILendingStruct
         bool floorTerm
     ) external view returns (Offer memory offer);
 
-    /// @notice Creates an offer on the on chain offer book
+    /// @notice Creates an offer in the on chain offer book
     /// @param offer The details of offer
     function createOffer(Offer calldata offer) external returns (bytes32);
 
@@ -59,16 +65,16 @@ interface IOffers is IOffersAdmin, IOffersEvents, IOffersStructs, ILendingStruct
         bool floorTerm
     ) external;
 
-    /// @notice Checks that a signature has not been cancelled/withdrawn on chain
+    /// @notice Can only be called by the lendingContractAddress
+    /// @param offer The details of the offer
     /// @param signature The signature of the offer
-    function requireAvailableSignature(bytes memory signature) external view;
+    function markSignatureUsed(Offer memory offer, bytes memory signature) external;
 
     /// @notice Checks that a signature has a length of 65 bytes
     /// @param signature The signature of the offer
     function requireSignature65(bytes memory signature) external pure;
 
-    /// @notice Checks that a signature has a length of 65 bytes
-    /// @param offer The details of the offer
+    /// @notice Checks that a signature has not been cancelled/withdrawn on chain
     /// @param signature The signature of the offer
-    function markSignatureUsed(Offer memory offer, bytes memory signature) external;
+    function requireAvailableSignature(bytes memory signature) external view;
 }

@@ -2,23 +2,14 @@
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/access/OwnableUpgradeable.sol";
-// TODO:(captnseagraves) drop this
 import "@openzeppelin/contracts/security/PausableUpgradeable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20Upgradeable.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Upgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712Upgradeable.sol";
-import "@openzeppelin/contracts/utils/math/MathUpgradeable.sol";
 import "@openzeppelin/contracts/utils/math/SafeCastUpgradeable.sol";
 import "@openzeppelin/contracts/utils/AddressUpgradeable.sol";
-import "./interfaces/compound/ICEther.sol";
-import "./interfaces/compound/ICERC20.sol";
 import "./interfaces/niftyapes/offers/IOffers.sol";
 import "./interfaces/niftyapes/liquidity/ILiquidity.sol";
-import "./interfaces/sanctions/SanctionsList.sol";
 import "./lib/ECDSABridge.sol";
-import "./lib/Math.sol";
-import "./test/Console.sol";
 
 /// @title Implemention of the IOffers interface
 contract NiftyApesOffers is
@@ -27,12 +18,7 @@ contract NiftyApesOffers is
     EIP712Upgradeable,
     IOffers
 {
-    using SafeERC20Upgradeable for IERC20Upgradeable;
     using AddressUpgradeable for address payable;
-
-    //TODO: (Captnseagraves) do we need to impose sanctions on offers? 
-    /// @dev Internal constant address for the Chinalysis OFAC sanctions oracle
-    address private constant SANCTIONS_CONTRACT = 0x40C57923924B5c5c5455c48D93317139ADDaC8fb;
 
     /// @dev A mapping for a NFT to an Offer
     ///      The mapping has to be broken into three parts since an NFT is denomiated by its address (first part)
@@ -48,8 +34,10 @@ contract NiftyApesOffers is
     ///      The mapping allows users to withdraw offers that they made by signature.
     mapping(bytes => bool) private _cancelledOrFinalized;
 
+    /// @inheritdoc IOffers
     address public lendingContractAddress;
 
+    /// @inheritdoc IOffers
     address public liquidityContractAddress;
 
     /// @dev This empty reserved space is put in place to allow future versions to add new
@@ -57,13 +45,25 @@ contract NiftyApesOffers is
     uint256[500] private __gap;
 
     /// @notice The initializer for the NiftyApes protocol.
-    ///         Nifty Apes is intended to be deployed behind a proxy amd thus needs to initialize
-    ///         its state outsize of a constructor.
+    ///         NiftyApes is intended to be deployed behind a proxy and thus needs to initialize
+    ///         its state outside of a constructor.
     function initialize() public initializer {
         EIP712Upgradeable.__EIP712_init("NiftyApes_Offers", "0.0.1");
 
         OwnableUpgradeable.__Ownable_init();
         PausableUpgradeable.__Pausable_init();
+    }
+
+    /// @inheritdoc IOffersAdmin
+    function updateLendingContractAddress(address newLendingContractAddress) external onlyOwner {
+        emit OffersXLendingContractAddressUpdated(lendingContractAddress, newLendingContractAddress);
+        lendingContractAddress = newLendingContractAddress;
+    }
+
+    /// @inheritdoc IOffersAdmin
+    function updateLiquidityContractAddress(address newLiquidityContractAddress) external onlyOwner {
+        emit OffersXLiquidityContractAddressUpdated(liquidityContractAddress, newLiquidityContractAddress);
+        liquidityContractAddress = newLiquidityContractAddress;
     }
 
     /// @inheritdoc IOffersAdmin
@@ -76,7 +76,6 @@ contract NiftyApesOffers is
         _unpause();
     }
    
-
     /// @inheritdoc IOffers
     function getOfferHash(Offer memory offer) public view returns (bytes32) {
         return
@@ -107,11 +106,6 @@ contract NiftyApesOffers is
     }
 
     /// @inheritdoc IOffers
-    function getOfferSignatureStatus(bytes memory signature) external view returns (bool) {
-        return _cancelledOrFinalized[signature];
-    }
-
-    /// @inheritdoc IOffers
     function getOfferSigner(Offer memory offer, bytes memory signature)
         public
         view
@@ -119,6 +113,11 @@ contract NiftyApesOffers is
         returns (address)
     {
         return ECDSABridge.recover(getOfferHash(offer), signature);
+    }
+
+    /// @inheritdoc IOffers
+    function getOfferSignatureStatus(bytes memory signature) external view returns (bool) {
+        return _cancelledOrFinalized[signature];
     }
 
     /// @inheritdoc IOffers
@@ -132,7 +131,7 @@ contract NiftyApesOffers is
         address signer = getOfferSigner(offer, signature);
 
         requireSigner(signer, msg.sender);
-        requireOfferCreator(offer, msg.sender);
+        requireOfferCreator(offer.creator, msg.sender);
 
         _markSignatureUsed(offer, signature);
     }
@@ -220,7 +219,7 @@ contract NiftyApesOffers is
         uint256 nftId,
         bytes32 offerHash,
         bool floorTerm
-    ) internal whenNotPaused {
+    ) internal {
         mapping(bytes32 => Offer) storage offerBook = getOfferBook(
             nftContractAddress,
             nftId,
@@ -241,29 +240,24 @@ contract NiftyApesOffers is
         delete offerBook[offerHash];
     }
 
-    /// @inheritdoc IOffersAdmin
-    function updateLendingContractAddress(address newLendingContractAddress) external onlyOwner {
-        emit OffersXLendingContractAddressUpdated(lendingContractAddress, newLendingContractAddress);
-        lendingContractAddress = newLendingContractAddress;
-    }
-
-        /// @inheritdoc IOffersAdmin
-    function updateLiquidityContractAddress(address newLiquidityContractAddress) external onlyOwner {
-        emit OffersXLiquidityContractAddressUpdated(liquidityContractAddress, newLiquidityContractAddress);
-        liquidityContractAddress = newLiquidityContractAddress;
-    }
-
+    /// @inheritdoc IOffers
     function markSignatureUsed(Offer memory offer, bytes memory signature) external {
         require(msg.sender == lendingContractAddress, "not authorized");
         _markSignatureUsed(offer, signature);
     }
-   
+    
     function _markSignatureUsed(Offer memory offer, bytes memory signature) internal {
         _cancelledOrFinalized[signature] = true;
 
         emit OfferSignatureUsed(offer.nftContractAddress, offer.nftId, offer, signature);
     }
 
+    /// @inheritdoc IOffers
+    function requireAvailableSignature(bytes memory signature) public view {
+        require(!_cancelledOrFinalized[signature], "signature not available");
+    }
+
+    /// @inheritdoc IOffers
     function requireSignature65(bytes memory signature) public pure {
         require(signature.length == 65, "signature unsupported");
     }
@@ -272,28 +266,12 @@ contract NiftyApesOffers is
         require(!offer.floorTerm, "floor term");
     }
 
-    function requireIsNotSanctioned(
-        address addressToCheck
-    ) internal view {
-        SanctionsList sanctionsList = SanctionsList(SANCTIONS_CONTRACT);
-        bool isToSanctioned = sanctionsList.isSanctioned(addressToCheck);
-        require(!isToSanctioned, "sanctioned address");
-    }
-
     function requireNftOwner(
         address nftContractAddress,
         uint256 nftId,
         address owner
     ) internal view {
         require(IERC721Upgradeable(nftContractAddress).ownerOf(nftId) == owner, "nft owner");
-    }
-
-    function requireAvailableSignature(bytes memory signature) public view {
-        require(!_cancelledOrFinalized[signature], "signature not available");
-    }
-
-    function requireOfferCreator(Offer memory offer, address creator) internal pure {
-        require(creator == offer.creator, "offer creator mismatch");
     }
 
     function requireSigner(address signer, address expected) internal pure {
@@ -312,10 +290,6 @@ contract NiftyApesOffers is
         uint256 amount
     ) internal view {
         require(ILiquidity(liquidityContractAddress).getCAssetBalance(account, cAsset) >= amount, "Insufficient cToken balance");
-    }
-
-    function currentTimestamp() internal view returns (uint32) {
-        return SafeCastUpgradeable.toUint32(block.timestamp);
     }
 
     function renounceOwnership() public override onlyOwner {}

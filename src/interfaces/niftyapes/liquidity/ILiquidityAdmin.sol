@@ -13,15 +13,15 @@ interface ILiquidityAdmin {
     ///         in the protocol.
     function setMaxCAssetBalance(address asset, uint256 maxBalance) external;
 
+    /// @notice Updates the associated lending contract address
+    function updateLendingContractAddress(address newLendingContractAddress) external;
+
     /// @notice Updates the bps of revenue sent to the Regen Collective
     ///         Fees are denomiated in basis points, parts of 10_000
     function updateRegenCollectiveBpsOfRevenue(uint16 newRegenCollectiveBpsOfRevenue) external;
 
      /// @notice Updates the address for the Regen Collective
     function updateRegenCollectiveAddress(address newRegenCollectiveAddress) external;
-
-    /// @notice Updates the associated lending contract address
-    function updateLendingContractAddress(address newLendingContractAddress) external;
 
     /// @notice Pauses all interactions with the contract.
     ///         This is intended to be used as an emergency measure to avoid loosing funds.
