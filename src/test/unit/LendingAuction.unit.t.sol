@@ -80,8 +80,7 @@ contract LendingAuctionUnitTest is
         cUSDCToken = new CERC20Mock();
         cUSDCToken.initialize(usdcToken);
         liquidityProviders.setCAssetAddress(address(usdcToken), address(cUSDCToken));
-        liquidityProviders.setMaxCAssetBalance(address(usdcToken), 2**256-1);
-
+        liquidityProviders.setMaxCAssetBalance(address(usdcToken), 2**256 - 1);
 
         cEtherToken = new CEtherMock();
         cEtherToken.initialize();
@@ -89,8 +88,10 @@ contract LendingAuctionUnitTest is
             address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
             address(cEtherToken)
         );
-        liquidityProviders.setMaxCAssetBalance(address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE), 2**256-1);
-
+        liquidityProviders.setMaxCAssetBalance(
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
+            2**256 - 1
+        );
 
         acceptEth = true;
 
@@ -511,9 +512,42 @@ contract LendingAuctionUnitTest is
     // executeLoanByBorrower Tests
 
     function testCannotExecuteLoanByBorrower_asset_not_in_allow_list() public {
-        // TODO(miller): Can not write this test since we can not unlist
-        // assets from the allow list and we need them to be in the list to add funds
-        // This test is now possible because we have enabled asset/cAsset to be relisted by owner
+        usdcToken.mint(address(this), 6);
+        usdcToken.approve(address(liquidityProviders), 6);
+
+        liquidityProviders.supplyErc20(address(usdcToken), 6);
+
+        Offer memory offer = Offer({
+            creator: address(this),
+            nftContractAddress: address(0x0000000000000000000000000000000000000002),
+            interestRatePerSecond: 3,
+            fixedTerms: true,
+            floorTerm: true,
+            lenderOffer: true,
+            nftId: 4,
+            asset: address(usdcToken),
+            amount: 6,
+            duration: 7,
+            expiration: uint32(block.timestamp + 1)
+        });
+
+        offersContract.createOffer(offer);
+
+        bytes32 offerHash = offersContract.getOfferHash(offer);
+
+        liquidityProviders.setCAssetAddress(
+            address(usdcToken),
+            address(0x0000000000000000000000000000000000000000)
+        );
+
+        hevm.expectRevert("asset allow list");
+
+        lendingAuction.executeLoanByBorrower(
+            offer.nftContractAddress,
+            offer.nftId,
+            offerHash,
+            offer.floorTerm
+        );
     }
 
     function testCannotExecuteLoanByBorrower_no_offer_present() public {
@@ -1091,9 +1125,39 @@ contract LendingAuctionUnitTest is
     // executeLoanByBorrowerSignature Tests
 
     function testCannotExecuteLoanByBorrowerSignature_asset_not_in_allow_list() public {
-        // TODO(miller): Can not write this test since we can not unlist
-        // assets from the allow list and we need them to be in the list to add funds
-        // this test can now be run as well
+        hevm.startPrank(SIGNER_1);
+
+        usdcToken.mint(SIGNER_1, 12);
+        usdcToken.approve(address(liquidityProviders), 12);
+
+        liquidityProviders.supplyErc20(address(usdcToken), 12);
+
+        Offer memory offer = Offer({
+            creator: SIGNER_1,
+            nftContractAddress: address(mockNft),
+            interestRatePerSecond: 3,
+            fixedTerms: true,
+            floorTerm: true,
+            lenderOffer: true,
+            nftId: 1,
+            asset: address(usdcToken),
+            amount: 6,
+            duration: 1 days,
+            expiration: uint32(block.timestamp + 1)
+        });
+
+        hevm.stopPrank();
+
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
+
+        liquidityProviders.setCAssetAddress(
+            address(usdcToken),
+            address(0x0000000000000000000000000000000000000000)
+        );
+
+        hevm.expectRevert("asset allow list");
+
+        lendingAuction.executeLoanByBorrowerSignature(offer, signature, 1);
     }
 
     function testCannotExecuteLoanByBorrowerSignature_signature_blocked() public {
@@ -1622,9 +1686,47 @@ contract LendingAuctionUnitTest is
     // executeLoanByLender Tests
 
     function testCannotExecuteLoanByLender_asset_not_in_allow_list() public {
-        // TODO(miller): Can not write this test since we can not unlist
-        // assets from the allow list and we need them to be in the list to add funds
-        // this one can now be written
+        hevm.startPrank(LENDER_1);
+        usdcToken.mint(address(LENDER_1), 6);
+        usdcToken.approve(address(liquidityProviders), 6);
+
+        liquidityProviders.supplyErc20(address(usdcToken), 6);
+
+        hevm.stopPrank();
+
+        Offer memory offer = Offer({
+            creator: address(this),
+            nftContractAddress: address(mockNft),
+            interestRatePerSecond: 3,
+            fixedTerms: true,
+            floorTerm: false,
+            lenderOffer: false,
+            nftId: 1,
+            asset: address(usdcToken),
+            amount: 6,
+            duration: 1 days,
+            expiration: uint32(block.timestamp + 1)
+        });
+
+        offersContract.createOffer(offer);
+
+        bytes32 offerHash = offersContract.getOfferHash(offer);
+
+        liquidityProviders.setCAssetAddress(
+            address(usdcToken),
+            address(0x0000000000000000000000000000000000000000)
+        );
+
+        hevm.expectRevert("asset allow list");
+
+        hevm.startPrank(LENDER_1);
+
+        lendingAuction.executeLoanByLender(
+            offer.nftContractAddress,
+            offer.nftId,
+            offerHash,
+            offer.floorTerm
+        );
     }
 
     function testCannotExecuteLoanByLender_no_offer_present() public {
@@ -2169,9 +2271,47 @@ contract LendingAuctionUnitTest is
     // executeLoanByLenderSignature Tests
 
     function testCannotExecuteLoanByLenderSignature_asset_not_in_allow_list() public {
-        // TODO(miller): Can not write this test since we can not unlist
-        // assets from the allow list and we need them to be in the list to add funds
-        // this one can now be implemented
+        hevm.startPrank(LENDER_1);
+
+        usdcToken.mint(LENDER_1, 6);
+        usdcToken.approve(address(liquidityProviders), 6);
+
+        liquidityProviders.supplyErc20(address(usdcToken), 6);
+
+        Offer memory offer = Offer({
+            creator: SIGNER_1,
+            nftContractAddress: address(mockNft),
+            interestRatePerSecond: 3,
+            fixedTerms: true,
+            floorTerm: false,
+            lenderOffer: false,
+            nftId: 1,
+            asset: address(usdcToken),
+            amount: 6,
+            duration: 1 days,
+            expiration: uint32(block.timestamp + 1)
+        });
+
+        hevm.stopPrank();
+
+        mockNft.transferFrom(address(this), SIGNER_1, 1);
+
+        hevm.startPrank(SIGNER_1);
+        mockNft.approve(address(lendingAuction), 1);
+        hevm.stopPrank();
+
+        liquidityProviders.setCAssetAddress(
+            address(usdcToken),
+            address(0x0000000000000000000000000000000000000000)
+        );
+
+        hevm.startPrank(LENDER_1);
+
+        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
+
+        hevm.expectRevert("asset allow list");
+
+        lendingAuction.executeLoanByLenderSignature(offer, signature);
     }
 
     function testCannotExecuteLoanByLenderSignature_signature_blocked() public {
@@ -6646,7 +6786,7 @@ contract LendingAuctionUnitTest is
 
     // TODO(miller): More tests for regen collective percentage
     // TODO(miller): Tests for slashUnsupportedAmount
-    // TODO(miller): Tests for interest math and different gas greifing and term griefing premiums
+    // TODO(miller): Tests for interest math and different gas griefing and term griefing premiums
     // TODO(miller): Review existing tests for additional cases
     // TODO(miller): Review contract functions and ensure there are tests for each function
     // TODO updateLendingContractAddress test

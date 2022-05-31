@@ -82,7 +82,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 1 ether);
     }
 
-    function testCannotSupplyErc20_maxCAssethit() public {
+    function testCannotSupplyErc20_maxCAsset_hit() public {
         usdcToken.mint(address(this), 2);
         usdcToken.approve(address(liquidityProviders), 2);
 
@@ -177,7 +177,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         liquidityProviders.supplyCErc20(address(cUSDCToken), 1);
     }
 
-    function testCannotSupplyCErc20_maxCAssethit() public {
+    function testCannotSupplyCErc20_maxCAsset_hit() public {
         usdcToken.mint(address(this), 2);
 
         cUSDCToken.mint(2);
@@ -441,7 +441,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         liquidityProviders.supplyEth{ value: 1 }();
     }
 
-    function testCannotSupplyEth_maxCAssethit() public {
+    function testCannotSupplyEth_maxCAsset_hit() public {
         liquidityProviders.setCAssetAddress(
             address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
             address(cEtherToken)
