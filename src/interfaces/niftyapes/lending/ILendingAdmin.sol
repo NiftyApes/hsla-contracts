@@ -5,7 +5,7 @@ import "./ILendingEvents.sol";
 
 /// @title NiftyApes interface for the admin role.
 interface ILendingAdmin {
-    /// @notice Updates the fee that computes protocol interest
+    /// @notice Updates the fee that computes protocol interest due on loan payback
     ///         Interest is charged per second on a loan.
     function updateProtocolInterestBps(uint96 newProtocolInterestBps) external;
 
