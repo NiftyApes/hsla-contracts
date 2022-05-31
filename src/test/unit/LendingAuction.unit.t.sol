@@ -6786,7 +6786,9 @@ contract LendingAuctionUnitTest is
 
     // TODO(miller): More tests for regen collective percentage
     // TODO(miller): Tests for slashUnsupportedAmount
-    // TODO(miller): Tests for interest math and different gas griefing and term griefing premiums
+    // TODO(miller): Tests for interest math and dynamic interestRatePerSecond
+    // TODO(miller): Tests for gas griefing preimum
+    // TODO(miller): Tests for term griefing premium
     // TODO(miller): Review existing tests for additional cases
     // TODO(miller): Review contract functions and ensure there are tests for each function
     // TODO updateLendingContractAddress test
