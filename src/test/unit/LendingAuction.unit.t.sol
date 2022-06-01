@@ -17,6 +17,8 @@ import "../mock/CEtherMock.sol";
 import "../mock/ERC20Mock.sol";
 import "../mock/ERC721Mock.sol";
 
+import "../Console.sol";
+
 contract LendingAuctionUnitTest is
     BaseTest,
     ILendingEvents,
@@ -124,13 +126,13 @@ contract LendingAuctionUnitTest is
         Offer memory offer = Offer({
             creator: LENDER_1,
             nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
+            interestRatePerSecond: 694444444444,
             fixedTerms: false,
             floorTerm: true,
             lenderOffer: true,
             nftId: 1,
             asset: address(usdcToken),
-            amount: 1 ether,
+            amount: 6 ether,
             duration: 1 days,
             expiration: uint32(block.timestamp + 1)
         });
@@ -6784,6 +6786,39 @@ contract LendingAuctionUnitTest is
         lendingAuction.repayLoanForAccount(address(mockNft), 1);
     }
 
+    function testDrawLoanAmount_slashUnsupportedAmount_works() public {
+        setupRefinance();
+
+        //increase block.timestamp to accumulate interest
+        hevm.warp(block.timestamp + 12 hours);
+
+        hevm.prank(LENDER_2);
+        liquidityProviders.withdrawErc20(address(usdcToken), 0.9 ether);
+
+        LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
+        (uint256 lenderInterest,) = lendingAuction.calculateInterestAccrued(address(mockNft), 1);
+        uint256 lenderBalanceBefore = liquidityProviders.getCAssetBalance(LENDER_2, address(cUSDCToken));
+
+        assertEq(lenderInterest, 29999999999980800);
+        assertEq(loanAuction.amountDrawn, 6 ether);
+        assertTrue(loanAuction.lenderRefi);
+        assertEq(lenderBalanceBefore, 40000000000019200000000000000000000);
+
+        lendingAuction.drawLoanAmount(address(mockNft), 1, 1 ether);
+
+        LoanAuction memory loanAuctionAfter = lendingAuction.getLoanAuction(address(mockNft), 1);
+        (uint256 lenderInterestAfter,) = lendingAuction.calculateInterestAccrued(address(mockNft), 1);
+        uint256 lenderBalanceAfter = liquidityProviders.getCAssetBalance(LENDER_2, address(cUSDCToken));
+        
+        assertEq(lenderInterestAfter, 0);
+        assertEq(lenderBalanceAfter, 0);        
+        // balance of the borrower
+        assertEq(usdcToken.balanceOf(address(this)), 6040000000000019200);
+        // we expect the amountDrawn to be 6.04x ether. This is the remaining balance of the lender plus the current amountdrawn
+        assertEq(loanAuctionAfter.amountDrawn, 6040000000000019200);
+        assertTrue(!loanAuctionAfter.lenderRefi);
+    }
+
     // TODO(miller): More tests for regen collective percentage
     // TODO(miller): Tests for slashUnsupportedAmount
     // TODO(miller): Tests for interest math and dynamic interestRatePerSecond
@@ -6793,4 +6828,5 @@ contract LendingAuctionUnitTest is
     // TODO(miller): Review contract functions and ensure there are tests for each function
     // TODO updateLendingContractAddress test
     // TODO updateLiquidityContractAddress test
+    // TODO(captnseagraves): Add tests for lenderRefi in relevant functions
 }
