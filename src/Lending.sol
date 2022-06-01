@@ -13,6 +13,7 @@ import "./interfaces/niftyapes/liquidity/ILiquidity.sol";
 import "./interfaces/niftyapes/offers/IOffers.sol";
 import "./interfaces/sanctions/SanctionsList.sol";
 
+import "./test/Console.sol";
 
 /// @title Implemention of the ILending interface
 contract NiftyApesLending is
@@ -554,10 +555,6 @@ contract NiftyApesLending is
         requireDrawableAmount(loanAuction, drawAmount);
         requireLoanNotExpired(loanAuction);
 
-        if (loanAuction.lenderRefi) {
-            loanAuction.lenderRefi = false;
-        }
-
         uint256 slashedDrawAmount = slashUnsupportedAmount(loanAuction, drawAmount, cAsset);
 
         if (slashedDrawAmount > 0) {
@@ -580,6 +577,7 @@ contract NiftyApesLending is
                 loanAuction.asset,
                 slashedDrawAmount
             );
+
             ILiquidity(liquidityContractAddress).withdrawCBalance(
                 loanAuction.lender,
                 cAsset,
@@ -765,10 +763,13 @@ contract NiftyApesLending is
         address cAsset
     ) internal returns (uint256) {
         if (loanAuction.lenderRefi) {
+            loanAuction.lenderRefi = false;
+
             uint256 lenderBalance = ILiquidity(liquidityContractAddress).getCAssetBalance(
                 loanAuction.lender,
                 cAsset
             );
+
             uint256 drawTokens = ILiquidity(liquidityContractAddress).assetAmountToCAssetAmount(
                 loanAuction.asset,
                 drawAmount
