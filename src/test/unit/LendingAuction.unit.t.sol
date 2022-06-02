@@ -6787,14 +6787,14 @@ contract LendingAuctionUnitTest is
     }
 
     function testFrontRunningIsProfitable() public {
-        // Note borrower and Lender 1 are colluding together
+        // Note: Borrower and Lender 1 are colluding throughout
         // to extract fees from Lender 2
         hevm.startPrank(LENDER_1);
         usdcToken.mint(address(LENDER_1), 10 ether);
         usdcToken.approve(address(liquidityProviders), 10 ether);
         liquidityProviders.supplyErc20(address(usdcToken), 10 ether);
 
-        // Lender 1 has 1e18 USDC (1e18e18 cUSDC)
+        // Lender 1 has 10e18 USDC (10e18e18 cUSDC)
         assertEq(
             liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken)),
             10 ether * 1 ether
