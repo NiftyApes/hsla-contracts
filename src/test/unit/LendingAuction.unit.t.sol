@@ -126,13 +126,13 @@ contract LendingAuctionUnitTest is
         Offer memory offer = Offer({
             creator: LENDER_1,
             nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
+            interestRatePerSecond: 694444444444,
             fixedTerms: false,
             floorTerm: true,
             lenderOffer: true,
             nftId: 1,
             asset: address(usdcToken),
-            amount: 1 ether,
+            amount: 6 ether,
             duration: 1 days,
             expiration: uint32(block.timestamp + 1)
         });
@@ -6981,4 +6981,5 @@ contract LendingAuctionUnitTest is
     // TODO(miller): Review contract functions and ensure there are tests for each function
     // TODO updateLendingContractAddress test
     // TODO updateLiquidityContractAddress test
+    // TODO(captnseagraves): Add tests for lenderRefi in relevant functions
 }
