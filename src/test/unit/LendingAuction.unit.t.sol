@@ -6846,9 +6846,9 @@ contract LendingAuctionUnitTest is
         // Warp ahead 12 hours
         hevm.warp(block.timestamp + 12 hours);
 
-        // Lender 2 wants to refinance
-        // given the current loan, they only expect
-        // to pay an origination fee relative to 1e18 draw amount
+        // Lender 2 wants to refinance.
+        // Given the current loan, they only expect
+        // to pay an origination fee relative to 1 USDC draw amount
         // and no gas griefing fee
         hevm.startPrank(LENDER_2);
         usdcToken.mint(address(LENDER_2), 10 ether);
@@ -6857,7 +6857,7 @@ contract LendingAuctionUnitTest is
         liquidityProviders.supplyErc20(address(usdcToken), 10 ether);
         hevm.stopPrank();
 
-        // Lender 1 decides to frontrun Lender 2
+        // Lender 1 decides to frontrun Lender 2,
         // thereby 9x'ing the origination fee
         // and adding a gas griefing fee
         hevm.startPrank(LENDER_1);
@@ -6889,8 +6889,7 @@ contract LendingAuctionUnitTest is
         hevm.stopPrank();
 
         // Borrower (colluding with Lender 1 and still frontrunning Lender 2)
-        // draws full amount
-        // to maximize origination fee and gas griefing fee
+        // draws full amount to maximize origination fee and gas griefing fee
         // that Lender 2 will pay Lender 1
         lendingAuction.drawLoanAmount(address(mockNft), 1, 8 ether);
 
