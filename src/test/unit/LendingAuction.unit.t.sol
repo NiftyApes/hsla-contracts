@@ -6789,15 +6789,21 @@ contract LendingAuctionUnitTest is
     function testFrontRunningIsProfitable() public {
         // Note: Borrower and Lender 1 are colluding throughout
         // to extract fees from Lender 2
+
+        // Also Note: assuming USDC has decimals 18 throughout
+        // even though the real version has decimals 6
         hevm.startPrank(LENDER_1);
         usdcToken.mint(address(LENDER_1), 10 ether);
         usdcToken.approve(address(liquidityProviders), 10 ether);
         liquidityProviders.supplyErc20(address(usdcToken), 10 ether);
 
-        // Lender 1 has 10e18 USDC (10e18e18 cUSDC)
+        // Lender 1 has 10 USDC
         assertEq(
-            liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken)),
-            10 ether * 1 ether
+            liquidityProviders.cAssetAmountToAssetAmount(
+                address(cUSDCToken),
+                liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken))
+            ),
+            10 ether
         );
 
         Offer memory offer = Offer({
@@ -6828,10 +6834,13 @@ contract LendingAuctionUnitTest is
             offer.floorTerm
         );
 
-        // Lender 1 has 1e18 fewer USDC, i.e., 9e18
+        // Lender 1 has 1 fewer USDC, i.e., 9
         assertEq(
-            liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken)),
-            9 ether * 1 ether
+            liquidityProviders.cAssetAmountToAssetAmount(
+                address(cUSDCToken),
+                liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken))
+            ),
+            9 ether
         );
 
         // Warp ahead 12 hours
@@ -6868,10 +6877,13 @@ contract LendingAuctionUnitTest is
 
         lendingAuction.refinanceByLender(frontrunner);
 
-        // Lender 1 has same 9e18 USDC (9e18e18 cUSDC)
+        // Lender 1 has same 9 USDC
         assertEq(
-            liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken)),
-            9 ether * 1 ether
+            liquidityProviders.cAssetAmountToAssetAmount(
+                address(cUSDCToken),
+                liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken))
+            ),
+            9 ether
         );
 
         hevm.stopPrank();
@@ -6882,10 +6894,13 @@ contract LendingAuctionUnitTest is
         // that Lender 2 will pay Lender 1
         lendingAuction.drawLoanAmount(address(mockNft), 1, 8 ether);
 
-        // After borrower draws rest, Lender 1 has 1e18 USDC
+        // After borrower draws rest, Lender 1 has 1 USDC
         assertEq(
-            liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken)),
-            1 ether * 1 ether
+            liquidityProviders.cAssetAmountToAssetAmount(
+                address(cUSDCToken),
+                liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken))
+            ),
+            1 ether
         );
 
         hevm.startPrank(LENDER_2);
@@ -6923,8 +6938,11 @@ contract LendingAuctionUnitTest is
             ((amtDrawn * gasGriefingFee) / MAX_BPS);
 
         assertEq(
-            liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken)),
-            (principal + interest + feesFromLender2) * 1 ether
+            liquidityProviders.cAssetAmountToAssetAmount(
+                address(cUSDCToken),
+                liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken))
+            ),
+            principal + interest + feesFromLender2
         );
 
         assertEq(feesFromLender2, 0.0675 ether);
