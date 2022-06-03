@@ -583,8 +583,6 @@ contract NiftyApesLending is
         uint256 slashedDrawAmount = slashUnsupportedAmount(loanAuction, drawAmount, cAsset);
 
         if (slashedDrawAmount > 0) {
-            updateInterest(loanAuction);
-
             uint128 currentAmountDrawn = loanAuction.amountDrawn;
             loanAuction.amountDrawn += SafeCastUpgradeable.toUint128(slashedDrawAmount);
 
@@ -815,7 +813,13 @@ contract NiftyApesLending is
                     .cAssetAmountToAssetAmount(cAsset, lenderBalance);
                 drawAmount = lenderBalanceUnderlying;
 
-                // setting lastUpdatedTimestamp to currentTimestamp eliminates lender profit for the latest period
+                // update interest only for protocol. This eliminates lender interest for the current interest period
+                (, uint256 protocolInterest) = calculateInterestAccrued(loanAuction);
+
+                loanAuction.accumulatedProtocolInterest += SafeCastUpgradeable.toUint128(
+                    protocolInterest
+                );
+
                 loanAuction.lastUpdatedTimestamp = currentTimestamp();
                 loanAuction.amount =
                     loanAuction.amountDrawn +
