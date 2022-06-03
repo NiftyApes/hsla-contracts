@@ -1174,10 +1174,6 @@ contract NiftyApesLending is
             }
             return cTokensMinted;
         } else {
-            IERC20Upgradeable(loanAuction.asset).safeTransfer(
-                address(liquidityContractAddress),
-                payment
-            );
             return
                 ILiquidity(liquidityContractAddress).mintCErc20(
                     msg.sender,

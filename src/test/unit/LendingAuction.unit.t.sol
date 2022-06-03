@@ -6679,6 +6679,10 @@ contract LendingAuctionUnitTest is
         assertEq(usdcToken.balanceOf(address(this)), 0);
         assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
         assertEq(
+            liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken)),
+            (6 ether + lenderInterest + protocolInterest) * 1 ether
+        );
+        assertEq(
             cUSDCToken.balanceOf(address(liquidityProviders)),
             (6 ether + lenderInterest + protocolInterest) * 1 ether
         );
@@ -6839,4 +6843,5 @@ contract LendingAuctionUnitTest is
     // TODO updateLiquidityContractAddress test
     // TODO(captnseagraves): Add tests for lenderRefi in relevant functions
     // TODO: Write tests that set protocolInterestBps higher than 0 and check payout
+    // TODO: Write tests for full flow with ETH
 }
