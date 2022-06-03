@@ -275,7 +275,7 @@ contract LendingAuctionUnitTest is
             expiration: 8
         });
 
-        hevm.expectRevert("offer creator");
+        hevm.expectRevert("00024");
 
         offersContract.createOffer(offer);
     }
@@ -408,7 +408,7 @@ contract LendingAuctionUnitTest is
 
         hevm.prank(address(0x0000000000000000000000000000000000000001));
 
-        hevm.expectRevert("offer creator");
+        hevm.expectRevert("00024");
 
         offersContract.removeOffer(
             offer.nftContractAddress,
@@ -574,7 +574,7 @@ contract LendingAuctionUnitTest is
 
         bytes32 offerHash = offersContract.getOfferHash(offer);
 
-        hevm.expectRevert("lender offer");
+        hevm.expectRevert("00012");
 
         lendingAuction.executeLoanByBorrower(
             offer.nftContractAddress,
@@ -608,7 +608,7 @@ contract LendingAuctionUnitTest is
 
         bytes32 offerHash = offersContract.getOfferHash(offer);
 
-        hevm.expectRevert("offer expired");
+        hevm.expectRevert("00010");
 
         lendingAuction.executeLoanByBorrower(
             offer.nftContractAddress,
@@ -642,7 +642,7 @@ contract LendingAuctionUnitTest is
 
         bytes32 offerHash = offersContract.getOfferHash(offer);
 
-        hevm.expectRevert("offer duration");
+        hevm.expectRevert("00011");
 
         lendingAuction.executeLoanByBorrower(
             offer.nftContractAddress,
@@ -678,7 +678,7 @@ contract LendingAuctionUnitTest is
 
         mockNft.transferFrom(address(this), address(0x0000000000000000000000000000000000000001), 1);
 
-        hevm.expectRevert("nft owner");
+        hevm.expectRevert("00018");
 
         lendingAuction.executeLoanByBorrower(
             offer.nftContractAddress,
@@ -866,7 +866,7 @@ contract LendingAuctionUnitTest is
 
         bytes32 offerHash = offersContract.getOfferHash(offer);
 
-        hevm.expectRevert("lender offer");
+        hevm.expectRevert("00012");
 
         lendingAuction.executeLoanByBorrower(
             offer.nftContractAddress,
@@ -1254,7 +1254,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        hevm.expectRevert("offer creator mismatch");
+        hevm.expectRevert("00024");
 
         lendingAuction.executeLoanByBorrowerSignature(offer, signature, 4);
     }
@@ -1285,7 +1285,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        hevm.expectRevert("lender offer");
+        hevm.expectRevert("00012");
 
         lendingAuction.executeLoanByBorrowerSignature(offer, signature, 4);
     }
@@ -1316,7 +1316,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        hevm.expectRevert("offer expired");
+        hevm.expectRevert("00010");
 
         lendingAuction.executeLoanByBorrowerSignature(offer, signature, 4);
     }
@@ -1347,7 +1347,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        hevm.expectRevert("offer duration");
+        hevm.expectRevert("00011");
 
         lendingAuction.executeLoanByBorrowerSignature(offer, signature, 4);
     }
@@ -1379,7 +1379,7 @@ contract LendingAuctionUnitTest is
         mockNft.transferFrom(address(this), address(0x0000000000000000000000000000000000000001), 1);
         bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
-        hevm.expectRevert("nft owner");
+        hevm.expectRevert("00018");
 
         lendingAuction.executeLoanByBorrowerSignature(offer, signature, 1);
     }
@@ -1753,7 +1753,7 @@ contract LendingAuctionUnitTest is
 
         bytes32 offerHash = offersContract.getOfferHash(offer);
 
-        hevm.expectRevert("no offer");
+        hevm.expectRevert("00004");
 
         lendingAuction.executeLoanByLender(
             offer.nftContractAddress,
@@ -1796,7 +1796,7 @@ contract LendingAuctionUnitTest is
 
         bytes32 offerHash = offersContract.getOfferHash(offer);
 
-        hevm.expectRevert("offer expired");
+        hevm.expectRevert("00010");
 
         hevm.stopPrank();
 
@@ -1843,7 +1843,7 @@ contract LendingAuctionUnitTest is
 
         bytes32 offerHash = offersContract.getOfferHash(offer);
 
-        hevm.expectRevert("offer duration");
+        hevm.expectRevert("00011");
 
         hevm.stopPrank();
 
@@ -1884,7 +1884,7 @@ contract LendingAuctionUnitTest is
 
         mockNft.transferFrom(address(this), address(0x0000000000000000000000000000000000000001), 1);
 
-        hevm.expectRevert("nft owner");
+        hevm.expectRevert("00018");
 
         hevm.startPrank(LENDER_1);
 
@@ -2047,7 +2047,7 @@ contract LendingAuctionUnitTest is
 
         bytes32 offerHash = offersContract.getOfferHash(offer);
 
-        hevm.expectRevert("borrower offer");
+        hevm.expectRevert("00013");
 
         lendingAuction.executeLoanByLender(
             offer.nftContractAddress,
@@ -2374,7 +2374,7 @@ contract LendingAuctionUnitTest is
 
         bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
-        hevm.expectRevert("offer creator mismatch");
+        hevm.expectRevert("00024");
 
         lendingAuction.executeLoanByLenderSignature(offer, signature);
     }
@@ -2405,7 +2405,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        hevm.expectRevert("borrower offer");
+        hevm.expectRevert("00013");
 
         lendingAuction.executeLoanByLenderSignature(offer, signature);
     }
@@ -2436,7 +2436,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        hevm.expectRevert("offer expired");
+        hevm.expectRevert("00010");
 
         lendingAuction.executeLoanByLenderSignature(offer, signature);
     }
@@ -2467,7 +2467,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        hevm.expectRevert("offer duration");
+        hevm.expectRevert("00011");
 
         lendingAuction.executeLoanByLenderSignature(offer, signature);
     }
@@ -2496,7 +2496,7 @@ contract LendingAuctionUnitTest is
 
         bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
-        hevm.expectRevert("nft owner");
+        hevm.expectRevert("00018");
 
         lendingAuction.executeLoanByLenderSignature(offer, signature);
     }
@@ -2815,7 +2815,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        hevm.expectRevert("fixed term loan");
+        hevm.expectRevert("00015");
 
         lendingAuction.refinanceByBorrower(address(mockNft), 1, true, offerHash2);
     }
@@ -2880,7 +2880,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        hevm.expectRevert("offer duration");
+        hevm.expectRevert("00011");
 
         lendingAuction.refinanceByBorrower(address(mockNft), 1, true, offerHash2);
     }
@@ -2943,7 +2943,7 @@ contract LendingAuctionUnitTest is
 
         bytes32 offerHash2 = offersContract.getOfferHash(offer2);
 
-        hevm.expectRevert("lender offer");
+        hevm.expectRevert("00012");
 
         lendingAuction.refinanceByBorrower(address(mockNft), 1, false, offerHash2);
     }
@@ -3008,7 +3008,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        hevm.expectRevert("offer nftId mismatch");
+        hevm.expectRevert("00021");
 
         lendingAuction.refinanceByBorrower(address(mockNft), 3, false, offerHash2);
     }
@@ -3071,7 +3071,7 @@ contract LendingAuctionUnitTest is
 
         bytes32 offerHash2 = offersContract.getOfferHash(offer2);
 
-        hevm.expectRevert("asset mismatch");
+        hevm.expectRevert("00019");
 
         lendingAuction.refinanceByBorrower(address(mockNft), 2, false, offerHash2);
     }
@@ -3140,7 +3140,7 @@ contract LendingAuctionUnitTest is
 
         lendingAuction.repayLoan(address(mockNft), 1);
 
-        hevm.expectRevert("asset mismatch");
+        hevm.expectRevert("00019");
 
         lendingAuction.refinanceByBorrower(address(mockNft), 2, true, offerHash2);
     }
@@ -3208,7 +3208,7 @@ contract LendingAuctionUnitTest is
 
         usdcToken.approve(address(liquidityProviders), 6);
 
-        hevm.expectRevert("nft owner");
+        hevm.expectRevert("00018");
 
         lendingAuction.refinanceByBorrower(address(mockNft), 1, true, offerHash2);
     }
@@ -3276,7 +3276,7 @@ contract LendingAuctionUnitTest is
 
         usdcToken.approve(address(liquidityProviders), 6);
 
-        hevm.expectRevert("offer nftId mismatch");
+        hevm.expectRevert("00021");
 
         lendingAuction.refinanceByBorrower(address(mockNft), 1, true, offerHash2);
     }
@@ -3344,7 +3344,7 @@ contract LendingAuctionUnitTest is
 
         usdcToken.approve(address(liquidityProviders), 6);
 
-        hevm.expectRevert("offer nftId mismatch");
+        hevm.expectRevert("00021");
 
         lendingAuction.refinanceByBorrower(address(mockNft), 1, true, offerHash2);
     }
@@ -3412,7 +3412,7 @@ contract LendingAuctionUnitTest is
 
         usdcToken.approve(address(liquidityProviders), 6);
 
-        hevm.expectRevert("offer nftId mismatch");
+        hevm.expectRevert("00021");
 
         lendingAuction.refinanceByBorrower(address(mockNft), 1, true, offerHash2);
     }
@@ -3479,7 +3479,7 @@ contract LendingAuctionUnitTest is
 
         hevm.warp(block.timestamp + 2);
 
-        hevm.expectRevert("offer expired");
+        hevm.expectRevert("00010");
 
         lendingAuction.refinanceByBorrower(address(mockNft), 1, true, offerHash2);
     }
@@ -3809,7 +3809,7 @@ contract LendingAuctionUnitTest is
 
         hevm.warp(block.timestamp + 100);
 
-        hevm.expectRevert("offer amount");
+        hevm.expectRevert("00005");
 
         lendingAuction.refinanceByBorrower(address(mockNft), 1, true, offerHash2);
     }
@@ -3978,7 +3978,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        hevm.expectRevert("fixed term loan");
+        hevm.expectRevert("00015");
 
         lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
     }
@@ -4106,7 +4106,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        hevm.expectRevert("offer duration");
+        hevm.expectRevert("00011");
 
         lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
     }
@@ -4168,7 +4168,7 @@ contract LendingAuctionUnitTest is
 
         bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
 
-        hevm.expectRevert("lender offer");
+        hevm.expectRevert("00012");
 
         lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
     }
@@ -4231,7 +4231,7 @@ contract LendingAuctionUnitTest is
 
         bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
 
-        hevm.expectRevert("offer nftId mismatch");
+        hevm.expectRevert("00021");
 
         lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
     }
@@ -4296,7 +4296,7 @@ contract LendingAuctionUnitTest is
 
         hevm.startPrank(BORROWER_1);
 
-        hevm.expectRevert("nft owner");
+        hevm.expectRevert("00018");
 
         lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
     }
@@ -4327,7 +4327,7 @@ contract LendingAuctionUnitTest is
         bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
 
         mockNft.transferFrom(address(this), address(0x1), 1);
-        hevm.expectRevert("asset mismatch");
+        hevm.expectRevert("00019");
 
         lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
     }
@@ -4390,7 +4390,7 @@ contract LendingAuctionUnitTest is
 
         bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
 
-        hevm.expectRevert("asset mismatch");
+        hevm.expectRevert("00019");
 
         lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
     }
@@ -4453,7 +4453,7 @@ contract LendingAuctionUnitTest is
 
         bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
 
-        hevm.expectRevert("offer nftId mismatch");
+        hevm.expectRevert("00021");
 
         lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
     }
@@ -4516,7 +4516,7 @@ contract LendingAuctionUnitTest is
 
         bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
 
-        hevm.expectRevert("asset mismatch");
+        hevm.expectRevert("00019");
 
         lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
     }
@@ -4580,7 +4580,7 @@ contract LendingAuctionUnitTest is
         bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
 
         hevm.warp(block.timestamp + 2);
-        hevm.expectRevert("offer expired");
+        hevm.expectRevert("00010");
 
         lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
     }
@@ -5002,7 +5002,7 @@ contract LendingAuctionUnitTest is
 
         bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
 
-        hevm.expectRevert("offer amount");
+        hevm.expectRevert("00005");
 
         hevm.warp(block.timestamp + 100);
 
@@ -5167,7 +5167,7 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 1)
         });
 
-        hevm.expectRevert("fixed term loan");
+        hevm.expectRevert("00015");
 
         lendingAuction.refinanceByLender(offer2);
     }
@@ -5226,7 +5226,7 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 1)
         });
 
-        hevm.expectRevert("not an improvement");
+        hevm.expectRevert("00025");
 
         lendingAuction.refinanceByLender(offer2);
     }
@@ -5287,7 +5287,7 @@ contract LendingAuctionUnitTest is
             offer.floorTerm
         );
 
-        hevm.expectRevert("lender offer");
+        hevm.expectRevert("00012");
         hevm.startPrank(LENDER_2);
         lendingAuction.refinanceByLender(offer2);
     }
@@ -5348,7 +5348,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        hevm.expectRevert("loan not active");
+        hevm.expectRevert("00007");
         hevm.startPrank(LENDER_2);
         lendingAuction.refinanceByLender(offer2);
     }
@@ -5407,7 +5407,7 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 1)
         });
 
-        hevm.expectRevert("loan not active");
+        hevm.expectRevert("00007");
 
         lendingAuction.refinanceByLender(offer2);
     }
@@ -5472,7 +5472,7 @@ contract LendingAuctionUnitTest is
 
         lendingAuction.repayLoan(address(mockNft), 1);
 
-        hevm.expectRevert("loan not active");
+        hevm.expectRevert("00007");
         hevm.startPrank(LENDER_2);
 
         lendingAuction.refinanceByLender(offer2);
@@ -5532,7 +5532,7 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 1)
         });
 
-        hevm.expectRevert("loan not active");
+        hevm.expectRevert("00007");
 
         lendingAuction.refinanceByLender(offer2);
     }
@@ -5591,7 +5591,7 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 1)
         });
 
-        hevm.expectRevert("loan not active");
+        hevm.expectRevert("00007");
 
         lendingAuction.refinanceByLender(offer2);
     }
@@ -5650,7 +5650,7 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 1)
         });
 
-        hevm.expectRevert("asset mismatch");
+        hevm.expectRevert("00019");
 
         lendingAuction.refinanceByLender(offer2);
     }
@@ -5711,7 +5711,7 @@ contract LendingAuctionUnitTest is
 
         hevm.warp(block.timestamp + 2);
 
-        hevm.expectRevert("offer expired");
+        hevm.expectRevert("00010");
 
         lendingAuction.refinanceByLender(offer2);
     }
@@ -5777,7 +5777,7 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 1)
         });
 
-        hevm.expectRevert("sanctioned address");
+        hevm.expectRevert("00017");
 
         lendingAuction.refinanceByLender(offer2);
     }
@@ -5937,7 +5937,7 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 1)
         });
 
-        hevm.expectRevert("fixed term offer");
+        hevm.expectRevert("00016");
 
         lendingAuction.refinanceByLender(offer2);
     }
@@ -6391,7 +6391,7 @@ contract LendingAuctionUnitTest is
         // set time to one second before the loan will expire
         hevm.warp(block.timestamp + 1 days - 1);
 
-        hevm.expectRevert("loan not expired");
+        hevm.expectRevert("00008");
         lendingAuction.seizeAsset(address(mockNft), 1);
     }
 
@@ -6724,7 +6724,7 @@ contract LendingAuctionUnitTest is
 
         assertEq(loanAuction.amountDrawn, 6 ether);
 
-        hevm.expectRevert("funds overdrawn");
+        hevm.expectRevert("00020");
 
         lendingAuction.drawLoanAmount(address(mockNft), 1, 2 * 10**18);
     }
@@ -6738,7 +6738,7 @@ contract LendingAuctionUnitTest is
         lendingAuction.repayLoan(address(mockNft), 1);
 
         // TODO(miller) change NiftApes.sol so
-        // that is "loan not active" is revert
+        // that is "00007" is revert
         hevm.expectRevert("asset allow list");
 
         lendingAuction.drawLoanAmount(address(mockNft), 1, 2 * 10**18);
@@ -6747,7 +6747,7 @@ contract LendingAuctionUnitTest is
     function testCannotDrawLoanAmount_not_your_loan() public {
         setupRefinance();
 
-        hevm.expectRevert("nft owner");
+        hevm.expectRevert("00018");
 
         hevm.prank(SIGNER_1);
 
@@ -6759,7 +6759,7 @@ contract LendingAuctionUnitTest is
 
         hevm.warp(block.timestamp + 3 days);
 
-        hevm.expectRevert("loan expired");
+        hevm.expectRevert("00009");
 
         lendingAuction.drawLoanAmount(address(mockNft), 1, 5 * 10**17);
     }
@@ -6781,7 +6781,7 @@ contract LendingAuctionUnitTest is
         usdcToken.mint(address(SANCTIONED_ADDRESS), 1000 ether);
         usdcToken.approve(address(liquidityProviders), 1000 ether);
 
-        hevm.expectRevert("sanctioned address");
+        hevm.expectRevert("00017");
 
         lendingAuction.repayLoanForAccount(address(mockNft), 1);
     }

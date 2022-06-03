@@ -13,8 +13,6 @@ import "./interfaces/niftyapes/liquidity/ILiquidity.sol";
 import "./interfaces/niftyapes/offers/IOffers.sol";
 import "./interfaces/sanctions/SanctionsList.sol";
 
-import "./test/Console.sol";
-
 /// @title Implemention of the ILending interface
 contract NiftyApesLending is
     OwnableUpgradeable,
@@ -95,35 +93,35 @@ contract NiftyApesLending is
 
     /// @inheritdoc ILendingAdmin
     function updateOriginationPremiumLenderBps(uint16 newOriginationPremiumBps) external onlyOwner {
-        require(newOriginationPremiumBps <= MAX_FEE, "max fee");
+        requireMaxFee(newOriginationPremiumBps);
         emit OriginationPremiumBpsUpdated(originationPremiumBps, newOriginationPremiumBps);
         originationPremiumBps = newOriginationPremiumBps;
     }
 
     /// @inheritdoc ILendingAdmin
     function updateGasGriefingPremiumBps(uint16 newGasGriefingPremiumBps) external onlyOwner {
-        require(newGasGriefingPremiumBps <= MAX_FEE, "max fee");
+        requireMaxFee(newGasGriefingPremiumBps);
         emit GasGriefingPremiumBpsUpdated(gasGriefingPremiumBps, newGasGriefingPremiumBps);
         gasGriefingPremiumBps = newGasGriefingPremiumBps;
     }
 
     /// @inheritdoc ILendingAdmin
     function updateGasGriefingProtocolPremiumBps(uint16 newGasGriefingProtocolPremiumBps) external onlyOwner {
-        require(newGasGriefingProtocolPremiumBps <= MAX_FEE, "max fee");
+        requireMaxFee(newGasGriefingProtocolPremiumBps);
         emit GasGriefingProtocolPremiumBpsUpdated(gasGriefingProtocolPremiumBps, newGasGriefingProtocolPremiumBps);
         gasGriefingProtocolPremiumBps = newGasGriefingProtocolPremiumBps;
     }
 
     /// @inheritdoc ILendingAdmin
     function updateDefaultRefinancePremiumBps(uint16 newDefaultRefinancePremiumBps) external onlyOwner {
-        require(newDefaultRefinancePremiumBps <= MAX_FEE, "max fee");
+        requireMaxFee(newDefaultRefinancePremiumBps);
         emit DefaultRefinancePremiumBpsUpdated(defaultRefinancePremiumBps, newDefaultRefinancePremiumBps);
         defaultRefinancePremiumBps = newDefaultRefinancePremiumBps;
     }
 
     /// @inheritdoc ILendingAdmin
     function updateTermGriefingPremiumBps(uint16 newTermGriefingPremiumBps) external onlyOwner {
-        require(newTermGriefingPremiumBps <= MAX_FEE, "max fee");
+        requireMaxFee(newTermGriefingPremiumBps);
         emit TermGriefingPremiumBpsUpdated(termGriefingPremiumBps, newTermGriefingPremiumBps);
         termGriefingPremiumBps = newTermGriefingPremiumBps;
     }
@@ -464,11 +462,7 @@ contract NiftyApesLending is
             uint256 additionalTokens = ILiquidity(liquidityContractAddress)
                 .assetAmountToCAssetAmount(offer.asset, offer.amount - loanAuction.amountDrawn);
 
-            require(
-                ILiquidity(liquidityContractAddress).getCAssetBalance(offer.creator, cAsset) >=
-                    additionalTokens,
-                "lender balance"
-            );
+            requireSufficientBalance(offer.creator, cAsset, additionalTokens);
         } else {
             // TODO: (captnseagraves) re-examine the lenderPremium here, can a lender lose money here?
             //        if a borrower pays back some and then the lender gets refinanced, do they lose money?
@@ -499,11 +493,7 @@ contract NiftyApesLending is
                 .assetAmountToCAssetAmount(offer.asset, fullAmount);
 
             // require prospective lender has sufficient available balance to refinance loan
-            require(
-                ILiquidity(liquidityContractAddress).getCAssetBalance(offer.creator, cAsset) >=
-                    fullCTokenAmount,
-                "lender balance"
-            );
+            requireSufficientBalance(offer.creator, cAsset, fullCTokenAmount);
 
             uint256 protocolPremimuimInCtokens = ILiquidity(liquidityContractAddress)
                 .assetAmountToCAssetAmount(offer.asset, protocolPremium);
@@ -909,66 +899,78 @@ contract NiftyApesLending is
         return improvementSum > termGriefingPremiumBps ? true : false;
     }
 
+    function requireSufficientBalance(address creator, address cAsset, uint256 amount) internal view {
+        require(
+                ILiquidity(liquidityContractAddress).getCAssetBalance(creator, cAsset) >=
+                    amount,
+                "00001"
+            );
+    }
+
+    function requireMaxFee(uint16 feeValue) internal pure {
+        require(feeValue <= MAX_FEE, "00002");
+    }
+
     function requireSignature65(bytes memory signature) internal pure {
-        require(signature.length == 65, "signature unsupported");
+        require(signature.length == 65, "00003");
     }
 
     function requireOfferPresent(Offer memory offer) internal pure {
-        require(offer.asset != address(0), "no offer");
+        require(offer.asset != address(0), "00004");
     }
 
     function requireOfferAmount(Offer memory offer, uint256 amount) internal pure {
-        require(offer.amount >= amount, "offer amount");
+        require(offer.amount >= amount, "00005");
     }
 
     function requireNoOpenLoan(LoanAuction storage loanAuction) internal view {
-        require(loanAuction.lastUpdatedTimestamp == 0, "Loan already open");
+        require(loanAuction.lastUpdatedTimestamp == 0, "00006");
     }
 
     function requireOpenLoan(LoanAuction storage loanAuction) internal view {
-        require(loanAuction.lastUpdatedTimestamp != 0, "loan not active");
+        require(loanAuction.lastUpdatedTimestamp != 0, "00007");
     }
 
     function requireLoanExpired(LoanAuction storage loanAuction) internal view {
-        require(currentTimestamp() >= loanAuction.loanEndTimestamp, "loan not expired");
+        require(currentTimestamp() >= loanAuction.loanEndTimestamp, "00008");
     }
 
     function requireLoanNotExpired(LoanAuction storage loanAuction) internal view {
-        require(currentTimestamp() < loanAuction.loanEndTimestamp, "loan expired");
+        require(currentTimestamp() < loanAuction.loanEndTimestamp, "00009");
     }
 
     function requireOfferNotExpired(Offer memory offer) internal view {
-        require(offer.expiration > currentTimestamp(), "offer expired");
+        require(offer.expiration > currentTimestamp(), "00010");
     }
 
     function requireMinDurationForOffer(Offer memory offer) internal pure {
-        require(offer.duration >= 1 days, "offer duration");
+        require(offer.duration >= 1 days, "00011");
     }
 
     function requireLenderOffer(Offer memory offer) internal pure {
-        require(offer.lenderOffer, "lender offer");
+        require(offer.lenderOffer, "00012");
     }
 
     function requireBorrowerOffer(Offer memory offer) internal pure {
-        require(!offer.lenderOffer, "borrower offer");
+        require(!offer.lenderOffer, "00013");
     }
 
     function requireNoFloorTerms(Offer memory offer) internal pure {
-        require(!offer.floorTerm, "floor term");
+        require(!offer.floorTerm, "00014");
     }
 
     function requireNoFixedTerm(LoanAuction storage loanAuction) internal view {
-        require(!loanAuction.fixedTerms, "fixed term loan");
+        require(!loanAuction.fixedTerms, "00015");
     }
 
     function requireNoFixTermOffer(Offer memory offer) internal pure {
-        require(!offer.fixedTerms, "fixed term offer");
+        require(!offer.fixedTerms, "00016");
     }
 
     function requireIsNotSanctioned(address addressToCheck) internal view {
         SanctionsList sanctionsList = SanctionsList(SANCTIONS_CONTRACT);
         bool isToSanctioned = sanctionsList.isSanctioned(addressToCheck);
-        require(!isToSanctioned, "sanctioned address");
+        require(!isToSanctioned, "00017");
     }
 
     function require721Owner(
@@ -976,34 +978,34 @@ contract NiftyApesLending is
         uint256 nftId,
         address owner
     ) internal view {
-        require(IERC721Upgradeable(nftContractAddress).ownerOf(nftId) == owner, "nft owner");
+        require(IERC721Upgradeable(nftContractAddress).ownerOf(nftId) == owner, "00018");
     }
 
     function requireMatchingAsset(address asset1, address asset2) internal pure {
-        require(asset1 == asset2, "asset mismatch");
+        require(asset1 == asset2, "00019");
     }
 
     function requireDrawableAmount(LoanAuction storage loanAuction, uint256 drawAmount)
         internal
         view
     {
-        require((drawAmount + loanAuction.amountDrawn) <= loanAuction.amount, "funds overdrawn");
+        require((drawAmount + loanAuction.amountDrawn) <= loanAuction.amount, "00020");
     }
 
     function requireNftOwner(LoanAuction storage loanAuction, address nftOwner) internal view {
-        require(nftOwner == loanAuction.nftOwner, "nft owner");
+        require(nftOwner == loanAuction.nftOwner, "00021");
     }
 
     function requireMatchingNftId(Offer memory offer, uint256 nftId) internal pure {
-        require(nftId == offer.nftId, "offer nftId mismatch");
+        require(nftId == offer.nftId, "00022");
     }
 
     function requireMsgValue(uint256 amount) internal view {
-        require(amount == msg.value, "msg value");
+        require(amount == msg.value, "00023");
     }
 
     function requireOfferCreator(Offer memory offer, address creator) internal pure {
-        require(creator == offer.creator, "offer creator mismatch");
+        require(creator == offer.creator, "00024");
     }
 
     function requireOfferParity(LoanAuction storage loanAuction, Offer memory offer) internal view {
@@ -1040,7 +1042,7 @@ contract NiftyApesLending is
             return;
         }
 
-        revert("not an improvement");
+        revert("00025");
     }
 
     function createLoan(
@@ -1103,7 +1105,7 @@ contract NiftyApesLending is
     ) internal returns (uint256) {
         if (loanAuction.asset == ETH_ADDRESS) {
             if (rls.repayFull) {
-                require(msg.value >= payment, "msg.value too low");
+                require(msg.value >= payment, "00026");
             }
 
             uint256 cTokensMinted = ILiquidity(liquidityContractAddress).mintCEth(payment);
