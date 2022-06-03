@@ -6637,7 +6637,7 @@ contract LendingAuctionUnitTest is
         Offer memory offer = Offer({
             creator: LENDER_1,
             nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
+            interestRatePerSecond: 694444444444,
             fixedTerms: false,
             floorTerm: true,
             lenderOffer: true,
@@ -6796,8 +6796,11 @@ contract LendingAuctionUnitTest is
         liquidityProviders.withdrawErc20(address(usdcToken), 0.9 ether);
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
-        (uint256 lenderInterest,) = lendingAuction.calculateInterestAccrued(address(mockNft), 1);
-        uint256 lenderBalanceBefore = liquidityProviders.getCAssetBalance(LENDER_2, address(cUSDCToken));
+        (uint256 lenderInterest, ) = lendingAuction.calculateInterestAccrued(address(mockNft), 1);
+        uint256 lenderBalanceBefore = liquidityProviders.getCAssetBalance(
+            LENDER_2,
+            address(cUSDCToken)
+        );
 
         assertEq(lenderInterest, 29999999999980800);
         assertEq(loanAuction.amountDrawn, 6 ether);
@@ -6807,11 +6810,17 @@ contract LendingAuctionUnitTest is
         lendingAuction.drawLoanAmount(address(mockNft), 1, 1 ether);
 
         LoanAuction memory loanAuctionAfter = lendingAuction.getLoanAuction(address(mockNft), 1);
-        (uint256 lenderInterestAfter,) = lendingAuction.calculateInterestAccrued(address(mockNft), 1);
-        uint256 lenderBalanceAfter = liquidityProviders.getCAssetBalance(LENDER_2, address(cUSDCToken));
-        
+        (uint256 lenderInterestAfter, ) = lendingAuction.calculateInterestAccrued(
+            address(mockNft),
+            1
+        );
+        uint256 lenderBalanceAfter = liquidityProviders.getCAssetBalance(
+            LENDER_2,
+            address(cUSDCToken)
+        );
+
         assertEq(lenderInterestAfter, 0);
-        assertEq(lenderBalanceAfter, 0);        
+        assertEq(lenderBalanceAfter, 0);
         // balance of the borrower
         assertEq(usdcToken.balanceOf(address(this)), 6040000000000019200);
         // we expect the amountDrawn to be 6.04x ether. This is the remaining balance of the lender plus the current amountdrawn

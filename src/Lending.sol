@@ -4,6 +4,8 @@ pragma solidity 0.8.13;
 import "@openzeppelin/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 import "@openzeppelin/contracts/utils/math/SafeCastUpgradeable.sol";
@@ -23,6 +25,7 @@ contract NiftyApesLending is
     ERC721HolderUpgradeable,
     ILending
 {
+    using SafeERC20Upgradeable for IERC20Upgradeable;
     using AddressUpgradeable for address payable;
 
     /// @dev Internal address used for for ETH in our mappings
@@ -1162,6 +1165,7 @@ contract NiftyApesLending is
                 require(msg.value >= payment, "msg.value too low");
             }
 
+            payable(address(liquidityContractAddress)).sendValue(payment);
             uint256 cTokensMinted = ILiquidity(liquidityContractAddress).mintCEth(payment);
 
             // If the caller has overpaid we send the extra ETH back
@@ -1170,6 +1174,10 @@ contract NiftyApesLending is
             }
             return cTokensMinted;
         } else {
+            IERC20Upgradeable(loanAuction.asset).safeTransfer(
+                address(liquidityContractAddress),
+                payment
+            );
             return
                 ILiquidity(liquidityContractAddress).mintCErc20(
                     msg.sender,
