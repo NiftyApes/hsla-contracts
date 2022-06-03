@@ -6829,4 +6829,5 @@ contract LendingAuctionUnitTest is
     // TODO updateLendingContractAddress test
     // TODO updateLiquidityContractAddress test
     // TODO(captnseagraves): Add tests for lenderRefi in relevant functions
+    // TODO: Write tests that set protocolInterestBps higher than 0 and check payout
 }
