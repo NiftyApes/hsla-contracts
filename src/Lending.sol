@@ -696,6 +696,7 @@ contract NiftyApesLending is
                 requireMsgValue(rls.paymentAmount);
             }
             require(rls.paymentAmount < loanAuction.amountDrawn, "use repayLoan");
+            requireLoanNotExpired(loanAuction);
         }
 
         requireOpenLoan(loanAuction);
