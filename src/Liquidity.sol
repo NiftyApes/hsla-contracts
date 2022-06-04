@@ -153,9 +153,9 @@ contract NiftyApesLiquidity is
         nonReentrant
         returns (uint256)
     {
-        address cAsset = getCAsset(asset);
-
         requireIsNotSanctioned(msg.sender);
+
+        address cAsset = getCAsset(asset);
 
         uint256 cTokensMinted = _mintCErc20(msg.sender, address(this), asset, tokenAmount);
 
@@ -175,10 +175,10 @@ contract NiftyApesLiquidity is
         nonReentrant
         returns (uint256)
     {
+        requireIsNotSanctioned(msg.sender);
+
         getAsset(cAsset); // Ensures asset / cAsset is in the allow list
         IERC20Upgradeable cToken = IERC20Upgradeable(cAsset);
-
-        requireIsNotSanctioned(msg.sender);
 
         cToken.safeTransferFrom(msg.sender, address(this), cTokenAmount);
 
@@ -198,6 +198,8 @@ contract NiftyApesLiquidity is
         nonReentrant
         returns (uint256)
     {
+        requireIsNotSanctioned(msg.sender);
+
         address cAsset = getCAsset(asset);
         IERC20Upgradeable underlying = IERC20Upgradeable(asset);
 
@@ -224,6 +226,8 @@ contract NiftyApesLiquidity is
         nonReentrant
         returns (uint256)
     {
+        requireIsNotSanctioned(msg.sender);
+
         // Making sure a mapping for cAsset exists
         getAsset(cAsset);
         IERC20Upgradeable cToken = IERC20Upgradeable(cAsset);
@@ -244,9 +248,9 @@ contract NiftyApesLiquidity is
 
     /// @inheritdoc ILiquidity
     function supplyEth() external payable whenNotPaused nonReentrant returns (uint256) {
-        address cAsset = getCAsset(ETH_ADDRESS);
-
         requireIsNotSanctioned(msg.sender);
+
+        address cAsset = getCAsset(ETH_ADDRESS);
 
         uint256 cTokensMinted = _mintCEth(msg.value);
 
@@ -261,6 +265,8 @@ contract NiftyApesLiquidity is
 
     /// @inheritdoc ILiquidity
     function withdrawEth(uint256 amount) external whenNotPaused nonReentrant returns (uint256) {
+        requireIsNotSanctioned(msg.sender);
+
         address cAsset = getCAsset(ETH_ADDRESS);
 
         if (msg.sender == owner()) {
