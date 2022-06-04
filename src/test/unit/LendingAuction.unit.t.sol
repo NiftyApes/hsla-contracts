@@ -6731,9 +6731,7 @@ contract LendingAuctionUnitTest is
 
         lendingAuction.repayLoan(address(mockNft), 1);
 
-        // TODO(miller) change NiftApes.sol so
-        // that is "loan not active" is revert
-        hevm.expectRevert("asset allow list");
+        hevm.expectRevert("loan not active");
 
         lendingAuction.drawLoanAmount(address(mockNft), 1, 2 * 10**18);
     }

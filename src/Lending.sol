@@ -572,13 +572,13 @@ contract NiftyApesLending is
     ) external whenNotPaused nonReentrant {
         LoanAuction storage loanAuction = getLoanAuctionInternal(nftContractAddress, nftId);
 
-        address cAsset = ILiquidity(liquidityContractAddress).getCAsset(loanAuction.asset);
-
         requireIsNotSanctioned(msg.sender);
         requireOpenLoan(loanAuction);
         requireNftOwner(loanAuction, msg.sender);
         requireDrawableAmount(loanAuction, drawAmount);
         requireLoanNotExpired(loanAuction);
+
+        address cAsset = ILiquidity(liquidityContractAddress).getCAsset(loanAuction.asset);
 
         uint256 slashedDrawAmount = slashUnsupportedAmount(loanAuction, drawAmount, cAsset);
 
