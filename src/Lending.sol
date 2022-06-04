@@ -287,7 +287,8 @@ contract NiftyApesLending is
         address borrower,
         uint256 nftId
     ) internal {
-        requireIsNotSanctioned(msg.sender);
+        requireIsNotSanctioned(lender);
+        requireIsNotSanctioned(borrower);
         requireOfferPresent(offer);
 
         address cAsset = ILiquidity(liquidityContractAddress).getCAsset(offer.asset);
@@ -575,6 +576,7 @@ contract NiftyApesLending is
 
         address cAsset = ILiquidity(liquidityContractAddress).getCAsset(loanAuction.asset);
 
+        requireIsNotSanctioned(msg.sender);
         requireOpenLoan(loanAuction);
         requireNftOwner(loanAuction, msg.sender);
         requireDrawableAmount(loanAuction, drawAmount);
@@ -697,6 +699,8 @@ contract NiftyApesLending is
         LoanAuction storage loanAuction = getLoanAuctionInternal(rls.nftContractAddress, rls.nftId);
         address cAsset = ILiquidity(liquidityContractAddress).getCAsset(loanAuction.asset);
 
+        requireIsNotSanctioned(msg.sender);
+
         if (!rls.repayFull) {
             if (loanAuction.asset == ETH_ADDRESS) {
                 requireMsgValue(rls.paymentAmount);
@@ -776,8 +780,9 @@ contract NiftyApesLending is
     {
         LoanAuction storage loanAuction = getLoanAuctionInternal(nftContractAddress, nftId);
         ILiquidity(liquidityContractAddress).getCAsset(loanAuction.asset); // Ensure asset mapping exists
-        requireOpenLoan(loanAuction);
 
+        requireIsNotSanctioned(msg.sender);
+        requireOpenLoan(loanAuction);
         requireLoanExpired(loanAuction);
 
         address currentLender = loanAuction.lender;
