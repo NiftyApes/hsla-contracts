@@ -264,8 +264,7 @@ contract NiftyApesLiquidity is
         address cAsset = getCAsset(ETH_ADDRESS);
 
         if (msg.sender == owner()) {
-            uint256 cTokensBurnt = ownerWithdrawUnderlying(ETH_ADDRESS, cAsset);
-            return cTokensBurnt;
+            return ownerWithdrawUnderlying(ETH_ADDRESS, cAsset);
         } else {
             uint256 cTokensBurnt = _burnCErc20(ETH_ADDRESS, amount);
 
