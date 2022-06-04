@@ -1060,10 +1060,10 @@ contract NiftyApesLending is
         view
     {
         // Caching fields here for gas usage
-        uint256 amount = loanAuction.amount;
-        uint256 interestRatePerSecond = loanAuction.interestRatePerSecond;
-        uint256 loanEndTime = loanAuction.loanEndTimestamp;
-        uint256 offerEndTime = loanAuction.loanBeginTimestamp + offer.duration;
+        uint128 amount = loanAuction.amount;
+        uint96 interestRatePerSecond = loanAuction.interestRatePerSecond;
+        uint32 loanEndTime = loanAuction.loanEndTimestamp;
+        uint32 offerEndTime = loanAuction.loanBeginTimestamp + offer.duration;
 
         // Better amount
         if (
