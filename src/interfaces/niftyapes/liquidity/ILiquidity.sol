@@ -130,17 +130,6 @@ interface ILiquidity is ILiquidityAdmin, ILiquidityEvents, ILiquidityStructs {
         uint256 amount
     ) external;
 
-    /// @notice Function only callable by the NiftyApesLending contract
-    ///         Allows lending contract to affect liquidity directly
-    /// @param account The users account address
-    /// @param cAsset The address of the compund ERC20 token
-    /// @param amount The amount of cAsset to subtract
-    function subFromCAssetBalance(
-        address account,
-        address cAsset,
-        uint256 amount
-    ) external;
-
     /// @notice Returns the current amount of ctokens to be minted for a given amount of an underlying asset
     /// @param asset The assets address (e.g. USDC address)
     /// @param amount The amount of asset to convert to cAsset

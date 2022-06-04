@@ -479,16 +479,6 @@ contract NiftyApesLiquidity is
     }
 
     /// @inheritdoc ILiquidity
-    function subFromCAssetBalance(
-        address account,
-        address cAsset,
-        uint256 amount
-    ) external {
-        requireLendingContract();
-        _balanceByAccountByAsset[account][cAsset].cAssetBalance -= amount;
-    }
-
-    /// @inheritdoc ILiquidity
     function assetAmountToCAssetAmount(address asset, uint256 amount) external returns (uint256) {
         address cAsset = assetToCAsset[asset];
         ICERC20 cToken = ICERC20(cAsset);

@@ -543,7 +543,7 @@ contract NiftyApesLending is
                 cAsset,
                 (fullCTokenAmount - protocolPremimuimInCtokens)
             );
-            ILiquidity(liquidityContractAddress).subFromCAssetBalance(
+            ILiquidity(liquidityContractAddress).withdrawCBalance(
                 offer.creator,
                 cAsset,
                 fullCTokenAmount
