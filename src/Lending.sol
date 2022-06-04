@@ -629,15 +629,6 @@ contract NiftyApesLending is
         );
     }
 
-    /// @dev Struct exists since we ran out of stack space in _repayLoan
-    struct RepayLoanStruct {
-        address nftContractAddress;
-        uint256 nftId;
-        bool repayFull;
-        uint256 paymentAmount;
-        bool checkMsgSender;
-    }
-
     /// @inheritdoc ILending
     function repayLoan(address nftContractAddress, uint256 nftId)
         external

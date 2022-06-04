@@ -40,6 +40,14 @@ interface ILendingStructs {
         // SLOT 5 START
         // This fee is the rate of interest per second for the protocol
         uint96 protocolInterestRatePerSecond;
+    }
 
+    /// @dev Struct exists since we ran out of stack space in _repayLoan
+    struct RepayLoanStruct {
+        address nftContractAddress;
+        uint256 nftId;
+        bool repayFull;
+        uint256 paymentAmount;
+        bool checkMsgSender;
     }
 }
