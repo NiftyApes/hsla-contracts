@@ -702,22 +702,17 @@ contract NiftyApesLending is
                 loanAuction.accumulatedLenderInterest +
                 loanAuction.accumulatedProtocolInterest +
                 loanAuction.amountDrawn;
-
-            if (loanAuction.asset == ETH_ADDRESS) {
-                require(msg.value >= rls.paymentAmount, "msg.value too low");
-
-                // If the caller has overpaid we send the extra ETH back
-                if (msg.value > rls.paymentAmount) {
-                    unchecked {
-                        payable(msg.sender).sendValue(msg.value - rls.paymentAmount);
-                    }
+        } else {
+            require(rls.paymentAmount < loanAuction.amountDrawn, "use repayLoan");
+        }
+        if (loanAuction.asset == ETH_ADDRESS) {
+            require(msg.value >= rls.paymentAmount, "msg.value too low");
+            // If the caller has overpaid we send the extra ETH back
+            if (msg.value > rls.paymentAmount) {
+                unchecked {
+                    payable(msg.sender).sendValue(msg.value - rls.paymentAmount);
                 }
             }
-        } else {
-            if (loanAuction.asset == ETH_ADDRESS) {
-                requireMsgValue(rls.paymentAmount);
-            }
-            require(rls.paymentAmount < loanAuction.amountDrawn, "use repayLoan");
         }
 
         uint256 cTokensMinted = handleLoanPayment(loanAuction.asset, rls.paymentAmount);
