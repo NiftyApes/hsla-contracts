@@ -403,6 +403,10 @@ contract NiftyApesLiquidity is
         ICERC20 cToken = ICERC20(cAsset);
 
         underlying.safeTransferFrom(from, to, amount);
+        uint256 allowance = underlying.allowance(address(this), address(cToken));
+        if (allowance > 0) {
+            underlying.safeDecreaseAllowance(cAsset, allowance);
+        }
         underlying.safeIncreaseAllowance(cAsset, amount);
 
         uint256 cTokenBalanceBefore = cToken.balanceOf(address(this));
