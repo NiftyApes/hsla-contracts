@@ -176,6 +176,7 @@ contract NiftyApesLiquidity is
         returns (uint256)
     {
         requireIsNotSanctioned(msg.sender);
+        requireAmountGreaterThanZero(cTokenAmount);
 
         getAsset(cAsset); // Ensures asset / cAsset is in the allow list
         IERC20Upgradeable cToken = IERC20Upgradeable(cAsset);
@@ -308,6 +309,10 @@ contract NiftyApesLiquidity is
         require(getCAssetBalance(account, cAsset) >= amount, "Insufficient cToken balance");
     }
 
+    function requireAmountGreaterThanZero(uint256 amount) internal pure {
+        require(amount > 0, "amount 0");
+    }
+
     function requireLendingContract() internal view {
         require(msg.sender == lendingContractAddress, "not authorized");
     }
@@ -379,6 +384,7 @@ contract NiftyApesLiquidity is
         uint256 amount,
         address to
     ) internal {
+        requireAmountGreaterThanZero(amount);
         if (asset == ETH_ADDRESS) {
             payable(to).sendValue(amount);
         } else {
@@ -403,6 +409,8 @@ contract NiftyApesLiquidity is
         address asset,
         uint256 amount
     ) internal returns (uint256) {
+        requireAmountGreaterThanZero(amount);
+
         address cAsset = assetToCAsset[asset];
         IERC20Upgradeable underlying = IERC20Upgradeable(asset);
         ICERC20 cToken = ICERC20(cAsset);
@@ -427,6 +435,8 @@ contract NiftyApesLiquidity is
     }
 
     function _mintCEth(uint256 amount) internal returns (uint256) {
+        requireAmountGreaterThanZero(amount);
+
         address cAsset = assetToCAsset[ETH_ADDRESS];
         ICEther cToken = ICEther(cAsset);
         uint256 cTokenBalanceBefore = cToken.balanceOf(address(this));
@@ -443,6 +453,8 @@ contract NiftyApesLiquidity is
 
     // @notice param amount is demoninated in the underlying asset, not cAsset
     function _burnCErc20(address asset, uint256 amount) internal returns (uint256) {
+        requireAmountGreaterThanZero(amount);
+
         address cAsset = assetToCAsset[asset];
         ICERC20 cToken = ICERC20(cAsset);
 
