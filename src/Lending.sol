@@ -390,7 +390,6 @@ contract NiftyApesLending is
         uint256 fullAmount = loanAuction.amountDrawn +
             loanAuction.accumulatedLenderInterest +
             loanAuction.accumulatedProtocolInterest;
-        uint256 previousDrawn = loanAuction.amountDrawn;
 
         requireOfferAmount(offer, fullAmount);
 
@@ -433,7 +432,7 @@ contract NiftyApesLending is
             loanAuction.nftOwner,
             offer.nftContractAddress,
             nftId,
-            loanAuction.amountDrawn - previousDrawn,
+            loanAuction.accumulatedLenderInterest + loanAuction.accumulatedProtocolInterest,
             loanAuction.amountDrawn
         );
     }
