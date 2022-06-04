@@ -222,11 +222,11 @@ contract NiftyApesLending is
         bytes memory signature,
         uint256 nftId
     ) external payable whenNotPaused nonReentrant {
+        address lender = IOffers(offersContractAddress).getOfferSigner(offer, signature);
+
+        requireOfferCreator(offer, lender);
         IOffers(offersContractAddress).requireAvailableSignature(signature);
         IOffers(offersContractAddress).requireSignature65(signature);
-
-        address lender = IOffers(offersContractAddress).getOfferSigner(offer, signature);
-        requireOfferCreator(offer, lender);
         requireLenderOffer(offer);
 
         if (!offer.floorTerm) {
@@ -267,12 +267,11 @@ contract NiftyApesLending is
         whenNotPaused
         nonReentrant
     {
+        address borrower = IOffers(offersContractAddress).getOfferSigner(offer, signature);
+
+        requireOfferCreator(offer, borrower);
         IOffers(offersContractAddress).requireAvailableSignature(signature);
         requireSignature65(signature);
-
-        address borrower = IOffers(offersContractAddress).getOfferSigner(offer, signature);
-        requireOfferCreator(offer, borrower);
-
         requireBorrowerOffer(offer);
         requireNoFloorTerms(offer);
 
@@ -331,6 +330,8 @@ contract NiftyApesLending is
             floorTerm
         );
 
+        requireLenderOffer(offer);
+
         if (!offer.floorTerm) {
             requireMatchingNftId(offer, nftId);
             // Only removing the offer if its not a floor term offer
@@ -357,6 +358,7 @@ contract NiftyApesLending is
         requireOfferCreator(offer, signer);
         IOffers(offersContractAddress).requireAvailableSignature(signature);
         requireSignature65(signature);
+        requireLenderOffer(offer);
 
         if (!offer.floorTerm) {
             requireMatchingNftId(offer, nftId);
