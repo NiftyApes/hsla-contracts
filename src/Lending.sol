@@ -507,7 +507,7 @@ contract NiftyApesLending is
                     MAX_BPS;
             }
 
-            if (block.timestamp > loanAuction.loanEndTimestamp - 1 hours) {
+            if (currentTimestamp32() > loanAuction.loanEndTimestamp - 1 hours) {
                 protocolInterestAndPremium +=
                     (loanAuction.amountDrawn * defaultRefinancePremiumBps) /
                     MAX_BPS;
@@ -823,7 +823,7 @@ contract NiftyApesLending is
                     protocolInterest
                 );
 
-                loanAuction.lastUpdatedTimestamp = currentTimestamp();
+                loanAuction.lastUpdatedTimestamp = currentTimestamp32();
                 loanAuction.amount =
                     loanAuction.amountDrawn +
                     SafeCastUpgradeable.toUint128(drawAmount);
@@ -846,7 +846,7 @@ contract NiftyApesLending is
 
         loanAuction.accumulatedLenderInterest += SafeCastUpgradeable.toUint128(lenderInterest);
         loanAuction.accumulatedProtocolInterest += SafeCastUpgradeable.toUint128(protocolInterest);
-        loanAuction.lastUpdatedTimestamp = currentTimestamp();
+        loanAuction.lastUpdatedTimestamp = currentTimestamp32();
     }
 
     /// @inheritdoc ILending
@@ -863,7 +863,7 @@ contract NiftyApesLending is
         view
         returns (uint256 lenderInterest, uint256 protocolInterest)
     {
-        uint256 timePassed = currentTimestamp() - loanAuction.lastUpdatedTimestamp;
+        uint256 timePassed = currentTimestamp32() - loanAuction.lastUpdatedTimestamp;
 
         lenderInterest = (timePassed * loanAuction.interestRatePerSecond);
         protocolInterest = (timePassed * loanAuction.protocolInterestRatePerSecond);
@@ -989,15 +989,15 @@ contract NiftyApesLending is
     }
 
     function requireLoanExpired(LoanAuction storage loanAuction) internal view {
-        require(currentTimestamp() >= loanAuction.loanEndTimestamp, "loan not expired");
+        require(currentTimestamp32() >= loanAuction.loanEndTimestamp, "loan not expired");
     }
 
     function requireLoanNotExpired(LoanAuction storage loanAuction) internal view {
-        require(currentTimestamp() < loanAuction.loanEndTimestamp, "loan expired");
+        require(currentTimestamp32() < loanAuction.loanEndTimestamp, "loan expired");
     }
 
     function requireOfferNotExpired(Offer memory offer) internal view {
-        require(offer.expiration > currentTimestamp(), "offer expired");
+        require(offer.expiration > currentTimestamp32(), "offer expired");
     }
 
     function requireMinDurationForOffer(Offer memory offer) internal pure {
@@ -1112,9 +1112,9 @@ contract NiftyApesLending is
         loanAuction.lender = lender;
         loanAuction.asset = offer.asset;
         loanAuction.amount = offer.amount;
-        loanAuction.loanEndTimestamp = currentTimestamp() + offer.duration;
-        loanAuction.loanBeginTimestamp = currentTimestamp();
-        loanAuction.lastUpdatedTimestamp = currentTimestamp();
+        loanAuction.loanEndTimestamp = currentTimestamp32() + offer.duration;
+        loanAuction.loanBeginTimestamp = currentTimestamp32();
+        loanAuction.lastUpdatedTimestamp = currentTimestamp32();
         loanAuction.amountDrawn = offer.amount;
         loanAuction.fixedTerms = offer.fixedTerms;
         loanAuction.interestRatePerSecond = offer.interestRatePerSecond;
@@ -1184,7 +1184,7 @@ contract NiftyApesLending is
         }
     }
 
-    function currentTimestamp() internal view returns (uint32) {
+    function currentTimestamp32() internal view returns (uint32) {
         return SafeCastUpgradeable.toUint32(block.timestamp);
     }
 
