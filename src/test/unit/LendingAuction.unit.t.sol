@@ -3271,11 +3271,6 @@ contract LendingAuctionUnitTest is
 
         bytes32 offerHash2 = offersContract.getOfferHash(offer2);
 
-        hevm.stopPrank();
-        hevm.startPrank(LENDER_1);
-
-        usdcToken.approve(address(liquidityProviders), 6);
-
         hevm.expectRevert("offer nftId mismatch");
 
         lendingAuction.refinanceByBorrower(address(mockNft), 1, true, offerHash2);
@@ -3338,11 +3333,6 @@ contract LendingAuctionUnitTest is
         offersContract.createOffer(offer2);
 
         bytes32 offerHash2 = offersContract.getOfferHash(offer2);
-
-        hevm.stopPrank();
-        hevm.startPrank(LENDER_1);
-
-        usdcToken.approve(address(liquidityProviders), 6);
 
         hevm.expectRevert("offer nftId mismatch");
 

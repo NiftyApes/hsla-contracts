@@ -330,8 +330,6 @@ contract NiftyApesLending is
             floorTerm
         );
 
-        requireLenderOffer(offer);
-
         if (!offer.floorTerm) {
             requireMatchingNftId(offer, nftId);
             // Only removing the offer if its not a floor term offer
@@ -358,7 +356,6 @@ contract NiftyApesLending is
         requireOfferCreator(offer, signer);
         IOffers(offersContractAddress).requireAvailableSignature(signature);
         requireSignature65(signature);
-        requireLenderOffer(offer);
 
         if (!offer.floorTerm) {
             requireMatchingNftId(offer, nftId);
