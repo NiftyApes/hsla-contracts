@@ -872,27 +872,20 @@ contract NiftyApesLending is
 
     /// @inheritdoc ILending
     function calculateLenderInterestPerSecond(
-        uint128 amount,
-        uint96 interestRateBps,
-        uint32 duration
+        uint256 amount,
+        uint256 interestRateBps,
+        uint256 duration
     ) public pure returns (uint96) {
-        return
-            (SafeCastUpgradeable.toUint96(amount) * SafeCastUpgradeable.toUint96(interestRateBps)) /
-            SafeCastUpgradeable.toUint96(MAX_BPS) /
-            SafeCastUpgradeable.toUint96(duration);
+        return SafeCastUpgradeable.toUint96((amount * interestRateBps) / MAX_BPS / duration);
     }
 
     /// @inheritdoc ILending
-    function calculateProtocolInterestPerSecond(uint128 amount, uint32 duration)
+    function calculateProtocolInterestPerSecond(uint256 amount, uint256 duration)
         public
         view
         returns (uint96)
     {
-        return
-            (SafeCastUpgradeable.toUint96(amount) *
-                SafeCastUpgradeable.toUint96(protocolInterestBps)) /
-            SafeCastUpgradeable.toUint96(MAX_BPS) /
-            SafeCastUpgradeable.toUint96(duration);
+        return SafeCastUpgradeable.toUint96((amount * protocolInterestBps) / MAX_BPS / duration);
     }
 
     /// @inheritdoc ILending
