@@ -6532,7 +6532,7 @@ contract LendingAuctionUnitTest is
     }
 
     function testCannotRepayLoan_no_loan() public {
-        hevm.expectRevert("asset allow list");
+        hevm.expectRevert("loan not active");
         lendingAuction.repayLoan(address(mockNft), 1);
     }
 

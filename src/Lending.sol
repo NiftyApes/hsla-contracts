@@ -687,18 +687,8 @@ contract NiftyApesLending is
 
     function _repayLoanAmount(RepayLoanStruct memory rls) internal {
         LoanAuction storage loanAuction = getLoanAuctionInternal(rls.nftContractAddress, rls.nftId);
-        address cAsset = ILiquidity(liquidityContractAddress).getCAsset(loanAuction.asset);
 
         requireIsNotSanctioned(msg.sender);
-
-        if (!rls.repayFull) {
-            if (loanAuction.asset == ETH_ADDRESS) {
-                requireMsgValue(rls.paymentAmount);
-            }
-            require(rls.paymentAmount < loanAuction.amountDrawn, "use repayLoan");
-            requireLoanNotExpired(loanAuction);
-        }
-
         requireOpenLoan(loanAuction);
 
         if (rls.checkMsgSender) {
@@ -707,15 +697,34 @@ contract NiftyApesLending is
 
         updateInterest(loanAuction);
 
-        uint256 payment = rls.repayFull
-            ? loanAuction.accumulatedLenderInterest +
+        if (rls.repayFull) {
+            rls.paymentAmount =
+                loanAuction.accumulatedLenderInterest +
                 loanAuction.accumulatedProtocolInterest +
-                loanAuction.amountDrawn
-            : rls.paymentAmount;
+                loanAuction.amountDrawn;
 
-        uint256 cTokensMinted = handleLoanPayment(rls, loanAuction, payment);
+            if (loanAuction.asset == ETH_ADDRESS) {
+                require(msg.value >= rls.paymentAmount, "msg.value too low");
 
-        payoutCTokenBalances(loanAuction, cAsset, cTokensMinted, payment);
+                // If the caller has overpaid we send the extra ETH back
+                if (msg.value > rls.paymentAmount) {
+                    unchecked {
+                        payable(msg.sender).sendValue(msg.value - rls.paymentAmount);
+                    }
+                }
+            }
+        } else {
+            if (loanAuction.asset == ETH_ADDRESS) {
+                requireMsgValue(rls.paymentAmount);
+            }
+            require(rls.paymentAmount < loanAuction.amountDrawn, "use repayLoan");
+        }
+
+        uint256 cTokensMinted = handleLoanPayment(loanAuction.asset, rls.paymentAmount);
+
+        address cAsset = ILiquidity(liquidityContractAddress).getCAsset(loanAuction.asset);
+
+        payoutCTokenBalances(loanAuction, cAsset, cTokensMinted, rls.paymentAmount);
 
         if (rls.repayFull) {
             transferNft(rls.nftContractAddress, rls.nftId, address(this), loanAuction.nftOwner);
@@ -726,7 +735,7 @@ contract NiftyApesLending is
                 rls.nftContractAddress,
                 rls.nftId,
                 loanAuction.asset,
-                payment
+                rls.paymentAmount
             );
 
             delete _loanAuctions[rls.nftContractAddress][rls.nftId];
@@ -735,7 +744,7 @@ contract NiftyApesLending is
                 loanAuction.lenderRefi = false;
             }
             uint256 currentAmountDrawn = loanAuction.amountDrawn;
-            loanAuction.amountDrawn -= SafeCastUpgradeable.toUint128(payment);
+            loanAuction.amountDrawn -= SafeCastUpgradeable.toUint128(rls.paymentAmount);
 
             if (loanAuction.interestRatePerSecond > 0) {
                 uint256 interestRatePerSecond256 = (loanAuction.interestRatePerSecond *
@@ -1149,30 +1158,16 @@ contract NiftyApesLending is
         ILiquidity(liquidityContractAddress).addToCAssetBalance(owner(), cAsset, cTokensToProtocol);
     }
 
-    function handleLoanPayment(
-        RepayLoanStruct memory rls,
-        LoanAuction storage loanAuction,
-        uint256 payment
-    ) internal returns (uint256) {
-        if (loanAuction.asset == ETH_ADDRESS) {
-            if (rls.repayFull) {
-                require(msg.value >= payment, "msg.value too low");
-            }
-
+    function handleLoanPayment(address asset, uint256 payment) internal returns (uint256) {
+        if (asset == ETH_ADDRESS) {
             payable(address(liquidityContractAddress)).sendValue(payment);
-            uint256 cTokensMinted = ILiquidity(liquidityContractAddress).mintCEth(payment);
-
-            // If the caller has overpaid we send the extra ETH back
-            if (payment < msg.value) {
-                payable(msg.sender).sendValue(msg.value - payment);
-            }
-            return cTokensMinted;
+            return ILiquidity(liquidityContractAddress).mintCEth(payment);
         } else {
             return
                 ILiquidity(liquidityContractAddress).mintCErc20(
                     msg.sender,
                     liquidityContractAddress,
-                    loanAuction.asset,
+                    asset,
                     payment
                 );
         }
