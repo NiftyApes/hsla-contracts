@@ -173,6 +173,7 @@ contract NiftyApesLiquidity is
         external
         whenNotPaused
         nonReentrant
+        returns (uint256)
     {
         getAsset(cAsset); // Ensures asset / cAsset is in the allow list
         IERC20Upgradeable cToken = IERC20Upgradeable(cAsset);
@@ -186,6 +187,8 @@ contract NiftyApesLiquidity is
         requireMaxCAssetBalance(cAsset);
 
         emit CErc20Supplied(msg.sender, cAsset, cTokenAmount);
+
+        return cTokenAmount;
     }
 
     /// @inheritdoc ILiquidity
