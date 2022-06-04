@@ -583,22 +583,23 @@ contract NiftyApesLending is
         uint256 slashedDrawAmount = slashUnsupportedAmount(loanAuction, drawAmount, cAsset);
 
         if (slashedDrawAmount > 0) {
-            uint128 currentAmountDrawn = loanAuction.amountDrawn;
+            uint256 currentAmountDrawn = loanAuction.amountDrawn;
             loanAuction.amountDrawn += SafeCastUpgradeable.toUint128(slashedDrawAmount);
 
             if (loanAuction.interestRatePerSecond > 0) {
-                uint256 interestPerSecond = currentAmountDrawn / loanAuction.interestRatePerSecond;
-                loanAuction.interestRatePerSecond =
-                    SafeCastUpgradeable.toUint96(loanAuction.amountDrawn) /
-                    SafeCastUpgradeable.toUint96(interestPerSecond);
+                uint256 interestRatePerSecond256 = (loanAuction.interestRatePerSecond *
+                    loanAuction.amountDrawn) / currentAmountDrawn;
+                loanAuction.interestRatePerSecond = SafeCastUpgradeable.toUint96(
+                    interestRatePerSecond256
+                );
             }
 
             if (loanAuction.protocolInterestRatePerSecond > 0) {
-                uint256 protocolInterestPerSecond = currentAmountDrawn /
-                    loanAuction.protocolInterestRatePerSecond;
-                loanAuction.protocolInterestRatePerSecond =
-                    SafeCastUpgradeable.toUint96(loanAuction.amountDrawn) /
-                    SafeCastUpgradeable.toUint96(protocolInterestPerSecond);
+                uint256 protocolInterestPerSecond256 = (loanAuction.protocolInterestRatePerSecond *
+                    loanAuction.amountDrawn) / currentAmountDrawn;
+                loanAuction.protocolInterestRatePerSecond = SafeCastUpgradeable.toUint96(
+                    protocolInterestPerSecond256
+                );
             }
 
             uint256 cTokensBurnt = ILiquidity(liquidityContractAddress).burnCErc20(
@@ -741,22 +742,23 @@ contract NiftyApesLending is
             if (loanAuction.lenderRefi) {
                 loanAuction.lenderRefi = false;
             }
-            uint128 currentAmountDrawn = loanAuction.amountDrawn;
+            uint256 currentAmountDrawn = loanAuction.amountDrawn;
             loanAuction.amountDrawn -= SafeCastUpgradeable.toUint128(payment);
 
             if (loanAuction.interestRatePerSecond > 0) {
-                uint256 interestPerSecond = currentAmountDrawn / loanAuction.interestRatePerSecond;
-                loanAuction.interestRatePerSecond =
-                    SafeCastUpgradeable.toUint96(loanAuction.amountDrawn) /
-                    SafeCastUpgradeable.toUint96(interestPerSecond);
+                uint256 interestRatePerSecond256 = (loanAuction.interestRatePerSecond *
+                    loanAuction.amountDrawn) / currentAmountDrawn;
+                loanAuction.interestRatePerSecond = SafeCastUpgradeable.toUint96(
+                    interestRatePerSecond256
+                );
             }
 
             if (loanAuction.protocolInterestRatePerSecond > 0) {
-                uint256 protocolInterestPerSecond = currentAmountDrawn /
-                    loanAuction.protocolInterestRatePerSecond;
-                loanAuction.protocolInterestRatePerSecond =
-                    SafeCastUpgradeable.toUint96(loanAuction.amountDrawn) /
-                    SafeCastUpgradeable.toUint96(protocolInterestPerSecond);
+                uint256 protocolInterestPerSecond256 = (loanAuction.protocolInterestRatePerSecond *
+                    loanAuction.amountDrawn) / currentAmountDrawn;
+                loanAuction.protocolInterestRatePerSecond = SafeCastUpgradeable.toUint96(
+                    protocolInterestPerSecond256
+                );
             }
 
             emit PartialRepayment(
