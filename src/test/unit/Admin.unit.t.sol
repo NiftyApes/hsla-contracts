@@ -58,7 +58,7 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
     function testSetCAddressMapping_can_be_set_by_owner() public {
         hevm.expectEmit(true, false, false, true);
 
-        emit NewAssetListed(
+        emit AssetToCAssetSet(
             address(0x0000000000000000000000000000000000000001),
             address(0x0000000000000000000000000000000000000002)
         );

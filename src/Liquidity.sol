@@ -79,7 +79,7 @@ contract NiftyApesLiquidity is
         assetToCAsset[asset] = cAsset;
         _cAssetToAsset[cAsset] = asset;
 
-        emit NewAssetListed(asset, cAsset);
+        emit AssetToCAssetSet(asset, cAsset);
     }
 
     /// @inheritdoc ILiquidityAdmin
