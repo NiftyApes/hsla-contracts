@@ -251,7 +251,7 @@ contract LendingAuctionUnitTest is
             nftId: 4,
             asset: address(0x0000000000000000000000000000000000000005),
             amount: 6,
-            duration: 1 days,
+            duration: 7,
             expiration: 8
         });
 
@@ -271,7 +271,7 @@ contract LendingAuctionUnitTest is
             nftId: 4,
             asset: address(usdcToken),
             amount: 6,
-            duration: 1 days,
+            duration: 7,
             expiration: 8
         });
 
@@ -291,7 +291,7 @@ contract LendingAuctionUnitTest is
             nftId: 4,
             asset: address(usdcToken),
             amount: 6,
-            duration: 1 days,
+            duration: 7,
             expiration: 8
         });
 
@@ -316,7 +316,7 @@ contract LendingAuctionUnitTest is
             nftId: 4,
             asset: address(usdcToken),
             amount: 6,
-            duration: 1 days,
+            duration: 7,
             expiration: 8
         });
 
@@ -340,7 +340,7 @@ contract LendingAuctionUnitTest is
         assertEq(actual.nftId, 4);
         assertEq(actual.asset, address(usdcToken));
         assertEq(actual.amount, 6);
-        assertEq(actual.duration, 1 days);
+        assertEq(actual.duration, 7);
         assertEq(actual.expiration, 8);
     }
 
@@ -360,7 +360,7 @@ contract LendingAuctionUnitTest is
             nftId: 4,
             asset: address(usdcToken),
             amount: 6,
-            duration: 1 days,
+            duration: 7,
             expiration: 8
         });
 
@@ -398,7 +398,7 @@ contract LendingAuctionUnitTest is
             nftId: 4,
             asset: address(usdcToken),
             amount: 6,
-            duration: 1 days,
+            duration: 7,
             expiration: 8
         });
 
@@ -434,7 +434,7 @@ contract LendingAuctionUnitTest is
             nftId: 4,
             asset: address(usdcToken),
             amount: 6,
-            duration: 1 days,
+            duration: 7,
             expiration: 8
         });
 
@@ -484,7 +484,7 @@ contract LendingAuctionUnitTest is
             nftId: 4,
             asset: address(usdcToken),
             amount: 6,
-            duration: 1 days,
+            duration: 7,
             expiration: 8
         });
 
@@ -529,7 +529,7 @@ contract LendingAuctionUnitTest is
             nftId: 4,
             asset: address(usdcToken),
             amount: 6,
-            duration: 1 days,
+            duration: 7,
             expiration: uint32(block.timestamp + 1)
         });
 
@@ -568,7 +568,7 @@ contract LendingAuctionUnitTest is
             nftId: 4,
             asset: address(usdcToken),
             amount: 6,
-            duration: 1 days,
+            duration: 7,
             expiration: 8
         });
 
@@ -600,7 +600,7 @@ contract LendingAuctionUnitTest is
             nftId: 4,
             asset: address(usdcToken),
             amount: 6,
-            duration: 1 days,
+            duration: 7,
             expiration: 8
         });
 
@@ -634,7 +634,7 @@ contract LendingAuctionUnitTest is
             nftId: 4,
             asset: address(usdcToken),
             amount: 6,
-            duration: 1 days,
+            duration: 7,
             expiration: uint32(block.timestamp + 1)
         });
 
@@ -1180,7 +1180,7 @@ contract LendingAuctionUnitTest is
             nftId: 4,
             asset: address(usdcToken),
             amount: 6,
-            duration: 1 days,
+            duration: 7,
             expiration: 8
         });
 
@@ -1213,7 +1213,7 @@ contract LendingAuctionUnitTest is
             nftId: 4,
             asset: address(usdcToken),
             amount: 6,
-            duration: 1 days,
+            duration: 7,
             expiration: 8
         });
 
@@ -1246,7 +1246,7 @@ contract LendingAuctionUnitTest is
             nftId: 4,
             asset: address(usdcToken),
             amount: 6,
-            duration: 1 days,
+            duration: 7,
             expiration: uint32(block.timestamp + 1)
         });
 
@@ -1277,7 +1277,7 @@ contract LendingAuctionUnitTest is
             nftId: 4,
             asset: address(usdcToken),
             amount: 6,
-            duration: 1 days,
+            duration: 7,
             expiration: uint32(block.timestamp + 1)
         });
 
@@ -1308,7 +1308,7 @@ contract LendingAuctionUnitTest is
             nftId: 4,
             asset: address(usdcToken),
             amount: 6,
-            duration: 1 days,
+            duration: 7,
             expiration: 8
         });
 
@@ -1339,7 +1339,7 @@ contract LendingAuctionUnitTest is
             nftId: 4,
             asset: address(usdcToken),
             amount: 6,
-            duration: 1 days,
+            duration: 7,
             expiration: uint32(block.timestamp + 1)
         });
 
@@ -1747,7 +1747,7 @@ contract LendingAuctionUnitTest is
             nftId: 4,
             asset: address(usdcToken),
             amount: 6,
-            duration: 1 days,
+            duration: 7,
             expiration: 8
         });
 
@@ -1780,7 +1780,7 @@ contract LendingAuctionUnitTest is
             nftId: 1,
             asset: address(usdcToken),
             amount: 6,
-            duration: 1 days,
+            duration: 7,
             expiration: 8
         });
 
@@ -1827,7 +1827,7 @@ contract LendingAuctionUnitTest is
             nftId: 1,
             asset: address(usdcToken),
             amount: 6,
-            duration: 1 days,
+            duration: 7,
             expiration: uint32(block.timestamp + 1)
         });
 
@@ -2334,7 +2334,7 @@ contract LendingAuctionUnitTest is
             nftId: 4,
             asset: address(usdcToken),
             amount: 6,
-            duration: 1 days,
+            duration: 7,
             expiration: 8
         });
 
@@ -2368,7 +2368,7 @@ contract LendingAuctionUnitTest is
             nftId: 4,
             asset: address(usdcToken),
             amount: 6,
-            duration: 1 days,
+            duration: 7,
             expiration: uint32(block.timestamp + 1)
         });
 
@@ -2397,7 +2397,7 @@ contract LendingAuctionUnitTest is
             nftId: 4,
             asset: address(usdcToken),
             amount: 6,
-            duration: 1 days,
+            duration: 7,
             expiration: uint32(block.timestamp + 1)
         });
 
@@ -2428,7 +2428,7 @@ contract LendingAuctionUnitTest is
             nftId: 4,
             asset: address(usdcToken),
             amount: 6,
-            duration: 1 days,
+            duration: 7,
             expiration: 8
         });
 
@@ -2459,7 +2459,7 @@ contract LendingAuctionUnitTest is
             nftId: 4,
             asset: address(usdcToken),
             amount: 6,
-            duration: 1 days,
+            duration: 7,
             expiration: uint32(block.timestamp + 1)
         });
 
@@ -2874,13 +2874,13 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 1)
         });
 
-        hevm.expectRevert("offer duration");
-
         offersContract.createOffer(offer2);
 
         bytes32 offerHash2 = offersContract.getOfferHash(offer2);
 
         hevm.stopPrank();
+
+        hevm.expectRevert("offer duration");
 
         lendingAuction.refinanceByBorrower(address(mockNft), 1, true, offerHash2);
     }
