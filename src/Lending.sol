@@ -917,11 +917,7 @@ contract NiftyApesLending is
             SafeCastUpgradeable.toUint96(gasGriefingPremiumBps)) /
             SafeCastUpgradeable.toUint96(MAX_BPS);
 
-        return (
-            lenderInterest > interestThreshold ? true : false,
-            lenderInterest,
-            interestThreshold
-        );
+        return (lenderInterest > interestThreshold, lenderInterest, interestThreshold);
     }
 
     /// @inheritdoc ILending
@@ -959,7 +955,7 @@ contract NiftyApesLending is
         uint256 improvementSum = amountImprovement + interestImprovement + durationImprovement;
 
         // check and return if improvements are greater than 25 bps total
-        return improvementSum > termGriefingPremiumBps ? true : false;
+        return improvementSum > termGriefingPremiumBps;
     }
 
     function _requireSignature65(bytes memory signature) internal pure {
