@@ -193,7 +193,7 @@ contract NiftyApesLiquidity is
 
     /// @inheritdoc ILiquidity
     function withdrawErc20(address asset, uint256 tokenAmount)
-        public
+        external
         whenNotPaused
         nonReentrant
         returns (uint256)
