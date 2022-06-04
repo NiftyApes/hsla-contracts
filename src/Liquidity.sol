@@ -56,7 +56,7 @@ contract NiftyApesLiquidity is
     address public regenCollectiveAddress;
 
     /// @notice A bool to prevent external eth from being received and locked in the contract
-    bool private _ethTransferable = false;
+    bool private _ethTransferable;
 
     /// @dev This empty reserved space is put in place to allow future versions to add new
     /// variables without shifting storage.
