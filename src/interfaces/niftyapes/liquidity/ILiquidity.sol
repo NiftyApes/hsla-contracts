@@ -100,7 +100,7 @@ interface ILiquidity is ILiquidityAdmin, ILiquidityEvents, ILiquidityStructs {
     /// @notice Function only callable by the NiftyApesLending contract
     ///         Allows lending contract to affect liquidity directly
     /// @param amount The amount of eth to withdraw
-    function mintCEth(uint256 amount) external returns (uint256);
+    function mintCEth(uint256 amount) external payable returns (uint256);
 
     /// @notice Function only callable by the NiftyApesLending contract
     ///         Allows lending contract to affect liquidity directly

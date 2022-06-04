@@ -364,7 +364,7 @@ contract NiftyApesLiquidity is
         address asset,
         uint256 amount,
         address to
-    ) public {
+    ) external {
         requireLendingContract();
         _sendValue(asset, amount, to);
     }
@@ -387,7 +387,7 @@ contract NiftyApesLiquidity is
         address to,
         address asset,
         uint256 amount
-    ) public returns (uint256) {
+    ) external returns (uint256) {
         requireLendingContract();
         return _mintCErc20(from, to, asset, amount);
     }
@@ -416,7 +416,7 @@ contract NiftyApesLiquidity is
     }
 
     /// @inheritdoc ILiquidity
-    function mintCEth(uint256 amount) public returns (uint256) {
+    function mintCEth(uint256 amount) external payable returns (uint256) {
         requireLendingContract();
         return _mintCEth(amount);
     }
@@ -431,7 +431,7 @@ contract NiftyApesLiquidity is
     }
 
     /// @inheritdoc ILiquidity
-    function burnCErc20(address asset, uint256 amount) public returns (uint256) {
+    function burnCErc20(address asset, uint256 amount) external returns (uint256) {
         requireLendingContract();
         return _burnCErc20(asset, amount);
     }
@@ -454,7 +454,7 @@ contract NiftyApesLiquidity is
         address account,
         address cAsset,
         uint256 cTokenAmount
-    ) public {
+    ) external {
         requireLendingContract();
         _withdrawCBalance(account, cAsset, cTokenAmount);
     }
@@ -473,7 +473,7 @@ contract NiftyApesLiquidity is
         address account,
         address cAsset,
         uint256 amount
-    ) public {
+    ) external {
         requireLendingContract();
         _balanceByAccountByAsset[account][cAsset].cAssetBalance += amount;
     }
@@ -483,13 +483,13 @@ contract NiftyApesLiquidity is
         address account,
         address cAsset,
         uint256 amount
-    ) public {
+    ) external {
         requireLendingContract();
         _balanceByAccountByAsset[account][cAsset].cAssetBalance -= amount;
     }
 
     /// @inheritdoc ILiquidity
-    function assetAmountToCAssetAmount(address asset, uint256 amount) public returns (uint256) {
+    function assetAmountToCAssetAmount(address asset, uint256 amount) external returns (uint256) {
         address cAsset = assetToCAsset[asset];
         ICERC20 cToken = ICERC20(cAsset);
 
