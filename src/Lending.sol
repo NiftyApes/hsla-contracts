@@ -1110,6 +1110,9 @@ contract NiftyApesLending is
         loanAuction.lastUpdatedTimestamp = _currentTimestamp32();
         loanAuction.amountDrawn = offer.amount;
         loanAuction.fixedTerms = offer.fixedTerms;
+        loanAuction.lenderRefi = false;
+        loanAuction.accumulatedLenderInterest = 0;
+        loanAuction.accumulatedProtocolInterest = 0;
         loanAuction.interestRatePerSecond = offer.interestRatePerSecond;
 
         uint96 protocolInterestRatePerSecond = calculateProtocolInterestPerSecond(
