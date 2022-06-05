@@ -182,6 +182,7 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
     function createOffer(Offer memory offer) external whenNotPaused returns (bytes32 offerHash) {
         address cAsset = ILiquidity(liquidityContractAddress).getCAsset(offer.asset);
 
+        requireOfferNotExpired(offer);
         requireOfferCreator(offer.creator, msg.sender);
 
         if (offer.lenderOffer) {
@@ -308,6 +309,14 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
             ILiquidity(liquidityContractAddress).getCAssetBalance(account, cAsset) >= amount,
             "Insufficient cToken balance"
         );
+    }
+
+    function requireOfferNotExpired(Offer memory offer) public view {
+        require(offer.expiration > currentTimestamp(), "offer expired");
+    }
+
+    function currentTimestamp() internal view returns (uint32) {
+        return SafeCastUpgradeable.toUint32(block.timestamp);
     }
 
     function renounceOwnership() public override onlyOwner {}

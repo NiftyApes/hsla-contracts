@@ -295,7 +295,7 @@ contract NiftyApesLending is
         LoanAuction storage loanAuction = getLoanAuctionInternal(offer.nftContractAddress, nftId);
 
         requireNoOpenLoan(loanAuction);
-        requireOfferNotExpired(offer);
+        IOffers(offersContractAddress).requireOfferNotExpired(offer);
         requireMinDurationForOffer(offer);
         require721Owner(offer.nftContractAddress, nftId, borrower);
 
@@ -376,7 +376,7 @@ contract NiftyApesLending is
         requireNftOwner(loanAuction, msg.sender);
         requireNoFixedTerm(loanAuction);
         requireOpenLoan(loanAuction);
-        requireOfferNotExpired(offer);
+        IOffers(offersContractAddress).requireOfferNotExpired(offer);
         requireLenderOffer(offer);
         requireMinDurationForOffer(offer);
 
@@ -450,7 +450,7 @@ contract NiftyApesLending is
         requireOfferCreator(offer, msg.sender);
         requireLenderOffer(offer);
         requireLoanNotExpired(loanAuction);
-        requireOfferNotExpired(offer);
+        IOffers(offersContractAddress).requireOfferNotExpired(offer);
         requireOfferParity(loanAuction, offer);
         requireNoFixedTerm(loanAuction);
         requireNoFloorTerms(offer);
@@ -980,10 +980,6 @@ contract NiftyApesLending is
 
     function requireLoanNotExpired(LoanAuction storage loanAuction) internal view {
         require(currentTimestamp() < loanAuction.loanEndTimestamp, "loan expired");
-    }
-
-    function requireOfferNotExpired(Offer memory offer) internal view {
-        require(offer.expiration > currentTimestamp(), "offer expired");
     }
 
     function requireMinDurationForOffer(Offer memory offer) internal pure {
