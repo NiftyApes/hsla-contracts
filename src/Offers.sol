@@ -129,18 +129,18 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
         external
         whenNotPaused
     {
-        requireAvailableSignature(signature);
-        requireSignature65(signature);
+        _requireAvailableSignature(signature);
+        _requireSignature65(signature);
 
         address signer = getOfferSigner(offer, signature);
 
-        requireSigner(signer, msg.sender);
-        requireOfferCreator(offer.creator, msg.sender);
+        _requireSigner(signer, msg.sender);
+        _requireOfferCreator(offer.creator, msg.sender);
 
         _markSignatureUsed(offer, signature);
     }
 
-    function getOfferBook(
+    function _getOfferBook(
         address nftContractAddress,
         uint256 nftId,
         bool floorTerm
@@ -158,36 +158,36 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
         bytes32 offerHash,
         bool floorTerm
     ) public view returns (Offer memory) {
-        return getOfferInternal(nftContractAddress, nftId, offerHash, floorTerm);
+        return _getOfferInternal(nftContractAddress, nftId, offerHash, floorTerm);
     }
 
-    function getOfferInternal(
+    function _getOfferInternal(
         address nftContractAddress,
         uint256 nftId,
         bytes32 offerHash,
         bool floorTerm
     ) internal view returns (Offer storage) {
-        return getOfferBook(nftContractAddress, nftId, floorTerm)[offerHash];
+        return _getOfferBook(nftContractAddress, nftId, floorTerm)[offerHash];
     }
 
     /// @inheritdoc IOffers
     function createOffer(Offer memory offer) external whenNotPaused returns (bytes32 offerHash) {
         address cAsset = ILiquidity(liquidityContractAddress).getCAsset(offer.asset);
 
-        requireOfferCreator(offer.creator, msg.sender);
+        _requireOfferCreator(offer.creator, msg.sender);
 
         if (offer.lenderOffer) {
             uint256 offerTokens = ILiquidity(liquidityContractAddress).assetAmountToCAssetAmount(
                 offer.asset,
                 offer.amount
             );
-            requireCAssetBalance(msg.sender, cAsset, offerTokens);
+            _requireCAssetBalance(msg.sender, cAsset, offerTokens);
         } else {
-            requireNftOwner(offer.nftContractAddress, offer.nftId, msg.sender);
-            requireNoFloorTerms(offer);
+            _requireNftOwner(offer.nftContractAddress, offer.nftId, msg.sender);
+            _requireNoFloorTerms(offer);
         }
 
-        mapping(bytes32 => Offer) storage offerBook = getOfferBook(
+        mapping(bytes32 => Offer) storage offerBook = _getOfferBook(
             offer.nftContractAddress,
             offer.nftId,
             offer.floorTerm
@@ -216,18 +216,18 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
     ) external whenNotPaused {
         Offer memory offer = getOffer(nftContractAddress, nftId, offerHash, floorTerm);
 
-        requireOfferCreator(offer.creator, msg.sender);
+        _requireOfferCreator(offer.creator, msg.sender);
 
-        doRemoveOffer(nftContractAddress, nftId, offerHash, floorTerm);
+        _doRemoveOffer(nftContractAddress, nftId, offerHash, floorTerm);
     }
 
-    function doRemoveOffer(
+    function _doRemoveOffer(
         address nftContractAddress,
         uint256 nftId,
         bytes32 offerHash,
         bool floorTerm
     ) internal {
-        mapping(bytes32 => Offer) storage offerBook = getOfferBook(
+        mapping(bytes32 => Offer) storage offerBook = _getOfferBook(
             nftContractAddress,
             nftId,
             floorTerm
@@ -269,11 +269,11 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
         require(signature.length == 65, "signature unsupported");
     }
 
-    function requireNoFloorTerms(Offer memory offer) internal pure {
+    function _requireNoFloorTerms(Offer memory offer) internal pure {
         require(!offer.floorTerm, "floor term");
     }
 
-    function requireNftOwner(
+    function _requireNftOwner(
         address nftContractAddress,
         uint256 nftId,
         address owner
@@ -281,17 +281,17 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
         require(IERC721Upgradeable(nftContractAddress).ownerOf(nftId) == owner, "nft owner");
     }
 
-    function requireSigner(address signer, address expected) internal pure {
+    function _requireSigner(address signer, address expected) internal pure {
         require(signer == expected, "signer");
     }
 
-    function requireOfferCreator(address signer, address expected) internal view {
+    function _requireOfferCreator(address signer, address expected) internal view {
         if (msg.sender != lendingContractAddress) {
             require(signer == expected, "offer creator");
         }
     }
 
-    function requireCAssetBalance(
+    function _requireCAssetBalance(
         address account,
         address cAsset,
         uint256 amount
