@@ -279,7 +279,7 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
     }
 
     function requireNoFloorTerms(Offer memory offer) internal pure {
-        require(!offer.floorTerm, "floor term");
+        require(!offer.floorTerm, "offer is floor term");
     }
 
     function requireNftOwner(
@@ -287,16 +287,16 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
         uint256 nftId,
         address owner
     ) internal view {
-        require(IERC721Upgradeable(nftContractAddress).ownerOf(nftId) == owner, "nft owner");
+        require(IERC721Upgradeable(nftContractAddress).ownerOf(nftId) == owner, "is not NFT owner");
     }
 
     function requireSigner(address signer, address expected) internal pure {
-        require(signer == expected, "signer");
+        require(signer == expected, "is not signer");
     }
 
     function requireOfferCreator(address signer, address expected) internal view {
         if (msg.sender != lendingContractAddress) {
-            require(signer == expected, "offer creator");
+            require(signer == expected, "is not offer creator");
         }
     }
 
@@ -307,12 +307,12 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
     ) internal view {
         require(
             ILiquidity(liquidityContractAddress).getCAssetBalance(account, cAsset) >= amount,
-            "Insufficient cToken balance"
+            "insufficient cToken balance"
         );
     }
 
     function requireOfferNotExpired(Offer memory offer) public view {
-        require(offer.expiration > currentTimestamp(), "offer expired");
+        require(offer.expiration > currentTimestamp(), "offer has expired");
     }
 
     function currentTimestamp() internal view returns (uint32) {
