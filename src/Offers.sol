@@ -51,6 +51,10 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
 
     /// @inheritdoc IOffersAdmin
     function updateLendingContractAddress(address newLendingContractAddress) external onlyOwner {
+        require(
+            address(newLendingContractAddress) != address(0),
+            "LendingContract: cannot be address(0)"
+        );
         emit OffersXLendingContractAddressUpdated(
             lendingContractAddress,
             newLendingContractAddress
@@ -63,6 +67,10 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
         external
         onlyOwner
     {
+        require(
+            address(newLiquidityContractAddress) != address(0),
+            "LiquidityContract: cannot be address(0)"
+        );
         emit OffersXLiquidityContractAddressUpdated(
             liquidityContractAddress,
             newLiquidityContractAddress
