@@ -277,7 +277,7 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 1)
         });
 
-        hevm.expectRevert("is not offer creator");
+        hevm.expectRevert("is not offer creator or lending contract");
 
         offersContract.createOffer(offer);
     }
@@ -410,7 +410,7 @@ contract LendingAuctionUnitTest is
 
         hevm.prank(address(0x0000000000000000000000000000000000000001));
 
-        hevm.expectRevert("is not offer creator");
+        hevm.expectRevert("is not offer creator or lending contract");
 
         offersContract.removeOffer(
             offer.nftContractAddress,
