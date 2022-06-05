@@ -1156,6 +1156,7 @@ contract NiftyApesLending is
             payable(address(liquidityContractAddress)).sendValue(payment);
             return ILiquidity(liquidityContractAddress).mintCEth(payment);
         } else {
+            require(msg.value == 0, "msg.value");
             return
                 ILiquidity(liquidityContractAddress).mintCErc20(
                     msg.sender,
