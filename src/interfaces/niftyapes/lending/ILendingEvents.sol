@@ -105,7 +105,10 @@ interface ILendingEvents {
     /// @notice Emmited when the the bps premium for refinancing a loan that the new lender has to pay is changed
     /// @param oldOriginationPremiumBps The old basis points denominated in parts of 10_000
     /// @param newOriginationPremiumBps The new basis points denominated in parts of 10_000
-    event OriginationPremiumBpsUpdated(uint16 oldOriginationPremiumBps, uint16 newOriginationPremiumBps);
+    event OriginationPremiumBpsUpdated(
+        uint16 oldOriginationPremiumBps,
+        uint16 newOriginationPremiumBps
+    );
 
     /// @notice Emmited when the bps premium for refinancing a loan before the current lender has earned the equivalent amount of interest has changed
     /// @param oldGasGriefingPremiumBps The old basis points denominated in parts of 10_000
@@ -147,11 +150,17 @@ interface ILendingEvents {
         address newOffersContractAdress
     );
 
-        /// @notice Emmited when the associated liquidity contract address is changed
+    /// @notice Emmited when the associated liquidity contract address is changed
     /// @param oldLiquidityContractAdress The old liquidity contract address
     /// @param newLiquidityContractAdress The new liquidity contract address
     event LendingXLiquidityContractAddressUpdated(
         address oldLiquidityContractAdress,
         address newLiquidityContractAdress
     );
+
+    /// @notice Emmited when sanctions checks are paused
+    event LendingSanctionsPaused();
+
+    /// @notice Emmited when sanctions checks are unpaused
+    event LendingSanctionsUnpaused();
 }

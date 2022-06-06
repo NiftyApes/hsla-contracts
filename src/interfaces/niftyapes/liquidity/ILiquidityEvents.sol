@@ -97,4 +97,10 @@ interface ILiquidityEvents {
         address oldLendingContractAdress,
         address newLendingContractAdress
     );
+
+    /// @notice Emmited when sanctions checks are paused
+    event LiquiditySanctionsPaused();
+
+    /// @notice Emmited when sanctions checks are unpaused
+    event LiquiditySanctionsUnpaused();
 }

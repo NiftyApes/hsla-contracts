@@ -29,7 +29,7 @@ contract NiftyApesLiquidity is
     /// @dev Internal address used for for ETH in our mappings
     address private constant ETH_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
 
-    /// @dev Internal constant address for the Chinalysis OFAC sanctions oracle
+    /// @dev Internal constant address for the Chainalysis OFAC sanctions oracle
     address private constant SANCTIONS_CONTRACT = 0x40C57923924B5c5c5455c48D93317139ADDaC8fb;
 
     /// @inheritdoc ILiquidity
@@ -54,7 +54,10 @@ contract NiftyApesLiquidity is
     address public regenCollectiveAddress;
 
     /// @notice A bool to prevent external eth from being received and locked in the contract
-    bool private _ethTransferable;
+    bool internal _ethTransferable;
+
+    /// @dev The status of sanctions checks. Can be set to false if oracle becomes malicious.
+    bool internal sanctionsPause;
 
     /// @dev This empty reserved space is put in place to allow future versions to add new
     /// variables without shifting storage.
@@ -112,6 +115,18 @@ contract NiftyApesLiquidity is
     function updateRegenCollectiveAddress(address newRegenCollectiveAddress) external onlyOwner {
         emit RegenCollectiveAddressUpdated(newRegenCollectiveAddress);
         regenCollectiveAddress = newRegenCollectiveAddress;
+    }
+
+    /// @inheritdoc ILiquidityAdmin
+    function pauseSanctions() external onlyOwner {
+        sanctionsPause = true;
+        emit LiquiditySanctionsPaused();
+    }
+
+    /// @inheritdoc ILiquidityAdmin
+    function unpauseSanctions() external onlyOwner {
+        sanctionsPause = false;
+        emit LiquiditySanctionsUnpaused();
     }
 
     /// @inheritdoc ILiquidityAdmin
@@ -288,9 +303,11 @@ contract NiftyApesLiquidity is
     }
 
     function _requireIsNotSanctioned(address addressToCheck) internal view {
-        SanctionsList sanctionsList = SanctionsList(SANCTIONS_CONTRACT);
-        bool isToSanctioned = sanctionsList.isSanctioned(addressToCheck);
-        require(!isToSanctioned, "sanctioned address");
+        if (!sanctionsPause) {
+            SanctionsList sanctionsList = SanctionsList(SANCTIONS_CONTRACT);
+            bool isToSanctioned = sanctionsList.isSanctioned(addressToCheck);
+            require(!isToSanctioned, "sanctioned address");
+        }
     }
 
     function _requireMaxCAssetBalance(address cAsset) internal view {

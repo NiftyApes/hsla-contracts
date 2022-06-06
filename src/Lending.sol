@@ -65,6 +65,9 @@ contract NiftyApesLending is
     /// @inheritdoc ILending
     uint16 public defaultRefinancePremiumBps;
 
+    /// @dev The status of sanctions checks. Can be set to false if oracle becomes malicious.
+    bool internal sanctionsPause;
+
     /// @dev This empty reserved space is put in place to allow future versions to add new
     /// variables without shifting storage.
     uint256[500] private __gap;
@@ -154,6 +157,18 @@ contract NiftyApesLending is
             newLiquidityContractAddress
         );
         liquidityContractAddress = newLiquidityContractAddress;
+    }
+
+    /// @inheritdoc ILendingAdmin
+    function pauseSanctions() external onlyOwner {
+        sanctionsPause = true;
+        emit LendingSanctionsPaused();
+    }
+
+    /// @inheritdoc ILendingAdmin
+    function unpauseSanctions() external onlyOwner {
+        sanctionsPause = false;
+        emit LendingSanctionsUnpaused();
     }
 
     /// @inheritdoc ILendingAdmin
@@ -1013,9 +1028,11 @@ contract NiftyApesLending is
     }
 
     function _requireIsNotSanctioned(address addressToCheck) internal view {
-        SanctionsList sanctionsList = SanctionsList(SANCTIONS_CONTRACT);
-        bool isToSanctioned = sanctionsList.isSanctioned(addressToCheck);
-        require(!isToSanctioned, "sanctioned address");
+        if (!sanctionsPause) {
+            SanctionsList sanctionsList = SanctionsList(SANCTIONS_CONTRACT);
+            bool isToSanctioned = sanctionsList.isSanctioned(addressToCheck);
+            require(!isToSanctioned, "sanctioned address");
+        }
     }
 
     function _require721Owner(
