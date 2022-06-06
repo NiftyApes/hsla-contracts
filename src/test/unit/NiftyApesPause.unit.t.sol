@@ -196,7 +196,7 @@ contract NiftyApesPauseUnitTest is BaseTest, ILendingStructs, IOffersStructs, ER
     function testCannotRefinanceByLender_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        niftyApes.refinanceByLender(getOffer());
+        niftyApes.refinanceByLender(getOffer(), 0);
     }
 
     function testCannotDrawLoanAmount_paused() public {
