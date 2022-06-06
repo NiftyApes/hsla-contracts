@@ -433,7 +433,11 @@ contract NiftyApesLending is
     }
 
     /// @inheritdoc ILending
-    function refinanceByLender(Offer memory offer) external whenNotPaused nonReentrant {
+    function refinanceByLender(Offer memory offer, uint32 lastUpdatedTimestamp)
+        external
+        whenNotPaused
+        nonReentrant
+    {
         LoanAuction storage loanAuction = _getLoanAuctionInternal(
             offer.nftContractAddress,
             offer.nftId
@@ -441,6 +445,7 @@ contract NiftyApesLending is
 
         _requireIsNotSanctioned(msg.sender);
         _requireOpenLoan(loanAuction);
+        _requireExpectedLoanIsActive(loanAuction, lastUpdatedTimestamp);
         _requireOfferCreator(offer, msg.sender);
         _requireLenderOffer(offer);
         _requireLoanNotExpired(loanAuction);
@@ -1047,6 +1052,13 @@ contract NiftyApesLending is
 
     function _requireOfferCreator(Offer memory offer, address creator) internal pure {
         require(creator == offer.creator, "offer creator mismatch");
+    }
+
+    function _requireExpectedLoanIsActive(
+        LoanAuction storage loanAuction,
+        uint32 lastUpdatedTimestamp
+    ) internal view {
+        require(loanAuction.lastUpdatedTimestamp == lastUpdatedTimestamp, "unexpected terms");
     }
 
     function _requireOfferParity(LoanAuction storage loanAuction, Offer memory offer)

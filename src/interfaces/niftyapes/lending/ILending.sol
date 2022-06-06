@@ -141,7 +141,7 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     ///         The Lender must allow 25 bps on interest to accrue or pay a gas greifing premium to the current lender
     ///         This premium is equal to gasGreifingPremiumBps - interestEarned
     /// @param offer The details of the loan auction offer
-    function refinanceByLender(Offer calldata offer) external;
+    function refinanceByLender(Offer calldata offer, uint32 lastUpdatedTimestamp) external;
 
     /// @notice Allows borrowers to draw a higher balance on their loan if it has been refianced with a higher maximum amount
     ///         Drawing down value increases the maximum loan pay back amount and so is not automatically imposed on a refinance by lender, hence this function.
