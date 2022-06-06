@@ -44,10 +44,10 @@ interface ILendingStructs {
 
     /// @dev Struct exists since we ran out of stack space in _repayLoan
     struct RepayLoanStruct {
-        address nftContractAddress;
-        uint256 nftId;
-        bool repayFull;
-        uint256 paymentAmount;
-        bool checkMsgSender;
+        uint256 nftId;                  // 32 bytes
+        uint256 paymentAmount;          // 32 bytes
+        address nftContractAddress;     // 20
+        bool repayFull;                 // 1
+        bool checkMsgSender;            // 1
     }
 }
