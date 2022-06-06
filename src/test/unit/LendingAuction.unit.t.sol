@@ -274,7 +274,7 @@ contract LendingAuctionUnitTest is
             asset: address(usdcToken),
             amount: 6,
             duration: 7,
-            expiration: 8
+            expiration: uint32(block.timestamp + 1)
         });
 
         hevm.expectRevert("offer creator");
@@ -294,10 +294,10 @@ contract LendingAuctionUnitTest is
             asset: address(usdcToken),
             amount: 6,
             duration: 7,
-            expiration: 8
+            expiration: uint32(block.timestamp + 1)
         });
 
-        hevm.expectRevert("Insufficient cToken balance");
+        hevm.expectRevert("insufficient cToken balance");
 
         offersContract.createOffer(offer);
     }
@@ -319,7 +319,7 @@ contract LendingAuctionUnitTest is
             asset: address(usdcToken),
             amount: 6,
             duration: 7,
-            expiration: 8
+            expiration: uint32(block.timestamp + 1)
         });
 
         offersContract.createOffer(offer);
@@ -343,7 +343,7 @@ contract LendingAuctionUnitTest is
         assertEq(actual.asset, address(usdcToken));
         assertEq(actual.amount, 6);
         assertEq(actual.duration, 7);
-        assertEq(actual.expiration, 8);
+        assertEq(actual.expiration, uint32(block.timestamp + 1));
     }
 
     function testCreateOffer_works_event() public {
@@ -363,7 +363,7 @@ contract LendingAuctionUnitTest is
             asset: address(usdcToken),
             amount: 6,
             duration: 7,
-            expiration: 8
+            expiration: uint32(block.timestamp + 1)
         });
 
         bytes32 offerHash = offersContract.getOfferHash(offer);
@@ -401,7 +401,7 @@ contract LendingAuctionUnitTest is
             asset: address(usdcToken),
             amount: 6,
             duration: 7,
-            expiration: 8
+            expiration: uint32(block.timestamp + 1)
         });
 
         offersContract.createOffer(offer);
@@ -437,7 +437,7 @@ contract LendingAuctionUnitTest is
             asset: address(usdcToken),
             amount: 6,
             duration: 7,
-            expiration: 8
+            expiration: uint32(block.timestamp + 1)
         });
 
         offersContract.createOffer(offer);
@@ -487,7 +487,7 @@ contract LendingAuctionUnitTest is
             asset: address(usdcToken),
             amount: 6,
             duration: 7,
-            expiration: 8
+            expiration: uint32(block.timestamp + 1)
         });
 
         offersContract.createOffer(offer);
@@ -602,15 +602,17 @@ contract LendingAuctionUnitTest is
             nftId: 4,
             asset: address(usdcToken),
             amount: 6,
-            duration: 7,
-            expiration: 8
+            duration: 30 days,
+            expiration: uint32(block.timestamp + 1)
         });
 
         offersContract.createOffer(offer);
 
+        hevm.warp(block.timestamp + 1 days);
+
         bytes32 offerHash = offersContract.getOfferHash(offer);
 
-        hevm.expectRevert("offer expired");
+        hevm.expectRevert("offer has expired");
 
         lendingAuction.executeLoanByBorrower(
             offer.nftContractAddress,
@@ -1318,7 +1320,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        hevm.expectRevert("offer expired");
+        hevm.expectRevert("offer has expired");
 
         lendingAuction.executeLoanByBorrowerSignature(offer, signature, 4);
     }
@@ -1783,7 +1785,7 @@ contract LendingAuctionUnitTest is
             asset: address(usdcToken),
             amount: 6,
             duration: 7,
-            expiration: 8
+            expiration: uint32(block.timestamp + 1)
         });
 
         mockNft.transferFrom(address(this), SIGNER_1, 1);
@@ -1798,9 +1800,11 @@ contract LendingAuctionUnitTest is
 
         bytes32 offerHash = offersContract.getOfferHash(offer);
 
-        hevm.expectRevert("offer expired");
+        hevm.expectRevert("offer has expired");
 
         hevm.stopPrank();
+
+        hevm.warp(block.timestamp + 1 days);
 
         hevm.startPrank(LENDER_1);
 
@@ -2438,7 +2442,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        hevm.expectRevert("offer expired");
+        hevm.expectRevert("offer has expired");
 
         lendingAuction.executeLoanByLenderSignature(offer, signature);
     }
@@ -3471,7 +3475,7 @@ contract LendingAuctionUnitTest is
 
         hevm.warp(block.timestamp + 2);
 
-        hevm.expectRevert("offer expired");
+        hevm.expectRevert("offer has expired");
 
         lendingAuction.refinanceByBorrower(address(mockNft), 1, true, offerHash2);
     }
@@ -4572,7 +4576,7 @@ contract LendingAuctionUnitTest is
         bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
 
         hevm.warp(block.timestamp + 2);
-        hevm.expectRevert("offer expired");
+        hevm.expectRevert("offer has expired");
 
         lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
     }
@@ -5728,7 +5732,7 @@ contract LendingAuctionUnitTest is
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
 
-        hevm.expectRevert("offer expired");
+        hevm.expectRevert("offer has expired");
 
         lendingAuction.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
     }

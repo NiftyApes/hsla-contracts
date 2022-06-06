@@ -308,7 +308,7 @@ contract NiftyApesLending is
         LoanAuction storage loanAuction = _getLoanAuctionInternal(offer.nftContractAddress, nftId);
 
         _requireNoOpenLoan(loanAuction);
-        _requireOfferNotExpired(offer);
+        IOffers(offersContractAddress).requireOfferNotExpired(offer);
         _requireMinDurationForOffer(offer);
         _require721Owner(offer.nftContractAddress, nftId, borrower);
 
@@ -389,7 +389,7 @@ contract NiftyApesLending is
         _requireNftOwner(loanAuction, msg.sender);
         _requireNoFixedTerm(loanAuction);
         _requireOpenLoan(loanAuction);
-        _requireOfferNotExpired(offer);
+        IOffers(offersContractAddress).requireOfferNotExpired(offer);
         _requireLenderOffer(offer);
         _requireMinDurationForOffer(offer);
 
@@ -464,7 +464,7 @@ contract NiftyApesLending is
         _requireOfferCreator(offer, msg.sender);
         _requireLenderOffer(offer);
         _requireLoanNotExpired(loanAuction);
-        _requireOfferNotExpired(offer);
+        IOffers(offersContractAddress).requireOfferNotExpired(offer);
         _requireOfferParity(loanAuction, offer);
         _requireNoFixedTerm(loanAuction);
         _requireNoFloorTerms(offer);
@@ -997,10 +997,6 @@ contract NiftyApesLending is
 
     function _requireLoanNotExpired(LoanAuction storage loanAuction) internal view {
         require(_currentTimestamp32() < loanAuction.loanEndTimestamp, "loan expired");
-    }
-
-    function _requireOfferNotExpired(Offer memory offer) internal view {
-        require(offer.expiration > _currentTimestamp32(), "offer expired");
     }
 
     function _requireMinDurationForOffer(Offer memory offer) internal pure {
