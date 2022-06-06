@@ -141,7 +141,7 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     ///         The Lender must allow 25 bps on interest to accrue or pay a gas greifing premium to the current lender
     ///         This premium is equal to gasGreifingPremiumBps - interestEarned
     /// @param offer The details of the loan auction offer
-    function refinanceByLender(Offer calldata offer, uint32 lastUpdatedTimestamp) external;
+    function refinanceByLender(Offer calldata offer, uint32 expectedLastUpdatedTimestamp) external;
 
     /// @notice Allows borrowers to draw a higher balance on their loan if it has been refianced with a higher maximum amount
     ///         Drawing down value increases the maximum loan pay back amount and so is not automatically imposed on a refinance by lender, hence this function.
@@ -171,7 +171,11 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     ///         The main use case for this function is to have a bot repay a loan on behalf of a borrower
     /// @param nftContractAddress The address of the NFT collection
     /// @param nftId The id of the specified NFT
-    function repayLoanForAccount(address nftContractAddress, uint256 nftId) external payable;
+    function repayLoanForAccount(
+        address nftContractAddress,
+        uint256 nftId,
+        uint32 expectedLoanBeginTimestamp
+    ) external payable;
 
     /// @notice Repay part of an open loan.
     ///         Repaying part of a loan will lower the remaining interest accumulated

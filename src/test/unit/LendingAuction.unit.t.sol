@@ -6806,7 +6806,7 @@ contract LendingAuctionUnitTest is
         usdcToken.mint(address(SIGNER_1), 1000 ether);
         usdcToken.approve(address(liquidityProviders), 1000 ether);
 
-        lendingAuction.repayLoanForAccount(address(mockNft), 1);
+        lendingAuction.repayLoanForAccount(address(mockNft), 1, uint32(block.timestamp));
     }
 
     function testCannotRepayLoanForAccount_if_sanctioned() public {
@@ -6818,7 +6818,7 @@ contract LendingAuctionUnitTest is
 
         hevm.expectRevert("sanctioned address");
 
-        lendingAuction.repayLoanForAccount(address(mockNft), 1);
+        lendingAuction.repayLoanForAccount(address(mockNft), 1, uint32(block.timestamp));
     }
 
     function testCannotRefinanceByLender_when_frontrunning_happens() public {
@@ -6957,7 +6957,7 @@ contract LendingAuctionUnitTest is
 
         // Not updating loanAuction, so this should be obsolete after frontrunning
 
-        hevm.expectRevert("active loan is not as expected");
+        hevm.expectRevert("unexpected terms");
 
         lendingAuction.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
     }
@@ -7473,4 +7473,5 @@ contract LendingAuctionUnitTest is
     // TODO(captnseagraves): Add tests for lenderRefi in relevant functions
     // TODO: Write tests that set protocolInterestBps higher than 0 and check payout
     // TODO: Write tests for full flow with ETH
+    // TODO: write tests for _requireExpectedLoanIsActive in repayLoanForAccount
 }

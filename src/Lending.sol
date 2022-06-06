@@ -433,7 +433,7 @@ contract NiftyApesLending is
     }
 
     /// @inheritdoc ILending
-    function refinanceByLender(Offer memory offer, uint32 lastUpdatedTimestamp)
+    function refinanceByLender(Offer memory offer, uint32 expectedLastUpdatedTimestamp)
         external
         whenNotPaused
         nonReentrant
@@ -445,7 +445,7 @@ contract NiftyApesLending is
 
         _requireIsNotSanctioned(msg.sender);
         _requireOpenLoan(loanAuction);
-        _requireExpectedLoanIsActive(loanAuction, lastUpdatedTimestamp);
+        _requireExpectedTermsAreActive(loanAuction, expectedLastUpdatedTimestamp);
         _requireOfferCreator(offer, msg.sender);
         _requireLenderOffer(offer);
         _requireLoanNotExpired(loanAuction);
@@ -458,11 +458,9 @@ contract NiftyApesLending is
 
         address cAsset = ILiquidity(liquidityContractAddress).getCAsset(offer.asset);
 
-        (
-            bool sufficientInterest,
-            uint256 lenderInterest,
-            uint96 interestThreshold
-        ) = _checkSufficientInterestAccumulated(loanAuction);
+        (, uint256 lenderInterest, uint96 interestThreshold) = _checkSufficientInterestAccumulated(
+            loanAuction
+        );
         bool sufficientTerms = _checkSufficientTerms(
             loanAuction,
             offer.amount,
@@ -498,7 +496,7 @@ contract NiftyApesLending is
                 ((loanAuction.amountDrawn * originationPremiumBps) / MAX_BPS);
             uint256 protocolInterestAndPremium = protocolInterest;
 
-            if (!sufficientInterest) {
+            if (interestThreshold > lenderInterest) {
                 interestAndPremiumOwedToCurrentLender += interestThreshold - lenderInterest;
                 protocolInterestAndPremium +=
                     (lenderInterest * gasGriefingProtocolPremiumBps) /
@@ -651,13 +649,11 @@ contract NiftyApesLending is
     }
 
     /// @inheritdoc ILending
-    function repayLoanForAccount(address nftContractAddress, uint256 nftId)
-        external
-        payable
-        override
-        whenNotPaused
-        nonReentrant
-    {
+    function repayLoanForAccount(
+        address nftContractAddress,
+        uint256 nftId,
+        uint32 expectedLoanBeginTimestamp
+    ) external payable override whenNotPaused nonReentrant {
         RepayLoanStruct memory rls = RepayLoanStruct({
             nftContractAddress: nftContractAddress,
             nftId: nftId,
@@ -667,6 +663,9 @@ contract NiftyApesLending is
         });
 
         _requireIsNotSanctioned(msg.sender);
+
+        LoanAuction memory loanAuction = _getLoanAuctionInternal(nftContractAddress, nftId);
+        _requireExpectedLoanIsActive(loanAuction, expectedLoanBeginTimestamp);
 
         _repayLoanAmount(rls);
     }
@@ -1054,11 +1053,21 @@ contract NiftyApesLending is
         require(creator == offer.creator, "offer creator mismatch");
     }
 
-    function _requireExpectedLoanIsActive(
+    function _requireExpectedTermsAreActive(
         LoanAuction storage loanAuction,
-        uint32 lastUpdatedTimestamp
+        uint32 expectedLastUpdatedTimestamp
     ) internal view {
-        require(loanAuction.lastUpdatedTimestamp == lastUpdatedTimestamp, "unexpected terms");
+        require(
+            loanAuction.lastUpdatedTimestamp == expectedLastUpdatedTimestamp,
+            "unexpected terms"
+        );
+    }
+
+    function _requireExpectedLoanIsActive(
+        LoanAuction memory loanAuction,
+        uint32 expectedLoanBeginTimestamp
+    ) internal view {
+        require(loanAuction.loanBeginTimestamp == expectedLoanBeginTimestamp, "unexpected loan");
     }
 
     function _requireOfferParity(LoanAuction storage loanAuction, Offer memory offer)
