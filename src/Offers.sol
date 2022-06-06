@@ -129,8 +129,8 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
         external
         whenNotPaused
     {
-        _requireAvailableSignature(signature);
-        _requireSignature65(signature);
+        requireAvailableSignature(signature);
+        requireSignature65(signature);
 
         address signer = getOfferSigner(offer, signature);
 
