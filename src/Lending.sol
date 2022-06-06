@@ -1057,10 +1057,12 @@ contract NiftyApesLending is
         LoanAuction storage loanAuction,
         uint32 expectedLastUpdatedTimestamp
     ) internal view {
-        require(
-            loanAuction.lastUpdatedTimestamp == expectedLastUpdatedTimestamp,
-            "unexpected terms"
-        );
+        if (expectedLastUpdatedTimestamp != 0) {
+            require(
+                loanAuction.lastUpdatedTimestamp == expectedLastUpdatedTimestamp,
+                "unexpected terms"
+            );
+        }
     }
 
     function _requireExpectedLoanIsActive(
