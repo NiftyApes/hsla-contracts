@@ -87,12 +87,10 @@ interface ILiquidity is ILiquidityAdmin, ILiquidityEvents, ILiquidityStructs {
     /// @notice Function only callable by the NiftyApesLending contract
     ///         Allows lending contract to affect liquidity directly
     /// @param from The address the transaction is from
-    /// @param to The address the transaction is to
     /// @param asset The assets address (e.g. USDC address)
     /// @param amount The amount of eth to withdraw
     function mintCErc20(
         address from,
-        address to,
         address asset,
         uint256 amount
     ) external returns (uint256);

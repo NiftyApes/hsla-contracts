@@ -155,7 +155,7 @@ contract NiftyApesLiquidity is
 
         address cAsset = getCAsset(asset);
 
-        uint256 cTokensMinted = _mintCErc20(msg.sender, address(this), asset, tokenAmount);
+        uint256 cTokensMinted = _mintCErc20(msg.sender, asset, tokenAmount);
 
         _balanceByAccountByAsset[msg.sender][cAsset].cAssetBalance += cTokensMinted;
 
@@ -393,17 +393,15 @@ contract NiftyApesLiquidity is
     /// @inheritdoc ILiquidity
     function mintCErc20(
         address from,
-        address to,
         address asset,
         uint256 amount
     ) external returns (uint256) {
         _requireLendingContract();
-        return _mintCErc20(from, to, asset, amount);
+        return _mintCErc20(from, asset, amount);
     }
 
     function _mintCErc20(
         address from,
-        address to,
         address asset,
         uint256 amount
     ) internal returns (uint256) {
@@ -413,7 +411,7 @@ contract NiftyApesLiquidity is
         IERC20Upgradeable underlying = IERC20Upgradeable(asset);
         ICERC20 cToken = ICERC20(cAsset);
 
-        underlying.safeTransferFrom(from, to, amount);
+        underlying.safeTransferFrom(from, address(this), amount);
         uint256 allowance = underlying.allowance(address(this), address(cToken));
         if (allowance > 0) {
             underlying.safeDecreaseAllowance(cAsset, allowance);
