@@ -269,7 +269,7 @@ contract NiftyApesLending is
 
         _requireOfferCreator(offer, borrower);
         IOffers(offersContractAddress).requireAvailableSignature(signature);
-        _requireSignature65(signature);
+        IOffers(offersContractAddress).requireSignature65(signature);
         _requireBorrowerOffer(offer);
         _requireNoFloorTerms(offer);
 
@@ -353,7 +353,7 @@ contract NiftyApesLending is
 
         _requireOfferCreator(offer, signer);
         IOffers(offersContractAddress).requireAvailableSignature(signature);
-        _requireSignature65(signature);
+        IOffers(offersContractAddress).requireSignature65(signature);
 
         if (!offer.floorTerm) {
             _requireMatchingNftId(offer, nftId);
@@ -954,10 +954,6 @@ contract NiftyApesLending is
 
         // check and return if improvements are greater than 25 bps total
         return improvementSum > termGriefingPremiumBps;
-    }
-
-    function _requireSignature65(bytes memory signature) internal pure {
-        require(signature.length == 65, "signature unsupported");
     }
 
     function _requireOfferPresent(Offer memory offer) internal pure {
