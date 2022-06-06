@@ -79,11 +79,11 @@ contract NiftyApesLiquidity is
     function setCAssetAddress(address asset, address cAsset) external onlyOwner {
         address cAssetOld = assetToCAsset[asset];
         address assetOld = _cAssetToAsset[cAsset];
-        if (cAssetOld) {
-            _cAssetToAsset[cAssetOld] = 0;
+        if (cAssetOld != address(0)) {
+            _cAssetToAsset[cAssetOld] = address(0);
         }
-        if (assetOld) {
-            assetToCAsset[assetOld] = 0;
+        if (assetOld != address(0)) {
+            assetToCAsset[assetOld] = address(0);
         }
 
         assetToCAsset[asset] = cAsset;
