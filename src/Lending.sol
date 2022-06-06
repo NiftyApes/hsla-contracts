@@ -108,16 +108,28 @@ contract NiftyApesLending is
     }
 
     /// @inheritdoc ILendingAdmin
-    function updateGasGriefingProtocolPremiumBps(uint16 newGasGriefingProtocolPremiumBps) external onlyOwner {
+    function updateGasGriefingProtocolPremiumBps(uint16 newGasGriefingProtocolPremiumBps)
+        external
+        onlyOwner
+    {
         require(newGasGriefingProtocolPremiumBps <= MAX_FEE, "max fee");
-        emit GasGriefingProtocolPremiumBpsUpdated(gasGriefingProtocolPremiumBps, newGasGriefingProtocolPremiumBps);
+        emit GasGriefingProtocolPremiumBpsUpdated(
+            gasGriefingProtocolPremiumBps,
+            newGasGriefingProtocolPremiumBps
+        );
         gasGriefingProtocolPremiumBps = newGasGriefingProtocolPremiumBps;
     }
 
     /// @inheritdoc ILendingAdmin
-    function updateDefaultRefinancePremiumBps(uint16 newDefaultRefinancePremiumBps) external onlyOwner {
+    function updateDefaultRefinancePremiumBps(uint16 newDefaultRefinancePremiumBps)
+        external
+        onlyOwner
+    {
         require(newDefaultRefinancePremiumBps <= MAX_FEE, "max fee");
-        emit DefaultRefinancePremiumBpsUpdated(defaultRefinancePremiumBps, newDefaultRefinancePremiumBps);
+        emit DefaultRefinancePremiumBpsUpdated(
+            defaultRefinancePremiumBps,
+            newDefaultRefinancePremiumBps
+        );
         defaultRefinancePremiumBps = newDefaultRefinancePremiumBps;
     }
 
@@ -283,7 +295,7 @@ contract NiftyApesLending is
         LoanAuction storage loanAuction = getLoanAuctionInternal(offer.nftContractAddress, nftId);
 
         requireNoOpenLoan(loanAuction);
-        requireOfferNotExpired(offer);
+        IOffers(offersContractAddress).requireOfferNotExpired(offer);
         requireMinDurationForOffer(offer);
         require721Owner(offer.nftContractAddress, nftId, borrower);
 
@@ -364,7 +376,7 @@ contract NiftyApesLending is
         requireNftOwner(loanAuction, msg.sender);
         requireNoFixedTerm(loanAuction);
         requireOpenLoan(loanAuction);
-        requireOfferNotExpired(offer);
+        IOffers(offersContractAddress).requireOfferNotExpired(offer);
         requireLenderOffer(offer);
         requireMinDurationForOffer(offer);
 
@@ -438,7 +450,7 @@ contract NiftyApesLending is
         requireOfferCreator(offer, msg.sender);
         requireLenderOffer(offer);
         requireLoanNotExpired(loanAuction);
-        requireOfferNotExpired(offer);
+        IOffers(offersContractAddress).requireOfferNotExpired(offer);
         requireOfferParity(loanAuction, offer);
         requireNoFixedTerm(loanAuction);
         requireNoFloorTerms(offer);
@@ -447,7 +459,11 @@ contract NiftyApesLending is
 
         address cAsset = ILiquidity(liquidityContractAddress).getCAsset(offer.asset);
 
-        (bool sufficientInterest, uint256 lenderInterest, uint96 interestThreshold) = checkSufficientInterestAccumulated(loanAuction);
+        (
+            bool sufficientInterest,
+            uint256 lenderInterest,
+            uint96 interestThreshold
+        ) = checkSufficientInterestAccumulated(loanAuction);
         bool sufficientTerms = checkSufficientTerms(
             loanAuction,
             offer.amount,
@@ -567,16 +583,21 @@ contract NiftyApesLending is
 
             uint128 currentAmountDrawn = loanAuction.amountDrawn;
             loanAuction.amountDrawn += SafeCastUpgradeable.toUint128(slashedDrawAmount);
-           
+
             if (loanAuction.interestRatePerSecond > 0) {
                 uint256 interestPerSecond = currentAmountDrawn / loanAuction.interestRatePerSecond;
-                loanAuction.interestRatePerSecond = SafeCastUpgradeable.toUint96(loanAuction.amountDrawn) / SafeCastUpgradeable.toUint96(interestPerSecond);
+                loanAuction.interestRatePerSecond =
+                    SafeCastUpgradeable.toUint96(loanAuction.amountDrawn) /
+                    SafeCastUpgradeable.toUint96(interestPerSecond);
             }
 
             if (loanAuction.protocolInterestRatePerSecond > 0) {
-                uint256 protocolInterestPerSecond = currentAmountDrawn / loanAuction.protocolInterestRatePerSecond;
-                loanAuction.protocolInterestRatePerSecond = SafeCastUpgradeable.toUint96(loanAuction.amountDrawn) / SafeCastUpgradeable.toUint96(protocolInterestPerSecond);
-            }           
+                uint256 protocolInterestPerSecond = currentAmountDrawn /
+                    loanAuction.protocolInterestRatePerSecond;
+                loanAuction.protocolInterestRatePerSecond =
+                    SafeCastUpgradeable.toUint96(loanAuction.amountDrawn) /
+                    SafeCastUpgradeable.toUint96(protocolInterestPerSecond);
+            }
 
             uint256 cTokensBurnt = ILiquidity(liquidityContractAddress).burnCErc20(
                 loanAuction.asset,
@@ -605,7 +626,7 @@ contract NiftyApesLending is
         );
     }
 
-   /// @dev Struct exists since we ran out of stack space in _repayLoan
+    /// @dev Struct exists since we ran out of stack space in _repayLoan
     struct RepayLoanStruct {
         address nftContractAddress;
         uint256 nftId;
@@ -718,17 +739,22 @@ contract NiftyApesLending is
             }
             uint128 currentAmountDrawn = loanAuction.amountDrawn;
             loanAuction.amountDrawn -= SafeCastUpgradeable.toUint128(payment);
-           
+
             if (loanAuction.interestRatePerSecond > 0) {
                 uint256 interestPerSecond = currentAmountDrawn / loanAuction.interestRatePerSecond;
-                loanAuction.interestRatePerSecond = SafeCastUpgradeable.toUint96(loanAuction.amountDrawn) / SafeCastUpgradeable.toUint96(interestPerSecond);
+                loanAuction.interestRatePerSecond =
+                    SafeCastUpgradeable.toUint96(loanAuction.amountDrawn) /
+                    SafeCastUpgradeable.toUint96(interestPerSecond);
             }
 
             if (loanAuction.protocolInterestRatePerSecond > 0) {
-                uint256 protocolInterestPerSecond = currentAmountDrawn / loanAuction.protocolInterestRatePerSecond;
-                loanAuction.protocolInterestRatePerSecond = SafeCastUpgradeable.toUint96(loanAuction.amountDrawn) / SafeCastUpgradeable.toUint96(protocolInterestPerSecond);
-            }           
-            
+                uint256 protocolInterestPerSecond = currentAmountDrawn /
+                    loanAuction.protocolInterestRatePerSecond;
+                loanAuction.protocolInterestRatePerSecond =
+                    SafeCastUpgradeable.toUint96(loanAuction.amountDrawn) /
+                    SafeCastUpgradeable.toUint96(protocolInterestPerSecond);
+            }
+
             emit PartialRepayment(
                 loanAuction.lender,
                 loanAuction.nftOwner,
@@ -787,7 +813,9 @@ contract NiftyApesLending is
 
                 // setting lastUpdatedTimestamp to currentTimestamp eliminates lender profit for the latest period
                 loanAuction.lastUpdatedTimestamp = currentTimestamp();
-                loanAuction.amount = loanAuction.amountDrawn + SafeCastUpgradeable.toUint128(drawAmount);
+                loanAuction.amount =
+                    loanAuction.amountDrawn +
+                    SafeCastUpgradeable.toUint128(drawAmount);
             }
         }
 
@@ -856,7 +884,11 @@ contract NiftyApesLending is
     function checkSufficientInterestAccumulated(address nftContractAddress, uint256 nftId)
         public
         view
-        returns (bool, uint256, uint96)
+        returns (
+            bool,
+            uint256,
+            uint96
+        )
     {
         return
             checkSufficientInterestAccumulated(getLoanAuctionInternal(nftContractAddress, nftId));
@@ -865,7 +897,11 @@ contract NiftyApesLending is
     function checkSufficientInterestAccumulated(LoanAuction storage loanAuction)
         internal
         view
-        returns (bool, uint256, uint96)
+        returns (
+            bool,
+            uint256,
+            uint96
+        )
     {
         (uint256 lenderInterest, ) = calculateInterestAccrued(loanAuction);
 
@@ -873,7 +909,11 @@ contract NiftyApesLending is
             SafeCastUpgradeable.toUint96(gasGriefingPremiumBps)) /
             SafeCastUpgradeable.toUint96(MAX_BPS);
 
-        return (lenderInterest > interestThreshold ? true : false, lenderInterest, interestThreshold);
+        return (
+            lenderInterest > interestThreshold ? true : false,
+            lenderInterest,
+            interestThreshold
+        );
     }
 
     /// @inheritdoc ILending
@@ -940,10 +980,6 @@ contract NiftyApesLending is
 
     function requireLoanNotExpired(LoanAuction storage loanAuction) internal view {
         require(currentTimestamp() < loanAuction.loanEndTimestamp, "loan expired");
-    }
-
-    function requireOfferNotExpired(Offer memory offer) internal view {
-        require(offer.expiration > currentTimestamp(), "offer expired");
     }
 
     function requireMinDurationForOffer(Offer memory offer) internal pure {
@@ -1048,8 +1084,14 @@ contract NiftyApesLending is
         revert("not an improvement");
     }
 
-    function requireExpectedLoanIsActive(LoanAuction storage loanAuction, uint32 lastUpdatedTimestamp) internal view {
-      require(loanAuction.lastUpdatedTimestamp == lastUpdatedTimestamp, "active loan is not as expected");
+    function requireExpectedLoanIsActive(
+        LoanAuction storage loanAuction,
+        uint32 lastUpdatedTimestamp
+    ) internal view {
+        require(
+            loanAuction.lastUpdatedTimestamp == lastUpdatedTimestamp,
+            "active loan is not as expected"
+        );
     }
 
     function createLoan(
