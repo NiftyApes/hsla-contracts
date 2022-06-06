@@ -77,6 +77,15 @@ contract NiftyApesLiquidity is
 
     /// @inheritdoc ILiquidityAdmin
     function setCAssetAddress(address asset, address cAsset) external onlyOwner {
+        address cAssetOld = assetToCAsset[asset];
+        address assetOld = _cAssetToAsset[cAsset];
+        if (cAssetOld) {
+            _cAssetToAsset[cAssetOld] = 0;
+        }
+        if (assetOld) {
+            assetToCAsset[assetOld] = 0;
+        }
+
         assetToCAsset[asset] = cAsset;
         _cAssetToAsset[cAsset] = asset;
 
