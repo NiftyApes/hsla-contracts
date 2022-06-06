@@ -277,7 +277,7 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 1)
         });
 
-        hevm.expectRevert("is not offer creator or lending contract");
+        hevm.expectRevert("offer creator");
 
         offersContract.createOffer(offer);
     }
@@ -410,7 +410,7 @@ contract LendingAuctionUnitTest is
 
         hevm.prank(address(0x0000000000000000000000000000000000000001));
 
-        hevm.expectRevert("is not offer creator or lending contract");
+        hevm.expectRevert("offer creator");
 
         offersContract.removeOffer(
             offer.nftContractAddress,
@@ -1227,7 +1227,7 @@ contract LendingAuctionUnitTest is
 
         hevm.prank(SIGNER_2);
 
-        hevm.expectRevert("is not signer");
+        hevm.expectRevert("signer");
 
         offersContract.withdrawOfferSignature(offer, signature);
     }
@@ -3277,11 +3277,6 @@ contract LendingAuctionUnitTest is
 
         bytes32 offerHash2 = offersContract.getOfferHash(offer2);
 
-        hevm.stopPrank();
-        hevm.startPrank(LENDER_1);
-
-        usdcToken.approve(address(liquidityProviders), 6);
-
         hevm.expectRevert("offer nftId mismatch");
 
         lendingAuction.refinanceByBorrower(address(mockNft), 1, true, offerHash2);
@@ -3344,11 +3339,6 @@ contract LendingAuctionUnitTest is
         offersContract.createOffer(offer2);
 
         bytes32 offerHash2 = offersContract.getOfferHash(offer2);
-
-        hevm.stopPrank();
-        hevm.startPrank(LENDER_1);
-
-        usdcToken.approve(address(liquidityProviders), 6);
 
         hevm.expectRevert("offer nftId mismatch");
 
@@ -6589,7 +6579,7 @@ contract LendingAuctionUnitTest is
     }
 
     function testCannotRepayLoan_no_loan() public {
-        hevm.expectRevert("asset allow list");
+        hevm.expectRevert("loan not active");
         lendingAuction.repayLoan(address(mockNft), 1);
     }
 
@@ -6684,7 +6674,7 @@ contract LendingAuctionUnitTest is
         Offer memory offer = Offer({
             creator: LENDER_1,
             nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
+            interestRatePerSecond: 694444444444,
             fixedTerms: false,
             floorTerm: true,
             lenderOffer: true,
@@ -6725,6 +6715,10 @@ contract LendingAuctionUnitTest is
 
         assertEq(usdcToken.balanceOf(address(this)), 0);
         assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
+        assertEq(
+            liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken)),
+            (6 ether + lenderInterest + protocolInterest) * 1 ether
+        );
         assertEq(
             cUSDCToken.balanceOf(address(liquidityProviders)),
             (6 ether + lenderInterest + protocolInterest) * 1 ether
@@ -6784,9 +6778,7 @@ contract LendingAuctionUnitTest is
 
         lendingAuction.repayLoan(address(mockNft), 1);
 
-        // TODO(miller) change NiftApes.sol so
-        // that is "loan not active" is revert
-        hevm.expectRevert("asset allow list");
+        hevm.expectRevert("loan not active");
 
         lendingAuction.drawLoanAmount(address(mockNft), 1, 2 * 10**18);
     }
@@ -6818,7 +6810,7 @@ contract LendingAuctionUnitTest is
         usdcToken.mint(address(SIGNER_1), 1000 ether);
         usdcToken.approve(address(liquidityProviders), 1000 ether);
 
-        lendingAuction.repayLoanForAccount(address(mockNft), 1);
+        lendingAuction.repayLoanForAccount(address(mockNft), 1, uint32(block.timestamp));
     }
 
     function testCannotRepayLoanForAccount_if_sanctioned() public {
@@ -6830,7 +6822,7 @@ contract LendingAuctionUnitTest is
 
         hevm.expectRevert("sanctioned address");
 
-        lendingAuction.repayLoanForAccount(address(mockNft), 1);
+        lendingAuction.repayLoanForAccount(address(mockNft), 1, uint32(block.timestamp));
     }
 
     function testCannotRefinanceByLender_when_frontrunning_happens() public {
@@ -6969,7 +6961,7 @@ contract LendingAuctionUnitTest is
 
         // Not updating loanAuction, so this should be obsolete after frontrunning
 
-        hevm.expectRevert("active loan is not as expected");
+        hevm.expectRevert("unexpected terms");
 
         lendingAuction.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
     }
@@ -7483,4 +7475,7 @@ contract LendingAuctionUnitTest is
     // TODO updateLendingContractAddress test
     // TODO updateLiquidityContractAddress test
     // TODO(captnseagraves): Add tests for lenderRefi in relevant functions
+    // TODO: Write tests that set protocolInterestBps higher than 0 and check payout
+    // TODO: Write tests for full flow with ETH
+    // TODO: write tests for _requireExpectedLoanIsActive in repayLoanForAccount
 }

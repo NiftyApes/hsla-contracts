@@ -16,8 +16,6 @@ import "./interfaces/niftyapes/offers/IOffers.sol";
 import "./interfaces/sanctions/SanctionsList.sol";
 import "./lib/Math.sol";
 
-import "./test/Console.sol";
-
 /// @title Implemention of the ILiquidity interface
 contract NiftyApesLiquidity is
     OwnableUpgradeable,
@@ -31,7 +29,7 @@ contract NiftyApesLiquidity is
     /// @dev Internal address used for for ETH in our mappings
     address private constant ETH_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
 
-    /// @dev Internal constant address for the Chinalysis OFAC sanctions oracle
+    /// @dev Internal constant address for the Chainalysis OFAC sanctions oracle
     address private constant SANCTIONS_CONTRACT = 0x40C57923924B5c5c5455c48D93317139ADDaC8fb;
 
     /// @inheritdoc ILiquidity
@@ -56,7 +54,10 @@ contract NiftyApesLiquidity is
     address public regenCollectiveAddress;
 
     /// @notice A bool to prevent external eth from being received and locked in the contract
-    bool private _ethTransferable = false;
+    bool internal _ethTransferable;
+
+    /// @dev The status of sanctions checks. Can be set to false if oracle becomes malicious.
+    bool internal sanctionsPause;
 
     /// @dev This empty reserved space is put in place to allow future versions to add new
     /// variables without shifting storage.
@@ -76,10 +77,19 @@ contract NiftyApesLiquidity is
 
     /// @inheritdoc ILiquidityAdmin
     function setCAssetAddress(address asset, address cAsset) external onlyOwner {
+        address cAssetOld = assetToCAsset[asset];
+        address assetOld = _cAssetToAsset[cAsset];
+        if (cAssetOld != address(0)) {
+            _cAssetToAsset[cAssetOld] = address(0);
+        }
+        if (assetOld != address(0)) {
+            assetToCAsset[assetOld] = address(0);
+        }
+
         assetToCAsset[asset] = cAsset;
         _cAssetToAsset[cAsset] = asset;
 
-        emit NewAssetListed(asset, cAsset);
+        emit AssetToCAssetSet(asset, cAsset);
     }
 
     /// @inheritdoc ILiquidityAdmin
@@ -117,6 +127,18 @@ contract NiftyApesLiquidity is
     }
 
     /// @inheritdoc ILiquidityAdmin
+    function pauseSanctions() external onlyOwner {
+        sanctionsPause = true;
+        emit LiquiditySanctionsPaused();
+    }
+
+    /// @inheritdoc ILiquidityAdmin
+    function unpauseSanctions() external onlyOwner {
+        sanctionsPause = false;
+        emit LiquiditySanctionsUnpaused();
+    }
+
+    /// @inheritdoc ILiquidityAdmin
     function pause() external onlyOwner {
         _pause();
     }
@@ -139,7 +161,7 @@ contract NiftyApesLiquidity is
         return cAsset;
     }
 
-    function getAsset(address cAsset) internal view returns (address) {
+    function _getAsset(address cAsset) internal view returns (address) {
         address asset = _cAssetToAsset[cAsset];
         require(asset != address(0), "cAsset allow list");
         require(cAsset == assetToCAsset[asset], "non matching allow list");
@@ -153,15 +175,15 @@ contract NiftyApesLiquidity is
         nonReentrant
         returns (uint256)
     {
+        _requireIsNotSanctioned(msg.sender);
+
         address cAsset = getCAsset(asset);
 
-        requireIsNotSanctioned(msg.sender);
-
-        uint256 cTokensMinted = _mintCErc20(msg.sender, address(this), asset, tokenAmount);
+        uint256 cTokensMinted = _mintCErc20(msg.sender, asset, tokenAmount);
 
         _balanceByAccountByAsset[msg.sender][cAsset].cAssetBalance += cTokensMinted;
 
-        requireMaxCAssetBalance(cAsset);
+        _requireMaxCAssetBalance(cAsset);
 
         emit Erc20Supplied(msg.sender, asset, tokenAmount, cTokensMinted);
 
@@ -173,33 +195,39 @@ contract NiftyApesLiquidity is
         external
         whenNotPaused
         nonReentrant
+        returns (uint256)
     {
-        getAsset(cAsset); // Ensures asset / cAsset is in the allow list
-        IERC20Upgradeable cToken = IERC20Upgradeable(cAsset);
+        _requireIsNotSanctioned(msg.sender);
+        _requireAmountGreaterThanZero(cTokenAmount);
 
-        requireIsNotSanctioned(msg.sender);
+        _getAsset(cAsset); // Ensures asset / cAsset is in the allow list
+        IERC20Upgradeable cToken = IERC20Upgradeable(cAsset);
 
         cToken.safeTransferFrom(msg.sender, address(this), cTokenAmount);
 
         _balanceByAccountByAsset[msg.sender][cAsset].cAssetBalance += cTokenAmount;
 
-        requireMaxCAssetBalance(cAsset);
+        _requireMaxCAssetBalance(cAsset);
 
         emit CErc20Supplied(msg.sender, cAsset, cTokenAmount);
+
+        return cTokenAmount;
     }
 
     /// @inheritdoc ILiquidity
     function withdrawErc20(address asset, uint256 tokenAmount)
-        public
+        external
         whenNotPaused
         nonReentrant
         returns (uint256)
     {
+        _requireIsNotSanctioned(msg.sender);
+
         address cAsset = getCAsset(asset);
         IERC20Upgradeable underlying = IERC20Upgradeable(asset);
 
         if (msg.sender == owner()) {
-            uint256 cTokensBurnt = ownerWithdrawUnderlying(asset, cAsset);
+            uint256 cTokensBurnt = _ownerWithdrawUnderlying(asset, cAsset);
             return cTokensBurnt;
         } else {
             uint256 cTokensBurnt = _burnCErc20(asset, tokenAmount);
@@ -221,12 +249,14 @@ contract NiftyApesLiquidity is
         nonReentrant
         returns (uint256)
     {
+        _requireIsNotSanctioned(msg.sender);
+
         // Making sure a mapping for cAsset exists
-        getAsset(cAsset);
+        _getAsset(cAsset);
         IERC20Upgradeable cToken = IERC20Upgradeable(cAsset);
 
         if (msg.sender == owner()) {
-            uint256 cTokensBurnt = ownerWithdrawCToken(cAsset);
+            uint256 cTokensBurnt = _ownerWithdrawCToken(cAsset);
             return cTokensBurnt;
         } else {
             _withdrawCBalance(msg.sender, cAsset, cTokenAmount);
@@ -241,15 +271,15 @@ contract NiftyApesLiquidity is
 
     /// @inheritdoc ILiquidity
     function supplyEth() external payable whenNotPaused nonReentrant returns (uint256) {
-        address cAsset = getCAsset(ETH_ADDRESS);
+        _requireIsNotSanctioned(msg.sender);
 
-        requireIsNotSanctioned(msg.sender);
+        address cAsset = getCAsset(ETH_ADDRESS);
 
         uint256 cTokensMinted = _mintCEth(msg.value);
 
         _balanceByAccountByAsset[msg.sender][cAsset].cAssetBalance += cTokensMinted;
 
-        requireMaxCAssetBalance(cAsset);
+        _requireMaxCAssetBalance(cAsset);
 
         emit EthSupplied(msg.sender, msg.value, cTokensMinted);
 
@@ -258,11 +288,12 @@ contract NiftyApesLiquidity is
 
     /// @inheritdoc ILiquidity
     function withdrawEth(uint256 amount) external whenNotPaused nonReentrant returns (uint256) {
+        _requireIsNotSanctioned(msg.sender);
+
         address cAsset = getCAsset(ETH_ADDRESS);
 
         if (msg.sender == owner()) {
-            uint256 cTokensBurnt = ownerWithdrawUnderlying(ETH_ADDRESS, cAsset);
-            return cTokensBurnt;
+            return _ownerWithdrawUnderlying(ETH_ADDRESS, cAsset);
         } else {
             uint256 cTokensBurnt = _burnCErc20(ETH_ADDRESS, amount);
 
@@ -276,23 +307,25 @@ contract NiftyApesLiquidity is
         }
     }
 
-    function requireEthTransferable() internal view {
+    function _requireEthTransferable() internal view {
         require(_ethTransferable, "eth not transferable");
     }
 
-    function requireIsNotSanctioned(address addressToCheck) internal view {
-        SanctionsList sanctionsList = SanctionsList(SANCTIONS_CONTRACT);
-        bool isToSanctioned = sanctionsList.isSanctioned(addressToCheck);
-        require(!isToSanctioned, "sanctioned address");
+    function _requireIsNotSanctioned(address addressToCheck) internal view {
+        if (!sanctionsPause) {
+            SanctionsList sanctionsList = SanctionsList(SANCTIONS_CONTRACT);
+            bool isToSanctioned = sanctionsList.isSanctioned(addressToCheck);
+            require(!isToSanctioned, "sanctioned address");
+        }
     }
 
-    function requireMaxCAssetBalance(address cAsset) internal view {
+    function _requireMaxCAssetBalance(address cAsset) internal view {
         uint256 maxCAssetBalance = maxBalanceByCAsset[cAsset];
 
         require(maxCAssetBalance >= ICERC20(cAsset).balanceOf(address(this)), "max casset");
     }
 
-    function requireCAssetBalance(
+    function _requireCAssetBalance(
         address account,
         address cAsset,
         uint256 amount
@@ -300,11 +333,15 @@ contract NiftyApesLiquidity is
         require(getCAssetBalance(account, cAsset) >= amount, "Insufficient cToken balance");
     }
 
-    function requireLendingContract() internal view {
+    function _requireAmountGreaterThanZero(uint256 amount) internal pure {
+        require(amount > 0, "amount 0");
+    }
+
+    function _requireLendingContract() internal view {
         require(msg.sender == lendingContractAddress, "not authorized");
     }
 
-    function ownerWithdrawUnderlying(address asset, address cAsset)
+    function _ownerWithdrawUnderlying(address asset, address cAsset)
         internal
         returns (uint256 cTokensBurnt)
     {
@@ -337,7 +374,7 @@ contract NiftyApesLiquidity is
         }
     }
 
-    function ownerWithdrawCToken(address cAsset) internal returns (uint256) {
+    function _ownerWithdrawCToken(address cAsset) internal returns (uint256) {
         uint256 ownerBalance = getCAssetBalance(owner(), cAsset);
 
         uint256 bpsForRegen = (ownerBalance * regenCollectiveBpsOfRevenue) / 10_000;
@@ -361,8 +398,8 @@ contract NiftyApesLiquidity is
         address asset,
         uint256 amount,
         address to
-    ) public {
-        requireLendingContract();
+    ) external {
+        _requireLendingContract();
         _sendValue(asset, amount, to);
     }
 
@@ -371,6 +408,7 @@ contract NiftyApesLiquidity is
         uint256 amount,
         address to
     ) internal {
+        _requireAmountGreaterThanZero(amount);
         if (asset == ETH_ADDRESS) {
             payable(to).sendValue(amount);
         } else {
@@ -381,25 +419,29 @@ contract NiftyApesLiquidity is
     /// @inheritdoc ILiquidity
     function mintCErc20(
         address from,
-        address to,
         address asset,
         uint256 amount
-    ) public returns (uint256) {
-        requireLendingContract();
-        return _mintCErc20(from, to, asset, amount);
+    ) external returns (uint256) {
+        _requireLendingContract();
+        return _mintCErc20(from, asset, amount);
     }
 
     function _mintCErc20(
         address from,
-        address to,
         address asset,
         uint256 amount
     ) internal returns (uint256) {
+        _requireAmountGreaterThanZero(amount);
+
         address cAsset = assetToCAsset[asset];
         IERC20Upgradeable underlying = IERC20Upgradeable(asset);
         ICERC20 cToken = ICERC20(cAsset);
 
-        underlying.safeTransferFrom(from, to, amount);
+        underlying.safeTransferFrom(from, address(this), amount);
+        uint256 allowance = underlying.allowance(address(this), address(cToken));
+        if (allowance > 0) {
+            underlying.safeDecreaseAllowance(cAsset, allowance);
+        }
         underlying.safeIncreaseAllowance(cAsset, amount);
 
         uint256 cTokenBalanceBefore = cToken.balanceOf(address(this));
@@ -409,12 +451,14 @@ contract NiftyApesLiquidity is
     }
 
     /// @inheritdoc ILiquidity
-    function mintCEth(uint256 amount) public returns (uint256) {
-        requireLendingContract();
+    function mintCEth(uint256 amount) external payable returns (uint256) {
+        _requireLendingContract();
         return _mintCEth(amount);
     }
 
     function _mintCEth(uint256 amount) internal returns (uint256) {
+        _requireAmountGreaterThanZero(amount);
+
         address cAsset = assetToCAsset[ETH_ADDRESS];
         ICEther cToken = ICEther(cAsset);
         uint256 cTokenBalanceBefore = cToken.balanceOf(address(this));
@@ -424,13 +468,15 @@ contract NiftyApesLiquidity is
     }
 
     /// @inheritdoc ILiquidity
-    function burnCErc20(address asset, uint256 amount) public returns (uint256) {
-        requireLendingContract();
+    function burnCErc20(address asset, uint256 amount) external returns (uint256) {
+        _requireLendingContract();
         return _burnCErc20(asset, amount);
     }
 
     // @notice param amount is demoninated in the underlying asset, not cAsset
     function _burnCErc20(address asset, uint256 amount) internal returns (uint256) {
+        _requireAmountGreaterThanZero(amount);
+
         address cAsset = assetToCAsset[asset];
         ICERC20 cToken = ICERC20(cAsset);
 
@@ -447,8 +493,8 @@ contract NiftyApesLiquidity is
         address account,
         address cAsset,
         uint256 cTokenAmount
-    ) public {
-        requireLendingContract();
+    ) external {
+        _requireLendingContract();
         _withdrawCBalance(account, cAsset, cTokenAmount);
     }
 
@@ -457,7 +503,7 @@ contract NiftyApesLiquidity is
         address cAsset,
         uint256 cTokenAmount
     ) internal {
-        requireCAssetBalance(account, cAsset, cTokenAmount);
+        _requireCAssetBalance(account, cAsset, cTokenAmount);
         _balanceByAccountByAsset[account][cAsset].cAssetBalance -= cTokenAmount;
     }
 
@@ -466,23 +512,13 @@ contract NiftyApesLiquidity is
         address account,
         address cAsset,
         uint256 amount
-    ) public {
-        requireLendingContract();
+    ) external {
+        _requireLendingContract();
         _balanceByAccountByAsset[account][cAsset].cAssetBalance += amount;
     }
 
     /// @inheritdoc ILiquidity
-    function subFromCAssetBalance(
-        address account,
-        address cAsset,
-        uint256 amount
-    ) public {
-        requireLendingContract();
-        _balanceByAccountByAsset[account][cAsset].cAssetBalance -= amount;
-    }
-
-    /// @inheritdoc ILiquidity
-    function assetAmountToCAssetAmount(address asset, uint256 amount) public returns (uint256) {
+    function assetAmountToCAssetAmount(address asset, uint256 amount) external returns (uint256) {
         address cAsset = assetToCAsset[asset];
         ICERC20 cToken = ICERC20(cAsset);
 
@@ -503,6 +539,6 @@ contract NiftyApesLiquidity is
 
     // This is needed to receive ETH when calling withdrawing ETH from compund
     receive() external payable {
-        requireEthTransferable();
+        _requireEthTransferable();
     }
 }

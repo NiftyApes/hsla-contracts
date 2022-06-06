@@ -14,7 +14,7 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
 
     /// @notice Returns the address for the associated liquidity contract
     function liquidityContractAddress() external view returns (address);
-    
+
     /// @notice Returns the fee that computes protocol interest
     ///         This fee is the basis points in order to calculate interest per second
     function protocolInterestBps() external view returns (uint96);
@@ -32,13 +32,13 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     function gasGriefingPremiumBps() external view returns (uint16);
 
     /// @notice Returns the bps premium paid to the protocol for refinancing a loan before the current lender has earned the equivalent amount of interest
-    ///         This value represents the percentage of the gas griefing premium taken by the protocol. 
+    ///         This value represents the percentage of the gas griefing premium taken by the protocol.
     ///         For example, if the value of gasGriefingPremiumBps is 25 and 10 bps of interest has been earned, the premium will be 15 bps paid to the current lender
     ///         This premium is a percentage of the delta from the gasGriefingPremium. In effect, it is an additional percentage paid equivalent to the ineterest earned X the gasGriefingProtocol premium
     ///         Fees are denomiated in basis points, parts of 10_000
     function gasGriefingProtocolPremiumBps() external view returns (uint16);
 
-    /// @notice Returns the bps premium paid to the protocol for refinancing a loan with terms that do not improve the cumulative terms of the loan by the equivalant basis points 
+    /// @notice Returns the bps premium paid to the protocol for refinancing a loan with terms that do not improve the cumulative terms of the loan by the equivalant basis points
     ///         For example, if termGriefingPremiumBps is 25 then the cumulative improvement of amount, interestRatePerSecond, and duration must be more than 25 bps
     ///         If the amount is 8 bps better, interestRatePerSecond is 7 bps better, and duration is 10 bps better, then no premium is paid
     ///         If any one of those terms is worse then a full premimum is paid
@@ -102,13 +102,13 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     ///         execute these offers
     /// @param offer The details of the loan auction offer
     /// @param signature A signed offerHash
-    function executeLoanByLenderSignature(
-        Offer calldata offer,
-        bytes calldata signature
-    ) external payable;
+    function executeLoanByLenderSignature(Offer calldata offer, bytes calldata signature)
+        external
+        payable;
 
     /// @notice Refinance a loan against the on chain offer book as the borrower.
     ///         The new offer has to cover the principle remaining and all lender interest owed on the loan
+    ///         Borrowers can refinance at any time even after loan default as long as their NFT collateral has not been seized
     /// @param nftContractAddress The address of the NFT collection
     /// @param nftId The id of the specified NFT
     /// @param floorTerm Indicates whether this is a floor or individual NFT offer.
@@ -122,6 +122,7 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
 
     /// @notice Refinance a loan against an off chain signed offer as the borrower.
     ///         The new offer has to cover the principle remaining and all lender interest owed on the loan
+    ///         Borrowers can refinance at any time even after loan default as long as their NFT collateral has not been seized
     /// @param offer The details of the loan auction offer
     /// @param signature The signature for the offer
     /// @param nftId The id of a specified NFT
@@ -136,11 +137,13 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     ///         Lender must improve terms by a cumulative 25 bps or pay a 25 bps premium
     ///         For example, if termGriefingPremiumBps is 25 then the cumulative improvement of amount, interestRatePerSecond, and duration must be more than 25 bps
     ///         If the amount is 8 bps better, interestRatePerSecond is 7 bps better, and duration is 10 bps better, then no premium is paid
-    ///         If any one of those terms is worse then a full premimum is paid 
+    ///         If any one of those terms is worse then a full premimum is paid
     ///         The Lender must allow 25 bps on interest to accrue or pay a gas greifing premium to the current lender
     ///         This premium is equal to gasGreifingPremiumBps - interestEarned
     /// @param offer The details of the loan auction offer
-    function refinanceByLender(Offer calldata offer, uint32 lastUpdatedTimestamp) external;
+    /// @param expectedLastUpdatedTimestamp The timestamp of the expected terms. This allows lenders to avoid being frontrun and forced to pay a gasGriefingPremium.
+    ///        Lenders can provide a 0 value if they are willing to pay the gasGriefingPremium in a high volume loanAuction
+    function refinanceByLender(Offer calldata offer, uint32 expectedLastUpdatedTimestamp) external;
 
     /// @notice Allows borrowers to draw a higher balance on their loan if it has been refianced with a higher maximum amount
     ///         Drawing down value increases the maximum loan pay back amount and so is not automatically imposed on a refinance by lender, hence this function.
@@ -170,7 +173,11 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     ///         The main use case for this function is to have a bot repay a loan on behalf of a borrower
     /// @param nftContractAddress The address of the NFT collection
     /// @param nftId The id of the specified NFT
-    function repayLoanForAccount(address nftContractAddress, uint256 nftId) external payable;
+    function repayLoanForAccount(
+        address nftContractAddress,
+        uint256 nftId,
+        uint32 expectedLoanBeginTimestamp
+    ) external payable;
 
     /// @notice Repay part of an open loan.
     ///         Repaying part of a loan will lower the remaining interest accumulated
@@ -209,16 +216,16 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     /// @param interestRateBps The interest of the loan in bps
     /// @param duration The duration of the loan
     function calculateLenderInterestPerSecond(
-        uint128 amount,
-        uint96 interestRateBps,
-        uint32 duration
+        uint256 amount,
+        uint256 interestRateBps,
+        uint256 duration
     ) external pure returns (uint96);
 
     /// @notice Returns the protocolInterestRatePerSecond for a given set of terms
     ///         There is a set protocolInterestRateBps so no interestBps value is provided
     /// @param amount The amount of the loan
     /// @param duration The duration of the loan
-    function calculateProtocolInterestPerSecond(uint128 amount, uint32 duration)
+    function calculateProtocolInterestPerSecond(uint256 amount, uint256 duration)
         external
         view
         returns (uint96);
@@ -229,13 +236,20 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     function checkSufficientInterestAccumulated(address nftContractAddress, uint256 nftId)
         external
         view
-        returns (bool, uint256, uint96);
+        returns (
+            bool,
+            uint256,
+            uint96
+        );
 
     /// @notice Returns whether the lender has provided sufficient terms to not be charged a term griefing premium
     /// @param nftContractAddress The address of the NFT collection
     /// @param nftId The id of the specified NFT
-    function checkSufficientTerms(address nftContractAddress, uint256 nftId, uint128 amount, uint96 interestRatePerSecond, uint32 duration)
-        external
-        view
-        returns (bool);
+    function checkSufficientTerms(
+        address nftContractAddress,
+        uint256 nftId,
+        uint128 amount,
+        uint96 interestRatePerSecond,
+        uint32 duration
+    ) external view returns (bool);
 }
