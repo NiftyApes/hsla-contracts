@@ -168,11 +168,11 @@ contract NiftyApesPauseUnitTest is
         niftyApes.executeLoanByBorrower(address(0), 1, bytes32(0), false);
     }
 
-    function testCannotExecuteLoanByBorrowerSignature_paused() public {
-        hevm.expectRevert("Pausable: paused");
+    // function testCannotExecuteLoanByBorrowerSignature_paused() public {
+    //     hevm.expectRevert("Pausable: paused");
 
-        niftyApes.executeLoanByBorrowerSignature(getOffer(), "", 0);
-    }
+    //     niftyApes.executeLoanByBorrowerSignature(getOffer(), "", 0);
+    // }
 
     function testCannotExecuteLoanByLender_paused() public {
         hevm.expectRevert("Pausable: paused");
@@ -180,11 +180,11 @@ contract NiftyApesPauseUnitTest is
         niftyApes.executeLoanByLender(address(0), 1, bytes32(0), false);
     }
 
-    function testCannotExecuteLoanByLenderSignature_paused() public {
-        hevm.expectRevert("Pausable: paused");
+    // function testCannotExecuteLoanByLenderSignature_paused() public {
+    //     hevm.expectRevert("Pausable: paused");
 
-        niftyApes.executeLoanByLenderSignature(getOffer(), "");
-    }
+    //     niftyApes.executeLoanByLenderSignature(getOffer(), "");
+    // }
 
     function testCannotRefinanceByBorrower_paused() public {
         hevm.expectRevert("Pausable: paused");
@@ -192,11 +192,11 @@ contract NiftyApesPauseUnitTest is
         niftyApes.refinanceByBorrower(address(0), 1, false, bytes32(0));
     }
 
-    function testCannotRefinanceByBorrowerSignature_paused() public {
-        hevm.expectRevert("Pausable: paused");
+    // function testCannotRefinanceByBorrowerSignature_paused() public {
+    //     hevm.expectRevert("Pausable: paused");
 
-        niftyApes.refinanceByBorrowerSignature(getOffer(), "", 1);
-    }
+    //     niftyApes.refinanceByBorrowerSignature(getOffer(), "", 1);
+    // }
 
     function testCannotRefinanceByLender_paused() public {
         hevm.expectRevert("Pausable: paused");

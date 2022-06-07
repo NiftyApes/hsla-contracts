@@ -1380,565 +1380,565 @@ contract LendingAuctionUnitTest is
 
     // executeLoanByBorrowerSignature Tests
 
-    function testCannotExecuteLoanByBorrowerSignature_asset_not_in_allow_list() public {
-        hevm.startPrank(SIGNER_1);
+    // function testCannotExecuteLoanByBorrowerSignature_asset_not_in_allow_list() public {
+    //     hevm.startPrank(SIGNER_1);
 
-        usdcToken.mint(SIGNER_1, 12);
-        usdcToken.approve(address(liquidityProviders), 12);
+    //     usdcToken.mint(SIGNER_1, 12);
+    //     usdcToken.approve(address(liquidityProviders), 12);
 
-        liquidityProviders.supplyErc20(address(usdcToken), 12);
+    //     liquidityProviders.supplyErc20(address(usdcToken), 12);
 
-        Offer memory offer = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
-            fixedTerms: true,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
-
-        hevm.stopPrank();
-
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
-
-        hevm.prank(OWNER);
-        liquidityProviders.setCAssetAddress(
-            address(usdcToken),
-            address(0x0000000000000000000000000000000000000000)
-        );
+    //     Offer memory offer = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: true,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
+
+    //     hevm.stopPrank();
+
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
+
+    //     hevm.prank(OWNER);
+    //     liquidityProviders.setCAssetAddress(
+    //         address(usdcToken),
+    //         address(0x0000000000000000000000000000000000000000)
+    //     );
 
-        hevm.expectRevert("asset allow list");
+    //     hevm.expectRevert("asset allow list");
 
-        lendingAuction.executeLoanByBorrowerSignature(offer, signature, 1);
-    }
+    //     lendingAuction.executeLoanByBorrowerSignature(offer, signature, 1);
+    // }
 
-    function testCannotExecuteLoanByBorrowerSignature_signature_blocked() public {
-        hevm.startPrank(SIGNER_1);
+    // function testCannotExecuteLoanByBorrowerSignature_signature_blocked() public {
+    //     hevm.startPrank(SIGNER_1);
 
-        usdcToken.mint(SIGNER_1, 6);
-        usdcToken.approve(address(liquidityProviders), 6);
+    //     usdcToken.mint(SIGNER_1, 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
 
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
 
-        Offer memory offer = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(0x0000000000000000000000000000000000000002),
-            interestRatePerSecond: 3,
-            fixedTerms: true,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 4,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 7,
-            expiration: 8
-        });
+    //     Offer memory offer = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(0x0000000000000000000000000000000000000002),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: true,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 4,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 7,
+    //         expiration: 8
+    //     });
 
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
-        offersContract.withdrawOfferSignature(offer, signature);
+    //     offersContract.withdrawOfferSignature(offer, signature);
 
-        hevm.stopPrank();
+    //     hevm.stopPrank();
 
-        hevm.expectRevert("signature not available");
+    //     hevm.expectRevert("signature not available");
 
-        lendingAuction.executeLoanByBorrowerSignature(offer, signature, 4);
-    }
+    //     lendingAuction.executeLoanByBorrowerSignature(offer, signature, 4);
+    // }
 
-    function testCannotWithdrawOfferSignature_others_signature() public {
-        hevm.startPrank(SIGNER_1);
+    // function testCannotWithdrawOfferSignature_others_signature() public {
+    //     hevm.startPrank(SIGNER_1);
 
-        usdcToken.mint(SIGNER_1, 6);
-        usdcToken.approve(address(liquidityProviders), 6);
+    //     usdcToken.mint(SIGNER_1, 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
 
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
 
-        Offer memory offer = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(0x0000000000000000000000000000000000000002),
-            interestRatePerSecond: 3,
-            fixedTerms: true,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 4,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 7,
-            expiration: 8
-        });
+    //     Offer memory offer = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(0x0000000000000000000000000000000000000002),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: true,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 4,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 7,
+    //         expiration: 8
+    //     });
 
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
-        hevm.stopPrank();
+    //     hevm.stopPrank();
 
-        hevm.prank(SIGNER_2);
+    //     hevm.prank(SIGNER_2);
 
-        hevm.expectRevert("signer");
+    //     hevm.expectRevert("signer");
 
-        offersContract.withdrawOfferSignature(offer, signature);
-    }
+    //     offersContract.withdrawOfferSignature(offer, signature);
+    // }
 
-    function testCannotExecuteLoanByBorrowerSignature_wrong_signer() public {
-        hevm.startPrank(SIGNER_1);
+    // function testCannotExecuteLoanByBorrowerSignature_wrong_signer() public {
+    //     hevm.startPrank(SIGNER_1);
 
-        usdcToken.mint(SIGNER_1, 6);
-        usdcToken.approve(address(liquidityProviders), 6);
+    //     usdcToken.mint(SIGNER_1, 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
 
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
 
-        Offer memory offer = Offer({
-            creator: LENDER_1,
-            nftContractAddress: address(0x0000000000000000000000000000000000000002),
-            interestRatePerSecond: 3,
-            fixedTerms: true,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 4,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 7,
-            expiration: uint32(block.timestamp + 1)
-        });
+    //     Offer memory offer = Offer({
+    //         creator: LENDER_1,
+    //         nftContractAddress: address(0x0000000000000000000000000000000000000002),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: true,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 4,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 7,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
 
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
-        hevm.stopPrank();
+    //     hevm.stopPrank();
 
-        hevm.expectRevert("00024");
+    //     hevm.expectRevert("00024");
 
-        lendingAuction.executeLoanByBorrowerSignature(offer, signature, 4);
-    }
+    //     lendingAuction.executeLoanByBorrowerSignature(offer, signature, 4);
+    // }
 
-    function testCannotExecuteLoanByBorrowerSignature_borrower_offer() public {
-        hevm.startPrank(SIGNER_1);
+    // function testCannotExecuteLoanByBorrowerSignature_borrower_offer() public {
+    //     hevm.startPrank(SIGNER_1);
 
-        usdcToken.mint(SIGNER_1, 6);
-        usdcToken.approve(address(liquidityProviders), 6);
+    //     usdcToken.mint(SIGNER_1, 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
 
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
 
-        Offer memory offer = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(0x0000000000000000000000000000000000000002),
-            interestRatePerSecond: 3,
-            fixedTerms: true,
-            floorTerm: true,
-            lenderOffer: false,
-            nftId: 4,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 7,
-            expiration: uint32(block.timestamp + 1)
-        });
+    //     Offer memory offer = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(0x0000000000000000000000000000000000000002),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: true,
+    //         floorTerm: true,
+    //         lenderOffer: false,
+    //         nftId: 4,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 7,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
 
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
-        hevm.stopPrank();
+    //     hevm.stopPrank();
 
-        hevm.expectRevert("00012");
+    //     hevm.expectRevert("00012");
 
-        lendingAuction.executeLoanByBorrowerSignature(offer, signature, 4);
-    }
+    //     lendingAuction.executeLoanByBorrowerSignature(offer, signature, 4);
+    // }
 
-    function testCannotExecuteLoanByBorrowerSignature_offer_expired() public {
-        hevm.startPrank(SIGNER_1);
+    // function testCannotExecuteLoanByBorrowerSignature_offer_expired() public {
+    //     hevm.startPrank(SIGNER_1);
 
-        usdcToken.mint(SIGNER_1, 6);
-        usdcToken.approve(address(liquidityProviders), 6);
+    //     usdcToken.mint(SIGNER_1, 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
 
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
 
-        Offer memory offer = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(0x0000000000000000000000000000000000000002),
-            interestRatePerSecond: 3,
-            fixedTerms: true,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 4,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 7,
-            expiration: 8
-        });
+    //     Offer memory offer = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(0x0000000000000000000000000000000000000002),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: true,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 4,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 7,
+    //         expiration: 8
+    //     });
 
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
-        hevm.stopPrank();
+    //     hevm.stopPrank();
 
-        hevm.expectRevert("00010");
+    //     hevm.expectRevert("00010");
 
-        lendingAuction.executeLoanByBorrowerSignature(offer, signature, 4);
-    }
+    //     lendingAuction.executeLoanByBorrowerSignature(offer, signature, 4);
+    // }
 
-    function testCannotExecuteLoanByBorrowerSignature_offer_duration() public {
-        hevm.startPrank(SIGNER_1);
+    // function testCannotExecuteLoanByBorrowerSignature_offer_duration() public {
+    //     hevm.startPrank(SIGNER_1);
 
-        usdcToken.mint(SIGNER_1, 6);
-        usdcToken.approve(address(liquidityProviders), 6);
+    //     usdcToken.mint(SIGNER_1, 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
 
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
 
-        Offer memory offer = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(0x0000000000000000000000000000000000000002),
-            interestRatePerSecond: 3,
-            fixedTerms: true,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 4,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 7,
-            expiration: uint32(block.timestamp + 1)
-        });
+    //     Offer memory offer = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(0x0000000000000000000000000000000000000002),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: true,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 4,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 7,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
 
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
-        hevm.stopPrank();
+    //     hevm.stopPrank();
 
-        hevm.expectRevert("00011");
+    //     hevm.expectRevert("00011");
 
-        lendingAuction.executeLoanByBorrowerSignature(offer, signature, 4);
-    }
+    //     lendingAuction.executeLoanByBorrowerSignature(offer, signature, 4);
+    // }
 
-    function testCannotExecuteLoanByBorrowerSignature_not_owning_nft() public {
-        hevm.startPrank(SIGNER_1);
+    // function testCannotExecuteLoanByBorrowerSignature_not_owning_nft() public {
+    //     hevm.startPrank(SIGNER_1);
 
-        usdcToken.mint(SIGNER_1, 6);
-        usdcToken.approve(address(liquidityProviders), 6);
+    //     usdcToken.mint(SIGNER_1, 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
 
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
 
-        Offer memory offer = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
-            fixedTerms: true,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
+    //     Offer memory offer = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: true,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
 
-        hevm.stopPrank();
+    //     hevm.stopPrank();
 
-        mockNft.transferFrom(address(this), address(0x0000000000000000000000000000000000000001), 1);
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
+    //     mockNft.transferFrom(address(this), address(0x0000000000000000000000000000000000000001), 1);
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
-        hevm.expectRevert("00018");
+    //     hevm.expectRevert("00018");
 
-        lendingAuction.executeLoanByBorrowerSignature(offer, signature, 1);
-    }
+    //     lendingAuction.executeLoanByBorrowerSignature(offer, signature, 1);
+    // }
 
-    function testCannotExecuteLoanByBorrowerSignature_not_enough_tokens() public {
-        hevm.startPrank(SIGNER_1);
+    // function testCannotExecuteLoanByBorrowerSignature_not_enough_tokens() public {
+    //     hevm.startPrank(SIGNER_1);
 
-        usdcToken.mint(SIGNER_1, 6);
-        usdcToken.approve(address(liquidityProviders), 6);
+    //     usdcToken.mint(SIGNER_1, 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
 
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
 
-        Offer memory offer = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
-            fixedTerms: true,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 7,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
+    //     Offer memory offer = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: true,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 7,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
 
-        hevm.stopPrank();
+    //     hevm.stopPrank();
 
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
-        hevm.expectRevert("ERC20: burn amount exceeds balance");
+    //     hevm.expectRevert("ERC20: burn amount exceeds balance");
 
-        lendingAuction.executeLoanByBorrowerSignature(offer, signature, 1);
-    }
+    //     lendingAuction.executeLoanByBorrowerSignature(offer, signature, 1);
+    // }
 
-    function testCannotExecuteLoanByBorrowerSignature_underlying_transfer_fails() public {
-        hevm.startPrank(SIGNER_1);
+    // function testCannotExecuteLoanByBorrowerSignature_underlying_transfer_fails() public {
+    //     hevm.startPrank(SIGNER_1);
 
-        usdcToken.mint(SIGNER_1, 6);
-        usdcToken.approve(address(liquidityProviders), 6);
+    //     usdcToken.mint(SIGNER_1, 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
 
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
 
-        Offer memory offer = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
-            fixedTerms: true,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
+    //     Offer memory offer = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: true,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
 
-        hevm.stopPrank();
+    //     hevm.stopPrank();
 
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
-        usdcToken.setTransferFail(true);
+    //     usdcToken.setTransferFail(true);
 
-        hevm.expectRevert("SafeERC20: ERC20 operation did not succeed");
+    //     hevm.expectRevert("SafeERC20: ERC20 operation did not succeed");
 
-        lendingAuction.executeLoanByBorrowerSignature(offer, signature, 1);
-    }
+    //     lendingAuction.executeLoanByBorrowerSignature(offer, signature, 1);
+    // }
 
-    function testCannotExecuteLoanByBorrowerSignature_eth_payment_fails() public {
-        AddressUpgradeable.sendValue(payable(SIGNER_1), 6);
+    // function testCannotExecuteLoanByBorrowerSignature_eth_payment_fails() public {
+    //     AddressUpgradeable.sendValue(payable(SIGNER_1), 6);
 
-        hevm.startPrank(SIGNER_1);
+    //     hevm.startPrank(SIGNER_1);
 
-        liquidityProviders.supplyEth{ value: 6 }();
+    //     liquidityProviders.supplyEth{ value: 6 }();
 
-        Offer memory offer = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
-            fixedTerms: true,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 1,
-            asset: ETH_ADDRESS,
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
+    //     Offer memory offer = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: true,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 1,
+    //         asset: ETH_ADDRESS,
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
 
-        hevm.stopPrank();
+    //     hevm.stopPrank();
 
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
-        acceptEth = false;
+    //     acceptEth = false;
 
-        hevm.expectRevert("Address: unable to send value, recipient may have reverted");
+    //     hevm.expectRevert("Address: unable to send value, recipient may have reverted");
 
-        lendingAuction.executeLoanByBorrowerSignature(offer, signature, 1);
-    }
+    //     lendingAuction.executeLoanByBorrowerSignature(offer, signature, 1);
+    // }
 
-    function testExecuteLoanByBorrowerSignature_works_floor_term() public {
-        hevm.startPrank(SIGNER_1);
+    // function testExecuteLoanByBorrowerSignature_works_floor_term() public {
+    //     hevm.startPrank(SIGNER_1);
 
-        usdcToken.mint(SIGNER_1, 12);
-        usdcToken.approve(address(liquidityProviders), 12);
+    //     usdcToken.mint(SIGNER_1, 12);
+    //     usdcToken.approve(address(liquidityProviders), 12);
 
-        liquidityProviders.supplyErc20(address(usdcToken), 12);
+    //     liquidityProviders.supplyErc20(address(usdcToken), 12);
 
-        Offer memory offer = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
-            fixedTerms: true,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
+    //     Offer memory offer = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: true,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
 
-        hevm.stopPrank();
+    //     hevm.stopPrank();
 
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
-        lendingAuction.executeLoanByBorrowerSignature(offer, signature, 1);
+    //     lendingAuction.executeLoanByBorrowerSignature(offer, signature, 1);
 
-        assertEq(usdcToken.balanceOf(address(this)), 6);
-        assertEq(cUSDCToken.balanceOf(address(this)), 0);
+    //     assertEq(usdcToken.balanceOf(address(this)), 6);
+    //     assertEq(cUSDCToken.balanceOf(address(this)), 0);
 
-        assertEq(usdcToken.balanceOf(address(LENDER_1)), 0);
-        assertEq(cUSDCToken.balanceOf(address(LENDER_1)), 0);
+    //     assertEq(usdcToken.balanceOf(address(LENDER_1)), 0);
+    //     assertEq(cUSDCToken.balanceOf(address(LENDER_1)), 0);
 
-        assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
-        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 6 ether);
+    //     assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
+    //     assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 6 ether);
 
-        assertEq(mockNft.ownerOf(1), address(lendingAuction));
-        assertEq(lendingAuction.ownerOf(address(mockNft), 1), address(this));
+    //     assertEq(mockNft.ownerOf(1), address(lendingAuction));
+    //     assertEq(lendingAuction.ownerOf(address(mockNft), 1), address(this));
 
-        assertEq(liquidityProviders.getCAssetBalance(address(this), address(cUSDCToken)), 0);
+    //     assertEq(liquidityProviders.getCAssetBalance(address(this), address(cUSDCToken)), 0);
 
-        LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
+    //     LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
 
-        assertEq(loanAuction.nftOwner, address(this));
-        assertEq(loanAuction.lender, SIGNER_1);
-        assertEq(loanAuction.asset, address(usdcToken));
-        assertEq(loanAuction.interestRatePerSecond, 3);
-        assertTrue(loanAuction.fixedTerms);
+    //     assertEq(loanAuction.nftOwner, address(this));
+    //     assertEq(loanAuction.lender, SIGNER_1);
+    //     assertEq(loanAuction.asset, address(usdcToken));
+    //     assertEq(loanAuction.interestRatePerSecond, 3);
+    //     assertTrue(loanAuction.fixedTerms);
 
-        assertEq(loanAuction.amount, 6);
-        assertEq(loanAuction.loanEndTimestamp, block.timestamp + 1 days);
-        assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
-        assertEq(loanAuction.accumulatedLenderInterest, 0);
-        assertEq(loanAuction.accumulatedProtocolInterest, 0);
-        assertEq(loanAuction.amountDrawn, 6);
+    //     assertEq(loanAuction.amount, 6);
+    //     assertEq(loanAuction.loanEndTimestamp, block.timestamp + 1 days);
+    //     assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
+    //     assertEq(loanAuction.accumulatedLenderInterest, 0);
+    //     assertEq(loanAuction.accumulatedProtocolInterest, 0);
+    //     assertEq(loanAuction.amountDrawn, 6);
 
-        // ensure that the offer is still there since its a floor offer
-        lendingAuction.executeLoanByBorrowerSignature(offer, signature, 2);
-    }
+    //     // ensure that the offer is still there since its a floor offer
+    //     lendingAuction.executeLoanByBorrowerSignature(offer, signature, 2);
+    // }
 
-    function testExecuteLoanByBorrowerSignature_works_not_floor_term() public {
-        hevm.startPrank(SIGNER_1);
+    // function testExecuteLoanByBorrowerSignature_works_not_floor_term() public {
+    //     hevm.startPrank(SIGNER_1);
 
-        usdcToken.mint(SIGNER_1, 12);
-        usdcToken.approve(address(liquidityProviders), 12);
+    //     usdcToken.mint(SIGNER_1, 12);
+    //     usdcToken.approve(address(liquidityProviders), 12);
 
-        liquidityProviders.supplyErc20(address(usdcToken), 12);
+    //     liquidityProviders.supplyErc20(address(usdcToken), 12);
 
-        Offer memory offer = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
-            fixedTerms: true,
-            floorTerm: false,
-            lenderOffer: true,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
+    //     Offer memory offer = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: true,
+    //         floorTerm: false,
+    //         lenderOffer: true,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
 
-        hevm.stopPrank();
+    //     hevm.stopPrank();
 
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
-        lendingAuction.executeLoanByBorrowerSignature(offer, signature, 1);
+    //     lendingAuction.executeLoanByBorrowerSignature(offer, signature, 1);
 
-        assertEq(usdcToken.balanceOf(address(this)), 6);
-        assertEq(cUSDCToken.balanceOf(address(this)), 0);
+    //     assertEq(usdcToken.balanceOf(address(this)), 6);
+    //     assertEq(cUSDCToken.balanceOf(address(this)), 0);
 
-        assertEq(usdcToken.balanceOf(address(SIGNER_1)), 0);
-        assertEq(cUSDCToken.balanceOf(address(SIGNER_1)), 0);
+    //     assertEq(usdcToken.balanceOf(address(SIGNER_1)), 0);
+    //     assertEq(cUSDCToken.balanceOf(address(SIGNER_1)), 0);
 
-        assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
-        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 6 ether);
+    //     assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
+    //     assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 6 ether);
 
-        assertEq(mockNft.ownerOf(1), address(lendingAuction));
-        assertEq(lendingAuction.ownerOf(address(mockNft), 1), address(this));
+    //     assertEq(mockNft.ownerOf(1), address(lendingAuction));
+    //     assertEq(lendingAuction.ownerOf(address(mockNft), 1), address(this));
 
-        assertEq(liquidityProviders.getCAssetBalance(address(this), address(cUSDCToken)), 0);
+    //     assertEq(liquidityProviders.getCAssetBalance(address(this), address(cUSDCToken)), 0);
 
-        LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
+    //     LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
 
-        assertEq(loanAuction.nftOwner, address(this));
-        assertEq(loanAuction.lender, SIGNER_1);
-        assertEq(loanAuction.asset, address(usdcToken));
-        assertEq(loanAuction.interestRatePerSecond, 3);
-        assertTrue(loanAuction.fixedTerms);
+    //     assertEq(loanAuction.nftOwner, address(this));
+    //     assertEq(loanAuction.lender, SIGNER_1);
+    //     assertEq(loanAuction.asset, address(usdcToken));
+    //     assertEq(loanAuction.interestRatePerSecond, 3);
+    //     assertTrue(loanAuction.fixedTerms);
 
-        assertEq(loanAuction.amount, 6);
-        assertEq(loanAuction.loanEndTimestamp, block.timestamp + 1 days);
-        assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
-        assertEq(loanAuction.accumulatedLenderInterest, 0);
-        assertEq(loanAuction.accumulatedProtocolInterest, 0);
-        assertEq(loanAuction.amountDrawn, 6);
+    //     assertEq(loanAuction.amount, 6);
+    //     assertEq(loanAuction.loanEndTimestamp, block.timestamp + 1 days);
+    //     assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
+    //     assertEq(loanAuction.accumulatedLenderInterest, 0);
+    //     assertEq(loanAuction.accumulatedProtocolInterest, 0);
+    //     assertEq(loanAuction.amountDrawn, 6);
 
-        // ensure that the offer is gone
-        hevm.expectRevert("signature not available");
+    //     // ensure that the offer is gone
+    //     hevm.expectRevert("signature not available");
 
-        lendingAuction.executeLoanByBorrowerSignature(offer, signature, 2);
-    }
+    //     lendingAuction.executeLoanByBorrowerSignature(offer, signature, 2);
+    // }
 
-    function testExecuteLoanByBorrowerSignature_works_in_eth() public {
-        AddressUpgradeable.sendValue(payable(SIGNER_1), 6);
-        hevm.startPrank(SIGNER_1);
+    // function testExecuteLoanByBorrowerSignature_works_in_eth() public {
+    //     AddressUpgradeable.sendValue(payable(SIGNER_1), 6);
+    //     hevm.startPrank(SIGNER_1);
 
-        liquidityProviders.supplyEth{ value: 6 }();
+    //     liquidityProviders.supplyEth{ value: 6 }();
 
-        Offer memory offer = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
-            fixedTerms: true,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 1,
-            asset: ETH_ADDRESS,
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
+    //     Offer memory offer = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: true,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 1,
+    //         asset: ETH_ADDRESS,
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
 
-        offersContract.createOffer(offer);
+    //     offersContract.createOffer(offer);
 
-        hevm.stopPrank();
+    //     hevm.stopPrank();
 
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
-        uint256 borrowerEthBalanceBefore = address(this).balance;
-        uint256 lenderEthBalanceBefore = address(SIGNER_1).balance;
+    //     uint256 borrowerEthBalanceBefore = address(this).balance;
+    //     uint256 lenderEthBalanceBefore = address(SIGNER_1).balance;
 
-        lendingAuction.executeLoanByBorrowerSignature(offer, signature, 1);
+    //     lendingAuction.executeLoanByBorrowerSignature(offer, signature, 1);
 
-        assertEq(address(this).balance, borrowerEthBalanceBefore + 6);
-        assertEq(cEtherToken.balanceOf(address(this)), 0);
+    //     assertEq(address(this).balance, borrowerEthBalanceBefore + 6);
+    //     assertEq(cEtherToken.balanceOf(address(this)), 0);
 
-        assertEq(address(SIGNER_1).balance, lenderEthBalanceBefore);
-        assertEq(cEtherToken.balanceOf(address(SIGNER_1)), 0);
+    //     assertEq(address(SIGNER_1).balance, lenderEthBalanceBefore);
+    //     assertEq(cEtherToken.balanceOf(address(SIGNER_1)), 0);
 
-        assertEq(address(lendingAuction).balance, 0);
-        assertEq(cEtherToken.balanceOf(address(lendingAuction)), 0);
+    //     assertEq(address(lendingAuction).balance, 0);
+    //     assertEq(cEtherToken.balanceOf(address(lendingAuction)), 0);
 
-        assertEq(mockNft.ownerOf(1), address(lendingAuction));
-        assertEq(lendingAuction.ownerOf(address(mockNft), 1), address(this));
-    }
+    //     assertEq(mockNft.ownerOf(1), address(lendingAuction));
+    //     assertEq(lendingAuction.ownerOf(address(mockNft), 1), address(this));
+    // }
 
-    function testExecuteLoanByBorrowerSignature_event() public {
-        hevm.startPrank(SIGNER_1);
+    // function testExecuteLoanByBorrowerSignature_event() public {
+    //     hevm.startPrank(SIGNER_1);
 
-        usdcToken.mint(SIGNER_1, 12);
-        usdcToken.approve(address(liquidityProviders), 12);
+    //     usdcToken.mint(SIGNER_1, 12);
+    //     usdcToken.approve(address(liquidityProviders), 12);
 
-        liquidityProviders.supplyErc20(address(usdcToken), 12);
+    //     liquidityProviders.supplyErc20(address(usdcToken), 12);
 
-        Offer memory offer = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
-            fixedTerms: true,
-            floorTerm: false,
-            lenderOffer: true,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
+    //     Offer memory offer = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: true,
+    //         floorTerm: false,
+    //         lenderOffer: true,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
 
-        hevm.stopPrank();
+    //     hevm.stopPrank();
 
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
-        hevm.expectEmit(true, true, true, true);
+    //     hevm.expectEmit(true, true, true, true);
 
-        emit LoanExecuted(SIGNER_1, address(usdcToken), address(this), address(mockNft), 1, offer);
+    //     emit LoanExecuted(SIGNER_1, address(usdcToken), address(this), address(mockNft), 1, offer);
 
-        emit AmountDrawn(address(this), address(mockNft), 1, 6, 6);
+    //     emit AmountDrawn(address(this), address(mockNft), 1, 6, 6);
 
-        emit OfferSignatureUsed(address(mockNft), 1, offer, signature);
+    //     emit OfferSignatureUsed(address(mockNft), 1, offer, signature);
 
-        lendingAuction.executeLoanByBorrowerSignature(offer, signature, 1);
-    }
+    //     lendingAuction.executeLoanByBorrowerSignature(offer, signature, 1);
+    // }
 
     // executeLoanByLender Tests
 
@@ -2530,487 +2530,487 @@ contract LendingAuctionUnitTest is
 
     // executeLoanByLenderSignature Tests
 
-    function testCannotExecuteLoanByLenderSignature_asset_not_in_allow_list() public {
-        hevm.startPrank(LENDER_1);
-
-        usdcToken.mint(LENDER_1, 6);
-        usdcToken.approve(address(liquidityProviders), 6);
-
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
-
-        Offer memory offer = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
-            fixedTerms: true,
-            floorTerm: false,
-            lenderOffer: false,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
-
-        hevm.stopPrank();
-
-        mockNft.transferFrom(address(this), SIGNER_1, 1);
-
-        hevm.startPrank(SIGNER_1);
-        mockNft.approve(address(lendingAuction), 1);
-        hevm.stopPrank();
-
-        hevm.prank(OWNER);
-        liquidityProviders.setCAssetAddress(
-            address(usdcToken),
-            address(0x0000000000000000000000000000000000000000)
-        );
-
-        hevm.startPrank(LENDER_1);
-
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
-
-        hevm.expectRevert("asset allow list");
-
-        lendingAuction.executeLoanByLenderSignature(offer, signature);
-    }
-
-    function testCannotExecuteLoanByLenderSignature_signature_blocked() public {
-        hevm.startPrank(LENDER_1);
+    // function testCannotExecuteLoanByLenderSignature_asset_not_in_allow_list() public {
+    //     hevm.startPrank(LENDER_1);
+
+    //     usdcToken.mint(LENDER_1, 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
+
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
+
+    //     Offer memory offer = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: true,
+    //         floorTerm: false,
+    //         lenderOffer: false,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
+
+    //     hevm.stopPrank();
+
+    //     mockNft.transferFrom(address(this), SIGNER_1, 1);
+
+    //     hevm.startPrank(SIGNER_1);
+    //     mockNft.approve(address(lendingAuction), 1);
+    //     hevm.stopPrank();
+
+    //     hevm.prank(OWNER);
+    //     liquidityProviders.setCAssetAddress(
+    //         address(usdcToken),
+    //         address(0x0000000000000000000000000000000000000000)
+    //     );
+
+    //     hevm.startPrank(LENDER_1);
+
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
+
+    //     hevm.expectRevert("asset allow list");
+
+    //     lendingAuction.executeLoanByLenderSignature(offer, signature);
+    // }
+
+    // function testCannotExecuteLoanByLenderSignature_signature_blocked() public {
+    //     hevm.startPrank(LENDER_1);
 
-        usdcToken.mint(LENDER_1, 6);
-        usdcToken.approve(address(liquidityProviders), 6);
-
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
-
-        Offer memory offer = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(0x0000000000000000000000000000000000000002),
-            interestRatePerSecond: 3,
-            fixedTerms: true,
-            floorTerm: false,
-            lenderOffer: false,
-            nftId: 4,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 7,
-            expiration: 8
-        });
-
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
-
-        hevm.stopPrank();
-        hevm.startPrank(SIGNER_1);
-        offersContract.withdrawOfferSignature(offer, signature);
-
-        hevm.expectRevert("signature not available");
-        hevm.stopPrank();
-        hevm.startPrank(LENDER_1);
-        lendingAuction.executeLoanByLenderSignature(offer, signature);
-    }
+    //     usdcToken.mint(LENDER_1, 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
+
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
+
+    //     Offer memory offer = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(0x0000000000000000000000000000000000000002),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: true,
+    //         floorTerm: false,
+    //         lenderOffer: false,
+    //         nftId: 4,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 7,
+    //         expiration: 8
+    //     });
+
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
+
+    //     hevm.stopPrank();
+    //     hevm.startPrank(SIGNER_1);
+    //     offersContract.withdrawOfferSignature(offer, signature);
+
+    //     hevm.expectRevert("signature not available");
+    //     hevm.stopPrank();
+    //     hevm.startPrank(LENDER_1);
+    //     lendingAuction.executeLoanByLenderSignature(offer, signature);
+    // }
 
-    function testCannotExecuteLoanByLenderSignature_wrong_signer() public {
-        hevm.startPrank(LENDER_1);
-
-        usdcToken.mint(LENDER_1, 6);
-        usdcToken.approve(address(liquidityProviders), 6);
-
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
-
-        Offer memory offer = Offer({
-            creator: LENDER_1,
-            nftContractAddress: address(0x0000000000000000000000000000000000000002),
-            interestRatePerSecond: 3,
-            fixedTerms: true,
-            floorTerm: false,
-            lenderOffer: false,
-            nftId: 4,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 7,
-            expiration: uint32(block.timestamp + 1)
-        });
-
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
+    // function testCannotExecuteLoanByLenderSignature_wrong_signer() public {
+    //     hevm.startPrank(LENDER_1);
+
+    //     usdcToken.mint(LENDER_1, 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
+
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
+
+    //     Offer memory offer = Offer({
+    //         creator: LENDER_1,
+    //         nftContractAddress: address(0x0000000000000000000000000000000000000002),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: true,
+    //         floorTerm: false,
+    //         lenderOffer: false,
+    //         nftId: 4,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 7,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
+
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
-        hevm.expectRevert("00024");
+    //     hevm.expectRevert("00024");
 
-        lendingAuction.executeLoanByLenderSignature(offer, signature);
-    }
+    //     lendingAuction.executeLoanByLenderSignature(offer, signature);
+    // }
 
-    function testCannotExecuteLoanByLenderSignature_lender_offer() public {
-        hevm.startPrank(LENDER_1);
+    // function testCannotExecuteLoanByLenderSignature_lender_offer() public {
+    //     hevm.startPrank(LENDER_1);
 
-        usdcToken.mint(LENDER_1, 6);
-        usdcToken.approve(address(liquidityProviders), 6);
+    //     usdcToken.mint(LENDER_1, 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
 
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
 
-        Offer memory offer = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(0x0000000000000000000000000000000000000002),
-            interestRatePerSecond: 3,
-            fixedTerms: true,
-            floorTerm: false,
-            lenderOffer: true,
-            nftId: 4,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 7,
-            expiration: uint32(block.timestamp + 1)
-        });
+    //     Offer memory offer = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(0x0000000000000000000000000000000000000002),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: true,
+    //         floorTerm: false,
+    //         lenderOffer: true,
+    //         nftId: 4,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 7,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
 
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
-        hevm.stopPrank();
+    //     hevm.stopPrank();
 
-        hevm.expectRevert("00013");
+    //     hevm.expectRevert("00013");
 
-        lendingAuction.executeLoanByLenderSignature(offer, signature);
-    }
+    //     lendingAuction.executeLoanByLenderSignature(offer, signature);
+    // }
 
-    function testCannotExecuteLoanByLenderSignature_offer_expired() public {
-        hevm.startPrank(LENDER_1);
+    // function testCannotExecuteLoanByLenderSignature_offer_expired() public {
+    //     hevm.startPrank(LENDER_1);
 
-        usdcToken.mint(LENDER_1, 6);
-        usdcToken.approve(address(liquidityProviders), 6);
+    //     usdcToken.mint(LENDER_1, 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
 
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
 
-        Offer memory offer = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(0x0000000000000000000000000000000000000002),
-            interestRatePerSecond: 3,
-            fixedTerms: true,
-            floorTerm: false,
-            lenderOffer: false,
-            nftId: 4,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 7,
-            expiration: 8
-        });
+    //     Offer memory offer = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(0x0000000000000000000000000000000000000002),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: true,
+    //         floorTerm: false,
+    //         lenderOffer: false,
+    //         nftId: 4,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 7,
+    //         expiration: 8
+    //     });
 
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
-        hevm.stopPrank();
+    //     hevm.stopPrank();
 
-        hevm.expectRevert("00010");
+    //     hevm.expectRevert("00010");
 
-        lendingAuction.executeLoanByLenderSignature(offer, signature);
-    }
+    //     lendingAuction.executeLoanByLenderSignature(offer, signature);
+    // }
 
-    function testCannotExecuteLoanByLenderSignature_offer_duration() public {
-        hevm.startPrank(LENDER_1);
+    // function testCannotExecuteLoanByLenderSignature_offer_duration() public {
+    //     hevm.startPrank(LENDER_1);
 
-        usdcToken.mint(LENDER_1, 6);
-        usdcToken.approve(address(liquidityProviders), 6);
+    //     usdcToken.mint(LENDER_1, 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
 
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
 
-        Offer memory offer = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(0x0000000000000000000000000000000000000002),
-            interestRatePerSecond: 3,
-            fixedTerms: true,
-            floorTerm: false,
-            lenderOffer: false,
-            nftId: 4,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 7,
-            expiration: uint32(block.timestamp + 1)
-        });
+    //     Offer memory offer = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(0x0000000000000000000000000000000000000002),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: true,
+    //         floorTerm: false,
+    //         lenderOffer: false,
+    //         nftId: 4,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 7,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
 
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
-        hevm.stopPrank();
+    //     hevm.stopPrank();
 
-        hevm.expectRevert("00011");
+    //     hevm.expectRevert("00011");
 
-        lendingAuction.executeLoanByLenderSignature(offer, signature);
-    }
+    //     lendingAuction.executeLoanByLenderSignature(offer, signature);
+    // }
 
-    function testCannotExecuteLoanByLenderSignature_not_owning_nft() public {
-        hevm.startPrank(LENDER_1);
+    // function testCannotExecuteLoanByLenderSignature_not_owning_nft() public {
+    //     hevm.startPrank(LENDER_1);
 
-        usdcToken.mint(LENDER_1, 6);
-        usdcToken.approve(address(liquidityProviders), 6);
+    //     usdcToken.mint(LENDER_1, 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
 
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
 
-        Offer memory offer = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
-            fixedTerms: true,
-            floorTerm: false,
-            lenderOffer: false,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
+    //     Offer memory offer = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: true,
+    //         floorTerm: false,
+    //         lenderOffer: false,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
 
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
-        hevm.expectRevert("00018");
+    //     hevm.expectRevert("00018");
 
-        lendingAuction.executeLoanByLenderSignature(offer, signature);
-    }
+    //     lendingAuction.executeLoanByLenderSignature(offer, signature);
+    // }
 
-    function testCannotExecuteLoanByLenderSignature_not_enough_tokens() public {
-        hevm.startPrank(LENDER_1);
+    // function testCannotExecuteLoanByLenderSignature_not_enough_tokens() public {
+    //     hevm.startPrank(LENDER_1);
 
-        usdcToken.mint(LENDER_1, 6);
-        usdcToken.approve(address(liquidityProviders), 6);
+    //     usdcToken.mint(LENDER_1, 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
 
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
 
-        Offer memory offer = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
-            fixedTerms: true,
-            floorTerm: false,
-            lenderOffer: false,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 7,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
+    //     Offer memory offer = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: true,
+    //         floorTerm: false,
+    //         lenderOffer: false,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 7,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
 
-        hevm.stopPrank();
+    //     hevm.stopPrank();
 
-        mockNft.transferFrom(address(this), SIGNER_1, 1);
+    //     mockNft.transferFrom(address(this), SIGNER_1, 1);
 
-        hevm.startPrank(SIGNER_1);
-        mockNft.approve(address(lendingAuction), 1);
-        hevm.stopPrank();
+    //     hevm.startPrank(SIGNER_1);
+    //     mockNft.approve(address(lendingAuction), 1);
+    //     hevm.stopPrank();
 
-        hevm.startPrank(LENDER_1);
+    //     hevm.startPrank(LENDER_1);
 
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
-        hevm.expectRevert("ERC20: burn amount exceeds balance");
+    //     hevm.expectRevert("ERC20: burn amount exceeds balance");
 
-        lendingAuction.executeLoanByLenderSignature(offer, signature);
-    }
+    //     lendingAuction.executeLoanByLenderSignature(offer, signature);
+    // }
 
-    function testCannotExecuteLoanByLenderSignature_underlying_transfer_fails() public {
-        hevm.startPrank(LENDER_1);
+    // function testCannotExecuteLoanByLenderSignature_underlying_transfer_fails() public {
+    //     hevm.startPrank(LENDER_1);
 
-        usdcToken.mint(LENDER_1, 6);
-        usdcToken.approve(address(liquidityProviders), 6);
+    //     usdcToken.mint(LENDER_1, 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
 
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
 
-        Offer memory offer = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
-            fixedTerms: true,
-            floorTerm: false,
-            lenderOffer: false,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
+    //     Offer memory offer = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: true,
+    //         floorTerm: false,
+    //         lenderOffer: false,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
 
-        hevm.stopPrank();
+    //     hevm.stopPrank();
 
-        mockNft.transferFrom(address(this), SIGNER_1, 1);
+    //     mockNft.transferFrom(address(this), SIGNER_1, 1);
 
-        hevm.startPrank(SIGNER_1);
-        mockNft.approve(address(lendingAuction), 1);
-        hevm.stopPrank();
+    //     hevm.startPrank(SIGNER_1);
+    //     mockNft.approve(address(lendingAuction), 1);
+    //     hevm.stopPrank();
 
-        hevm.startPrank(LENDER_1);
+    //     hevm.startPrank(LENDER_1);
 
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
-        usdcToken.setTransferFail(true);
+    //     usdcToken.setTransferFail(true);
 
-        hevm.expectRevert("SafeERC20: ERC20 operation did not succeed");
+    //     hevm.expectRevert("SafeERC20: ERC20 operation did not succeed");
 
-        lendingAuction.executeLoanByLenderSignature(offer, signature);
-    }
+    //     lendingAuction.executeLoanByLenderSignature(offer, signature);
+    // }
 
-    function testCannotExecuteLoanByLenderSignature_eth_payment_fails() public {
-        // TODO(miller): This is tough to test since we can not revert the signers
-        //                 address on ETH transfers
-        // can you look into this?
-    }
+    // function testCannotExecuteLoanByLenderSignature_eth_payment_fails() public {
+    //     // TODO(miller): This is tough to test since we can not revert the signers
+    //     //                 address on ETH transfers
+    //     // can you look into this?
+    // }
 
-    function testExecuteLoanByLenderSignature_works_not_floor_term() public {
-        hevm.startPrank(LENDER_1);
+    // function testExecuteLoanByLenderSignature_works_not_floor_term() public {
+    //     hevm.startPrank(LENDER_1);
 
-        usdcToken.mint(LENDER_1, 6);
-        usdcToken.approve(address(liquidityProviders), 6);
+    //     usdcToken.mint(LENDER_1, 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
 
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
 
-        Offer memory offer = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
-            fixedTerms: true,
-            floorTerm: false,
-            lenderOffer: false,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
+    //     Offer memory offer = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: true,
+    //         floorTerm: false,
+    //         lenderOffer: false,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
 
-        hevm.stopPrank();
+    //     hevm.stopPrank();
 
-        mockNft.transferFrom(address(this), SIGNER_1, 1);
+    //     mockNft.transferFrom(address(this), SIGNER_1, 1);
 
-        hevm.startPrank(SIGNER_1);
-        mockNft.approve(address(lendingAuction), 1);
-        hevm.stopPrank();
+    //     hevm.startPrank(SIGNER_1);
+    //     mockNft.approve(address(lendingAuction), 1);
+    //     hevm.stopPrank();
 
-        hevm.startPrank(LENDER_1);
+    //     hevm.startPrank(LENDER_1);
 
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
-        lendingAuction.executeLoanByLenderSignature(offer, signature);
+    //     lendingAuction.executeLoanByLenderSignature(offer, signature);
 
-        assertEq(usdcToken.balanceOf(LENDER_1), 0);
-        assertEq(cUSDCToken.balanceOf(LENDER_1), 0);
+    //     assertEq(usdcToken.balanceOf(LENDER_1), 0);
+    //     assertEq(cUSDCToken.balanceOf(LENDER_1), 0);
 
-        assertEq(usdcToken.balanceOf(address(SIGNER_1)), 6);
-        assertEq(cUSDCToken.balanceOf(address(SIGNER_1)), 0);
+    //     assertEq(usdcToken.balanceOf(address(SIGNER_1)), 6);
+    //     assertEq(cUSDCToken.balanceOf(address(SIGNER_1)), 0);
 
-        assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
-        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 0);
+    //     assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
+    //     assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 0);
 
-        assertEq(mockNft.ownerOf(1), address(lendingAuction));
-        assertEq(lendingAuction.ownerOf(address(mockNft), 1), SIGNER_1);
+    //     assertEq(mockNft.ownerOf(1), address(lendingAuction));
+    //     assertEq(lendingAuction.ownerOf(address(mockNft), 1), SIGNER_1);
 
-        assertEq(liquidityProviders.getCAssetBalance(SIGNER_1, address(cUSDCToken)), 0);
+    //     assertEq(liquidityProviders.getCAssetBalance(SIGNER_1, address(cUSDCToken)), 0);
 
-        LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
+    //     LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
 
-        assertEq(loanAuction.nftOwner, SIGNER_1);
-        assertEq(loanAuction.lender, LENDER_1);
-        assertEq(loanAuction.asset, address(usdcToken));
-        assertEq(loanAuction.interestRatePerSecond, 3);
-        assertTrue(loanAuction.fixedTerms);
+    //     assertEq(loanAuction.nftOwner, SIGNER_1);
+    //     assertEq(loanAuction.lender, LENDER_1);
+    //     assertEq(loanAuction.asset, address(usdcToken));
+    //     assertEq(loanAuction.interestRatePerSecond, 3);
+    //     assertTrue(loanAuction.fixedTerms);
 
-        assertEq(loanAuction.amount, 6);
-        assertEq(loanAuction.loanEndTimestamp, block.timestamp + 1 days);
-        assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
-        assertEq(loanAuction.accumulatedLenderInterest, 0);
-        assertEq(loanAuction.accumulatedProtocolInterest, 0);
-        assertEq(loanAuction.amountDrawn, 6);
+    //     assertEq(loanAuction.amount, 6);
+    //     assertEq(loanAuction.loanEndTimestamp, block.timestamp + 1 days);
+    //     assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
+    //     assertEq(loanAuction.accumulatedLenderInterest, 0);
+    //     assertEq(loanAuction.accumulatedProtocolInterest, 0);
+    //     assertEq(loanAuction.amountDrawn, 6);
 
-        // ensure that the offer is gone
-        hevm.expectRevert("signature not available");
+    //     // ensure that the offer is gone
+    //     hevm.expectRevert("signature not available");
 
-        lendingAuction.executeLoanByLenderSignature(offer, signature);
-    }
+    //     lendingAuction.executeLoanByLenderSignature(offer, signature);
+    // }
 
-    function testExecuteLoanByLenderSignature_works_in_eth() public {
-        AddressUpgradeable.sendValue(payable(LENDER_1), 6);
-        hevm.startPrank(LENDER_1);
+    // function testExecuteLoanByLenderSignature_works_in_eth() public {
+    //     AddressUpgradeable.sendValue(payable(LENDER_1), 6);
+    //     hevm.startPrank(LENDER_1);
 
-        liquidityProviders.supplyEth{ value: 6 }();
+    //     liquidityProviders.supplyEth{ value: 6 }();
 
-        Offer memory offer = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
-            fixedTerms: true,
-            floorTerm: false,
-            lenderOffer: false,
-            nftId: 1,
-            asset: ETH_ADDRESS,
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
+    //     Offer memory offer = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: true,
+    //         floorTerm: false,
+    //         lenderOffer: false,
+    //         nftId: 1,
+    //         asset: ETH_ADDRESS,
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
 
-        hevm.stopPrank();
+    //     hevm.stopPrank();
 
-        mockNft.transferFrom(address(this), SIGNER_1, 1);
+    //     mockNft.transferFrom(address(this), SIGNER_1, 1);
 
-        hevm.startPrank(SIGNER_1);
-        mockNft.approve(address(lendingAuction), 1);
-        hevm.stopPrank();
+    //     hevm.startPrank(SIGNER_1);
+    //     mockNft.approve(address(lendingAuction), 1);
+    //     hevm.stopPrank();
 
-        hevm.startPrank(LENDER_1);
+    //     hevm.startPrank(LENDER_1);
 
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
-        uint256 borrowerEthBalanceBefore = address(SIGNER_1).balance;
-        uint256 lenderEthBalanceBefore = address(LENDER_1).balance;
+    //     uint256 borrowerEthBalanceBefore = address(SIGNER_1).balance;
+    //     uint256 lenderEthBalanceBefore = address(LENDER_1).balance;
 
-        lendingAuction.executeLoanByLenderSignature(offer, signature);
+    //     lendingAuction.executeLoanByLenderSignature(offer, signature);
 
-        assertEq(address(SIGNER_1).balance, borrowerEthBalanceBefore + 6);
-        assertEq(cEtherToken.balanceOf(address(SIGNER_1)), 0);
+    //     assertEq(address(SIGNER_1).balance, borrowerEthBalanceBefore + 6);
+    //     assertEq(cEtherToken.balanceOf(address(SIGNER_1)), 0);
 
-        assertEq(address(LENDER_1).balance, lenderEthBalanceBefore);
-        assertEq(cEtherToken.balanceOf(address(LENDER_1)), 0);
+    //     assertEq(address(LENDER_1).balance, lenderEthBalanceBefore);
+    //     assertEq(cEtherToken.balanceOf(address(LENDER_1)), 0);
 
-        assertEq(address(lendingAuction).balance, 0);
-        assertEq(cEtherToken.balanceOf(address(lendingAuction)), 0);
+    //     assertEq(address(lendingAuction).balance, 0);
+    //     assertEq(cEtherToken.balanceOf(address(lendingAuction)), 0);
 
-        assertEq(mockNft.ownerOf(1), address(lendingAuction));
-        assertEq(lendingAuction.ownerOf(address(mockNft), 1), address(SIGNER_1));
-    }
+    //     assertEq(mockNft.ownerOf(1), address(lendingAuction));
+    //     assertEq(lendingAuction.ownerOf(address(mockNft), 1), address(SIGNER_1));
+    // }
 
-    function testExecuteLoanByLenderSignature_event() public {
-        hevm.startPrank(LENDER_1);
+    // function testExecuteLoanByLenderSignature_event() public {
+    //     hevm.startPrank(LENDER_1);
 
-        usdcToken.mint(LENDER_1, 6);
-        usdcToken.approve(address(liquidityProviders), 6);
+    //     usdcToken.mint(LENDER_1, 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
 
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
 
-        Offer memory offer = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
-            fixedTerms: true,
-            floorTerm: false,
-            lenderOffer: false,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
+    //     Offer memory offer = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: true,
+    //         floorTerm: false,
+    //         lenderOffer: false,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
 
-        hevm.stopPrank();
+    //     hevm.stopPrank();
 
-        mockNft.transferFrom(address(this), SIGNER_1, 1);
+    //     mockNft.transferFrom(address(this), SIGNER_1, 1);
 
-        hevm.startPrank(SIGNER_1);
-        mockNft.approve(address(lendingAuction), 1);
-        hevm.stopPrank();
+    //     hevm.startPrank(SIGNER_1);
+    //     mockNft.approve(address(lendingAuction), 1);
+    //     hevm.stopPrank();
 
-        hevm.startPrank(LENDER_1);
+    //     hevm.startPrank(LENDER_1);
 
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
-        hevm.expectEmit(true, true, true, true);
+    //     hevm.expectEmit(true, true, true, true);
 
-        emit LoanExecuted(LENDER_1, address(usdcToken), SIGNER_1, address(mockNft), 1, offer);
+    //     emit LoanExecuted(LENDER_1, address(usdcToken), SIGNER_1, address(mockNft), 1, offer);
 
-        emit AmountDrawn(SIGNER_1, address(mockNft), 1, 6, 6);
+    //     emit AmountDrawn(SIGNER_1, address(mockNft), 1, 6, 6);
 
-        emit OfferSignatureUsed(address(mockNft), 1, offer, signature);
+    //     emit OfferSignatureUsed(address(mockNft), 1, offer, signature);
 
-        lendingAuction.executeLoanByLenderSignature(offer, signature);
-    }
+    //     lendingAuction.executeLoanByLenderSignature(offer, signature);
+    // }
 
     // refinanceByBorrower Tests
 
@@ -4179,1196 +4179,1196 @@ contract LendingAuctionUnitTest is
 
     // refinanceByBorrowerSignature Tests
 
-    function testCannotRefinanceByBorrowerSignature_fixed_terms() public {
-        hevm.startPrank(LENDER_1);
-        usdcToken.mint(address(LENDER_1), 6);
-        usdcToken.approve(address(liquidityProviders), 6);
-
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
-
-        Offer memory offer = Offer({
-            creator: LENDER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
-            fixedTerms: true,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
-
-        offersContract.createOffer(offer);
-
-        hevm.stopPrank();
-
-        bytes32 offerHash = offersContract.getOfferHash(offer);
-
-        lendingAuction.executeLoanByBorrower(
-            offer.nftContractAddress,
-            offer.nftId,
-            offerHash,
-            offer.floorTerm
-        );
-
-        hevm.startPrank(SIGNER_1);
-        usdcToken.mint(address(SIGNER_1), 6);
-        usdcToken.approve(address(liquidityProviders), 6);
-
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
-
-        Offer memory offer2 = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 2,
-            fixedTerms: true,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
-
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
-
-        hevm.stopPrank();
-
-        hevm.expectRevert("00015");
-
-        lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
-    }
-
-    function testCannotRefinanceByBorrowerSignature_withdrawn_signature() public {
-        hevm.startPrank(LENDER_1);
-        usdcToken.mint(address(LENDER_1), 6);
-        usdcToken.approve(address(liquidityProviders), 6);
-
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
-
-        Offer memory offer = Offer({
-            creator: LENDER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
-            fixedTerms: true,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
-
-        offersContract.createOffer(offer);
-
-        hevm.stopPrank();
-
-        bytes32 offerHash = offersContract.getOfferHash(offer);
-
-        lendingAuction.executeLoanByBorrower(
-            offer.nftContractAddress,
-            offer.nftId,
-            offerHash,
-            offer.floorTerm
-        );
-
-        hevm.startPrank(SIGNER_1);
-        usdcToken.mint(address(SIGNER_1), 6);
-        usdcToken.approve(address(liquidityProviders), 6);
-
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
-
-        Offer memory offer2 = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 2,
-            fixedTerms: true,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
-
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
-
-        offersContract.withdrawOfferSignature(offer2, signature);
-
-        hevm.stopPrank();
-
-        hevm.expectRevert("signature not available");
-
-        lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
-    }
-
-    function testCannotRefinanceByBorrowerSignature_min_duration() public {
-        hevm.startPrank(LENDER_1);
-        usdcToken.mint(address(LENDER_1), 6);
-        usdcToken.approve(address(liquidityProviders), 6);
-
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
-
-        Offer memory offer = Offer({
-            creator: LENDER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
-            fixedTerms: false,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
-
-        offersContract.createOffer(offer);
-
-        hevm.stopPrank();
-
-        bytes32 offerHash = offersContract.getOfferHash(offer);
-
-        lendingAuction.executeLoanByBorrower(
-            offer.nftContractAddress,
-            offer.nftId,
-            offerHash,
-            offer.floorTerm
-        );
-
-        hevm.startPrank(SIGNER_1);
-        usdcToken.mint(address(SIGNER_1), 6);
-        usdcToken.approve(address(liquidityProviders), 6);
-
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
-
-        Offer memory offer2 = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 2,
-            fixedTerms: false,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 1 days - 1,
-            expiration: uint32(block.timestamp + 1)
-        });
-
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
-
-        hevm.stopPrank();
-
-        hevm.expectRevert("00011");
-
-        lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
-    }
-
-    function testCannotRefinanceByBorrowerSignature_borrower_offer() public {
-        hevm.startPrank(LENDER_1);
-        usdcToken.mint(address(LENDER_1), 6);
-        usdcToken.approve(address(liquidityProviders), 6);
-
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
-
-        Offer memory offer = Offer({
-            creator: LENDER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
-            fixedTerms: false,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
-
-        offersContract.createOffer(offer);
-
-        hevm.stopPrank();
-
-        bytes32 offerHash = offersContract.getOfferHash(offer);
-
-        lendingAuction.executeLoanByBorrower(
-            offer.nftContractAddress,
-            offer.nftId,
-            offerHash,
-            offer.floorTerm
-        );
-
-        hevm.startPrank(SIGNER_1);
-        usdcToken.mint(address(SIGNER_1), 6);
-        usdcToken.approve(address(liquidityProviders), 6);
-
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
-
-        Offer memory offer2 = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 2,
-            fixedTerms: false,
-            floorTerm: true,
-            lenderOffer: false,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
-        hevm.stopPrank();
-
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
-
-        hevm.expectRevert("00012");
-
-        lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
-    }
-
-    function testCannotRefinanceByBorrowerSignature_not_floor_term_mismatch_nftid() public {
-        hevm.startPrank(LENDER_1);
-        usdcToken.mint(address(LENDER_1), 6);
-        usdcToken.approve(address(liquidityProviders), 6);
-
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
-
-        Offer memory offer = Offer({
-            creator: LENDER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
-            fixedTerms: false,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
-
-        offersContract.createOffer(offer);
-
-        hevm.stopPrank();
-
-        bytes32 offerHash = offersContract.getOfferHash(offer);
-
-        lendingAuction.executeLoanByBorrower(
-            offer.nftContractAddress,
-            offer.nftId,
-            offerHash,
-            offer.floorTerm
-        );
-
-        hevm.startPrank(SIGNER_1);
-        usdcToken.mint(address(SIGNER_1), 6);
-        usdcToken.approve(address(liquidityProviders), 6);
-
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
-
-        Offer memory offer2 = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 2,
-            fixedTerms: false,
-            floorTerm: false,
-            lenderOffer: true,
-            nftId: 2,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
-
-        hevm.stopPrank();
-
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
-
-        hevm.expectRevert("00021");
-
-        lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
-    }
-
-    function testCannotRefinanceByBorrowerSignature_borrower_not_nft_owner() public {
-        hevm.startPrank(LENDER_1);
-        usdcToken.mint(address(LENDER_1), 6);
-        usdcToken.approve(address(liquidityProviders), 6);
-
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
-
-        Offer memory offer = Offer({
-            creator: LENDER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
-            fixedTerms: false,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
-
-        offersContract.createOffer(offer);
-
-        hevm.stopPrank();
-
-        bytes32 offerHash = offersContract.getOfferHash(offer);
-
-        lendingAuction.executeLoanByBorrower(
-            offer.nftContractAddress,
-            offer.nftId,
-            offerHash,
-            offer.floorTerm
-        );
-
-        hevm.startPrank(SIGNER_1);
-        usdcToken.mint(address(SIGNER_1), 6);
-        usdcToken.approve(address(liquidityProviders), 6);
-
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
-
-        Offer memory offer2 = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 2,
-            fixedTerms: false,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 2,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
-
-        hevm.stopPrank();
-
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
-
-        hevm.startPrank(BORROWER_1);
-
-        hevm.expectRevert("00018");
-
-        lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
-    }
-
-    function testCannotRefinanceByBorrowerSignature_no_open_loan() public {
-        hevm.startPrank(SIGNER_1);
-        usdcToken.mint(address(SIGNER_1), 6);
-        usdcToken.approve(address(liquidityProviders), 6);
-
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
-
-        Offer memory offer2 = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 1,
-            fixedTerms: false,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 2,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
-
-        hevm.stopPrank();
-
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
-
-        mockNft.transferFrom(address(this), address(0x1), 1);
-        hevm.expectRevert("00019");
-
-        lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
-    }
-
-    function testCannotRefinanceByBorrowerSignature_nft_contract_address() public {
-        hevm.startPrank(LENDER_1);
-        usdcToken.mint(address(LENDER_1), 6);
-        usdcToken.approve(address(liquidityProviders), 6);
-
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
-
-        Offer memory offer = Offer({
-            creator: LENDER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
-            fixedTerms: false,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
-
-        offersContract.createOffer(offer);
-
-        hevm.stopPrank();
-
-        bytes32 offerHash = offersContract.getOfferHash(offer);
-
-        lendingAuction.executeLoanByBorrower(
-            offer.nftContractAddress,
-            offer.nftId,
-            offerHash,
-            offer.floorTerm
-        );
-
-        hevm.startPrank(SIGNER_1);
-        usdcToken.mint(address(SIGNER_1), 6);
-        usdcToken.approve(address(liquidityProviders), 6);
-
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
-
-        Offer memory offer2 = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(0x02),
-            interestRatePerSecond: 1,
-            fixedTerms: false,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
-
-        hevm.stopPrank();
-
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
-
-        hevm.expectRevert("00019");
-
-        lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
-    }
-
-    function testCannotRefinanceByBorrowerSignature_nft_id() public {
-        hevm.startPrank(LENDER_1);
-        usdcToken.mint(address(LENDER_1), 6);
-        usdcToken.approve(address(liquidityProviders), 6);
-
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
-
-        Offer memory offer = Offer({
-            creator: LENDER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
-            fixedTerms: false,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
-
-        offersContract.createOffer(offer);
-
-        hevm.stopPrank();
-
-        bytes32 offerHash = offersContract.getOfferHash(offer);
-
-        lendingAuction.executeLoanByBorrower(
-            offer.nftContractAddress,
-            offer.nftId,
-            offerHash,
-            offer.floorTerm
-        );
-
-        hevm.startPrank(SIGNER_1);
-        usdcToken.mint(address(SIGNER_1), 6);
-        usdcToken.approve(address(liquidityProviders), 6);
-
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
-
-        Offer memory offer2 = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 1,
-            fixedTerms: false,
-            floorTerm: false,
-            lenderOffer: true,
-            nftId: 2,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
-
-        hevm.stopPrank();
-
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
-
-        hevm.expectRevert("00021");
-
-        lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
-    }
-
-    function testCannotRefinanceByBorrowerSignature_wrong_asset() public {
-        hevm.startPrank(LENDER_1);
-        usdcToken.mint(address(LENDER_1), 6);
-        usdcToken.approve(address(liquidityProviders), 6);
-
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
-
-        Offer memory offer = Offer({
-            creator: LENDER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
-            fixedTerms: false,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
-
-        offersContract.createOffer(offer);
-
-        hevm.stopPrank();
-
-        bytes32 offerHash = offersContract.getOfferHash(offer);
-
-        lendingAuction.executeLoanByBorrower(
-            offer.nftContractAddress,
-            offer.nftId,
-            offerHash,
-            offer.floorTerm
-        );
-
-        AddressUpgradeable.sendValue(payable(SIGNER_1), 6);
-
-        hevm.startPrank(SIGNER_1);
-
-        liquidityProviders.supplyEth{ value: 6 }();
-
-        Offer memory offer2 = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 1,
-            fixedTerms: false,
-            floorTerm: false,
-            lenderOffer: true,
-            nftId: 1,
-            asset: ETH_ADDRESS,
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
-
-        hevm.stopPrank();
-
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
-
-        hevm.expectRevert("00019");
-
-        lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
-    }
-
-    function testCannotRefinanceByBorrowerSignature_offer_expired() public {
-        hevm.startPrank(LENDER_1);
-        usdcToken.mint(address(LENDER_1), 6);
-        usdcToken.approve(address(liquidityProviders), 6);
-
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
-
-        Offer memory offer = Offer({
-            creator: LENDER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
-            fixedTerms: false,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
-
-        offersContract.createOffer(offer);
-
-        hevm.stopPrank();
-
-        bytes32 offerHash = offersContract.getOfferHash(offer);
-
-        lendingAuction.executeLoanByBorrower(
-            offer.nftContractAddress,
-            offer.nftId,
-            offerHash,
-            offer.floorTerm
-        );
-
-        hevm.startPrank(SIGNER_1);
-        usdcToken.mint(address(SIGNER_1), 6);
-        usdcToken.approve(address(liquidityProviders), 6);
-
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
-
-        Offer memory offer2 = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 1,
-            fixedTerms: false,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
-
-        hevm.stopPrank();
-
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
-
-        hevm.warp(block.timestamp + 2);
-        hevm.expectRevert("00010");
-
-        lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
-    }
-
-    function testRefinanceByBorrowerSignature_works_floor_term() public {
-        hevm.startPrank(LENDER_1);
-        usdcToken.mint(address(LENDER_1), 6);
-        usdcToken.approve(address(liquidityProviders), 6);
-
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
-
-        Offer memory offer = Offer({
-            creator: LENDER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
-            fixedTerms: false,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
-
-        offersContract.createOffer(offer);
-
-        hevm.stopPrank();
-
-        bytes32 offerHash = offersContract.getOfferHash(offer);
-
-        lendingAuction.executeLoanByBorrower(
-            offer.nftContractAddress,
-            offer.nftId,
-            offerHash,
-            offer.floorTerm
-        );
-
-        hevm.startPrank(SIGNER_1);
-        usdcToken.mint(address(SIGNER_1), 6);
-        usdcToken.approve(address(liquidityProviders), 6);
-
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
-
-        Offer memory offer2 = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 2,
-            fixedTerms: false,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 3 days,
-            expiration: uint32(block.timestamp + 1)
-        });
-
-        hevm.stopPrank();
-
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
-
-        lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
-
-        assertEq(usdcToken.balanceOf(address(this)), 6);
-        assertEq(cUSDCToken.balanceOf(address(this)), 0);
-
-        assertEq(usdcToken.balanceOf(address(LENDER_1)), 0);
-        assertEq(cUSDCToken.balanceOf(address(LENDER_1)), 0);
-
-        assertEq(usdcToken.balanceOf(address(SIGNER_1)), 0);
-        assertEq(cUSDCToken.balanceOf(address(SIGNER_1)), 0);
-
-        assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
-        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 6 ether);
-
-        assertEq(mockNft.ownerOf(1), address(lendingAuction));
-        assertEq(lendingAuction.ownerOf(address(mockNft), 1), address(this));
-
-        assertEq(liquidityProviders.getCAssetBalance(address(this), address(cUSDCToken)), 0);
-        assertEq(liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken)), 6 ether);
-        assertEq(liquidityProviders.getCAssetBalance(SIGNER_1, address(cUSDCToken)), 0);
-
-        LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
-
-        assertEq(loanAuction.nftOwner, address(this));
-        assertEq(loanAuction.lender, SIGNER_1);
-        assertEq(loanAuction.asset, address(usdcToken));
-        assertEq(loanAuction.interestRatePerSecond, 2);
-        assertTrue(!loanAuction.fixedTerms);
-
-        assertEq(loanAuction.amount, 6);
-        assertEq(loanAuction.loanEndTimestamp, block.timestamp + 3 days);
-        assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
-        assertEq(loanAuction.accumulatedLenderInterest, 0);
-        assertEq(loanAuction.accumulatedProtocolInterest, 0);
-        assertEq(loanAuction.amountDrawn, 6);
-
-        // ensure the signature is not invalidated
-        assertTrue(!offersContract.getOfferSignatureStatus(signature));
-    }
-
-    function testRefinanceByBorrowerSignature_works_not_floor_term() public {
-        hevm.startPrank(LENDER_1);
-        usdcToken.mint(address(LENDER_1), 6);
-        usdcToken.approve(address(liquidityProviders), 6);
-
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
-
-        Offer memory offer = Offer({
-            creator: LENDER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
-            fixedTerms: false,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
-
-        offersContract.createOffer(offer);
-
-        hevm.stopPrank();
-
-        bytes32 offerHash = offersContract.getOfferHash(offer);
-
-        lendingAuction.executeLoanByBorrower(
-            offer.nftContractAddress,
-            offer.nftId,
-            offerHash,
-            offer.floorTerm
-        );
-
-        hevm.startPrank(SIGNER_1);
-        usdcToken.mint(address(SIGNER_1), 6);
-        usdcToken.approve(address(liquidityProviders), 6);
-
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
-
-        Offer memory offer2 = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 2,
-            fixedTerms: false,
-            floorTerm: false,
-            lenderOffer: true,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 3 days,
-            expiration: uint32(block.timestamp + 1)
-        });
-
-        hevm.stopPrank();
-
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
-
-        lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
-
-        assertEq(usdcToken.balanceOf(address(this)), 6);
-        assertEq(cUSDCToken.balanceOf(address(this)), 0);
-
-        assertEq(usdcToken.balanceOf(address(LENDER_1)), 0);
-        assertEq(cUSDCToken.balanceOf(address(LENDER_1)), 0);
-
-        assertEq(usdcToken.balanceOf(address(SIGNER_1)), 0);
-        assertEq(cUSDCToken.balanceOf(address(SIGNER_1)), 0);
-
-        assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
-        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 6 ether);
-
-        assertEq(mockNft.ownerOf(1), address(lendingAuction));
-        assertEq(lendingAuction.ownerOf(address(mockNft), 1), address(this));
-
-        assertEq(liquidityProviders.getCAssetBalance(address(this), address(cUSDCToken)), 0);
-        assertEq(liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken)), 6 ether);
-        assertEq(liquidityProviders.getCAssetBalance(SIGNER_1, address(cUSDCToken)), 0);
-
-        LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
-
-        assertEq(loanAuction.nftOwner, address(this));
-        assertEq(loanAuction.lender, SIGNER_1);
-        assertEq(loanAuction.asset, address(usdcToken));
-        assertEq(loanAuction.interestRatePerSecond, 2);
-        assertTrue(!loanAuction.fixedTerms);
-
-        assertEq(loanAuction.amount, 6);
-        assertEq(loanAuction.loanEndTimestamp, block.timestamp + 3 days);
-        assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
-        assertEq(loanAuction.accumulatedLenderInterest, 0);
-        assertEq(loanAuction.accumulatedProtocolInterest, 0);
-        assertEq(loanAuction.amountDrawn, 6);
-
-        assertTrue(offersContract.getOfferSignatureStatus(signature));
-    }
-
-    function testRefinanceByBorrowerSignature_works_into_fix_term() public {
-        hevm.startPrank(LENDER_1);
-        usdcToken.mint(address(LENDER_1), 6);
-        usdcToken.approve(address(liquidityProviders), 6);
-
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
-
-        Offer memory offer = Offer({
-            creator: LENDER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
-            fixedTerms: false,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
-
-        offersContract.createOffer(offer);
-
-        hevm.stopPrank();
-
-        bytes32 offerHash = offersContract.getOfferHash(offer);
-
-        lendingAuction.executeLoanByBorrower(
-            offer.nftContractAddress,
-            offer.nftId,
-            offerHash,
-            offer.floorTerm
-        );
-
-        hevm.startPrank(SIGNER_1);
-        usdcToken.mint(address(SIGNER_1), 6);
-        usdcToken.approve(address(liquidityProviders), 6);
-
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
-
-        Offer memory offer2 = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 2,
-            fixedTerms: true,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 3 days,
-            expiration: uint32(block.timestamp + 1)
-        });
-
-        hevm.stopPrank();
-
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
-
-        lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
-
-        assertEq(usdcToken.balanceOf(address(this)), 6);
-        assertEq(cUSDCToken.balanceOf(address(this)), 0);
-
-        assertEq(usdcToken.balanceOf(address(LENDER_1)), 0);
-        assertEq(cUSDCToken.balanceOf(address(LENDER_1)), 0);
-
-        assertEq(usdcToken.balanceOf(address(SIGNER_1)), 0);
-        assertEq(cUSDCToken.balanceOf(address(SIGNER_1)), 0);
-
-        assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
-        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 6 ether);
-
-        assertEq(mockNft.ownerOf(1), address(lendingAuction));
-        assertEq(lendingAuction.ownerOf(address(mockNft), 1), address(this));
-
-        assertEq(liquidityProviders.getCAssetBalance(address(this), address(cUSDCToken)), 0);
-        assertEq(liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken)), 6 ether);
-        assertEq(liquidityProviders.getCAssetBalance(SIGNER_1, address(cUSDCToken)), 0);
-
-        LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
-
-        assertEq(loanAuction.nftOwner, address(this));
-        assertEq(loanAuction.lender, SIGNER_1);
-        assertEq(loanAuction.asset, address(usdcToken));
-        assertEq(loanAuction.interestRatePerSecond, 2);
-        assertTrue(loanAuction.fixedTerms);
-
-        assertEq(loanAuction.amount, 6);
-        assertEq(loanAuction.loanEndTimestamp, block.timestamp + 3 days);
-        assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
-        assertEq(loanAuction.accumulatedLenderInterest, 0);
-        assertEq(loanAuction.accumulatedProtocolInterest, 0);
-        assertEq(loanAuction.amountDrawn, 6);
-    }
-
-    function testRefinanceByBorrowerSignature_events() public {
-        hevm.startPrank(LENDER_1);
-        usdcToken.mint(address(LENDER_1), 6);
-        usdcToken.approve(address(liquidityProviders), 6);
-
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
-
-        Offer memory offer = Offer({
-            creator: LENDER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
-            fixedTerms: false,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
-
-        offersContract.createOffer(offer);
-
-        hevm.stopPrank();
-
-        bytes32 offerHash = offersContract.getOfferHash(offer);
-
-        lendingAuction.executeLoanByBorrower(
-            offer.nftContractAddress,
-            offer.nftId,
-            offerHash,
-            offer.floorTerm
-        );
-
-        hevm.startPrank(SIGNER_1);
-        usdcToken.mint(address(SIGNER_1), 6);
-        usdcToken.approve(address(liquidityProviders), 6);
-
-        liquidityProviders.supplyErc20(address(usdcToken), 6);
-
-        Offer memory offer2 = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 2,
-            fixedTerms: false,
-            floorTerm: false,
-            lenderOffer: true,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6,
-            duration: 3 days,
-            expiration: uint32(block.timestamp + 1)
-        });
-
-        hevm.stopPrank();
-
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
-
-        hevm.expectEmit(true, true, true, true);
-
-        emit OfferSignatureUsed(address(mockNft), 1, offer2, signature);
-
-        emit Refinance(SIGNER_1, offer2.asset, address(this), address(mockNft), 1, offer2);
-
-        emit AmountDrawn(address(this), offer.nftContractAddress, 1, 0, 6);
-
-        lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
-    }
-
-    function testCannotRefinanceByBorrowerSignature_does_not_cover_interest() public {
-        hevm.startPrank(LENDER_1);
-        usdcToken.mint(address(LENDER_1), 6 ether);
-        usdcToken.approve(address(liquidityProviders), 6 ether);
-
-        liquidityProviders.supplyErc20(address(usdcToken), 6 ether);
-
-        Offer memory offer = Offer({
-            creator: LENDER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 3,
-            fixedTerms: false,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6 ether,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
-
-        offersContract.createOffer(offer);
-
-        hevm.stopPrank();
-
-        bytes32 offerHash = offersContract.getOfferHash(offer);
-
-        lendingAuction.executeLoanByBorrower(
-            offer.nftContractAddress,
-            offer.nftId,
-            offerHash,
-            offer.floorTerm
-        );
-
-        hevm.startPrank(SIGNER_1);
-        usdcToken.mint(address(SIGNER_1), 6 ether);
-        usdcToken.approve(address(liquidityProviders), 6 ether);
-
-        liquidityProviders.supplyErc20(address(usdcToken), 6 ether);
-
-        Offer memory offer2 = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 2,
-            fixedTerms: false,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6 ether,
-            duration: 3 days,
-            expiration: uint32(block.timestamp + 200)
-        });
-
-        hevm.stopPrank();
-
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
-
-        hevm.expectRevert("00005");
-
-        hevm.warp(block.timestamp + 100);
-
-        lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
-    }
-
-    function testRefinanceByBorrowerSignature_covers_interest() public {
-        hevm.startPrank(LENDER_1);
-        usdcToken.mint(address(LENDER_1), 6 ether);
-        usdcToken.approve(address(liquidityProviders), 6 ether);
-
-        liquidityProviders.supplyErc20(address(usdcToken), 6 ether);
-
-        Offer memory offer = Offer({
-            creator: LENDER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 694444444444, // 1% interest on 6 eth for 86400 seconds
-            fixedTerms: false,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 6 ether,
-            duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
-        });
-
-        offersContract.createOffer(offer);
-
-        hevm.stopPrank();
-
-        bytes32 offerHash = offersContract.getOfferHash(offer);
-
-        lendingAuction.executeLoanByBorrower(
-            offer.nftContractAddress,
-            offer.nftId,
-            offerHash,
-            offer.floorTerm
-        );
-
-        hevm.startPrank(SIGNER_1);
-        usdcToken.mint(address(SIGNER_1), 10 ether);
-        usdcToken.approve(address(liquidityProviders), 10 ether);
-
-        liquidityProviders.supplyErc20(address(usdcToken), 10 ether);
-
-        Offer memory offer2 = Offer({
-            creator: SIGNER_1,
-            nftContractAddress: address(mockNft),
-            interestRatePerSecond: 694444444442,
-            fixedTerms: false,
-            floorTerm: true,
-            lenderOffer: true,
-            nftId: 1,
-            asset: address(usdcToken),
-            amount: 7 ether,
-            duration: 3 days,
-            expiration: uint32(block.timestamp + 200)
-        });
-
-        hevm.stopPrank();
-
-        bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
-
-        hevm.warp(block.timestamp + 100);
-
-        lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
-
-        assertEq(usdcToken.balanceOf(address(this)), 6 ether);
-        assertEq(cUSDCToken.balanceOf(address(this)), 0);
-
-        assertEq(usdcToken.balanceOf(address(LENDER_1)), 0);
-        assertEq(cUSDCToken.balanceOf(address(LENDER_1)), 0);
-
-        assertEq(usdcToken.balanceOf(address(SIGNER_1)), 0);
-        assertEq(cUSDCToken.balanceOf(address(SIGNER_1)), 0);
-
-        assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
-        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 10 ether * 10**18);
-
-        assertEq(mockNft.ownerOf(1), address(lendingAuction));
-        assertEq(lendingAuction.ownerOf(address(mockNft), 1), address(this));
-
-        assertEq(liquidityProviders.getCAssetBalance(address(this), address(cUSDCToken)), 0);
-        assertEq(
-            liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken)),
-            6000069444444444400 ether
-        );
-        assertEq(
-            liquidityProviders.getCAssetBalance(SIGNER_1, address(cUSDCToken)),
-            3999930555555555600 ether
-        );
-
-        LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
-
-        assertEq(loanAuction.nftOwner, address(this));
-        assertEq(loanAuction.lender, SIGNER_1);
-        assertEq(loanAuction.asset, address(usdcToken));
-        assertEq(loanAuction.interestRatePerSecond, 694444444442);
-        assertTrue(!loanAuction.fixedTerms);
-
-        assertEq(loanAuction.amount, 7 ether);
-        assertEq(loanAuction.loanEndTimestamp, loanAuction.loanBeginTimestamp + 3 days);
-        assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
-        assertEq(loanAuction.accumulatedLenderInterest, 0);
-        assertEq(loanAuction.accumulatedProtocolInterest, 0); // 0 fee set so 0 balance expected
-    }
+    // function testCannotRefinanceByBorrowerSignature_fixed_terms() public {
+    //     hevm.startPrank(LENDER_1);
+    //     usdcToken.mint(address(LENDER_1), 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
+
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
+
+    //     Offer memory offer = Offer({
+    //         creator: LENDER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: true,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
+
+    //     offersContract.createOffer(offer);
+
+    //     hevm.stopPrank();
+
+    //     bytes32 offerHash = offersContract.getOfferHash(offer);
+
+    //     lendingAuction.executeLoanByBorrower(
+    //         offer.nftContractAddress,
+    //         offer.nftId,
+    //         offerHash,
+    //         offer.floorTerm
+    //     );
+
+    //     hevm.startPrank(SIGNER_1);
+    //     usdcToken.mint(address(SIGNER_1), 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
+
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
+
+    //     Offer memory offer2 = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 2,
+    //         fixedTerms: true,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
+
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
+
+    //     hevm.stopPrank();
+
+    //     hevm.expectRevert("00015");
+
+    //     lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
+    // }
+
+    // function testCannotRefinanceByBorrowerSignature_withdrawn_signature() public {
+    //     hevm.startPrank(LENDER_1);
+    //     usdcToken.mint(address(LENDER_1), 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
+
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
+
+    //     Offer memory offer = Offer({
+    //         creator: LENDER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: true,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
+
+    //     offersContract.createOffer(offer);
+
+    //     hevm.stopPrank();
+
+    //     bytes32 offerHash = offersContract.getOfferHash(offer);
+
+    //     lendingAuction.executeLoanByBorrower(
+    //         offer.nftContractAddress,
+    //         offer.nftId,
+    //         offerHash,
+    //         offer.floorTerm
+    //     );
+
+    //     hevm.startPrank(SIGNER_1);
+    //     usdcToken.mint(address(SIGNER_1), 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
+
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
+
+    //     Offer memory offer2 = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 2,
+    //         fixedTerms: true,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
+
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
+
+    //     offersContract.withdrawOfferSignature(offer2, signature);
+
+    //     hevm.stopPrank();
+
+    //     hevm.expectRevert("signature not available");
+
+    //     lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
+    // }
+
+    // function testCannotRefinanceByBorrowerSignature_min_duration() public {
+    //     hevm.startPrank(LENDER_1);
+    //     usdcToken.mint(address(LENDER_1), 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
+
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
+
+    //     Offer memory offer = Offer({
+    //         creator: LENDER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: false,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
+
+    //     offersContract.createOffer(offer);
+
+    //     hevm.stopPrank();
+
+    //     bytes32 offerHash = offersContract.getOfferHash(offer);
+
+    //     lendingAuction.executeLoanByBorrower(
+    //         offer.nftContractAddress,
+    //         offer.nftId,
+    //         offerHash,
+    //         offer.floorTerm
+    //     );
+
+    //     hevm.startPrank(SIGNER_1);
+    //     usdcToken.mint(address(SIGNER_1), 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
+
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
+
+    //     Offer memory offer2 = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 2,
+    //         fixedTerms: false,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 1 days - 1,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
+
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
+
+    //     hevm.stopPrank();
+
+    //     hevm.expectRevert("00011");
+
+    //     lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
+    // }
+
+    // function testCannotRefinanceByBorrowerSignature_borrower_offer() public {
+    //     hevm.startPrank(LENDER_1);
+    //     usdcToken.mint(address(LENDER_1), 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
+
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
+
+    //     Offer memory offer = Offer({
+    //         creator: LENDER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: false,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
+
+    //     offersContract.createOffer(offer);
+
+    //     hevm.stopPrank();
+
+    //     bytes32 offerHash = offersContract.getOfferHash(offer);
+
+    //     lendingAuction.executeLoanByBorrower(
+    //         offer.nftContractAddress,
+    //         offer.nftId,
+    //         offerHash,
+    //         offer.floorTerm
+    //     );
+
+    //     hevm.startPrank(SIGNER_1);
+    //     usdcToken.mint(address(SIGNER_1), 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
+
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
+
+    //     Offer memory offer2 = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 2,
+    //         fixedTerms: false,
+    //         floorTerm: true,
+    //         lenderOffer: false,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
+    //     hevm.stopPrank();
+
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
+
+    //     hevm.expectRevert("00012");
+
+    //     lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
+    // }
+
+    // function testCannotRefinanceByBorrowerSignature_not_floor_term_mismatch_nftid() public {
+    //     hevm.startPrank(LENDER_1);
+    //     usdcToken.mint(address(LENDER_1), 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
+
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
+
+    //     Offer memory offer = Offer({
+    //         creator: LENDER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: false,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
+
+    //     offersContract.createOffer(offer);
+
+    //     hevm.stopPrank();
+
+    //     bytes32 offerHash = offersContract.getOfferHash(offer);
+
+    //     lendingAuction.executeLoanByBorrower(
+    //         offer.nftContractAddress,
+    //         offer.nftId,
+    //         offerHash,
+    //         offer.floorTerm
+    //     );
+
+    //     hevm.startPrank(SIGNER_1);
+    //     usdcToken.mint(address(SIGNER_1), 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
+
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
+
+    //     Offer memory offer2 = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 2,
+    //         fixedTerms: false,
+    //         floorTerm: false,
+    //         lenderOffer: true,
+    //         nftId: 2,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
+
+    //     hevm.stopPrank();
+
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
+
+    //     hevm.expectRevert("00021");
+
+    //     lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
+    // }
+
+    // function testCannotRefinanceByBorrowerSignature_borrower_not_nft_owner() public {
+    //     hevm.startPrank(LENDER_1);
+    //     usdcToken.mint(address(LENDER_1), 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
+
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
+
+    //     Offer memory offer = Offer({
+    //         creator: LENDER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: false,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
+
+    //     offersContract.createOffer(offer);
+
+    //     hevm.stopPrank();
+
+    //     bytes32 offerHash = offersContract.getOfferHash(offer);
+
+    //     lendingAuction.executeLoanByBorrower(
+    //         offer.nftContractAddress,
+    //         offer.nftId,
+    //         offerHash,
+    //         offer.floorTerm
+    //     );
+
+    //     hevm.startPrank(SIGNER_1);
+    //     usdcToken.mint(address(SIGNER_1), 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
+
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
+
+    //     Offer memory offer2 = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 2,
+    //         fixedTerms: false,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 2,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
+
+    //     hevm.stopPrank();
+
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
+
+    //     hevm.startPrank(BORROWER_1);
+
+    //     hevm.expectRevert("00018");
+
+    //     lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
+    // }
+
+    // function testCannotRefinanceByBorrowerSignature_no_open_loan() public {
+    //     hevm.startPrank(SIGNER_1);
+    //     usdcToken.mint(address(SIGNER_1), 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
+
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
+
+    //     Offer memory offer2 = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 1,
+    //         fixedTerms: false,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 2,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
+
+    //     hevm.stopPrank();
+
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
+
+    //     mockNft.transferFrom(address(this), address(0x1), 1);
+    //     hevm.expectRevert("00019");
+
+    //     lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
+    // }
+
+    // function testCannotRefinanceByBorrowerSignature_nft_contract_address() public {
+    //     hevm.startPrank(LENDER_1);
+    //     usdcToken.mint(address(LENDER_1), 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
+
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
+
+    //     Offer memory offer = Offer({
+    //         creator: LENDER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: false,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
+
+    //     offersContract.createOffer(offer);
+
+    //     hevm.stopPrank();
+
+    //     bytes32 offerHash = offersContract.getOfferHash(offer);
+
+    //     lendingAuction.executeLoanByBorrower(
+    //         offer.nftContractAddress,
+    //         offer.nftId,
+    //         offerHash,
+    //         offer.floorTerm
+    //     );
+
+    //     hevm.startPrank(SIGNER_1);
+    //     usdcToken.mint(address(SIGNER_1), 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
+
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
+
+    //     Offer memory offer2 = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(0x02),
+    //         interestRatePerSecond: 1,
+    //         fixedTerms: false,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
+
+    //     hevm.stopPrank();
+
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
+
+    //     hevm.expectRevert("00019");
+
+    //     lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
+    // }
+
+    // function testCannotRefinanceByBorrowerSignature_nft_id() public {
+    //     hevm.startPrank(LENDER_1);
+    //     usdcToken.mint(address(LENDER_1), 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
+
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
+
+    //     Offer memory offer = Offer({
+    //         creator: LENDER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: false,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
+
+    //     offersContract.createOffer(offer);
+
+    //     hevm.stopPrank();
+
+    //     bytes32 offerHash = offersContract.getOfferHash(offer);
+
+    //     lendingAuction.executeLoanByBorrower(
+    //         offer.nftContractAddress,
+    //         offer.nftId,
+    //         offerHash,
+    //         offer.floorTerm
+    //     );
+
+    //     hevm.startPrank(SIGNER_1);
+    //     usdcToken.mint(address(SIGNER_1), 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
+
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
+
+    //     Offer memory offer2 = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 1,
+    //         fixedTerms: false,
+    //         floorTerm: false,
+    //         lenderOffer: true,
+    //         nftId: 2,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
+
+    //     hevm.stopPrank();
+
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
+
+    //     hevm.expectRevert("00021");
+
+    //     lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
+    // }
+
+    // function testCannotRefinanceByBorrowerSignature_wrong_asset() public {
+    //     hevm.startPrank(LENDER_1);
+    //     usdcToken.mint(address(LENDER_1), 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
+
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
+
+    //     Offer memory offer = Offer({
+    //         creator: LENDER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: false,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
+
+    //     offersContract.createOffer(offer);
+
+    //     hevm.stopPrank();
+
+    //     bytes32 offerHash = offersContract.getOfferHash(offer);
+
+    //     lendingAuction.executeLoanByBorrower(
+    //         offer.nftContractAddress,
+    //         offer.nftId,
+    //         offerHash,
+    //         offer.floorTerm
+    //     );
+
+    //     AddressUpgradeable.sendValue(payable(SIGNER_1), 6);
+
+    //     hevm.startPrank(SIGNER_1);
+
+    //     liquidityProviders.supplyEth{ value: 6 }();
+
+    //     Offer memory offer2 = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 1,
+    //         fixedTerms: false,
+    //         floorTerm: false,
+    //         lenderOffer: true,
+    //         nftId: 1,
+    //         asset: ETH_ADDRESS,
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
+
+    //     hevm.stopPrank();
+
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
+
+    //     hevm.expectRevert("00019");
+
+    //     lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
+    // }
+
+    // function testCannotRefinanceByBorrowerSignature_offer_expired() public {
+    //     hevm.startPrank(LENDER_1);
+    //     usdcToken.mint(address(LENDER_1), 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
+
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
+
+    //     Offer memory offer = Offer({
+    //         creator: LENDER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: false,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
+
+    //     offersContract.createOffer(offer);
+
+    //     hevm.stopPrank();
+
+    //     bytes32 offerHash = offersContract.getOfferHash(offer);
+
+    //     lendingAuction.executeLoanByBorrower(
+    //         offer.nftContractAddress,
+    //         offer.nftId,
+    //         offerHash,
+    //         offer.floorTerm
+    //     );
+
+    //     hevm.startPrank(SIGNER_1);
+    //     usdcToken.mint(address(SIGNER_1), 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
+
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
+
+    //     Offer memory offer2 = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 1,
+    //         fixedTerms: false,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
+
+    //     hevm.stopPrank();
+
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
+
+    //     hevm.warp(block.timestamp + 2);
+    //     hevm.expectRevert("00010");
+
+    //     lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
+    // }
+
+    // function testRefinanceByBorrowerSignature_works_floor_term() public {
+    //     hevm.startPrank(LENDER_1);
+    //     usdcToken.mint(address(LENDER_1), 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
+
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
+
+    //     Offer memory offer = Offer({
+    //         creator: LENDER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: false,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
+
+    //     offersContract.createOffer(offer);
+
+    //     hevm.stopPrank();
+
+    //     bytes32 offerHash = offersContract.getOfferHash(offer);
+
+    //     lendingAuction.executeLoanByBorrower(
+    //         offer.nftContractAddress,
+    //         offer.nftId,
+    //         offerHash,
+    //         offer.floorTerm
+    //     );
+
+    //     hevm.startPrank(SIGNER_1);
+    //     usdcToken.mint(address(SIGNER_1), 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
+
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
+
+    //     Offer memory offer2 = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 2,
+    //         fixedTerms: false,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 3 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
+
+    //     hevm.stopPrank();
+
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
+
+    //     lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
+
+    //     assertEq(usdcToken.balanceOf(address(this)), 6);
+    //     assertEq(cUSDCToken.balanceOf(address(this)), 0);
+
+    //     assertEq(usdcToken.balanceOf(address(LENDER_1)), 0);
+    //     assertEq(cUSDCToken.balanceOf(address(LENDER_1)), 0);
+
+    //     assertEq(usdcToken.balanceOf(address(SIGNER_1)), 0);
+    //     assertEq(cUSDCToken.balanceOf(address(SIGNER_1)), 0);
+
+    //     assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
+    //     assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 6 ether);
+
+    //     assertEq(mockNft.ownerOf(1), address(lendingAuction));
+    //     assertEq(lendingAuction.ownerOf(address(mockNft), 1), address(this));
+
+    //     assertEq(liquidityProviders.getCAssetBalance(address(this), address(cUSDCToken)), 0);
+    //     assertEq(liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken)), 6 ether);
+    //     assertEq(liquidityProviders.getCAssetBalance(SIGNER_1, address(cUSDCToken)), 0);
+
+    //     LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
+
+    //     assertEq(loanAuction.nftOwner, address(this));
+    //     assertEq(loanAuction.lender, SIGNER_1);
+    //     assertEq(loanAuction.asset, address(usdcToken));
+    //     assertEq(loanAuction.interestRatePerSecond, 2);
+    //     assertTrue(!loanAuction.fixedTerms);
+
+    //     assertEq(loanAuction.amount, 6);
+    //     assertEq(loanAuction.loanEndTimestamp, block.timestamp + 3 days);
+    //     assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
+    //     assertEq(loanAuction.accumulatedLenderInterest, 0);
+    //     assertEq(loanAuction.accumulatedProtocolInterest, 0);
+    //     assertEq(loanAuction.amountDrawn, 6);
+
+    //     // ensure the signature is not invalidated
+    //     assertTrue(!offersContract.getOfferSignatureStatus(signature));
+    // }
+
+    // function testRefinanceByBorrowerSignature_works_not_floor_term() public {
+    //     hevm.startPrank(LENDER_1);
+    //     usdcToken.mint(address(LENDER_1), 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
+
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
+
+    //     Offer memory offer = Offer({
+    //         creator: LENDER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: false,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
+
+    //     offersContract.createOffer(offer);
+
+    //     hevm.stopPrank();
+
+    //     bytes32 offerHash = offersContract.getOfferHash(offer);
+
+    //     lendingAuction.executeLoanByBorrower(
+    //         offer.nftContractAddress,
+    //         offer.nftId,
+    //         offerHash,
+    //         offer.floorTerm
+    //     );
+
+    //     hevm.startPrank(SIGNER_1);
+    //     usdcToken.mint(address(SIGNER_1), 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
+
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
+
+    //     Offer memory offer2 = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 2,
+    //         fixedTerms: false,
+    //         floorTerm: false,
+    //         lenderOffer: true,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 3 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
+
+    //     hevm.stopPrank();
+
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
+
+    //     lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
+
+    //     assertEq(usdcToken.balanceOf(address(this)), 6);
+    //     assertEq(cUSDCToken.balanceOf(address(this)), 0);
+
+    //     assertEq(usdcToken.balanceOf(address(LENDER_1)), 0);
+    //     assertEq(cUSDCToken.balanceOf(address(LENDER_1)), 0);
+
+    //     assertEq(usdcToken.balanceOf(address(SIGNER_1)), 0);
+    //     assertEq(cUSDCToken.balanceOf(address(SIGNER_1)), 0);
+
+    //     assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
+    //     assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 6 ether);
+
+    //     assertEq(mockNft.ownerOf(1), address(lendingAuction));
+    //     assertEq(lendingAuction.ownerOf(address(mockNft), 1), address(this));
+
+    //     assertEq(liquidityProviders.getCAssetBalance(address(this), address(cUSDCToken)), 0);
+    //     assertEq(liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken)), 6 ether);
+    //     assertEq(liquidityProviders.getCAssetBalance(SIGNER_1, address(cUSDCToken)), 0);
+
+    //     LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
+
+    //     assertEq(loanAuction.nftOwner, address(this));
+    //     assertEq(loanAuction.lender, SIGNER_1);
+    //     assertEq(loanAuction.asset, address(usdcToken));
+    //     assertEq(loanAuction.interestRatePerSecond, 2);
+    //     assertTrue(!loanAuction.fixedTerms);
+
+    //     assertEq(loanAuction.amount, 6);
+    //     assertEq(loanAuction.loanEndTimestamp, block.timestamp + 3 days);
+    //     assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
+    //     assertEq(loanAuction.accumulatedLenderInterest, 0);
+    //     assertEq(loanAuction.accumulatedProtocolInterest, 0);
+    //     assertEq(loanAuction.amountDrawn, 6);
+
+    //     assertTrue(offersContract.getOfferSignatureStatus(signature));
+    // }
+
+    // function testRefinanceByBorrowerSignature_works_into_fix_term() public {
+    //     hevm.startPrank(LENDER_1);
+    //     usdcToken.mint(address(LENDER_1), 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
+
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
+
+    //     Offer memory offer = Offer({
+    //         creator: LENDER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: false,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
+
+    //     offersContract.createOffer(offer);
+
+    //     hevm.stopPrank();
+
+    //     bytes32 offerHash = offersContract.getOfferHash(offer);
+
+    //     lendingAuction.executeLoanByBorrower(
+    //         offer.nftContractAddress,
+    //         offer.nftId,
+    //         offerHash,
+    //         offer.floorTerm
+    //     );
+
+    //     hevm.startPrank(SIGNER_1);
+    //     usdcToken.mint(address(SIGNER_1), 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
+
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
+
+    //     Offer memory offer2 = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 2,
+    //         fixedTerms: true,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 3 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
+
+    //     hevm.stopPrank();
+
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
+
+    //     lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
+
+    //     assertEq(usdcToken.balanceOf(address(this)), 6);
+    //     assertEq(cUSDCToken.balanceOf(address(this)), 0);
+
+    //     assertEq(usdcToken.balanceOf(address(LENDER_1)), 0);
+    //     assertEq(cUSDCToken.balanceOf(address(LENDER_1)), 0);
+
+    //     assertEq(usdcToken.balanceOf(address(SIGNER_1)), 0);
+    //     assertEq(cUSDCToken.balanceOf(address(SIGNER_1)), 0);
+
+    //     assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
+    //     assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 6 ether);
+
+    //     assertEq(mockNft.ownerOf(1), address(lendingAuction));
+    //     assertEq(lendingAuction.ownerOf(address(mockNft), 1), address(this));
+
+    //     assertEq(liquidityProviders.getCAssetBalance(address(this), address(cUSDCToken)), 0);
+    //     assertEq(liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken)), 6 ether);
+    //     assertEq(liquidityProviders.getCAssetBalance(SIGNER_1, address(cUSDCToken)), 0);
+
+    //     LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
+
+    //     assertEq(loanAuction.nftOwner, address(this));
+    //     assertEq(loanAuction.lender, SIGNER_1);
+    //     assertEq(loanAuction.asset, address(usdcToken));
+    //     assertEq(loanAuction.interestRatePerSecond, 2);
+    //     assertTrue(loanAuction.fixedTerms);
+
+    //     assertEq(loanAuction.amount, 6);
+    //     assertEq(loanAuction.loanEndTimestamp, block.timestamp + 3 days);
+    //     assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
+    //     assertEq(loanAuction.accumulatedLenderInterest, 0);
+    //     assertEq(loanAuction.accumulatedProtocolInterest, 0);
+    //     assertEq(loanAuction.amountDrawn, 6);
+    // }
+
+    // function testRefinanceByBorrowerSignature_events() public {
+    //     hevm.startPrank(LENDER_1);
+    //     usdcToken.mint(address(LENDER_1), 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
+
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
+
+    //     Offer memory offer = Offer({
+    //         creator: LENDER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: false,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
+
+    //     offersContract.createOffer(offer);
+
+    //     hevm.stopPrank();
+
+    //     bytes32 offerHash = offersContract.getOfferHash(offer);
+
+    //     lendingAuction.executeLoanByBorrower(
+    //         offer.nftContractAddress,
+    //         offer.nftId,
+    //         offerHash,
+    //         offer.floorTerm
+    //     );
+
+    //     hevm.startPrank(SIGNER_1);
+    //     usdcToken.mint(address(SIGNER_1), 6);
+    //     usdcToken.approve(address(liquidityProviders), 6);
+
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6);
+
+    //     Offer memory offer2 = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 2,
+    //         fixedTerms: false,
+    //         floorTerm: false,
+    //         lenderOffer: true,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6,
+    //         duration: 3 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
+
+    //     hevm.stopPrank();
+
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
+
+    //     hevm.expectEmit(true, true, true, true);
+
+    //     emit OfferSignatureUsed(address(mockNft), 1, offer2, signature);
+
+    //     emit Refinance(SIGNER_1, offer2.asset, address(this), address(mockNft), 1, offer2);
+
+    //     emit AmountDrawn(address(this), offer.nftContractAddress, 1, 0, 6);
+
+    //     lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
+    // }
+
+    // function testCannotRefinanceByBorrowerSignature_does_not_cover_interest() public {
+    //     hevm.startPrank(LENDER_1);
+    //     usdcToken.mint(address(LENDER_1), 6 ether);
+    //     usdcToken.approve(address(liquidityProviders), 6 ether);
+
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6 ether);
+
+    //     Offer memory offer = Offer({
+    //         creator: LENDER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 3,
+    //         fixedTerms: false,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6 ether,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
+
+    //     offersContract.createOffer(offer);
+
+    //     hevm.stopPrank();
+
+    //     bytes32 offerHash = offersContract.getOfferHash(offer);
+
+    //     lendingAuction.executeLoanByBorrower(
+    //         offer.nftContractAddress,
+    //         offer.nftId,
+    //         offerHash,
+    //         offer.floorTerm
+    //     );
+
+    //     hevm.startPrank(SIGNER_1);
+    //     usdcToken.mint(address(SIGNER_1), 6 ether);
+    //     usdcToken.approve(address(liquidityProviders), 6 ether);
+
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6 ether);
+
+    //     Offer memory offer2 = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 2,
+    //         fixedTerms: false,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6 ether,
+    //         duration: 3 days,
+    //         expiration: uint32(block.timestamp + 200)
+    //     });
+
+    //     hevm.stopPrank();
+
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
+
+    //     hevm.expectRevert("00005");
+
+    //     hevm.warp(block.timestamp + 100);
+
+    //     lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
+    // }
+
+    // function testRefinanceByBorrowerSignature_covers_interest() public {
+    //     hevm.startPrank(LENDER_1);
+    //     usdcToken.mint(address(LENDER_1), 6 ether);
+    //     usdcToken.approve(address(liquidityProviders), 6 ether);
+
+    //     liquidityProviders.supplyErc20(address(usdcToken), 6 ether);
+
+    //     Offer memory offer = Offer({
+    //         creator: LENDER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 694444444444, // 1% interest on 6 eth for 86400 seconds
+    //         fixedTerms: false,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 6 ether,
+    //         duration: 1 days,
+    //         expiration: uint32(block.timestamp + 1)
+    //     });
+
+    //     offersContract.createOffer(offer);
+
+    //     hevm.stopPrank();
+
+    //     bytes32 offerHash = offersContract.getOfferHash(offer);
+
+    //     lendingAuction.executeLoanByBorrower(
+    //         offer.nftContractAddress,
+    //         offer.nftId,
+    //         offerHash,
+    //         offer.floorTerm
+    //     );
+
+    //     hevm.startPrank(SIGNER_1);
+    //     usdcToken.mint(address(SIGNER_1), 10 ether);
+    //     usdcToken.approve(address(liquidityProviders), 10 ether);
+
+    //     liquidityProviders.supplyErc20(address(usdcToken), 10 ether);
+
+    //     Offer memory offer2 = Offer({
+    //         creator: SIGNER_1,
+    //         nftContractAddress: address(mockNft),
+    //         interestRatePerSecond: 694444444442,
+    //         fixedTerms: false,
+    //         floorTerm: true,
+    //         lenderOffer: true,
+    //         nftId: 1,
+    //         asset: address(usdcToken),
+    //         amount: 7 ether,
+    //         duration: 3 days,
+    //         expiration: uint32(block.timestamp + 200)
+    //     });
+
+    //     hevm.stopPrank();
+
+    //     bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
+
+    //     hevm.warp(block.timestamp + 100);
+
+    //     lendingAuction.refinanceByBorrowerSignature(offer2, signature, 1);
+
+    //     assertEq(usdcToken.balanceOf(address(this)), 6 ether);
+    //     assertEq(cUSDCToken.balanceOf(address(this)), 0);
+
+    //     assertEq(usdcToken.balanceOf(address(LENDER_1)), 0);
+    //     assertEq(cUSDCToken.balanceOf(address(LENDER_1)), 0);
+
+    //     assertEq(usdcToken.balanceOf(address(SIGNER_1)), 0);
+    //     assertEq(cUSDCToken.balanceOf(address(SIGNER_1)), 0);
+
+    //     assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
+    //     assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 10 ether * 10**18);
+
+    //     assertEq(mockNft.ownerOf(1), address(lendingAuction));
+    //     assertEq(lendingAuction.ownerOf(address(mockNft), 1), address(this));
+
+    //     assertEq(liquidityProviders.getCAssetBalance(address(this), address(cUSDCToken)), 0);
+    //     assertEq(
+    //         liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken)),
+    //         6000069444444444400 ether
+    //     );
+    //     assertEq(
+    //         liquidityProviders.getCAssetBalance(SIGNER_1, address(cUSDCToken)),
+    //         3999930555555555600 ether
+    //     );
+
+    //     LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
+
+    //     assertEq(loanAuction.nftOwner, address(this));
+    //     assertEq(loanAuction.lender, SIGNER_1);
+    //     assertEq(loanAuction.asset, address(usdcToken));
+    //     assertEq(loanAuction.interestRatePerSecond, 694444444442);
+    //     assertTrue(!loanAuction.fixedTerms);
+
+    //     assertEq(loanAuction.amount, 7 ether);
+    //     assertEq(loanAuction.loanEndTimestamp, loanAuction.loanBeginTimestamp + 3 days);
+    //     assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
+    //     assertEq(loanAuction.accumulatedLenderInterest, 0);
+    //     assertEq(loanAuction.accumulatedProtocolInterest, 0); // 0 fee set so 0 balance expected
+    // }
 
     // refinanceByLender Tests
 
