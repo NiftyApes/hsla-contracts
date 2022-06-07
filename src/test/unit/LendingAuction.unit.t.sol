@@ -7557,6 +7557,7 @@ contract LendingAuctionUnitTest is
     }
 
     function testWithdrawCErc20_owner_withdraw() public {
+        // 0.0025% term fee on 1 USDC draw amount = 0.0025 to owner
         setupOwnerUSDCBalance();
 
         // Will withdrawal now as owner
@@ -7581,6 +7582,7 @@ contract LendingAuctionUnitTest is
     }
 
     function testWithdrawCErc20_owner_withdraw_always_set_amount_even_if_more_requested() public {
+        // 0.0025% term fee on 1 USDC draw amount = 0.0025 to owner
         setupOwnerUSDCBalance();
 
         // Will withdrawal now as owner
@@ -7607,6 +7609,7 @@ contract LendingAuctionUnitTest is
     }
 
     function testWithdrawCErc20_owner_withdraw_always_set_amount_even_if_less_requested() public {
+        // 0.0025% term fee on 1 USDC draw amount = 0.0025 to owner
         setupOwnerUSDCBalance();
 
         // Will withdrawal now as owner
@@ -7633,6 +7636,7 @@ contract LendingAuctionUnitTest is
     }
 
     function testWithdrawErc20_owner_withdraw() public {
+        // 0.0025% term fee on 1 USDC draw amount = 0.0025 to owner
         setupOwnerUSDCBalance();
 
         // Will withdrawal now as owner
@@ -7659,6 +7663,7 @@ contract LendingAuctionUnitTest is
     }
 
     function testWithdrawErc20_owner_withdraw_always_set_amount_even_if_more_requested() public {
+        // 0.0025% term fee on 1 USDC draw amount = 0.0025 to owner
         setupOwnerUSDCBalance();
 
         // Will withdrawal now as owner
@@ -7685,6 +7690,7 @@ contract LendingAuctionUnitTest is
     }
 
     function testWithdrawErc20_owner_withdraw_always_set_amount_even_if_less_requested() public {
+        // 0.0025% term fee on 1 USDC draw amount = 0.0025 to owner
         setupOwnerUSDCBalance();
 
         // Will withdrawal now as owner
@@ -7711,6 +7717,7 @@ contract LendingAuctionUnitTest is
     }
 
     function testWithdrawEth_owner_withdraw() public {
+        // 0.0025% term fee on 1 ETH draw amount = 0.0025 to owner
         setupOwnerETHBalance();
 
         // Will withdrawal now as owner
@@ -7733,6 +7740,7 @@ contract LendingAuctionUnitTest is
     }
 
     function testWithdrawEth_owner_withdraw_always_set_amount_even_if_more_requested() public {
+        // 0.0025% term fee on 1 ETH draw amount = 0.0025 to owner
         setupOwnerETHBalance();
 
         // Will withdrawal now as owner
@@ -7756,6 +7764,7 @@ contract LendingAuctionUnitTest is
     }
 
     function testWithdrawEth_owner_withdraw_always_set_amount_even_if_less_requested() public {
+        // 0.0025% term fee on 1 ETH draw amount = 0.0025 to owner
         setupOwnerETHBalance();
 
         // Will withdrawal now as owner
