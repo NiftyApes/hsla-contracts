@@ -211,16 +211,6 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         view
         returns (uint256, uint256);
 
-    /// @notice Returns the interestRatePerSecond for a given set of terms
-    /// @param amount The amount of the loan
-    /// @param interestRateBps The interest of the loan in bps
-    /// @param duration The duration of the loan
-    function calculateLenderInterestPerSecond(
-        uint256 amount,
-        uint256 interestRateBps,
-        uint256 duration
-    ) external pure returns (uint96);
-
     /// @notice Returns the protocolInterestRatePerSecond for a given set of terms
     ///         There is a set protocolInterestRateBps so no interestBps value is provided
     /// @param amount The amount of the loan

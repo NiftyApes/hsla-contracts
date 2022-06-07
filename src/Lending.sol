@@ -888,15 +888,6 @@ contract NiftyApesLending is
     }
 
     /// @inheritdoc ILending
-    function calculateLenderInterestPerSecond(
-        uint256 amount,
-        uint256 interestRateBps,
-        uint256 duration
-    ) public pure returns (uint96) {
-        return SafeCastUpgradeable.toUint96((amount * interestRateBps) / MAX_BPS / duration);
-    }
-
-    /// @inheritdoc ILending
     function calculateProtocolInterestPerSecond(uint256 amount, uint256 duration)
         public
         view
