@@ -982,10 +982,6 @@ contract NiftyApesLending is
         require(feeValue <= MAX_FEE, "00002");
     }
 
-    function _requireSignature65(bytes memory signature) internal pure {
-        require(signature.length == 65, "00003");
-    }
-
     function _requireOfferPresent(Offer memory offer) internal pure {
         require(offer.asset != address(0), "00004");
     }
@@ -1035,9 +1031,11 @@ contract NiftyApesLending is
     }
 
     function _requireIsNotSanctioned(address addressToCheck) internal view {
-        SanctionsList sanctionsList = SanctionsList(SANCTIONS_CONTRACT);
-        bool isToSanctioned = sanctionsList.isSanctioned(addressToCheck);
-        require(!isToSanctioned, "00017");
+        if (!sanctionsPause) {
+            SanctionsList sanctionsList = SanctionsList(SANCTIONS_CONTRACT);
+            bool isToSanctioned = sanctionsList.isSanctioned(addressToCheck);
+            require(!isToSanctioned, "00017");
+        };
     }
 
     function _require721Owner(
