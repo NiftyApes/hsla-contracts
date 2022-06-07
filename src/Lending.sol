@@ -96,14 +96,14 @@ contract NiftyApesLending is
 
     /// @inheritdoc ILendingAdmin
     function updateOriginationPremiumLenderBps(uint16 newOriginationPremiumBps) external onlyOwner {
-        requireMaxFee(newOriginationPremiumBps);
+        _requireMaxFee(newOriginationPremiumBps);
         emit OriginationPremiumBpsUpdated(originationPremiumBps, newOriginationPremiumBps);
         originationPremiumBps = newOriginationPremiumBps;
     }
 
     /// @inheritdoc ILendingAdmin
     function updateGasGriefingPremiumBps(uint16 newGasGriefingPremiumBps) external onlyOwner {
-        requireMaxFee(newGasGriefingPremiumBps);
+        _requireMaxFee(newGasGriefingPremiumBps);
         emit GasGriefingPremiumBpsUpdated(gasGriefingPremiumBps, newGasGriefingPremiumBps);
         gasGriefingPremiumBps = newGasGriefingPremiumBps;
     }
@@ -113,7 +113,7 @@ contract NiftyApesLending is
         external
         onlyOwner
     {
-        require(newGasGriefingProtocolPremiumBps <= MAX_FEE, "max fee");
+        _requireMaxFee(newGasGriefingProtocolPremiumBps);
         emit GasGriefingProtocolPremiumBpsUpdated(
             gasGriefingProtocolPremiumBps,
             newGasGriefingProtocolPremiumBps
@@ -126,7 +126,7 @@ contract NiftyApesLending is
         external
         onlyOwner
     {
-        require(newDefaultRefinancePremiumBps <= MAX_FEE, "max fee");
+        _requireMaxFee(newDefaultRefinancePremiumBps);
         emit DefaultRefinancePremiumBpsUpdated(
             defaultRefinancePremiumBps,
             newDefaultRefinancePremiumBps
@@ -136,7 +136,7 @@ contract NiftyApesLending is
 
     /// @inheritdoc ILendingAdmin
     function updateTermGriefingPremiumBps(uint16 newTermGriefingPremiumBps) external onlyOwner {
-        requireMaxFee(newTermGriefingPremiumBps);
+        _requireMaxFee(newTermGriefingPremiumBps);
         emit TermGriefingPremiumBpsUpdated(termGriefingPremiumBps, newTermGriefingPremiumBps);
         termGriefingPremiumBps = newTermGriefingPremiumBps;
     }
@@ -497,7 +497,7 @@ contract NiftyApesLending is
             uint256 additionalTokens = ILiquidity(liquidityContractAddress)
                 .assetAmountToCAssetAmount(offer.asset, offer.amount - loanAuction.amountDrawn);
 
-            requireSufficientBalance(offer.creator, cAsset, additionalTokens);
+            _requireSufficientBalance(offer.creator, cAsset, additionalTokens);
         } else {
             // TODO: (captnseagraves) re-examine the lenderPremium here, can a lender lose money here?
             //        if a borrower pays back some and then the lender gets refinanced, do they lose money?
@@ -535,7 +535,7 @@ contract NiftyApesLending is
                 .assetAmountToCAssetAmount(offer.asset, fullAmount);
 
             // require prospective lender has sufficient available balance to refinance loan
-            requireSufficientBalance(offer.creator, cAsset, fullCTokenAmount);
+            _requireSufficientBalance(offer.creator, cAsset, fullCTokenAmount);
 
             uint256 protocolPremimuimInCtokens = ILiquidity(liquidityContractAddress)
                 .assetAmountToCAssetAmount(offer.asset, protocolInterestAndPremium);
@@ -1003,11 +1003,11 @@ contract NiftyApesLending is
     }
 
     function _requireLoanExpired(LoanAuction storage loanAuction) internal view {
-        require(currentTimestamp() >= loanAuction.loanEndTimestamp, "00008");
+        require(_currentTimestamp32() >= loanAuction.loanEndTimestamp, "00008");
     }
 
     function _requireLoanNotExpired(LoanAuction storage loanAuction) internal view {
-        require(currentTimestamp() < loanAuction.loanEndTimestamp, "00009");
+        require(_currentTimestamp32() < loanAuction.loanEndTimestamp, "00009");
     }
 
     function _requireMinDurationForOffer(Offer memory offer) internal pure {
