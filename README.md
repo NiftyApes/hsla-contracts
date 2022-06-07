@@ -18,14 +18,13 @@ Testing is done with forge. Prettier, solhint, slither, can be used to perform f
 
 ## Design
 
-The NiftyApes protocol is made up of three core contracts `Liquidity.sol`, `Offers.sol`, and `Lending.sol`. Each is deployed as a seperate contract with references to each other as via interfaces needed. 
+The NiftyApes protocol is made up of three core contracts `Liquidity.sol`, `Offers.sol`, and `Lending.sol`. Each is deployed as a seperate contract with references to each other as via interfaces needed.
 
 `Liquidity.sol` allows for lenders to manage cToken liquidity by depositing and withdrawing, wrapping and unwrapping either `cTokens`, or `ERC20` tokens which are approved for use on the protocol.
 
-`Offers.sol` allows for lenders and borrowers to make lending offers on any asset or collection in existence. This contract manages the NiftyApes on-chain offer book. 
+`Offers.sol` allows for lenders and borrowers to make lending offers on any asset or collection in existence. This contract manages the NiftyApes on-chain offer book.
 
-`Lending.sol` allows for lenders and borrowers to execute and refinance loans based on the liquidity and offers in the other two contracts. 
-
+`Lending.sol` allows for lenders and borrowers to execute and refinance loans based on the liquidity and offers in the other two contracts.
 
 ## Lending.sol Error Messages
 
@@ -54,4 +53,8 @@ The NiftyApes protocol is made up of three core contracts `Liquidity.sol`, `Offe
 "00023" == "msg value"
 "00024" == "offer creator"
 "00025" == "not an improvement"
-"00026" == "msg.value too low"
+"00026" == "unexpected terms"
+"00027" == "unexpected loan"
+"00028" == "msg.sender is not the borrower"
+"00029" == "use repayLoan"
+"00030" == "msg.value too low"

@@ -526,7 +526,7 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 1)
         });
 
-        hevm.expectRevert("00024");
+        hevm.expectRevert("offer creator");
 
         offersContract.createOffer(offer);
     }
@@ -7046,7 +7046,7 @@ contract LendingAuctionUnitTest is
 
         lendingAuction.repayLoan(address(mockNft), 1);
 
-        hevm.expectRevert("loan not active");
+        hevm.expectRevert("00007");
 
         lendingAuction.drawLoanAmount(address(mockNft), 1, 2 * 10**18);
     }
@@ -7054,7 +7054,7 @@ contract LendingAuctionUnitTest is
     function testCannotDrawLoanAmount_not_your_loan() public {
         setupRefinance();
 
-        hevm.expectRevert("00018");
+        hevm.expectRevert("00021");
 
         hevm.prank(SIGNER_1);
 

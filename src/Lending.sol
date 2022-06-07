@@ -704,7 +704,7 @@ contract NiftyApesLending is
         _requireOpenLoan(loanAuction);
 
         if (rls.checkMsgSender) {
-            require(msg.sender == loanAuction.nftOwner, "msg.sender is not the borrower");
+            require(msg.sender == loanAuction.nftOwner, "00028");
         }
 
         _updateInterest(loanAuction);
@@ -715,10 +715,10 @@ contract NiftyApesLending is
                 loanAuction.accumulatedProtocolInterest +
                 loanAuction.amountDrawn;
         } else {
-            require(rls.paymentAmount < loanAuction.amountDrawn, "use repayLoan");
+            require(rls.paymentAmount < loanAuction.amountDrawn, "00029");
         }
         if (loanAuction.asset == ETH_ADDRESS) {
-            require(msg.value >= rls.paymentAmount, "msg.value too low");
+            require(msg.value >= rls.paymentAmount, "00030");
             // If the caller has overpaid we send the extra ETH back
             if (msg.value > rls.paymentAmount) {
                 unchecked {
@@ -1035,7 +1035,7 @@ contract NiftyApesLending is
             SanctionsList sanctionsList = SanctionsList(SANCTIONS_CONTRACT);
             bool isToSanctioned = sanctionsList.isSanctioned(addressToCheck);
             require(!isToSanctioned, "00017");
-        };
+        }
     }
 
     function _require721Owner(
@@ -1074,10 +1074,7 @@ contract NiftyApesLending is
         uint32 expectedLastUpdatedTimestamp
     ) internal view {
         if (expectedLastUpdatedTimestamp != 0) {
-            require(
-                loanAuction.lastUpdatedTimestamp == expectedLastUpdatedTimestamp,
-                "unexpected terms"
-            );
+            require(loanAuction.lastUpdatedTimestamp == expectedLastUpdatedTimestamp, "00026");
         }
     }
 
@@ -1085,7 +1082,7 @@ contract NiftyApesLending is
         LoanAuction memory loanAuction,
         uint32 expectedLoanBeginTimestamp
     ) internal view {
-        require(loanAuction.loanBeginTimestamp == expectedLoanBeginTimestamp, "unexpected loan");
+        require(loanAuction.loanBeginTimestamp == expectedLoanBeginTimestamp, "00027");
     }
 
     function _requireOfferParity(LoanAuction storage loanAuction, Offer memory offer)
@@ -1189,7 +1186,7 @@ contract NiftyApesLending is
             payable(address(liquidityContractAddress)).sendValue(payment);
             return ILiquidity(liquidityContractAddress).mintCEth(payment);
         } else {
-            require(msg.value == 0, "msg.value");
+            require(msg.value == 0, "00023");
             return ILiquidity(liquidityContractAddress).mintCErc20(msg.sender, asset, payment);
         }
     }
