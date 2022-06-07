@@ -13,8 +13,6 @@ import "./lib/ECDSABridge.sol";
 
 /// @title Implemention of the IOffers interface
 contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgradeable, IOffers {
-    using AddressUpgradeable for address payable;
-
     /// @dev A mapping for a NFT to an Offer
     ///      The mapping has to be broken into three parts since an NFT is denomiated by its address (first part)
     ///      and its nftId (second part), offers are reffered to by their hash (see #getEIP712EncodedOffer for details) (third part).

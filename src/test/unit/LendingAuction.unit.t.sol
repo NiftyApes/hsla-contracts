@@ -5173,6 +5173,8 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 1)
         });
 
+        LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
+
         hevm.expectRevert("00015");
 
         lendingAuction.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
@@ -5231,6 +5233,8 @@ contract LendingAuctionUnitTest is
             duration: 1 days,
             expiration: uint32(block.timestamp + 1)
         });
+
+        LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
 
         hevm.expectRevert("00025");
 
@@ -5423,6 +5427,8 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 1)
         });
 
+        LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
+
         hevm.expectRevert("00007");
 
         lendingAuction.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
@@ -5552,6 +5558,8 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 1)
         });
 
+        LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
+
         hevm.expectRevert("00007");
 
         lendingAuction.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
@@ -5610,6 +5618,8 @@ contract LendingAuctionUnitTest is
             duration: 1 days,
             expiration: uint32(block.timestamp + 1)
         });
+
+        LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
 
         hevm.expectRevert("00007");
 
@@ -5670,6 +5680,8 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 1)
         });
 
+        LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
+
         hevm.expectRevert("00019");
 
         lendingAuction.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
@@ -5728,6 +5740,8 @@ contract LendingAuctionUnitTest is
             duration: 1 days,
             expiration: uint32(block.timestamp + 1)
         });
+
+        LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
 
         hevm.warp(block.timestamp + 2);
 
@@ -5798,6 +5812,8 @@ contract LendingAuctionUnitTest is
             duration: 1 days,
             expiration: uint32(block.timestamp + 1)
         });
+
+        LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
 
         hevm.expectRevert("00017");
 
@@ -5960,6 +5976,8 @@ contract LendingAuctionUnitTest is
             duration: 1 days,
             expiration: uint32(block.timestamp + 1)
         });
+
+        LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
 
         hevm.expectRevert("00016");
 
