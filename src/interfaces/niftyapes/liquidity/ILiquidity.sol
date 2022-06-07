@@ -29,7 +29,7 @@ interface ILiquidity is ILiquidityAdmin, ILiquidityEvents, ILiquidityStructs {
     /// @param account The users account address
     /// @param cAsset The compound token address
     function getCAssetBalance(address account, address cAsset) external view returns (uint256);
-    
+
     /// @notice Returns the whitelisted cAsset pair to the asset
     /// @param asset The assets address (e.g. USDC address)
     function getCAsset(address asset) external view returns (address);
@@ -47,7 +47,7 @@ interface ILiquidity is ILiquidityAdmin, ILiquidityEvents, ILiquidityStructs {
     ///         supply their compound tokens to NiftyApes.
     /// @param cAsset The address of the compound ERC20 token
     /// @param amount The number of tokens to supply
-    function supplyCErc20(address cAsset, uint256 amount) external;
+    function supplyCErc20(address cAsset, uint256 amount) external returns (uint256);
 
     /// @notice Withdraw a given ERC20 token.
     ///         This method withdraws tokens from compound and unwraps the ctoken returning
@@ -87,19 +87,18 @@ interface ILiquidity is ILiquidityAdmin, ILiquidityEvents, ILiquidityStructs {
     /// @notice Function only callable by the NiftyApesLending contract
     ///         Allows lending contract to affect liquidity directly
     /// @param from The address the transaction is from
-    /// @param to The address the transaction is to
     /// @param asset The assets address (e.g. USDC address)
     /// @param amount The amount of eth to withdraw
     function mintCErc20(
         address from,
-        address to,
         address asset,
-        uint256 amount) external returns (uint256);
-    
+        uint256 amount
+    ) external returns (uint256);
+
     /// @notice Function only callable by the NiftyApesLending contract
     ///         Allows lending contract to affect liquidity directly
     /// @param amount The amount of eth to withdraw
-    function mintCEth(uint256 amount) external returns (uint256);
+    function mintCEth(uint256 amount) external payable returns (uint256);
 
     /// @notice Function only callable by the NiftyApesLending contract
     ///         Allows lending contract to affect liquidity directly
@@ -123,14 +122,11 @@ interface ILiquidity is ILiquidityAdmin, ILiquidityEvents, ILiquidityStructs {
     /// @param account The users account address
     /// @param cAsset The address of the compund ERC20 token
     /// @param amount The amount of cAsset to add
-    function addToCAssetBalance(address account, address cAsset, uint256 amount) external;
-
-    /// @notice Function only callable by the NiftyApesLending contract
-    ///         Allows lending contract to affect liquidity directly
-    /// @param account The users account address
-    /// @param cAsset The address of the compund ERC20 token
-    /// @param amount The amount of cAsset to subtract
-    function subFromCAssetBalance(address account, address cAsset, uint256 amount) external;
+    function addToCAssetBalance(
+        address account,
+        address cAsset,
+        uint256 amount
+    ) external;
 
     /// @notice Returns the current amount of ctokens to be minted for a given amount of an underlying asset
     /// @param asset The assets address (e.g. USDC address)

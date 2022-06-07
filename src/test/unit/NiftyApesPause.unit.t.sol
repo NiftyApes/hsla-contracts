@@ -17,7 +17,12 @@ import "../mock/CEtherMock.sol";
 import "../mock/ERC20Mock.sol";
 import "../mock/ERC721Mock.sol";
 
-contract NiftyApesPauseUnitTest is BaseTest, ILendingStructs, IOffersStructs, ERC721HolderUpgradeable {
+contract NiftyApesPauseUnitTest is
+    BaseTest,
+    ILendingStructs,
+    IOffersStructs,
+    ERC721HolderUpgradeable
+{
     NiftyApesLending niftyApes;
     NiftyApesOffers offersContract;
     NiftyApesLiquidity liquidityProviders;
@@ -214,7 +219,7 @@ contract NiftyApesPauseUnitTest is BaseTest, ILendingStructs, IOffersStructs, ER
     function testCannotRepayLoanForAccount_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        niftyApes.repayLoanForAccount(address(0), 1);
+        niftyApes.repayLoanForAccount(address(0), 1, uint32(block.timestamp));
     }
 
     function testCannotPartialRepayLoan_paused() public {

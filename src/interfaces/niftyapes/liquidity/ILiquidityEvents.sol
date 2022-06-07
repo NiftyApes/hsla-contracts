@@ -73,10 +73,10 @@ interface ILiquidityEvents {
         uint256 cTokenAmount
     );
 
-    /// @notice Emmited when a new addest and its corresponding asset are added to nifty apes allow list
+    /// @notice Emmited when a new asset and its corresponding cAsset are added to nifty apes allow list
     /// @param asset The asset being added to the allow list
     /// @param cAsset The address of the corresponding compound token
-    event NewAssetListed(address asset, address cAsset);
+    event AssetToCAssetSet(address asset, address cAsset);
 
     /// @notice Emmited when the bps of reveneue sent to the Regen Collective is changed
     /// @param oldRegenCollectiveBpsOfRevenue The old basis points denominated in parts of 10_000
@@ -88,9 +88,7 @@ interface ILiquidityEvents {
 
     /// @notice Emmited when the address for the Regen Collective is changed
     /// @param newRegenCollectiveAddress The new address of the Regen Collective
-    event RegenCollectiveAddressUpdated(
-        address newRegenCollectiveAddress
-    ); 
+    event RegenCollectiveAddressUpdated(address newRegenCollectiveAddress);
 
     /// @notice Emmited when the associated lending contract address is changed
     /// @param oldLendingContractAdress The old lending contract address
@@ -99,4 +97,10 @@ interface ILiquidityEvents {
         address oldLendingContractAdress,
         address newLendingContractAdress
     );
+
+    /// @notice Emmited when sanctions checks are paused
+    event LiquiditySanctionsPaused();
+
+    /// @notice Emmited when sanctions checks are unpaused
+    event LiquiditySanctionsUnpaused();
 }

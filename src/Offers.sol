@@ -92,9 +92,7 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
             _hashTypedDataV4(
                 keccak256(
                     abi.encode(
-                        keccak256(
-                            "Offer(address creator,uint32 duration,uint32 expiration,bool fixedTerms,bool floorTerm,bool lenderOffer,address nftContractAddress,uint256 nftId,address asset,uint128 amount,uint96 interestRatePerSecond)"
-                        ),
+                        0x428a8e8c29d93e1e11aecebd37fa09e4f7c542a1302c7ac497bf5f49662103a5,
                         keccak256(
                             abi.encode(
                                 offer.creator,
@@ -140,13 +138,13 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
 
         address signer = getOfferSigner(offer, signature);
 
-        requireSigner(signer, msg.sender);
-        requireOfferCreatorOrLendingContract(offer.creator, msg.sender);
+        _requireSigner(signer, msg.sender);
+        _requireOfferCreatorOrLendingContract(offer.creator, msg.sender);
 
         _markSignatureUsed(offer, signature);
     }
 
-    function getOfferBook(
+    function _getOfferBook(
         address nftContractAddress,
         uint256 nftId,
         bool floorTerm
@@ -164,16 +162,16 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
         bytes32 offerHash,
         bool floorTerm
     ) public view returns (Offer memory) {
-        return getOfferInternal(nftContractAddress, nftId, offerHash, floorTerm);
+        return _getOfferInternal(nftContractAddress, nftId, offerHash, floorTerm);
     }
 
-    function getOfferInternal(
+    function _getOfferInternal(
         address nftContractAddress,
         uint256 nftId,
         bytes32 offerHash,
         bool floorTerm
     ) internal view returns (Offer storage) {
-        return getOfferBook(nftContractAddress, nftId, floorTerm)[offerHash];
+        return _getOfferBook(nftContractAddress, nftId, floorTerm)[offerHash];
     }
 
     /// @inheritdoc IOffers
@@ -181,20 +179,20 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
         address cAsset = ILiquidity(liquidityContractAddress).getCAsset(offer.asset);
 
         requireOfferNotExpired(offer);
-        requireOfferCreatorOrLendingContract(offer.creator, msg.sender);
+        _requireOfferCreatorOrLendingContract(offer.creator, msg.sender);
 
         if (offer.lenderOffer) {
             uint256 offerTokens = ILiquidity(liquidityContractAddress).assetAmountToCAssetAmount(
                 offer.asset,
                 offer.amount
             );
-            requireCAssetBalance(msg.sender, cAsset, offerTokens);
+            _requireCAssetBalance(msg.sender, cAsset, offerTokens);
         } else {
-            requireNftOwner(offer.nftContractAddress, offer.nftId, msg.sender);
-            requireNoFloorTerms(offer);
+            _requireNftOwner(offer.nftContractAddress, offer.nftId, msg.sender);
+            _requireNoFloorTerms(offer);
         }
 
-        mapping(bytes32 => Offer) storage offerBook = getOfferBook(
+        mapping(bytes32 => Offer) storage offerBook = _getOfferBook(
             offer.nftContractAddress,
             offer.nftId,
             offer.floorTerm
@@ -223,18 +221,18 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
     ) external whenNotPaused {
         Offer memory offer = getOffer(nftContractAddress, nftId, offerHash, floorTerm);
 
-        requireOfferCreatorOrLendingContract(offer.creator, msg.sender);
+        _requireOfferCreatorOrLendingContract(offer.creator, msg.sender);
 
-        doRemoveOffer(nftContractAddress, nftId, offerHash, floorTerm);
+        _doRemoveOffer(nftContractAddress, nftId, offerHash, floorTerm);
     }
 
-    function doRemoveOffer(
+    function _doRemoveOffer(
         address nftContractAddress,
         uint256 nftId,
         bytes32 offerHash,
         bool floorTerm
     ) internal {
-        mapping(bytes32 => Offer) storage offerBook = getOfferBook(
+        mapping(bytes32 => Offer) storage offerBook = _getOfferBook(
             nftContractAddress,
             nftId,
             floorTerm
@@ -276,11 +274,19 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
         require(signature.length == 65, "signature unsupported");
     }
 
-    function requireNoFloorTerms(Offer memory offer) internal pure {
-        require(!offer.floorTerm, "offer is floor term");
+    /// @inheritdoc IOffers
+    function requireOfferNotExpired(Offer memory offer) public view {
+        require(
+            offer.expiration > SafeCastUpgradeable.toUint32(block.timestamp),
+            "offer has expired"
+        );
     }
 
-    function requireNftOwner(
+    function _requireNoFloorTerms(Offer memory offer) internal pure {
+        require(!offer.floorTerm, "floor term");
+    }
+
+    function _requireNftOwner(
         address nftContractAddress,
         uint256 nftId,
         address owner
@@ -288,17 +294,17 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
         require(IERC721Upgradeable(nftContractAddress).ownerOf(nftId) == owner, "is not NFT owner");
     }
 
-    function requireSigner(address signer, address expected) internal pure {
-        require(signer == expected, "is not signer");
+    function _requireSigner(address signer, address expected) internal pure {
+        require(signer == expected, "signer");
     }
 
-    function requireOfferCreatorOrLendingContract(address signer, address expected) internal view {
+    function _requireOfferCreatorOrLendingContract(address signer, address expected) internal view {
         if (msg.sender != lendingContractAddress) {
-            require(signer == expected, "is not offer creator or lending contract");
+            require(signer == expected, "offer creator");
         }
     }
 
-    function requireCAssetBalance(
+    function _requireCAssetBalance(
         address account,
         address cAsset,
         uint256 amount
@@ -307,14 +313,6 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
             ILiquidity(liquidityContractAddress).getCAssetBalance(account, cAsset) >= amount,
             "insufficient cToken balance"
         );
-    }
-
-    function requireOfferNotExpired(Offer memory offer) public view {
-        require(offer.expiration > currentTimestamp(), "offer has expired");
-    }
-
-    function currentTimestamp() internal view returns (uint32) {
-        return SafeCastUpgradeable.toUint32(block.timestamp);
     }
 
     function renounceOwnership() public override onlyOwner {}
