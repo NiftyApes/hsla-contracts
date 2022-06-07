@@ -58,3 +58,4 @@ The NiftyApes protocol is made up of three core contracts `Liquidity.sol`, `Offe
 "00028" == "msg.sender is not the borrower"
 "00029" == "use repayLoan"
 "00030" == "msg.value too low"
+"00031" == "not authorized"
