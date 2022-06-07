@@ -1049,10 +1049,6 @@ contract NiftyApesLending is
         require(nftId == offer.nftId, "offer nftId mismatch");
     }
 
-    function _requireMsgValue(uint256 amount) internal view {
-        require(amount == msg.value, "msg value");
-    }
-
     function _requireOfferCreator(Offer memory offer, address creator) internal pure {
         require(creator == offer.creator, "offer creator mismatch");
     }
