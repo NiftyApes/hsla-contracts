@@ -23,6 +23,12 @@ interface ILiquidityAdmin {
     /// @notice Updates the address for the Regen Collective
     function updateRegenCollectiveAddress(address newRegenCollectiveAddress) external;
 
+    /// @notice Pauses sanctions checks
+    function pauseSanctions() external;
+
+    /// @notice Unpauses sanctions checks
+    function unpauseSanctions() external;
+
     /// @notice Pauses all interactions with the contract.
     ///         This is intended to be used as an emergency measure to avoid loosing funds.
     function pause() external;

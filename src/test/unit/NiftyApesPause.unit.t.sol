@@ -201,7 +201,7 @@ contract NiftyApesPauseUnitTest is
     function testCannotRefinanceByLender_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        niftyApes.refinanceByLender(getOffer());
+        niftyApes.refinanceByLender(getOffer(), 0);
     }
 
     function testCannotDrawLoanAmount_paused() public {
@@ -219,7 +219,7 @@ contract NiftyApesPauseUnitTest is
     function testCannotRepayLoanForAccount_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        niftyApes.repayLoanForAccount(address(0), 1);
+        niftyApes.repayLoanForAccount(address(0), 1, uint32(block.timestamp));
     }
 
     function testCannotPartialRepayLoan_paused() public {

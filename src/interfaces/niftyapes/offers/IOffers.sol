@@ -75,4 +75,8 @@ interface IOffers is IOffersAdmin, IOffersEvents, IOffersStructs, ILendingStruct
     /// @notice Checks that a signature has not been cancelled/withdrawn on chain
     /// @param signature The signature of the offer
     function requireAvailableSignature(bytes memory signature) external view;
+
+    /// @notice Checks that an offer has not expired
+    /// @param offer The details of the offer
+    function requireOfferNotExpired(Offer memory offer) external view;
 }

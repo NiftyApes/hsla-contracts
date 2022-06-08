@@ -35,6 +35,12 @@ interface ILendingAdmin {
     /// @notice Updates the associated liquidity contract address
     function updateLiquidityContractAddress(address newLiquidityContractAddress) external;
 
+    /// @notice Pauses sanctions checks
+    function pauseSanctions() external;
+
+    /// @notice Unpauses sanctions checks
+    function unpauseSanctions() external;
+
     /// @notice Pauses all interactions with the contract.
     ///         This is intended to be used as an emergency measure to avoid loosing funds.
     function pause() external;
