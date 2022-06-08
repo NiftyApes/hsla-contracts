@@ -48,6 +48,9 @@ contract NiftyApesLending is
     address public liquidityContractAddress;
 
     /// @inheritdoc ILending
+    address public sigLendingContractAddress;
+
+    /// @inheritdoc ILending
     uint96 public protocolInterestBps;
 
     /// @inheritdoc ILending
@@ -238,7 +241,7 @@ contract NiftyApesLending is
                 floorTerm
             );
         }
-        _executeLoanInternal(offer, offer.creator, msg.sender, nftId);
+        _doExecuteLoan(offer, offer.creator, msg.sender, nftId);
     }
 
     /// @inheritdoc ILending

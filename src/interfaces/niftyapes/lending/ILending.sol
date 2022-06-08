@@ -15,6 +15,9 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     /// @notice Returns the address for the associated liquidity contract
     function liquidityContractAddress() external view returns (address);
 
+    /// @notice Returns the address for the associated signature lending contract
+    function sigLendingContractAddress() external view returns (address);
+
     /// @notice Returns the fee that computes protocol interest
     ///         This fee is the basis points in order to calculate interest per second
     function protocolInterestBps() external view returns (uint96);
@@ -252,4 +255,23 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         uint96 interestRatePerSecond,
         uint32 duration
     ) external view returns (bool);
+
+    /// @notice Function only callable by the NiftyApesSigLending contract
+    ///         Allows SigLending contract to execute loan directly
+    /// @param offer The details of the loan auction offer
+    /// @param lender The lender of the loan
+    /// @param borrower The borrower of the loan
+    /// @param nftId The id of the specified NFT
+    function doExecuteLoan(
+        Offer memory offer,
+        address lender,
+        address borrower,
+        uint256 nftId
+    ) external;
+
+    /// @notice Function only callable by the NiftyApesSigLending contract
+    ///         Allows SigLending contract to refinance a loan directly
+    /// @param offer The details of the loan auction offer
+    /// @param nftId The id of the specified NFT
+    function doRefinanceByBorrower(Offer memory offer, uint256 nftId) external;
 }

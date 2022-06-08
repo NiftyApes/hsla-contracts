@@ -1,12 +1,13 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "./ILendingAdmin.sol";
-import "./ILendingEvents.sol";
+import "./ISigLendingAdmin.sol";
+import "./ISigLendingEvents.sol";
+import "../offers/IOffersStructs.sol";
 
 /// @title The signautre lending interface for Nifty Apes
 ///        This interface is intended to be used for interacting with loans on the protocol.
-interface ILending is ISigLendingAdmin, ISigLendingEvents {
+interface ISigLending is ISigLendingAdmin, ISigLendingEvents, IOffersStructs {
     /// @notice Returns the address for the associated offers contract
     function offersContractAddress() external view returns (address);
 

@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "./interfaces/niftyapes/lending/ILending.sol";
-import "./interfaces/niftyapes/lending/ISigLending.sol";
+import "./interfaces/niftyapes/sigLending/ISigLending.sol";
 import "./interfaces/niftyapes/offers/IOffers.sol";
 
 /// @title Implemention of the ILending interface
@@ -15,10 +15,10 @@ contract NiftyApesSigLending is
     ReentrancyGuardUpgradeable,
     ISigLending
 {
-    /// @inheritdoc ILending
+    /// @inheritdoc ISigLending
     address public offersContractAddress;
 
-    /// @inheritdoc ILending
+    /// @inheritdoc ISigLending
     address public lendingContractAddress;
 
     /// @dev This empty reserved space is put in place to allow future versions to add new
@@ -34,7 +34,7 @@ contract NiftyApesSigLending is
         ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
     }
 
-    /// @inheritdoc ILendingAdmin
+    /// @inheritdoc ISigLendingAdmin
     function updateOffersContractAddress(address newOffersContractAddress) external onlyOwner {
         emit SigLendingXOffersContractAddressUpdated(
             offersContractAddress,
@@ -43,7 +43,7 @@ contract NiftyApesSigLending is
         offersContractAddress = newOffersContractAddress;
     }
 
-    /// @inheritdoc ILendingAdmin
+    /// @inheritdoc ISigLendingAdmin
     function updateLendingContractAddress(address newLendingContractAddress) external onlyOwner {
         emit SigLendingXLendingContractAddressUpdated(
             lendingContractAddress,
@@ -52,12 +52,12 @@ contract NiftyApesSigLending is
         lendingContractAddress = newLendingContractAddress;
     }
 
-    /// @inheritdoc ILendingAdmin
+    /// @inheritdoc ISigLendingAdmin
     function pause() external onlyOwner {
         _pause();
     }
 
-    /// @inheritdoc ILendingAdmin
+    /// @inheritdoc ISigLendingAdmin
     function unpause() external onlyOwner {
         _unpause();
     }

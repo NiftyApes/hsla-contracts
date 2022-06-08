@@ -73,6 +73,61 @@ interface ILiquidity is ILiquidityAdmin, ILiquidityEvents, ILiquidityStructs {
     /// @param amount The amount of eth to withdraw
     function withdrawEth(uint256 amount) external returns (uint256);
 
+    /// @notice Function only callable by the NiftyApesLending contract
+    ///         Allows lending contract to affect liquidity directly
+    /// @param asset The assets address (e.g. USDC address)
+    /// @param amount The amount of eth to withdraw
+    /// @param to Recipient address
+    function sendValue(
+        address asset,
+        uint256 amount,
+        address to
+    ) external;
+
+    /// @notice Function only callable by the NiftyApesLending contract
+    ///         Allows lending contract to affect liquidity directly
+    /// @param from The address the transaction is from
+    /// @param asset The assets address (e.g. USDC address)
+    /// @param amount The amount of eth to withdraw
+    function mintCErc20(
+        address from,
+        address asset,
+        uint256 amount
+    ) external returns (uint256);
+
+    /// @notice Function only callable by the NiftyApesLending contract
+    ///         Allows lending contract to affect liquidity directly
+    /// @param amount The amount of eth to withdraw
+    function mintCEth(uint256 amount) external payable returns (uint256);
+
+    /// @notice Function only callable by the NiftyApesLending contract
+    ///         Allows lending contract to affect liquidity directly
+    /// @param asset The assets address (e.g. USDC address)
+    /// @param amount The amount of eth to withdraw
+    function burnCErc20(address asset, uint256 amount) external returns (uint256);
+
+    /// @notice Function only callable by the NiftyApesLending contract
+    ///         Allows lending contract to affect liquidity directly
+    /// @param account The users account address
+    /// @param cAsset The address of the compund ERC20 token
+    /// @param cTokenAmount The amount of cToken to withdraw
+    function withdrawCBalance(
+        address account,
+        address cAsset,
+        uint256 cTokenAmount
+    ) external;
+
+    /// @notice Function only callable by the NiftyApesLending contract
+    ///         Allows lending contract to affect liquidity directly
+    /// @param account The users account address
+    /// @param cAsset The address of the compund ERC20 token
+    /// @param amount The amount of cAsset to add
+    function addToCAssetBalance(
+        address account,
+        address cAsset,
+        uint256 amount
+    ) external;
+
     /// @notice Returns the current amount of ctokens to be minted for a given amount of an underlying asset
     /// @param asset The assets address (e.g. USDC address)
     /// @param amount The amount of asset to convert to cAsset

@@ -1,10 +1,10 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "./ILendingEvents.sol";
+import "./ISigLendingEvents.sol";
 
 /// @title NiftyApes interface for the admin role.
-interface ILendingAdmin {
+interface ISigLendingAdmin {
     /// @notice Updates the associated offers contract address
     function updateOffersContractAddress(address newOffersContractAddress) external;
 
