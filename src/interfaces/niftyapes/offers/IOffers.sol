@@ -6,17 +6,15 @@ import "./IOffersEvents.sol";
 import "./IOffersStructs.sol";
 import "../lending/ILendingStructs.sol";
 
-
 /// @title The Offers interface for NiftyApes
 ///        This interface is intended to be used for interacting with offers on the protocol
 interface IOffers is IOffersAdmin, IOffersEvents, IOffersStructs, ILendingStructs {
-
     /// @notice Returns the address for the associated lending contract
     function lendingContractAddress() external view returns (address);
 
     /// @notice Returns the address for the associated liquidity contract
     function liquidityContractAddress() external view returns (address);
-    
+
     /// @notice Returns an EIP712 standard compatiable hash for a given offer
     ///         This hash can be signed to create a valid offer.
     /// @param offer The offer to compute the hash for

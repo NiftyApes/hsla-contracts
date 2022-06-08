@@ -21,10 +21,10 @@ interface ILendingAdmin {
     ///         Fees are denomiated in basis points, parts of 10_000
     function updateGasGriefingProtocolPremiumBps(uint16 newGasGriefingProtocolPremiumBps) external;
 
-    /// @notice Updates the bps premium paid to the protocol for refinancing a loan with terms that do not improve the cumulative terms of the loan by the equivalant basis points 
+    /// @notice Updates the bps premium paid to the protocol for refinancing a loan with terms that do not improve the cumulative terms of the loan by the equivalant basis points
     ///         Fees are denomiated in basis points, parts of 10_000
     function updateTermGriefingPremiumBps(uint16 newTermGriefingPremiumBps) external;
-    
+
     /// @notice Updates the bps premium paid to the protocol for refinancing a loan within 1 hour of default
     ///         Fees are denomiated in basis points, parts of 10_000
     function updateDefaultRefinancePremiumBps(uint16 newDefaultRefinancePremiumBps) external;

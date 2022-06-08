@@ -82,7 +82,10 @@ contract TestLendingAuctionIntegrationTest is BaseTest, ERC721HolderUpgradeable 
 
         // Allow assets for testing
         liquidityProviders.setCAssetAddress(address(DAI), address(cDAI));
-        liquidityProviders.setCAssetAddress(address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE), address(cETH));
+        liquidityProviders.setCAssetAddress(
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
+            address(cETH)
+        );
         uint256 max = type(uint256).max;
 
         // Setup mock NFT

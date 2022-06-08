@@ -17,7 +17,12 @@ import "../mock/CEtherMock.sol";
 import "../mock/ERC20Mock.sol";
 import "../mock/ERC721Mock.sol";
 
-contract NiftyApesPauseUnitTest is BaseTest, ILendingStructs, IOffersStructs, ERC721HolderUpgradeable {
+contract NiftyApesPauseUnitTest is
+    BaseTest,
+    ILendingStructs,
+    IOffersStructs,
+    ERC721HolderUpgradeable
+{
     NiftyApesLending niftyApes;
     NiftyApesOffers offersContract;
     NiftyApesLiquidity liquidityProviders;

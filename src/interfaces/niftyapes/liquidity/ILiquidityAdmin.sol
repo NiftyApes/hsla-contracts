@@ -20,7 +20,7 @@ interface ILiquidityAdmin {
     ///         Fees are denomiated in basis points, parts of 10_000
     function updateRegenCollectiveBpsOfRevenue(uint16 newRegenCollectiveBpsOfRevenue) external;
 
-     /// @notice Updates the address for the Regen Collective
+    /// @notice Updates the address for the Regen Collective
     function updateRegenCollectiveAddress(address newRegenCollectiveAddress) external;
 
     /// @notice Pauses all interactions with the contract.
