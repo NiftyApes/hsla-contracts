@@ -684,6 +684,7 @@ contract NiftyApesLending is
     }
 
     function _repayLoanAmount(RepayLoanStruct memory rls) internal {
+
         LoanAuction storage loanAuction = _getLoanAuctionInternal(
             rls.nftContractAddress,
             rls.nftId
