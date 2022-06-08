@@ -65,6 +65,9 @@ contract NiftyApesLending is
     /// @inheritdoc ILending
     uint16 public defaultRefinancePremiumBps;
 
+    /// @dev The status of sanctions checks. Can be set to false if oracle becomes malicious.
+    bool internal sanctionsPause;
+
     /// @dev This empty reserved space is put in place to allow future versions to add new
     /// variables without shifting storage.
     uint256[500] private __gap;
@@ -154,6 +157,18 @@ contract NiftyApesLending is
             newLiquidityContractAddress
         );
         liquidityContractAddress = newLiquidityContractAddress;
+    }
+
+    /// @inheritdoc ILendingAdmin
+    function pauseSanctions() external onlyOwner {
+        sanctionsPause = true;
+        emit LendingSanctionsPaused();
+    }
+
+    /// @inheritdoc ILendingAdmin
+    function unpauseSanctions() external onlyOwner {
+        sanctionsPause = false;
+        emit LendingSanctionsUnpaused();
     }
 
     /// @inheritdoc ILendingAdmin
@@ -293,7 +308,7 @@ contract NiftyApesLending is
         LoanAuction storage loanAuction = _getLoanAuctionInternal(offer.nftContractAddress, nftId);
 
         _requireNoOpenLoan(loanAuction);
-        _requireOfferNotExpired(offer);
+        IOffers(offersContractAddress).requireOfferNotExpired(offer);
         _requireMinDurationForOffer(offer);
         _require721Owner(offer.nftContractAddress, nftId, borrower);
 
@@ -374,7 +389,7 @@ contract NiftyApesLending is
         _requireNftOwner(loanAuction, msg.sender);
         _requireNoFixedTerm(loanAuction);
         _requireOpenLoan(loanAuction);
-        _requireOfferNotExpired(offer);
+        IOffers(offersContractAddress).requireOfferNotExpired(offer);
         _requireLenderOffer(offer);
         _requireMinDurationForOffer(offer);
 
@@ -433,7 +448,11 @@ contract NiftyApesLending is
     }
 
     /// @inheritdoc ILending
-    function refinanceByLender(Offer memory offer) external whenNotPaused nonReentrant {
+    function refinanceByLender(Offer memory offer, uint32 expectedLastUpdatedTimestamp)
+        external
+        whenNotPaused
+        nonReentrant
+    {
         LoanAuction storage loanAuction = _getLoanAuctionInternal(
             offer.nftContractAddress,
             offer.nftId
@@ -441,10 +460,11 @@ contract NiftyApesLending is
 
         _requireIsNotSanctioned(msg.sender);
         _requireOpenLoan(loanAuction);
+        _requireExpectedTermsAreActive(loanAuction, expectedLastUpdatedTimestamp);
         _requireOfferCreator(offer, msg.sender);
         _requireLenderOffer(offer);
         _requireLoanNotExpired(loanAuction);
-        _requireOfferNotExpired(offer);
+        IOffers(offersContractAddress).requireOfferNotExpired(offer);
         _requireOfferParity(loanAuction, offer);
         _requireNoFixedTerm(loanAuction);
         _requireNoFloorTerms(offer);
@@ -453,11 +473,9 @@ contract NiftyApesLending is
 
         address cAsset = ILiquidity(liquidityContractAddress).getCAsset(offer.asset);
 
-        (
-            bool sufficientInterest,
-            uint256 lenderInterest,
-            uint96 interestThreshold
-        ) = _checkSufficientInterestAccumulated(loanAuction);
+        (, uint256 lenderInterest, uint96 interestThreshold) = _checkSufficientInterestAccumulated(
+            loanAuction
+        );
         bool sufficientTerms = _checkSufficientTerms(
             loanAuction,
             offer.amount,
@@ -493,7 +511,7 @@ contract NiftyApesLending is
                 ((loanAuction.amountDrawn * originationPremiumBps) / MAX_BPS);
             uint256 protocolInterestAndPremium = protocolInterest;
 
-            if (!sufficientInterest) {
+            if (interestThreshold > lenderInterest) {
                 interestAndPremiumOwedToCurrentLender += interestThreshold - lenderInterest;
                 protocolInterestAndPremium +=
                     (lenderInterest * gasGriefingProtocolPremiumBps) /
@@ -646,13 +664,11 @@ contract NiftyApesLending is
     }
 
     /// @inheritdoc ILending
-    function repayLoanForAccount(address nftContractAddress, uint256 nftId)
-        external
-        payable
-        override
-        whenNotPaused
-        nonReentrant
-    {
+    function repayLoanForAccount(
+        address nftContractAddress,
+        uint256 nftId,
+        uint32 expectedLoanBeginTimestamp
+    ) external payable override whenNotPaused nonReentrant {
         RepayLoanStruct memory rls = RepayLoanStruct({
             nftContractAddress: nftContractAddress,
             nftId: nftId,
@@ -662,6 +678,9 @@ contract NiftyApesLending is
         });
 
         _requireIsNotSanctioned(msg.sender);
+
+        LoanAuction memory loanAuction = _getLoanAuctionInternal(nftContractAddress, nftId);
+        _requireExpectedLoanIsActive(loanAuction, expectedLoanBeginTimestamp);
 
         _repayLoanAmount(rls);
     }
@@ -870,15 +889,6 @@ contract NiftyApesLending is
     }
 
     /// @inheritdoc ILending
-    function calculateLenderInterestPerSecond(
-        uint256 amount,
-        uint256 interestRateBps,
-        uint256 duration
-    ) public pure returns (uint96) {
-        return SafeCastUpgradeable.toUint96((amount * interestRateBps) / MAX_BPS / duration);
-    }
-
-    /// @inheritdoc ILending
     function calculateProtocolInterestPerSecond(uint256 amount, uint256 duration)
         public
         view
@@ -981,10 +991,6 @@ contract NiftyApesLending is
         require(_currentTimestamp32() < loanAuction.loanEndTimestamp, "loan expired");
     }
 
-    function _requireOfferNotExpired(Offer memory offer) internal view {
-        require(offer.expiration > _currentTimestamp32(), "offer expired");
-    }
-
     function _requireMinDurationForOffer(Offer memory offer) internal pure {
         require(offer.duration >= 1 days, "offer duration");
     }
@@ -1010,9 +1016,11 @@ contract NiftyApesLending is
     }
 
     function _requireIsNotSanctioned(address addressToCheck) internal view {
-        SanctionsList sanctionsList = SanctionsList(SANCTIONS_CONTRACT);
-        bool isToSanctioned = sanctionsList.isSanctioned(addressToCheck);
-        require(!isToSanctioned, "sanctioned address");
+        if (!sanctionsPause) {
+            SanctionsList sanctionsList = SanctionsList(SANCTIONS_CONTRACT);
+            bool isToSanctioned = sanctionsList.isSanctioned(addressToCheck);
+            require(!isToSanctioned, "sanctioned address");
+        }
     }
 
     function _require721Owner(
@@ -1042,12 +1050,27 @@ contract NiftyApesLending is
         require(nftId == offer.nftId, "offer nftId mismatch");
     }
 
-    function _requireMsgValue(uint256 amount) internal view {
-        require(amount == msg.value, "msg value");
-    }
-
     function _requireOfferCreator(Offer memory offer, address creator) internal pure {
         require(creator == offer.creator, "offer creator mismatch");
+    }
+
+    function _requireExpectedTermsAreActive(
+        LoanAuction storage loanAuction,
+        uint32 expectedLastUpdatedTimestamp
+    ) internal view {
+        if (expectedLastUpdatedTimestamp != 0) {
+            require(
+                loanAuction.lastUpdatedTimestamp == expectedLastUpdatedTimestamp,
+                "unexpected terms"
+            );
+        }
+    }
+
+    function _requireExpectedLoanIsActive(
+        LoanAuction memory loanAuction,
+        uint32 expectedLoanBeginTimestamp
+    ) internal view {
+        require(loanAuction.loanBeginTimestamp == expectedLoanBeginTimestamp, "unexpected loan");
     }
 
     function _requireOfferParity(LoanAuction storage loanAuction, Offer memory offer)
