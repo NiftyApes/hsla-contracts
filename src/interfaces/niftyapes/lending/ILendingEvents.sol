@@ -158,6 +158,14 @@ interface ILendingEvents {
         address newLiquidityContractAdress
     );
 
+    /// @notice Emmited when the associated signature lending contract address is changed
+    /// @param oldSigLendingContractAdress The old liquidity contract address
+    /// @param newSigLendingContractAdress The new liquidity contract address
+    event LendingXSigLendingContractAddressUpdated(
+        address oldSigLendingContractAdress,
+        address newSigLendingContractAdress
+    );
+
     /// @notice Emmited when sanctions checks are paused
     event LendingSanctionsPaused();
 

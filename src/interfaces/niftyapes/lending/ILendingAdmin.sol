@@ -35,6 +35,9 @@ interface ILendingAdmin {
     /// @notice Updates the associated liquidity contract address
     function updateLiquidityContractAddress(address newLiquidityContractAddress) external;
 
+    /// @notice Updates the associated signature lending contract address
+    function updateSigLendingContractAddress(address newSigLendingContractAddress) external;
+
     /// @notice Pauses sanctions checks
     function pauseSanctions() external;
 

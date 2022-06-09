@@ -57,7 +57,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
     }
 
     function testCannotSupplyErc20_asset_not_whitelisted() public {
-        hevm.expectRevert("asset allow list");
+        hevm.expectRevert("00040");
         liquidityProviders.supplyErc20(address(0x0000000000000000000000000000000000000001), 1);
     }
 
@@ -90,7 +90,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
 
         liquidityProviders.supplyErc20(address(usdcToken), 1);
 
-        hevm.expectRevert("max casset");
+        hevm.expectRevert("00044");
 
         liquidityProviders.supplyErc20(address(usdcToken), 1);
     }
@@ -129,7 +129,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
 
         cUSDCToken.setMintFail(true);
 
-        hevm.expectRevert("cToken mint");
+        hevm.expectRevert("00037");
 
         liquidityProviders.supplyErc20(address(usdcToken), 1);
     }
@@ -138,7 +138,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         usdcToken.mint(address(this), 1);
         usdcToken.approve(address(liquidityProviders), 1);
 
-        hevm.expectRevert("sanctioned address");
+        hevm.expectRevert("00017");
 
         hevm.startPrank(SANCTIONED_ADDRESS);
 
@@ -146,7 +146,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
     }
 
     function testCannotSupplyCErc20_asset_not_whitelisted() public {
-        hevm.expectRevert("cAsset allow list");
+        hevm.expectRevert("00041");
         liquidityProviders.supplyCErc20(address(0x0000000000000000000000000000000000000001), 1);
     }
 
@@ -187,7 +187,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
 
         liquidityProviders.supplyCErc20(address(cUSDCToken), 1 ether);
 
-        hevm.expectRevert("max casset");
+        hevm.expectRevert("00044");
 
         liquidityProviders.supplyCErc20(address(cUSDCToken), 1 ether);
     }
@@ -211,7 +211,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         cUSDCToken.mint(1);
         cUSDCToken.approve(address(liquidityProviders), 1);
 
-        hevm.expectRevert("sanctioned address");
+        hevm.expectRevert("00017");
 
         hevm.startPrank(SANCTIONED_ADDRESS);
 
@@ -219,7 +219,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
     }
 
     function testCannotWithdrawErc20_asset_not_whitelisted() public {
-        hevm.expectRevert("asset allow list");
+        hevm.expectRevert("00040");
         liquidityProviders.withdrawErc20(address(0x0000000000000000000000000000000000000001), 1);
     }
 
@@ -277,7 +277,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
 
         cUSDCToken.setRedeemUnderlyingFail(true);
 
-        hevm.expectRevert("redeemUnderlying failed");
+        hevm.expectRevert("00038");
 
         liquidityProviders.withdrawErc20(address(usdcToken), 1);
     }
@@ -302,7 +302,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         hevm.stopPrank();
 
         hevm.startPrank(NOT_ADMIN);
-        hevm.expectRevert("Insufficient cToken balance");
+        hevm.expectRevert("00034");
 
         liquidityProviders.withdrawErc20(address(usdcToken), 2);
         hevm.stopPrank();
@@ -322,7 +322,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
     }
 
     function testCannotWithdrawCErc20_asset_not_whitelisted() public {
-        hevm.expectRevert("cAsset allow list");
+        hevm.expectRevert("00041");
         liquidityProviders.withdrawCErc20(address(0x0000000000000000000000000000000000000001), 1);
     }
 
@@ -372,7 +372,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         usdcToken.approve(address(liquidityProviders), 1);
         liquidityProviders.supplyErc20(address(usdcToken), 1);
 
-        hevm.expectRevert("Insufficient cToken balance");
+        hevm.expectRevert("00034");
 
         liquidityProviders.withdrawCErc20(address(cUSDCToken), 2 ether);
     }
@@ -391,7 +391,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
     }
 
     function testCannotSupplyEth_asset_not_whitelisted() public {
-        hevm.expectRevert("asset allow list");
+        hevm.expectRevert("00040");
         liquidityProviders.supplyEth{ value: 1 }();
     }
 
@@ -454,7 +454,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
 
         liquidityProviders.supplyEth{ value: 1 }();
 
-        hevm.expectRevert("max casset");
+        hevm.expectRevert("00044");
 
         liquidityProviders.supplyEth{ value: 1 }();
     }
@@ -509,7 +509,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
             2**256 - 1
         );
 
-        hevm.expectRevert("sanctioned address");
+        hevm.expectRevert("00017");
 
         hevm.deal(SANCTIONED_ADDRESS, 1);
 
@@ -519,7 +519,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
     }
 
     function testCannotWithdrawEth_asset_not_whitelisted() public {
-        hevm.expectRevert("asset allow list");
+        hevm.expectRevert("00040");
         liquidityProviders.withdrawEth(1);
     }
 
@@ -592,7 +592,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
 
         cEtherToken.setRedeemUnderlyingFail(true);
 
-        hevm.expectRevert("redeemUnderlying failed");
+        hevm.expectRevert("00038");
 
         liquidityProviders.withdrawEth(1);
     }
@@ -622,7 +622,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
 
         liquidityProviders.supplyEth{ value: 1 }();
 
-        hevm.expectRevert("Insufficient cToken balance");
+        hevm.expectRevert("00034");
 
         liquidityProviders.withdrawEth(2);
     }
@@ -646,7 +646,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         acceptEth = false;
 
         // hevm.expectRevert("Address: unable to send value, recipient may have reverted");
-        hevm.expectRevert("amount 0");
+        hevm.expectRevert("00045");
 
         liquidityProviders.withdrawEth(1);
     }
