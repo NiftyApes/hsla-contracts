@@ -13,6 +13,8 @@ import "../mock/CERC20Mock.sol";
 import "../mock/CEtherMock.sol";
 import "../mock/ERC20Mock.sol";
 
+import "../Console.sol";
+
 contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
     NiftyApesLiquidity liquidityProviders;
     ERC20Mock usdcToken;
@@ -676,6 +678,12 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         hevm.startPrank(liquidityProviders.owner());
 
         liquidityProviders.withdrawErc20(address(usdcToken), 100);
+    }
+
+    function testCAssetAmountToAssetAmount() public {
+        uint256 result = liquidityProviders.cAssetAmountToAssetAmount(address(cUSDCToken), 1e8); // supply 1 mockCUSDC, would be better to call this mock DAI as USDC has 6 decimals
+
+        assertEq(result, 22015464514043444); // ~ 0.02 DAI
     }
 
     // TODO(miller): Missing unit tests for max c asset balance
