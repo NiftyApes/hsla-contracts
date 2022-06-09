@@ -18,13 +18,15 @@ Testing is done with forge. Prettier, solhint, slither, can be used to perform f
 
 ## Design
 
-The NiftyApes protocol is made up of three core contracts `Liquidity.sol`, `Offers.sol`, and `Lending.sol`. Each is deployed as a seperate contract with references to each other as via interfaces needed.
+The NiftyApes protocol is made up of four core contracts `Liquidity.sol`, `Offers.sol`, `Lending.sol`, and `SigLending.sol`. Each is deployed as a seperate contract with references to each other as via interfaces needed.
 
 `Liquidity.sol` allows for lenders to manage cToken liquidity by depositing and withdrawing, wrapping and unwrapping either `cTokens`, or `ERC20` tokens which are approved for use on the protocol.
 
 `Offers.sol` allows for lenders and borrowers to make lending offers on any asset or collection in existence. This contract manages the NiftyApes on-chain offer book.
 
 `Lending.sol` allows for lenders and borrowers to execute and refinance loans based on the liquidity and offers in the other two contracts.
+
+`SigLending.sol` allows for lenders and borrowers to execute and refinance loans based on the liquidity and gas-less offers made via signatures and that are stored in a centralized database.
 
 ## NiftyApes Error Messages
 
