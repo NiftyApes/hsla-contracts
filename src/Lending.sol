@@ -13,6 +13,8 @@ import "./interfaces/niftyapes/liquidity/ILiquidity.sol";
 import "./interfaces/niftyapes/offers/IOffers.sol";
 import "./interfaces/sanctions/SanctionsList.sol";
 
+import "./test/Console.sol";
+
 /// @title Implemention of the ILending interface
 contract NiftyApesLending is
     OwnableUpgradeable,
@@ -695,7 +697,7 @@ contract NiftyApesLending is
 
         address cAsset = ILiquidity(liquidityContractAddress).getCAsset(loanAuction.asset);
 
-        _payoutCTokenBalances(loanAuction, cAsset, cTokensMinted, paymentAmount);
+        _payoutCTokenBalances(loanAuction, cAsset, cTokensMinted, paymentAmount, repayFull);
 
         if (repayFull) {
             _transferNft(nftContractAddress, nftId, address(this), loanAuction.nftOwner);
@@ -1073,19 +1075,52 @@ contract NiftyApesLending is
         LoanAuction storage loanAuction,
         address cAsset,
         uint256 totalCTokens,
-        uint256 totalPayment
+        uint256 totalPayment,
+        bool repayFull
     ) internal {
-        uint256 cTokensToLender = (totalCTokens *
-            (loanAuction.amountDrawn + loanAuction.accumulatedLenderInterest)) / totalPayment;
-        uint256 cTokensToProtocol = (totalCTokens * loanAuction.accumulatedProtocolInterest) /
-            totalPayment;
+        uint256 cTokensToLender;
+        //  = (totalCTokens *
+        //     (loanAuction.amountDrawn + loanAuction.accumulatedLenderInterest)) / totalPayment;
+        // uint256 cTokensToProtocol = (totalCTokens * loanAuction.accumulatedProtocolInterest) /
+        //     totalPayment;
+
+        console.log(
+            "loanAuction.accumulatedProtocolInterest",
+            loanAuction.accumulatedProtocolInterest
+        );
+        console.log("totalCTokens", totalCTokens);
+        console.log("totalPayment", totalPayment);
+
+        if (repayFull) {
+            uint256 cTokensToLender = (totalPayment * MAX_BPS) /
+                (loanAuction.amountDrawn + loanAuction.accumulatedLenderInterest);
+            // * MAX_BPS * totalCTokens;
+            uint256 cTokensToProtocol = (totalCTokens * loanAuction.accumulatedProtocolInterest) /
+                totalPayment;
+
+            // uint256 cTokensToProtocolBps = (loanAuction.accumulatedProtocolInterest * MAX_BPS) /
+            //     totalPayment;
+            // uint256 cTokensToProtocol = totalCTokens / cTokensToProtocolBps;
+
+            // console.log("cTokensToProtocolBps", cTokensToProtocolBps);
+            console.log("cTokensToProtocol", cTokensToProtocol);
+
+            console.log("cTokensToLender", cTokensToLender);
+
+            ILiquidity(liquidityContractAddress).addToCAssetBalance(
+                owner(),
+                cAsset,
+                cTokensToProtocol
+            );
+        } else {
+            cTokensToLender = totalCTokens;
+        }
 
         ILiquidity(liquidityContractAddress).addToCAssetBalance(
             loanAuction.lender,
             cAsset,
             cTokensToLender
         );
-        ILiquidity(liquidityContractAddress).addToCAssetBalance(owner(), cAsset, cTokensToProtocol);
     }
 
     function _handleLoanPayment(address asset, uint256 payment) internal returns (uint256) {
