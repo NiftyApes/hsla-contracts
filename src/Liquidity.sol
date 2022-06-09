@@ -57,7 +57,7 @@ contract NiftyApesLiquidity is
     bool internal _ethTransferable;
 
     /// @dev The status of sanctions checks. Can be set to false if oracle becomes malicious.
-    bool internal sanctionsPause;
+    bool internal _sanctionsPause;
 
     /// @dev This empty reserved space is put in place to allow future versions to add new
     /// variables without shifting storage.
@@ -128,13 +128,13 @@ contract NiftyApesLiquidity is
 
     /// @inheritdoc ILiquidityAdmin
     function pauseSanctions() external onlyOwner {
-        sanctionsPause = true;
+        _sanctionsPause = true;
         emit LiquiditySanctionsPaused();
     }
 
     /// @inheritdoc ILiquidityAdmin
     function unpauseSanctions() external onlyOwner {
-        sanctionsPause = false;
+        _sanctionsPause = false;
         emit LiquiditySanctionsUnpaused();
     }
 
@@ -312,7 +312,7 @@ contract NiftyApesLiquidity is
     }
 
     function _requireIsNotSanctioned(address addressToCheck) internal view {
-        if (!sanctionsPause) {
+        if (!_sanctionsPause) {
             SanctionsList sanctionsList = SanctionsList(SANCTIONS_CONTRACT);
             bool isToSanctioned = sanctionsList.isSanctioned(addressToCheck);
             require(!isToSanctioned, "00017");
