@@ -787,9 +787,10 @@ contract NiftyApesLending is
             );
 
             if (lenderBalance < drawTokens) {
-                uint256 lenderBalanceUnderlying = ILiquidity(liquidityContractAddress)
-                    .cAssetAmountToAssetAmount(cAsset, lenderBalance);
-                drawAmount = lenderBalanceUnderlying;
+                drawAmount = ILiquidity(liquidityContractAddress).cAssetAmountToAssetAmount(
+                    cAsset,
+                    lenderBalance
+                );
 
                 // update interest only for protocol. This eliminates lender interest for the current interest period
                 (, uint256 protocolInterest) = _calculateInterestAccrued(loanAuction);
@@ -1053,13 +1054,10 @@ contract NiftyApesLending is
         loanAuction.accumulatedLenderInterest = 0;
         loanAuction.accumulatedProtocolInterest = 0;
         loanAuction.interestRatePerSecond = offer.interestRatePerSecond;
-
-        uint96 protocolInterestRatePerSecond = calculateProtocolInterestPerSecond(
+        loanAuction.protocolInterestRatePerSecond = calculateProtocolInterestPerSecond(
             offer.amount,
             offer.duration
         );
-
-        loanAuction.protocolInterestRatePerSecond = protocolInterestRatePerSecond;
     }
 
     function _transferNft(
