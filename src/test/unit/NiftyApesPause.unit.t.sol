@@ -8,6 +8,7 @@ import "../../interfaces/compound/ICEther.sol";
 import "../../Lending.sol";
 import "../../Liquidity.sol";
 import "../../Offers.sol";
+import "../../SigLending.sol";
 import "../../interfaces/niftyapes/lending/ILendingStructs.sol";
 import "../../interfaces/niftyapes/offers/IOffersStructs.sol";
 
@@ -26,6 +27,7 @@ contract NiftyApesPauseUnitTest is
     NiftyApesLending niftyApes;
     NiftyApesOffers offersContract;
     NiftyApesLiquidity liquidityProviders;
+    NiftyApesSigLending sigLendingAuction;
     ERC20Mock usdcToken;
     CERC20Mock cUSDCToken;
 
@@ -56,6 +58,9 @@ contract NiftyApesPauseUnitTest is
         offersContract = new NiftyApesOffers();
         offersContract.initialize();
 
+        sigLendingAuction = new NiftyApesSigLending();
+        sigLendingAuction.initialize();
+
         offersContract.updateLendingContractAddress(address(niftyApes));
 
         usdcToken = new ERC20Mock();
@@ -74,6 +79,7 @@ contract NiftyApesPauseUnitTest is
         niftyApes.pause();
         liquidityProviders.pause();
         offersContract.pause();
+        sigLendingAuction.pause();
 
         acceptEth = true;
 
@@ -171,7 +177,7 @@ contract NiftyApesPauseUnitTest is
     function testCannotExecuteLoanByBorrowerSignature_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        niftyApes.executeLoanByBorrowerSignature(getOffer(), "", 0);
+        sigLendingAuction.executeLoanByBorrowerSignature(getOffer(), "", 0);
     }
 
     function testCannotExecuteLoanByLender_paused() public {
@@ -183,7 +189,7 @@ contract NiftyApesPauseUnitTest is
     function testCannotExecuteLoanByLenderSignature_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        niftyApes.executeLoanByLenderSignature(getOffer(), "");
+        sigLendingAuction.executeLoanByLenderSignature(getOffer(), "");
     }
 
     function testCannotRefinanceByBorrower_paused() public {
@@ -195,7 +201,7 @@ contract NiftyApesPauseUnitTest is
     function testCannotRefinanceByBorrowerSignature_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        niftyApes.refinanceByBorrowerSignature(getOffer(), "", 1);
+        sigLendingAuction.refinanceByBorrowerSignature(getOffer(), "", 1);
     }
 
     function testCannotRefinanceByLender_paused() public {

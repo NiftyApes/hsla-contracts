@@ -15,6 +15,9 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     /// @notice Returns the address for the associated liquidity contract
     function liquidityContractAddress() external view returns (address);
 
+    /// @notice Returns the address for the associated signature lending contract
+    function sigLendingContractAddress() external view returns (address);
+
     /// @notice Returns the fee that computes protocol interest
     ///         This fee is the basis points in order to calculate interest per second
     function protocolInterestBps() external view returns (uint96);
@@ -77,11 +80,11 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     /// @param offer The details of the loan auction offer
     /// @param signature A signed offerHash
     /// @param nftId The id of a specified NFT
-    function executeLoanByBorrowerSignature(
-        Offer calldata offer,
-        bytes memory signature,
-        uint256 nftId
-    ) external payable;
+    // function executeLoanByBorrowerSignature(
+    //     Offer calldata offer,
+    //     bytes memory signature,
+    //     uint256 nftId
+    // ) external payable;
 
     /// @notice Start a loan as the lender using an offer from the on chain offer book.
     ///         Borrowers can make offers for loan terms on their NFTs and thus lenders can
@@ -102,9 +105,9 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     ///         execute these offers
     /// @param offer The details of the loan auction offer
     /// @param signature A signed offerHash
-    function executeLoanByLenderSignature(Offer calldata offer, bytes calldata signature)
-        external
-        payable;
+    // function executeLoanByLenderSignature(Offer calldata offer, bytes calldata signature)
+    //     external
+    //     payable;
 
     /// @notice Refinance a loan against the on chain offer book as the borrower.
     ///         The new offer has to cover the principle remaining and all lender interest owed on the loan
@@ -126,11 +129,11 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     /// @param offer The details of the loan auction offer
     /// @param signature The signature for the offer
     /// @param nftId The id of a specified NFT
-    function refinanceByBorrowerSignature(
-        Offer calldata offer,
-        bytes memory signature,
-        uint256 nftId
-    ) external;
+    // function refinanceByBorrowerSignature(
+    //     Offer calldata offer,
+    //     bytes memory signature,
+    //     uint256 nftId
+    // ) external;
 
     /// @notice Refinance a loan against a new offer.
     ///         The new offer must improve terms for the borrower
@@ -242,4 +245,28 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         uint96 interestRatePerSecond,
         uint32 duration
     ) external view returns (bool);
+
+    /// @notice Function only callable by the NiftyApesSigLending contract
+    ///         Allows SigLending contract to execute loan directly
+    /// @param offer The details of the loan auction offer
+    /// @param lender The lender of the loan
+    /// @param borrower The borrower of the loan
+    /// @param nftId The id of the specified NFT
+    function doExecuteLoan(
+        Offer memory offer,
+        address lender,
+        address borrower,
+        uint256 nftId
+    ) external;
+
+    /// @notice Function only callable by the NiftyApesSigLending contract
+    ///         Allows SigLending contract to refinance a loan directly
+    /// @param offer The details of the loan auction offer
+    /// @param nftId The id of the specified NFT
+    /// @param nftOwner owner of the nft in the lending.sol lendingAuction
+    function doRefinanceByBorrower(
+        Offer memory offer,
+        uint256 nftId,
+        address nftOwner
+    ) external;
 }

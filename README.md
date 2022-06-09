@@ -18,10 +18,60 @@ Testing is done with forge. Prettier, solhint, slither, can be used to perform f
 
 ## Design
 
-The NiftyApes protocol is made up of three core contracts `Liquidity.sol`, `Offers.sol`, and `Lending.sol`. Each is deployed as a seperate contract with references to each other as via interfaces needed. 
+The NiftyApes protocol is made up of four core contracts `Liquidity.sol`, `Offers.sol`, `Lending.sol`, and `SigLending.sol`. Each is deployed as a seperate contract with references to each other as via interfaces needed.
 
 `Liquidity.sol` allows for lenders to manage cToken liquidity by depositing and withdrawing, wrapping and unwrapping either `cTokens`, or `ERC20` tokens which are approved for use on the protocol.
 
-`Offers.sol` allows for lenders and borrowers to make lending offers on any asset or collection in existence. This contract manages the NiftyApes on-chain offer book. 
+`Offers.sol` allows for lenders and borrowers to make lending offers on any asset or collection in existence. This contract manages the NiftyApes on-chain offer book.
 
-`Lending.sol` allows for lenders and borrowers to execute and refinance loans based on the liquidity and offers in the other two contracts. 
+`Lending.sol` allows for lenders and borrowers to execute and refinance loans based on the liquidity and offers in the other two contracts.
+
+`SigLending.sol` allows for lenders and borrowers to execute and refinance loans based on the liquidity and gas-less offers made via signatures and that are stored in a centralized database.
+
+## NiftyApes Error Messages
+
+"00001" == "lender balance"
+"00002" == "max fee"
+"00003" == "signature unsupported"
+"00004" == "no offer"
+"00005" == "offer amount"
+"00006" == "Loan already open"
+"00007" == "loan not active"
+"00008" == "loan not expired"
+"00009" == "loan expired"
+"00010" == "offer expired"
+"00011" == "offer duration"
+"00012" == "lender offer"
+"00013" == "borrower offer"
+"00014" == "floor term"
+"00015" == "fixed term loan"
+"00016" == "fixed term offer"
+"00017" == "sanctioned address"
+"00018" == "721 owner"
+"00019" == "offer.asset and loanAuction.asset do not match"
+"00020" == "funds overdrawn"
+"00021" == "not nft owner"
+"00022" == "offer nftId mismatch"
+"00023" == "msg value"
+"00024" == "offer creator"
+"00025" == "not an improvement"
+"00026" == "unexpected terms"
+"00027" == "unexpected loan"
+"00028" == "msg.sender is not the borrower"
+"00029" == "use repayLoan"
+"00030" == "msg.value too low"
+"00031" == "not authorized"
+"00032" == "signature not available"
+"00033" == "signer"
+"00034" == "insufficient cToken balance"
+"00035" == "LendingContract: cannot be address(0)"
+"00036" == "LiquidityContract: cannot be address(0)"
+"00037" == "cToken mint"
+"00038" == "redeemUnderlying failed"
+"00039" == "must be greater"
+"00040" == "asset allow list"
+"00041" == "cAsset allow list"
+"00042" == "non matching allow list"
+"00043" == "eth not transferable"
+"00044" == "max casset"
+"00045" == "amount 0"
