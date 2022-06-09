@@ -26,7 +26,7 @@ The NiftyApes protocol is made up of three core contracts `Liquidity.sol`, `Offe
 
 `Lending.sol` allows for lenders and borrowers to execute and refinance loans based on the liquidity and offers in the other two contracts.
 
-## Lending.sol Error Messages
+## NiftyApes Error Messages
 
 "00001" == "lender balance"
 "00002" == "max fee"
@@ -46,9 +46,9 @@ The NiftyApes protocol is made up of three core contracts `Liquidity.sol`, `Offe
 "00016" == "fixed term offer"
 "00017" == "sanctioned address"
 "00018" == "721 owner"
-"00019" == "asset mismatch"
+"00019" == "offer.asset and loanAuction.asset do not match"
 "00020" == "funds overdrawn"
-"00021" == "nft owner"
+"00021" == "not nft owner"
 "00022" == "offer nftId mismatch"
 "00023" == "msg value"
 "00024" == "offer creator"
@@ -59,3 +59,17 @@ The NiftyApes protocol is made up of three core contracts `Liquidity.sol`, `Offe
 "00029" == "use repayLoan"
 "00030" == "msg.value too low"
 "00031" == "not authorized"
+"00032" == "signature not available"
+"00033" == "signer"
+"00034" == "insufficient cToken balance"
+"00035" == "LendingContract: cannot be address(0)"
+"00036" == "LiquidityContract: cannot be address(0)"
+"00037" == "cToken mint"
+"00038" == "redeemUnderlying failed"
+"00039" == "must be greater"
+"00040" == "asset allow list"
+"00041" == "cAsset allow list"
+"00042" == "non matching allow list"
+"00043" == "eth not transferable"
+"00044" == "max casset"
+"00045" == "amount 0"

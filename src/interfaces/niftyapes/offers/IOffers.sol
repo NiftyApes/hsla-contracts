@@ -12,6 +12,9 @@ interface IOffers is IOffersAdmin, IOffersEvents, IOffersStructs, ILendingStruct
     /// @notice Returns the address for the associated lending contract
     function lendingContractAddress() external view returns (address);
 
+    /// @notice Returns the address for the associated sigLending contract
+    function sigLendingContractAddress() external view returns (address);
+
     /// @notice Returns the address for the associated liquidity contract
     function liquidityContractAddress() external view returns (address);
 

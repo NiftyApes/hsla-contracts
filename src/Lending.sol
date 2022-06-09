@@ -13,6 +13,8 @@ import "./interfaces/niftyapes/liquidity/ILiquidity.sol";
 import "./interfaces/niftyapes/offers/IOffers.sol";
 import "./interfaces/sanctions/SanctionsList.sol";
 
+import "./test/Console.sol";
+
 /// @title Implemention of the ILending interface
 contract NiftyApesLending is
     OwnableUpgradeable,
@@ -340,19 +342,28 @@ contract NiftyApesLending is
             );
         }
 
-        _doRefinanceByBorrower(offer, nftId);
+        _doRefinanceByBorrower(offer, nftId, msg.sender);
     }
 
-    function doRefinanceByBorrower(Offer memory offer, uint256 nftId) external {
+    function doRefinanceByBorrower(
+        Offer memory offer,
+        uint256 nftId,
+        address nftOwner
+    ) external {
         _requireSigLendingContract();
-        _doRefinanceByBorrower(offer, nftId);
+        _doRefinanceByBorrower(offer, nftId, nftOwner);
     }
 
-    function _doRefinanceByBorrower(Offer memory offer, uint256 nftId) internal {
+    function _doRefinanceByBorrower(
+        Offer memory offer,
+        uint256 nftId,
+        address nftOwner
+    ) internal {
         LoanAuction storage loanAuction = _getLoanAuctionInternal(offer.nftContractAddress, nftId);
+
         _requireIsNotSanctioned(msg.sender);
         _requireMatchingAsset(offer.asset, loanAuction.asset);
-        _requireNftOwner(loanAuction, msg.sender);
+        _requireNftOwner(loanAuction, nftOwner);
         _requireNoFixedTerm(loanAuction);
         _requireOpenLoan(loanAuction);
         IOffers(offersContractAddress).requireOfferNotExpired(offer);

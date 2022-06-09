@@ -8,6 +8,8 @@ import "./interfaces/niftyapes/lending/ILending.sol";
 import "./interfaces/niftyapes/sigLending/ISigLending.sol";
 import "./interfaces/niftyapes/offers/IOffers.sol";
 
+import "./test/Console.sol";
+
 /// @title Implemention of the ILending interface
 contract NiftyApesSigLending is
     OwnableUpgradeable,
@@ -121,7 +123,7 @@ contract NiftyApesSigLending is
             IOffers(offersContractAddress).markSignatureUsed(offer, signature);
         }
 
-        ILending(lendingContractAddress).doRefinanceByBorrower(offer, nftId);
+        ILending(lendingContractAddress).doRefinanceByBorrower(offer, nftId, msg.sender);
     }
 
     function _requireLenderOffer(Offer memory offer) internal pure {

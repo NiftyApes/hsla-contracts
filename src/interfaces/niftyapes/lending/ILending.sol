@@ -273,5 +273,10 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     ///         Allows SigLending contract to refinance a loan directly
     /// @param offer The details of the loan auction offer
     /// @param nftId The id of the specified NFT
-    function doRefinanceByBorrower(Offer memory offer, uint256 nftId) external;
+    /// @param nftOwner owner of the nft in the lending.sol lendingAuction
+    function doRefinanceByBorrower(
+        Offer memory offer,
+        uint256 nftId,
+        address nftOwner
+    ) external;
 }
