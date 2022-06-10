@@ -57,7 +57,7 @@ contract NiftyApesLiquidity is
     bool internal _ethTransferable;
 
     /// @dev The status of sanctions checks. Can be set to false if oracle becomes malicious.
-    bool internal sanctionsPause;
+    bool internal _sanctionsPause;
 
     /// @dev This empty reserved space is put in place to allow future versions to add new
     /// variables without shifting storage.
@@ -111,8 +111,8 @@ contract NiftyApesLiquidity is
         external
         onlyOwner
     {
-        require(newRegenCollectiveBpsOfRevenue <= 1_000, "max fee");
-        require(newRegenCollectiveBpsOfRevenue >= regenCollectiveBpsOfRevenue, "must be greater");
+        require(newRegenCollectiveBpsOfRevenue <= 1_000, "00002");
+        require(newRegenCollectiveBpsOfRevenue >= regenCollectiveBpsOfRevenue, "00039");
         emit RegenCollectiveBpsOfRevenueUpdated(
             regenCollectiveBpsOfRevenue,
             newRegenCollectiveBpsOfRevenue
@@ -128,13 +128,13 @@ contract NiftyApesLiquidity is
 
     /// @inheritdoc ILiquidityAdmin
     function pauseSanctions() external onlyOwner {
-        sanctionsPause = true;
+        _sanctionsPause = true;
         emit LiquiditySanctionsPaused();
     }
 
     /// @inheritdoc ILiquidityAdmin
     function unpauseSanctions() external onlyOwner {
-        sanctionsPause = false;
+        _sanctionsPause = false;
         emit LiquiditySanctionsUnpaused();
     }
 
@@ -156,15 +156,15 @@ contract NiftyApesLiquidity is
     /// @inheritdoc ILiquidity
     function getCAsset(address asset) public view returns (address) {
         address cAsset = assetToCAsset[asset];
-        require(cAsset != address(0), "asset allow list");
-        require(asset == _cAssetToAsset[cAsset], "non matching allow list");
+        require(cAsset != address(0), "00040");
+        require(asset == _cAssetToAsset[cAsset], "00042");
         return cAsset;
     }
 
     function _getAsset(address cAsset) internal view returns (address) {
         address asset = _cAssetToAsset[cAsset];
-        require(asset != address(0), "cAsset allow list");
-        require(cAsset == assetToCAsset[asset], "non matching allow list");
+        require(asset != address(0), "00041");
+        require(cAsset == assetToCAsset[asset], "00042");
         return asset;
     }
 
@@ -308,21 +308,21 @@ contract NiftyApesLiquidity is
     }
 
     function _requireEthTransferable() internal view {
-        require(_ethTransferable, "eth not transferable");
+        require(_ethTransferable, "00043");
     }
 
     function _requireIsNotSanctioned(address addressToCheck) internal view {
-        if (!sanctionsPause) {
+        if (!_sanctionsPause) {
             SanctionsList sanctionsList = SanctionsList(SANCTIONS_CONTRACT);
             bool isToSanctioned = sanctionsList.isSanctioned(addressToCheck);
-            require(!isToSanctioned, "sanctioned address");
+            require(!isToSanctioned, "00017");
         }
     }
 
     function _requireMaxCAssetBalance(address cAsset) internal view {
         uint256 maxCAssetBalance = maxBalanceByCAsset[cAsset];
 
-        require(maxCAssetBalance >= ICERC20(cAsset).balanceOf(address(this)), "max casset");
+        require(maxCAssetBalance >= ICERC20(cAsset).balanceOf(address(this)), "00044");
     }
 
     function _requireCAssetBalance(
@@ -330,15 +330,15 @@ contract NiftyApesLiquidity is
         address cAsset,
         uint256 amount
     ) internal view {
-        require(getCAssetBalance(account, cAsset) >= amount, "Insufficient cToken balance");
+        require(getCAssetBalance(account, cAsset) >= amount, "00034");
     }
 
     function _requireAmountGreaterThanZero(uint256 amount) internal pure {
-        require(amount > 0, "amount 0");
+        require(amount > 0, "00045");
     }
 
     function _requireLendingContract() internal view {
-        require(msg.sender == lendingContractAddress, "not authorized");
+        require(msg.sender == lendingContractAddress, "00031");
     }
 
     function _ownerWithdrawUnderlying(address asset, address cAsset)
@@ -445,7 +445,7 @@ contract NiftyApesLiquidity is
         underlying.safeIncreaseAllowance(cAsset, amount);
 
         uint256 cTokenBalanceBefore = cToken.balanceOf(address(this));
-        require(cToken.mint(amount) == 0, "cToken mint");
+        require(cToken.mint(amount) == 0, "00037");
         uint256 cTokenBalanceAfter = cToken.balanceOf(address(this));
         return cTokenBalanceAfter - cTokenBalanceBefore;
     }
@@ -482,7 +482,7 @@ contract NiftyApesLiquidity is
 
         uint256 cTokenBalanceBefore = cToken.balanceOf(address(this));
         _ethTransferable = true;
-        require(cToken.redeemUnderlying(amount) == 0, "redeemUnderlying failed");
+        require(cToken.redeemUnderlying(amount) == 0, "00038");
         _ethTransferable = false;
         uint256 cTokenBalanceAfter = cToken.balanceOf(address(this));
         return cTokenBalanceBefore - cTokenBalanceAfter;

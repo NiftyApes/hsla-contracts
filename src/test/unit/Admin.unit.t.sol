@@ -106,7 +106,7 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
     }
 
     function testCannotUpdateRefinancePremiumLenderFee_max_fee() public {
-        hevm.expectRevert("max fee");
+        hevm.expectRevert("00002");
         niftyApes.updateOriginationPremiumLenderBps(1001);
     }
 
@@ -126,7 +126,7 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
     }
 
     function testCannotUpdateRefinancePremiumProtocolFee_max_fee() public {
-        hevm.expectRevert("max fee");
+        hevm.expectRevert("00002");
         niftyApes.updateGasGriefingPremiumBps(1001);
     }
 

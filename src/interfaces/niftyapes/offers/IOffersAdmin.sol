@@ -6,6 +6,9 @@ interface IOffersAdmin {
     /// @notice Updates the associated lending contract address
     function updateLendingContractAddress(address newLendingContractAddress) external;
 
+    /// @notice Updates the associated signature lending contract address
+    function updateSigLendingContractAddress(address newSigLendingContractAddress) external;
+
     /// @notice Updates the associated liquidity contract address
     function updateLiquidityContractAddress(address newLiquidityContractAddress) external;
 
