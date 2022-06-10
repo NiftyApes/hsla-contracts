@@ -57,7 +57,6 @@ interface IOffersEvents {
         address newLendingContractAdress
     );
 
-
     /// @notice Emmited when the associated signature lending contract address is changed
     /// @param oldSigLendingContractAdress The old lending contract address
     /// @param newSigLendingContractAdress The new lending contract address

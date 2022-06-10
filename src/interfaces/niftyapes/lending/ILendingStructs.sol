@@ -50,5 +50,4 @@ interface ILendingStructs {
         bool repayFull;
         bool checkMsgSender;
     }
-
 }
