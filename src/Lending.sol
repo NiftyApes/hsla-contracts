@@ -755,7 +755,6 @@ contract NiftyApesLending is
         LoanAuction storage loanAuction = _getLoanAuctionInternal(nftContractAddress, nftId);
         ILiquidity(liquidityContractAddress).getCAsset(loanAuction.asset); // Ensure asset mapping exists
 
-        _requireIsNotSanctioned(msg.sender);
         _requireOpenLoan(loanAuction);
         // requireLoanExpired
         require(_currentTimestamp32() >= loanAuction.loanEndTimestamp, "00008");
