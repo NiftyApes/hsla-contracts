@@ -251,8 +251,6 @@ contract NiftyApesLiquidity is
     {
         _requireIsNotSanctioned(msg.sender);
 
-        // Making sure a mapping for cAsset exists
-        _getAsset(cAsset);
         IERC20Upgradeable cToken = IERC20Upgradeable(cAsset);
 
         if (msg.sender == owner()) {
