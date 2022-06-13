@@ -175,7 +175,6 @@ contract LendingAuctionUnitTest is
         usdcToken.approve(address(liquidityProviders), 1 ether);
         liquidityProviders.supplyErc20(address(usdcToken), 1 ether);
 
-        console.log("log 1");
         // Lender 1 has 1 USDC
         assertEq(
             liquidityProviders.cAssetAmountToAssetAmount(
@@ -183,16 +182,6 @@ contract LendingAuctionUnitTest is
                 liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken))
             ),
             1 ether
-        );
-
-        console.log(
-            "getCAssetBalance",
-            liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken))
-        );
-
-        console.log(
-            "assetToCAssetAmount",
-            liquidityProviders.assetAmountToCAssetAmount(address(usdcToken), 999999999929517079)
         );
 
         Offer memory offer = Offer({
@@ -223,7 +212,6 @@ contract LendingAuctionUnitTest is
             offer.floorTerm
         );
 
-        console.log("log 2");
         // Lender 1 has 1 fewer USDC, i.e., 0
         assertEq(
             liquidityProviders.cAssetAmountToAssetAmount(
@@ -232,8 +220,6 @@ contract LendingAuctionUnitTest is
             ),
             0
         );
-
-        console.log("log 3");
 
         // Protocol owner has 0
         // Would have more later if there were a term fee
@@ -286,7 +272,6 @@ contract LendingAuctionUnitTest is
         uint256 MAX_BPS = 10_000;
         uint256 feesFromLender2 = ((amtDrawn * originationFeeBps) / MAX_BPS);
 
-        console.log("log 4");
         assertEq(
             liquidityProviders.cAssetAmountToAssetAmount(
                 address(cUSDCToken),
@@ -295,7 +280,6 @@ contract LendingAuctionUnitTest is
             principal + interest + feesFromLender2
         );
 
-        console.log("log 5");
         // Expect term griefing fee to have gone to protocol
         assertEq(
             liquidityProviders.cAssetAmountToAssetAmount(
@@ -7836,7 +7820,6 @@ contract LendingAuctionUnitTest is
         // because it's the owner
         liquidityProviders.withdrawErc20(address(usdcToken), 0.003 * 1 ether);
 
-        console.log("log 6");
         assertEq(
             liquidityProviders.cAssetAmountToAssetAmount(
                 address(cUSDCToken),
@@ -7845,10 +7828,8 @@ contract LendingAuctionUnitTest is
             0
         );
 
-        console.log("log 7");
         // Expect 1% of have been given to Regen Collective
         assertEq(usdcToken.balanceOf(OWNER), 0.002475 * 1 ether);
-        console.log("log 8");
         assertEq(
             usdcToken.balanceOf(liquidityProviders.regenCollectiveAddress()),
             0.000025 * 1 ether
