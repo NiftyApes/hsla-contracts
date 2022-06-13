@@ -56,7 +56,7 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
     }
 
     function testSetCAddressMapping_can_be_set_by_owner() public {
-        hevm.expectEmit(true, false, false, true);
+        hevm.expectEmit(false, false, false, true);
 
         emit AssetToCAssetSet(
             address(0x0000000000000000000000000000000000000001),
@@ -92,7 +92,7 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
 
     function testUpdateProtocolInterestBps_owner() public {
         assertEq(niftyApes.protocolInterestBps(), 0);
-        hevm.expectEmit(true, false, false, true);
+        hevm.expectEmit(false, false, false, true);
 
         emit ProtocolInterestBpsUpdated(0, 1);
         niftyApes.updateProtocolInterestBps(1);
@@ -112,7 +112,7 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
 
     function testUpdateRefinancePremiumLenderFee_owner() public {
         assertEq(niftyApes.originationPremiumBps(), 50);
-        hevm.expectEmit(true, false, false, true);
+        hevm.expectEmit(false, false, false, true);
 
         emit OriginationPremiumBpsUpdated(50, 1);
         niftyApes.updateOriginationPremiumLenderBps(1);
@@ -132,7 +132,7 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
 
     function testUpdateRefinancePremiumProtocolFee_owner() public {
         assertEq(niftyApes.gasGriefingPremiumBps(), 25);
-        hevm.expectEmit(true, false, false, true);
+        hevm.expectEmit(false, false, false, true);
 
         emit GasGriefingPremiumBpsUpdated(25, 1);
         niftyApes.updateGasGriefingPremiumBps(1);
