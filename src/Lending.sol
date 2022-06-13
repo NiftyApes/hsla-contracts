@@ -361,7 +361,7 @@ contract NiftyApesLending is
     ) internal {
         LoanAuction storage loanAuction = _getLoanAuctionInternal(offer.nftContractAddress, nftId);
 
-        _requireIsNotSanctioned(msg.sender);
+        _requireIsNotSanctioned(nftOwner);
         _requireMatchingAsset(offer.asset, loanAuction.asset);
         _requireNftOwner(loanAuction, nftOwner);
         _requireNoFixedTerm(loanAuction);
