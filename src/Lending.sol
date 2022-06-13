@@ -1079,39 +1079,22 @@ contract NiftyApesLending is
         bool repayFull
     ) internal {
         uint256 cTokensToLender;
-        //  = (totalCTokens *
-        //     (loanAuction.amountDrawn + loanAuction.accumulatedLenderInterest)) / totalPayment;
-        // uint256 cTokensToProtocol = (totalCTokens * loanAuction.accumulatedProtocolInterest) /
-        //     totalPayment;
-
-        console.log(
-            "loanAuction.accumulatedProtocolInterest",
-            loanAuction.accumulatedProtocolInterest
-        );
-        console.log("totalCTokens", totalCTokens);
-        console.log("totalPayment", totalPayment);
 
         if (repayFull) {
-            uint256 cTokensToLender = (totalPayment * MAX_BPS) /
-                (loanAuction.amountDrawn + loanAuction.accumulatedLenderInterest);
-            // * MAX_BPS * totalCTokens;
-            uint256 cTokensToProtocol = (totalCTokens * loanAuction.accumulatedProtocolInterest) /
-                totalPayment;
+            if (loanAuction.accumulatedProtocolInterest > 0) {
+                uint256 cTokensToProtocol = totalCTokens /
+                    (totalPayment / loanAuction.accumulatedProtocolInterest);
 
-            // uint256 cTokensToProtocolBps = (loanAuction.accumulatedProtocolInterest * MAX_BPS) /
-            //     totalPayment;
-            // uint256 cTokensToProtocol = totalCTokens / cTokensToProtocolBps;
+                cTokensToLender = totalCTokens - cTokensToProtocol;
 
-            // console.log("cTokensToProtocolBps", cTokensToProtocolBps);
-            console.log("cTokensToProtocol", cTokensToProtocol);
-
-            console.log("cTokensToLender", cTokensToLender);
-
-            ILiquidity(liquidityContractAddress).addToCAssetBalance(
-                owner(),
-                cAsset,
-                cTokensToProtocol
-            );
+                ILiquidity(liquidityContractAddress).addToCAssetBalance(
+                    owner(),
+                    cAsset,
+                    cTokensToProtocol
+                );
+            } else {
+                cTokensToLender = totalCTokens;
+            }
         } else {
             cTokensToLender = totalCTokens;
         }

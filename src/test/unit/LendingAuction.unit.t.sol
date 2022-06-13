@@ -175,6 +175,7 @@ contract LendingAuctionUnitTest is
         usdcToken.approve(address(liquidityProviders), 1 ether);
         liquidityProviders.supplyErc20(address(usdcToken), 1 ether);
 
+        console.log("log 1");
         // Lender 1 has 1 USDC
         assertEq(
             liquidityProviders.cAssetAmountToAssetAmount(
@@ -182,6 +183,16 @@ contract LendingAuctionUnitTest is
                 liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken))
             ),
             1 ether
+        );
+
+        console.log(
+            "getCAssetBalance",
+            liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken))
+        );
+
+        console.log(
+            "assetToCAssetAmount",
+            liquidityProviders.assetAmountToCAssetAmount(address(usdcToken), 999999999929517079)
         );
 
         Offer memory offer = Offer({
@@ -212,6 +223,7 @@ contract LendingAuctionUnitTest is
             offer.floorTerm
         );
 
+        console.log("log 2");
         // Lender 1 has 1 fewer USDC, i.e., 0
         assertEq(
             liquidityProviders.cAssetAmountToAssetAmount(
@@ -220,6 +232,8 @@ contract LendingAuctionUnitTest is
             ),
             0
         );
+
+        console.log("log 3");
 
         // Protocol owner has 0
         // Would have more later if there were a term fee
@@ -272,6 +286,7 @@ contract LendingAuctionUnitTest is
         uint256 MAX_BPS = 10_000;
         uint256 feesFromLender2 = ((amtDrawn * originationFeeBps) / MAX_BPS);
 
+        console.log("log 4");
         assertEq(
             liquidityProviders.cAssetAmountToAssetAmount(
                 address(cUSDCToken),
@@ -280,6 +295,7 @@ contract LendingAuctionUnitTest is
             principal + interest + feesFromLender2
         );
 
+        console.log("log 5");
         // Expect term griefing fee to have gone to protocol
         assertEq(
             liquidityProviders.cAssetAmountToAssetAmount(
@@ -6934,10 +6950,10 @@ contract LendingAuctionUnitTest is
 
     function testRepayLoan_works_with_interest() public {
         hevm.startPrank(LENDER_1);
-        usdcToken.mint(address(LENDER_1), 6 ether);
-        usdcToken.approve(address(liquidityProviders), 6 ether);
+        usdcToken.mint(address(LENDER_1), 1 ether);
+        usdcToken.approve(address(liquidityProviders), 1 ether);
 
-        liquidityProviders.supplyErc20(address(usdcToken), 6 ether);
+        liquidityProviders.supplyErc20(address(usdcToken), 1 ether);
 
         Offer memory offer = Offer({
             creator: LENDER_1,
@@ -6966,7 +6982,7 @@ contract LendingAuctionUnitTest is
             offer.floorTerm
         );
 
-        hevm.warp(block.timestamp + 1 days);
+        hevm.warp(block.timestamp + 12 hours + 1 seconds);
 
         uint256 principal = 1 ether;
 
@@ -6983,14 +6999,84 @@ contract LendingAuctionUnitTest is
 
         assertEq(usdcToken.balanceOf(address(this)), 0);
         assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
-        assertEq(
-            liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken)),
-            (6 ether + lenderInterest + protocolInterest) * 1 ether
+        assertEq(liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken)), 4678532645);
+        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 4678532645);
+
+        assertEq(mockNft.ownerOf(1), address(this));
+
+        LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
+
+        assertEq(loanAuction.nftOwner, ZERO_ADDRESS);
+        assertEq(loanAuction.lender, ZERO_ADDRESS);
+        assertEq(loanAuction.asset, ZERO_ADDRESS);
+        assertEq(loanAuction.interestRatePerSecond, 0);
+        assertTrue(!loanAuction.fixedTerms);
+
+        assertEq(loanAuction.amount, 0);
+        assertEq(loanAuction.loanEndTimestamp, 0);
+        assertEq(loanAuction.lastUpdatedTimestamp, 0);
+        assertEq(loanAuction.accumulatedLenderInterest, 0);
+        assertEq(loanAuction.accumulatedProtocolInterest, 0);
+        assertEq(loanAuction.amountDrawn, 0);
+    }
+
+    function testRepayLoan_works_with_interest_and_protocol_interest() public {
+        hevm.prank(OWNER);
+        lendingAuction.updateProtocolInterestBps(100);
+
+        hevm.startPrank(LENDER_1);
+        usdcToken.mint(address(LENDER_1), 1 ether);
+        usdcToken.approve(address(liquidityProviders), 1 ether);
+
+        liquidityProviders.supplyErc20(address(usdcToken), 1 ether);
+
+        Offer memory offer = Offer({
+            creator: LENDER_1,
+            nftContractAddress: address(mockNft),
+            interestRatePerSecond: 694444444444,
+            fixedTerms: false,
+            floorTerm: true,
+            lenderOffer: true,
+            nftId: 1,
+            asset: address(usdcToken),
+            amount: 1 ether,
+            duration: 1 days,
+            expiration: uint32(block.timestamp + 1)
+        });
+
+        offersContract.createOffer(offer);
+
+        hevm.stopPrank();
+
+        bytes32 offerHash = offersContract.getOfferHash(offer);
+
+        lendingAuction.executeLoanByBorrower(
+            offer.nftContractAddress,
+            offer.nftId,
+            offerHash,
+            offer.floorTerm
         );
-        assertEq(
-            cUSDCToken.balanceOf(address(liquidityProviders)),
-            (6 ether + lenderInterest + protocolInterest) * 1 ether
-        );
+
+        hevm.warp(block.timestamp + 12 hours);
+
+        uint256 principal = 1 ether;
+
+        (uint256 lenderInterest, uint256 protocolInterest) = lendingAuction
+            .calculateInterestAccrued(offer.nftContractAddress, offer.nftId);
+
+        uint256 repayAmount = principal + lenderInterest + protocolInterest;
+
+        usdcToken.mint(address(this), lenderInterest + protocolInterest);
+
+        usdcToken.approve(address(liquidityProviders), repayAmount);
+
+        lendingAuction.repayLoan(offer.nftContractAddress, offer.nftId);
+
+        assertEq(usdcToken.balanceOf(address(this)), 0);
+        assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
+        assertEq(liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken)), 4678529491);
+        assertEq(liquidityProviders.getCAssetBalance(OWNER, address(cUSDCToken)), 22711308);
+        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 4701240799);
 
         assertEq(mockNft.ownerOf(1), address(this));
 
@@ -7011,9 +7097,6 @@ contract LendingAuctionUnitTest is
     }
 
     function testPartialRepayLoan_works_with_interest() public {
-        hevm.prank(OWNER);
-        lendingAuction.updateProtocolInterestBps(100);
-
         hevm.startPrank(LENDER_1);
         usdcToken.mint(address(LENDER_1), 6 ether);
         usdcToken.approve(address(liquidityProviders), 6 ether);
@@ -7753,6 +7836,7 @@ contract LendingAuctionUnitTest is
         // because it's the owner
         liquidityProviders.withdrawErc20(address(usdcToken), 0.003 * 1 ether);
 
+        console.log("log 6");
         assertEq(
             liquidityProviders.cAssetAmountToAssetAmount(
                 address(cUSDCToken),
@@ -7761,8 +7845,10 @@ contract LendingAuctionUnitTest is
             0
         );
 
+        console.log("log 7");
         // Expect 1% of have been given to Regen Collective
         assertEq(usdcToken.balanceOf(OWNER), 0.002475 * 1 ether);
+        console.log("log 8");
         assertEq(
             usdcToken.balanceOf(liquidityProviders.regenCollectiveAddress()),
             0.000025 * 1 ether

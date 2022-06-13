@@ -19,7 +19,7 @@ contract CERC20Mock is ERC20Upgradeable, ICERC20 {
     function initialize(ERC20Mock _underlying) public initializer {
         ERC20Upgradeable.__ERC20_init("cUSDC", "cUSD");
         underlying = _underlying;
-        exchangeRateCurrentValue = 220154645140434444389595003;
+        exchangeRateCurrentValue = 220154645140434444389595003; // exchange rate of DAI at time of edit
     }
 
     function exchangeRateCurrent() public view returns (uint256) {
