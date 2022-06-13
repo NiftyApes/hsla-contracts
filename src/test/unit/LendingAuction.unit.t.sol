@@ -6933,6 +6933,8 @@ contract LendingAuctionUnitTest is
     }
 
     function testRepayLoan_works_with_interest() public {
+        cUSDCToken.setExchangeRateCurrent(220154645140434444389595003); // exchange rate of DAI at time of edit
+
         hevm.startPrank(LENDER_1);
         usdcToken.mint(address(LENDER_1), 1 ether);
         usdcToken.approve(address(liquidityProviders), 1 ether);
@@ -7005,6 +7007,8 @@ contract LendingAuctionUnitTest is
     }
 
     function testRepayLoan_works_with_interest_and_protocol_interest() public {
+        cUSDCToken.setExchangeRateCurrent(220154645140434444389595003); // exchange rate of DAI at time of edit
+
         hevm.prank(OWNER);
         lendingAuction.updateProtocolInterestBps(100);
 
@@ -7081,6 +7085,8 @@ contract LendingAuctionUnitTest is
     }
 
     function testPartialRepayLoan_works_with_interest() public {
+        cUSDCToken.setExchangeRateCurrent(220154645140434444389595003); // exchange rate of DAI at time of edit
+
         hevm.startPrank(LENDER_1);
         usdcToken.mint(address(LENDER_1), 6 ether);
         usdcToken.approve(address(liquidityProviders), 6 ether);
@@ -7122,7 +7128,74 @@ contract LendingAuctionUnitTest is
 
         lendingAuction.partialRepayLoan(offer.nftContractAddress, offer.nftId, partialAmount);
 
-        console.log("balance", liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken)));
+        assertEq(usdcToken.balanceOf(address(this)), 0.5 ether);
+        assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
+        assertEq(liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken)), 24982439032);
+        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 24982439032);
+
+        assertEq(mockNft.ownerOf(1), address(lendingAuction));
+
+        LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
+
+        assertEq(loanAuction.nftOwner, address(this));
+        assertEq(loanAuction.lender, LENDER_1);
+        assertEq(loanAuction.asset, address(usdcToken));
+        assertEq(loanAuction.interestRatePerSecond, 347222222222);
+        assertTrue(!loanAuction.fixedTerms);
+        assertEq(loanAuction.amount, 1 ether);
+        assertEq(loanAuction.loanEndTimestamp, block.timestamp + 12 hours);
+        assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
+        assertEq(loanAuction.accumulatedLenderInterest, 29999999999980800);
+        assertEq(loanAuction.accumulatedProtocolInterest, 0);
+        assertEq(loanAuction.amountDrawn, 0.5 ether);
+    }
+
+    function testPartialRepayLoan_works_with_interest_and_protocol_interest() public {
+        cUSDCToken.setExchangeRateCurrent(220154645140434444389595003); // exchange rate of DAI at time of edit
+
+        hevm.prank(OWNER);
+        lendingAuction.updateProtocolInterestBps(100);
+
+        hevm.startPrank(LENDER_1);
+        usdcToken.mint(address(LENDER_1), 6 ether);
+        usdcToken.approve(address(liquidityProviders), 6 ether);
+
+        liquidityProviders.supplyErc20(address(usdcToken), 6 ether);
+
+        Offer memory offer = Offer({
+            creator: LENDER_1,
+            nftContractAddress: address(mockNft),
+            interestRatePerSecond: 694444444444,
+            fixedTerms: false,
+            floorTerm: true,
+            lenderOffer: true,
+            nftId: 1,
+            asset: address(usdcToken),
+            amount: 1 ether,
+            duration: 1 days,
+            expiration: uint32(block.timestamp + 1)
+        });
+
+        offersContract.createOffer(offer);
+
+        hevm.stopPrank();
+
+        bytes32 offerHash = offersContract.getOfferHash(offer);
+
+        lendingAuction.executeLoanByBorrower(
+            offer.nftContractAddress,
+            offer.nftId,
+            offerHash,
+            offer.floorTerm
+        );
+
+        hevm.warp(block.timestamp + 12 hours);
+
+        uint256 partialAmount = 0.5 ether;
+
+        usdcToken.approve(address(liquidityProviders), partialAmount);
+
+        lendingAuction.partialRepayLoan(offer.nftContractAddress, offer.nftId, partialAmount);
 
         assertEq(usdcToken.balanceOf(address(this)), 0.5 ether);
         assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
