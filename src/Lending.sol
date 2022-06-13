@@ -639,8 +639,6 @@ contract NiftyApesLending is
         uint256 nftId,
         uint32 expectedLoanBeginTimestamp
     ) external payable override whenNotPaused nonReentrant {
-        _requireIsNotSanctioned(msg.sender);
-
         LoanAuction memory loanAuction = _getLoanAuctionInternal(nftContractAddress, nftId);
         // requireExpectedLoanIsActive
         require(loanAuction.loanBeginTimestamp == expectedLoanBeginTimestamp, "00027");
