@@ -681,6 +681,8 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
     }
 
     function testCAssetAmountToAssetAmount() public {
+        cUSDCToken.setExchangeRateCurrent(220154645140434444389595003); // exchange rate of DAI at time of edit
+
         uint256 result = liquidityProviders.cAssetAmountToAssetAmount(address(cUSDCToken), 1e8); // supply 1 mockCUSDC, would be better to call this mock DAI as USDC has 6 decimals
 
         assertEq(result, 22015464514043444); // ~ 0.02 DAI
