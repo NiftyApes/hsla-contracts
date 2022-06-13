@@ -119,18 +119,18 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
         assertEq(niftyApes.originationPremiumBps(), 1);
     }
 
-    function testCannotUpdateRefinancePremiumProtocolFee_not_owner() public {
+    function testCannotUpdateGasGriefingPremiumBps_not_owner() public {
         hevm.startPrank(NOT_ADMIN);
         hevm.expectRevert("Ownable: caller is not the owner");
         niftyApes.updateGasGriefingPremiumBps(1);
     }
 
-    function testCannotUpdateRefinancePremiumProtocolFee_max_fee() public {
+    function testCannotUpdateGasGriefingPremiumBps_max_fee() public {
         hevm.expectRevert("00002");
         niftyApes.updateGasGriefingPremiumBps(1001);
     }
 
-    function testUpdateRefinancePremiumProtocolFee_owner() public {
+    function testUpdateGasGriefingPremiumBps_owner() public {
         assertEq(niftyApes.gasGriefingPremiumBps(), 25);
         hevm.expectEmit(false, false, false, true);
 
