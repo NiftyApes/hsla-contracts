@@ -376,7 +376,8 @@ contract NiftyApesLending is
 
         uint256 fullAmount = loanAuction.amountDrawn +
             loanAuction.accumulatedLenderInterest +
-            loanAuction.accumulatedProtocolInterest;
+            loanAuction.accumulatedProtocolInterest +
+            loanAuction.slashableLenderInterest;
 
         // requireOfferAmount
         require(offer.amount >= fullAmount, "00005");
@@ -409,6 +410,10 @@ contract NiftyApesLending is
         loanAuction.accumulatedLenderInterest = 0;
         if (offer.fixedTerms) {
             loanAuction.fixedTerms = offer.fixedTerms;
+        }
+        if (loanAuction.slashableLenderInterest > 0) {
+            loanAuction.accumulatedLenderInterest += loanAuction.slashableLenderInterest;
+            loanAuction.slashableLenderInterest = 0;
         }
 
         emit Refinance(
@@ -485,6 +490,11 @@ contract NiftyApesLending is
 
             _requireSufficientBalance(offer.creator, cAsset, additionalTokens);
         } else {
+            if (loanAuction.slashableLenderInterest > 0) {
+                loanAuction.accumulatedLenderInterest += loanAuction.slashableLenderInterest;
+                loanAuction.slashableLenderInterest = 0;
+            }
+
             // calculate interest earned
             uint256 interestAndPremiumOwedToCurrentLender = loanAuction.accumulatedLenderInterest +
                 loanAuction.accumulatedProtocolInterest +
@@ -572,6 +582,8 @@ contract NiftyApesLending is
         _requireLoanNotExpired(loanAuction);
 
         address cAsset = ILiquidity(liquidityContractAddress).getCAsset(loanAuction.asset);
+
+        _updateInterest(loanAuction);
 
         uint256 slashedDrawAmount = _slashUnsupportedAmount(loanAuction, drawAmount, cAsset);
 
@@ -677,6 +689,7 @@ contract NiftyApesLending is
             paymentAmount =
                 loanAuction.accumulatedLenderInterest +
                 loanAuction.accumulatedProtocolInterest +
+                loanAuction.slashableLenderInterest +
                 loanAuction.amountDrawn;
         } else {
             require(paymentAmount < loanAuction.amountDrawn, "00029");
@@ -713,6 +726,10 @@ contract NiftyApesLending is
         } else {
             if (loanAuction.lenderRefi) {
                 loanAuction.lenderRefi = false;
+                if (loanAuction.slashableLenderInterest > 0) {
+                    loanAuction.accumulatedLenderInterest += loanAuction.slashableLenderInterest;
+                    loanAuction.slashableLenderInterest = 0;
+                }
             }
             uint256 currentAmountDrawn = loanAuction.amountDrawn;
             loanAuction.amountDrawn -= SafeCastUpgradeable.toUint128(paymentAmount);
@@ -791,17 +808,17 @@ contract NiftyApesLending is
                     lenderBalance
                 );
 
-                // update interest only for protocol. This eliminates lender interest for the current interest period
-                (, uint256 protocolInterest) = _calculateInterestAccrued(loanAuction);
+                // This eliminates all accumulated interest for this lender on the loan
+                loanAuction.slashableLenderInterest = 0;
 
-                loanAuction.accumulatedProtocolInterest += SafeCastUpgradeable.toUint128(
-                    protocolInterest
-                );
-
-                loanAuction.lastUpdatedTimestamp = _currentTimestamp32();
                 loanAuction.amount =
                     loanAuction.amountDrawn +
                     SafeCastUpgradeable.toUint128(drawAmount);
+            } else {
+                if (loanAuction.slashableLenderInterest > 0) {
+                    loanAuction.accumulatedLenderInterest += loanAuction.slashableLenderInterest;
+                    loanAuction.slashableLenderInterest = 0;
+                }
             }
         }
 
@@ -819,7 +836,12 @@ contract NiftyApesLending is
     {
         (lenderInterest, protocolInterest) = _calculateInterestAccrued(loanAuction);
 
-        loanAuction.accumulatedLenderInterest += SafeCastUpgradeable.toUint128(lenderInterest);
+        if (loanAuction.lenderRefi == true) {
+            loanAuction.slashableLenderInterest += SafeCastUpgradeable.toUint128(lenderInterest);
+        } else {
+            loanAuction.accumulatedLenderInterest += SafeCastUpgradeable.toUint128(lenderInterest);
+        }
+
         loanAuction.accumulatedProtocolInterest += SafeCastUpgradeable.toUint128(protocolInterest);
         loanAuction.lastUpdatedTimestamp = _currentTimestamp32();
     }
@@ -1057,6 +1079,7 @@ contract NiftyApesLending is
             offer.amount,
             offer.duration
         );
+        loanAuction.slashableLenderInterest = 0;
     }
 
     function _transferNft(
