@@ -419,7 +419,7 @@ contract NiftyApesLiquidity is
         address from,
         address asset,
         uint256 amount
-    ) external payable returns (uint256) {
+    ) external returns (uint256) {
         _requireLendingContract();
         return _mintCErc20(from, asset, amount);
     }

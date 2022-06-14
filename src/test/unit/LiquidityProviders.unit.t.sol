@@ -323,8 +323,8 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         liquidityProviders.withdrawErc20(address(usdcToken), 1);
     }
 
-    function testCannotWithdrawCErc20_asset_not_whitelisted() public {
-        hevm.expectRevert("00041");
+    function testCannotWithdrawCErc20_no_asset_balance() public {
+        hevm.expectRevert("00045");
         liquidityProviders.withdrawCErc20(address(0x0000000000000000000000000000000000000001), 1);
     }
 
