@@ -7798,7 +7798,7 @@ contract LendingAuctionUnitTest is
         assertEq(address(liquidityProviders.regenCollectiveAddress()).balance, 0.000025 * 1 ether);
     }
 
-    function testRefinanceByLender_term_fee_doesnt_apply_if_sufficient_improvement() public {
+    function testRefinanceByLender_no_term_fee_if_sufficient_improvement() public {
         // Also Note: assuming USDC has decimals 18 throughout
         // even though the real version has decimals 6
         hevm.startPrank(LENDER_1);
