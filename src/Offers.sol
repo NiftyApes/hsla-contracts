@@ -198,7 +198,7 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
             );
             _requireCAssetBalance(msg.sender, cAsset, offerTokens);
         } else {
-            _requireNftOwner(offer.nftContractAddress, offer.nftId, msg.sender);
+            _require721Owner(offer.nftContractAddress, offer.nftId, msg.sender);
             _requireNoFloorTerms(offer);
         }
 
@@ -293,7 +293,7 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
         require(!offer.floorTerm, "00014");
     }
 
-    function _requireNftOwner(
+    function _require721Owner(
         address nftContractAddress,
         uint256 nftId,
         address owner
