@@ -362,6 +362,7 @@ contract NiftyApesLending is
         LoanAuction storage loanAuction = _getLoanAuctionInternal(offer.nftContractAddress, nftId);
 
         _requireIsNotSanctioned(nftOwner);
+        _requireIsNotSanctioned(offer.creator);
         _requireMatchingAsset(offer.asset, loanAuction.asset);
         _requireNftOwner(loanAuction, nftOwner);
         _requireNoFixedTerm(loanAuction);
