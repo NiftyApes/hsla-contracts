@@ -694,6 +694,7 @@ contract NiftyApesLending is
                 loanAuction.amountDrawn;
         } else {
             require(paymentAmount < loanAuction.amountDrawn, "00029");
+            _requireLoanNotExpired(loanAuction);
         }
         if (loanAuction.asset == ETH_ADDRESS) {
             require(msg.value >= paymentAmount, "00030");
