@@ -8186,4 +8186,5 @@ contract LendingAuctionUnitTest is
     // TODO: Write tests that set protocolInterestBps higher than 0 and check payout
     // TODO: Write tests for full flow with ETH
     // TODO: write tests for _requireExpectedLoanIsActive in repayLoanForAccount
+    // TODO: write tests for termGriefing on same lender refinanceByLender
 }

@@ -478,6 +478,15 @@ contract NiftyApesLending is
 
         (, uint256 protocolInterest) = _updateInterest(loanAuction);
 
+        uint256 protocolInterestAndPremium;
+        uint256 protocolPremimuimInCtokens;
+
+        if (!sufficientTerms) {
+            protocolInterestAndPremium +=
+                (loanAuction.amountDrawn * termGriefingPremiumBps) /
+                MAX_BPS;
+        }
+
         // update LoanAuction struct
         loanAuction.amount = offer.amount;
         loanAuction.interestRatePerSecond = offer.interestRatePerSecond;
@@ -490,7 +499,27 @@ contract NiftyApesLending is
             uint256 additionalTokens = ILiquidity(liquidityContractAddress)
                 .assetAmountToCAssetAmount(offer.asset, offer.amount - loanAuction.amountDrawn);
 
-            _requireSufficientBalance(offer.creator, cAsset, additionalTokens);
+            protocolPremimuimInCtokens = ILiquidity(liquidityContractAddress)
+                .assetAmountToCAssetAmount(offer.asset, protocolInterestAndPremium);
+
+            _requireSufficientBalance(
+                offer.creator,
+                cAsset,
+                additionalTokens + protocolPremimuimInCtokens
+            );
+
+            if (protocolPremimuimInCtokens > 0) {
+                ILiquidity(liquidityContractAddress).withdrawCBalance(
+                    offer.creator,
+                    cAsset,
+                    protocolPremimuimInCtokens
+                );
+                ILiquidity(liquidityContractAddress).addToCAssetBalance(
+                    owner(),
+                    cAsset,
+                    protocolPremimuimInCtokens
+                );
+            }
         } else {
             if (loanAuction.slashableLenderInterest > 0) {
                 loanAuction.accumulatedLenderInterest += loanAuction.slashableLenderInterest;
@@ -501,17 +530,13 @@ contract NiftyApesLending is
             uint256 interestAndPremiumOwedToCurrentLender = loanAuction.accumulatedLenderInterest +
                 loanAuction.accumulatedProtocolInterest +
                 ((loanAuction.amountDrawn * originationPremiumBps) / MAX_BPS);
-            uint256 protocolInterestAndPremium = protocolInterest;
+
+            protocolInterestAndPremium += protocolInterest;
 
             if (interestThreshold > lenderInterest) {
                 interestAndPremiumOwedToCurrentLender += interestThreshold - lenderInterest;
                 protocolInterestAndPremium +=
                     (lenderInterest * gasGriefingProtocolPremiumBps) /
-                    MAX_BPS;
-            }
-            if (!sufficientTerms) {
-                protocolInterestAndPremium +=
-                    (loanAuction.amountDrawn * termGriefingPremiumBps) /
                     MAX_BPS;
             }
 
@@ -533,7 +558,7 @@ contract NiftyApesLending is
             // require prospective lender has sufficient available balance to refinance loan
             _requireSufficientBalance(offer.creator, cAsset, fullCTokenAmount);
 
-            uint256 protocolPremimuimInCtokens = ILiquidity(liquidityContractAddress)
+            protocolPremimuimInCtokens = ILiquidity(liquidityContractAddress)
                 .assetAmountToCAssetAmount(offer.asset, protocolInterestAndPremium);
 
             address currentlender = loanAuction.lender;
