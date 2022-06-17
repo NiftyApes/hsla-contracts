@@ -345,6 +345,7 @@ contract NiftyApesLending is
         _requireNftOwner(loanAuction, nftOwner);
         _requireNoFixedTerm(loanAuction);
         _requireOpenLoan(loanAuction);
+        _requireLoanNotExpired(loanAuction);
         IOffers(offersContractAddress).requireOfferNotExpired(offer);
         _requireLenderOffer(offer);
         _requireMinDurationForOffer(offer);
