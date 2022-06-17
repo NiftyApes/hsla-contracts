@@ -37,28 +37,21 @@ Deploy sequence:
 1. Deploy Liquidity.sol
 2. Call liquidity.initalize()
    a. Confirm contract ownership
-3. Hardcode liquidity contract address in:
-   a. Offers.sol
-   b. SigLending.sol
-   c. Lending.sol
-4. Deploy Offers.sol
-5. Call offers.initalize()
+3. Deploy Offers.sol
+4. Call offers.initalize(address(liquidityContractAddress))
    a. Confirm contract ownership
-6. Hardcode liquidity contract address in:
-   b. SigLending.sol
-   c. Lending.sol
-7. Deploy SigLending.sol
-8. Call sigLending.initalize()
+5. Deploy SigLending.sol
+6. Call sigLending.initalize(address(offersContractAddress))
    a. Confirm contract ownership
-9. Hardcode liquidity contract address in:
+7. Hardcode liquidity contract address in:
    c. Lending.sol
-10. Deploy Lending.sol
-11. Call lending.initalize()
-    a. Confirm contract ownership
-12. Call sigLending.updateLendingContractAddress(lendingContractAddress)
-13. Call offers.updateLendingContractAddress(lendingContractAddress)
-14. Call offers.updateSigLendingContractAddress(sigLendingContractAddress)
-15. Call liquidity.updateLendingContractAddress(lendingContractAddress)
+8. Deploy Lending.sol
+9. Call lending.initalize(address(liquidityContractAddress), address(offersContractAddress), address(sigLendingContractAddress))
+   a. Confirm contract ownership
+10. Call sigLending.updateLendingContractAddress(lendingContractAddress)
+11. Call offers.updateLendingContractAddress(lendingContractAddress)
+12. Call offers.updateSigLendingContractAddress(sigLendingContractAddress)
+13. Call liquidity.updateLendingContractAddress(lendingContractAddress)
 
 ## NiftyApes Error Messages
 

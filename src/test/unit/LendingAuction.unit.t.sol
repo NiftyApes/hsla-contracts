@@ -64,30 +64,28 @@ contract LendingAuctionUnitTest is
     function setUp() public {
         hevm.startPrank(OWNER);
 
-        lendingAuction = new NiftyApesLending();
-        lendingAuction.initialize();
-
         liquidityProviders = new NiftyApesLiquidity();
         liquidityProviders.initialize();
 
         offersContract = new NiftyApesOffers();
-        offersContract.initialize();
+        offersContract.initialize(address(liquidityProviders));
 
         sigLendingAuction = new NiftyApesSigLending();
-        sigLendingAuction.initialize();
+        sigLendingAuction.initialize(address(offersContract));
 
-        lendingAuction.updateOffersContractAddress(address(offersContract));
-        lendingAuction.updateLiquidityContractAddress(address(liquidityProviders));
-        lendingAuction.updateSigLendingContractAddress(address(sigLendingAuction));
+        lendingAuction = new NiftyApesLending();
+        lendingAuction.initialize(
+            address(liquidityProviders),
+            address(offersContract),
+            address(sigLendingAuction)
+        );
 
         liquidityProviders.updateLendingContractAddress(address(lendingAuction));
 
         offersContract.updateLendingContractAddress(address(lendingAuction));
-        offersContract.updateLiquidityContractAddress(address(liquidityProviders));
         offersContract.updateSigLendingContractAddress(address(sigLendingAuction));
 
         sigLendingAuction.updateLendingContractAddress(address(lendingAuction));
-        sigLendingAuction.updateOffersContractAddress(address(offersContract));
 
         hevm.stopPrank();
 

@@ -80,13 +80,21 @@ contract NiftyApesLending is
     /// @notice The initializer for the NiftyApes protocol.
     ///         Nifty Apes is intended to be deployed behind a proxy amd thus needs to initialize
     ///         its state outsize of a constructor.
-    function initialize() public initializer {
+    function initialize(
+        address newLiquidityContractAddress,
+        address newOffersContractAddress,
+        address newSigLendingContractAddress
+    ) public initializer {
         protocolInterestBps = 0;
         originationPremiumBps = 50;
         gasGriefingPremiumBps = 25;
         gasGriefingProtocolPremiumBps = 0;
         termGriefingPremiumBps = 25;
         defaultRefinancePremiumBps = 25;
+
+        liquidityContractAddress = newLiquidityContractAddress;
+        offersContractAddress = newOffersContractAddress;
+        sigLendingContractAddress = newSigLendingContractAddress;
 
         OwnableUpgradeable.__Ownable_init();
         PausableUpgradeable.__Pausable_init();
@@ -144,36 +152,6 @@ contract NiftyApesLending is
         _requireMaxFee(newTermGriefingPremiumBps);
         emit TermGriefingPremiumBpsUpdated(termGriefingPremiumBps, newTermGriefingPremiumBps);
         termGriefingPremiumBps = newTermGriefingPremiumBps;
-    }
-
-    /// @inheritdoc ILendingAdmin
-    function updateOffersContractAddress(address newOffersContractAddress) external onlyOwner {
-        emit LendingXOffersContractAddressUpdated(offersContractAddress, newOffersContractAddress);
-        offersContractAddress = newOffersContractAddress;
-    }
-
-    /// @inheritdoc ILendingAdmin
-    function updateLiquidityContractAddress(address newLiquidityContractAddress)
-        external
-        onlyOwner
-    {
-        emit LendingXLiquidityContractAddressUpdated(
-            liquidityContractAddress,
-            newLiquidityContractAddress
-        );
-        liquidityContractAddress = newLiquidityContractAddress;
-    }
-
-    /// @inheritdoc ILendingAdmin
-    function updateSigLendingContractAddress(address newSigLendingContractAddress)
-        external
-        onlyOwner
-    {
-        emit LendingXSigLendingContractAddressUpdated(
-            sigLendingContractAddress,
-            newSigLendingContractAddress
-        );
-        sigLendingContractAddress = newSigLendingContractAddress;
     }
 
     /// @inheritdoc ILendingAdmin

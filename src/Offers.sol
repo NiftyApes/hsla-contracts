@@ -43,8 +43,10 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
     /// @notice The initializer for the NiftyApes protocol.
     ///         NiftyApes is intended to be deployed behind a proxy and thus needs to initialize
     ///         its state outside of a constructor.
-    function initialize() public initializer {
+    function initialize(address newliquidityContractAddress) public initializer {
         EIP712Upgradeable.__EIP712_init("NiftyApes_Offers", "0.0.1");
+
+        liquidityContractAddress = newliquidityContractAddress;
 
         OwnableUpgradeable.__Ownable_init();
         PausableUpgradeable.__Pausable_init();
@@ -71,19 +73,6 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
             newSigLendingContractAddress
         );
         sigLendingContractAddress = newSigLendingContractAddress;
-    }
-
-    /// @inheritdoc IOffersAdmin
-    function updateLiquidityContractAddress(address newLiquidityContractAddress)
-        external
-        onlyOwner
-    {
-        require(address(newLiquidityContractAddress) != address(0), "00036");
-        emit OffersXLiquidityContractAddressUpdated(
-            liquidityContractAddress,
-            newLiquidityContractAddress
-        );
-        liquidityContractAddress = newLiquidityContractAddress;
     }
 
     /// @inheritdoc IOffersAdmin

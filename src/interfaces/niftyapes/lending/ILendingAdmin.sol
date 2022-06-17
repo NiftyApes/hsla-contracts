@@ -29,15 +29,6 @@ interface ILendingAdmin {
     ///         Fees are denomiated in basis points, parts of 10_000
     function updateDefaultRefinancePremiumBps(uint16 newDefaultRefinancePremiumBps) external;
 
-    /// @notice Updates the associated offers contract address
-    function updateOffersContractAddress(address newOffersContractAddress) external;
-
-    /// @notice Updates the associated liquidity contract address
-    function updateLiquidityContractAddress(address newLiquidityContractAddress) external;
-
-    /// @notice Updates the associated signature lending contract address
-    function updateSigLendingContractAddress(address newSigLendingContractAddress) external;
-
     /// @notice Pauses sanctions checks
     function pauseSanctions() external;
 

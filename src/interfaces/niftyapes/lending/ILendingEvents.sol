@@ -142,30 +142,6 @@ interface ILendingEvents {
         uint16 newDefaultRefinancePremiumBps
     );
 
-    /// @notice Emmited when the associated offers contract address is changed
-    /// @param oldOffersContractAdress The old offers contract address
-    /// @param newOffersContractAdress The new offers contract address
-    event LendingXOffersContractAddressUpdated(
-        address oldOffersContractAdress,
-        address newOffersContractAdress
-    );
-
-    /// @notice Emmited when the associated liquidity contract address is changed
-    /// @param oldLiquidityContractAdress The old liquidity contract address
-    /// @param newLiquidityContractAdress The new liquidity contract address
-    event LendingXLiquidityContractAddressUpdated(
-        address oldLiquidityContractAdress,
-        address newLiquidityContractAdress
-    );
-
-    /// @notice Emmited when the associated signature lending contract address is changed
-    /// @param oldSigLendingContractAdress The old liquidity contract address
-    /// @param newSigLendingContractAdress The new liquidity contract address
-    event LendingXSigLendingContractAddressUpdated(
-        address oldSigLendingContractAdress,
-        address newSigLendingContractAdress
-    );
-
     /// @notice Emmited when sanctions checks are paused
     event LendingSanctionsPaused();
 

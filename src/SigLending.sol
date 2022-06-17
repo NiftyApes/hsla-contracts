@@ -28,19 +28,12 @@ contract NiftyApesSigLending is
     /// @notice The initializer for the NiftyApes protocol.
     ///         Nifty Apes is intended to be deployed behind a proxy amd thus needs to initialize
     ///         its state outsize of a constructor.
-    function initialize() public initializer {
+    function initialize(address newOffersContractAddress) public initializer {
+        offersContractAddress = newOffersContractAddress;
+
         OwnableUpgradeable.__Ownable_init();
         PausableUpgradeable.__Pausable_init();
         ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
-    }
-
-    /// @inheritdoc ISigLendingAdmin
-    function updateOffersContractAddress(address newOffersContractAddress) external onlyOwner {
-        emit SigLendingXOffersContractAddressUpdated(
-            offersContractAddress,
-            newOffersContractAddress
-        );
-        offersContractAddress = newOffersContractAddress;
     }
 
     /// @inheritdoc ISigLendingAdmin

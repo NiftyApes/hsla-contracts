@@ -49,17 +49,21 @@ contract NiftyApesPauseUnitTest is
     }
 
     function setUp() public {
-        niftyApes = new NiftyApesLending();
-        niftyApes.initialize();
-
         liquidityProviders = new NiftyApesLiquidity();
         liquidityProviders.initialize();
 
         offersContract = new NiftyApesOffers();
-        offersContract.initialize();
+        offersContract.initialize(address(liquidityProviders));
 
         sigLendingAuction = new NiftyApesSigLending();
-        sigLendingAuction.initialize();
+        sigLendingAuction.initialize(address(offersContract));
+
+        niftyApes = new NiftyApesLending();
+        niftyApes.initialize(
+            address(liquidityProviders),
+            address(offersContract),
+            address(sigLendingAuction)
+        );
 
         offersContract.updateLendingContractAddress(address(niftyApes));
 

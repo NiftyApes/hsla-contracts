@@ -64,12 +64,4 @@ interface IOffersEvents {
         address oldSigLendingContractAdress,
         address newSigLendingContractAdress
     );
-
-    /// @notice Emmited when the associated liquidity contract address is changed
-    /// @param oldLiquidityContractAdress The old liquidity contract address
-    /// @param newLiquidityContractAdress The new liquidity contract address
-    event OffersXLiquidityContractAddressUpdated(
-        address oldLiquidityContractAdress,
-        address newLiquidityContractAdress
-    );
 }
