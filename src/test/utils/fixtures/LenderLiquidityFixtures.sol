@@ -6,19 +6,21 @@ import "forge-std/Test.sol";
 import "./NiftyApesDeployment.sol";
 
 contract LenderLiquidityFixtures is Test, NiftyApesDeployment {
+    uint256 internal defaultLiquiditySupplied = 1000 ether;
+
     function setUp() public virtual override {
         super.setUp();
 
         vm.startPrank(lender1);
-        liquidity.supplyEth{ value: 1000 ether }();
-        usdcToken.approve(address(liquidity), 1000 ether);
-        liquidity.supplyErc20(address(usdcToken), 1000 ether);
+        liquidity.supplyEth{ value: defaultLiquiditySupplied }();
+        usdcToken.approve(address(liquidity), defaultLiquiditySupplied);
+        liquidity.supplyErc20(address(usdcToken), defaultLiquiditySupplied);
         vm.stopPrank();
 
         vm.startPrank(lender2);
-        liquidity.supplyEth{ value: 1000 ether }();
-        usdcToken.approve(address(liquidity), 1000 ether);
-        liquidity.supplyErc20(address(usdcToken), 1000 ether);
+        liquidity.supplyEth{ value: defaultLiquiditySupplied }();
+        usdcToken.approve(address(liquidity), defaultLiquiditySupplied);
+        liquidity.supplyErc20(address(usdcToken), defaultLiquiditySupplied);
         vm.stopPrank();
     }
 }

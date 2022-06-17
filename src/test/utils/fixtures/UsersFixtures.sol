@@ -20,30 +20,32 @@ contract UsersFixtures is Test {
 
     address payable[10] internal users;
 
+    uint256 internal defaultInitialEthBalance = 1000 ether;
+
     function setUp() public virtual {
         borrower1 = getNextUserAddress();
-        vm.deal(borrower1, 1000 ether);
+        vm.deal(borrower1, defaultInitialEthBalance);
         vm.label(borrower1, "borrower1");
 
         borrower2 = getNextUserAddress();
-        vm.deal(borrower2, 1000 ether);
+        vm.deal(borrower2, defaultInitialEthBalance);
         vm.label(borrower2, "borrower2");
 
         lender1 = getNextUserAddress();
-        vm.deal(lender1, 1000 ether);
+        vm.deal(lender1, defaultInitialEthBalance);
         vm.label(lender1, "lender1");
 
         lender2 = getNextUserAddress();
-        vm.deal(lender2, 1000 ether);
+        vm.deal(lender2, defaultInitialEthBalance);
         vm.label(lender2, "lender2");
 
         owner = getNextUserAddress();
-        vm.deal(owner, 1000 ether);
+        vm.deal(owner, defaultInitialEthBalance);
         vm.label(owner, "owner");
 
         for (uint256 i = 0; i < 10; i++) {
             address payable user = getNextUserAddress();
-            vm.deal(user, 1000 ether);
+            vm.deal(user, defaultInitialEthBalance);
             users[i] = user;
             vm.label(user, string.concat("user", StringsUpgradeable.toString(i)));
         }
