@@ -1,0 +1,3 @@
+[default]
+# The number of fuzz runs for fuzz tests
+fuzz_runs = 1
