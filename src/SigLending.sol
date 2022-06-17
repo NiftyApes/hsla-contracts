@@ -101,7 +101,8 @@ contract NiftyApesSigLending is
     function refinanceByBorrowerSignature(
         Offer memory offer,
         bytes memory signature,
-        uint256 nftId
+        uint256 nftId,
+        uint32 expectedLastUpdatedTimestamp
     ) external whenNotPaused nonReentrant {
         address signer = IOffers(offersContractAddress).getOfferSigner(offer, signature);
 
@@ -114,7 +115,12 @@ contract NiftyApesSigLending is
             IOffers(offersContractAddress).markSignatureUsed(offer, signature);
         }
 
-        ILending(lendingContractAddress).doRefinanceByBorrower(offer, nftId, msg.sender);
+        ILending(lendingContractAddress).doRefinanceByBorrower(
+            offer,
+            nftId,
+            msg.sender,
+            expectedLastUpdatedTimestamp
+        );
     }
 
     function _requireLenderOffer(Offer memory offer) internal pure {

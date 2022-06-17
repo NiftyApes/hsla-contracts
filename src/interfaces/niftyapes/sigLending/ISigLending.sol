@@ -45,6 +45,7 @@ interface ISigLending is ISigLendingAdmin, ISigLendingEvents, IOffersStructs {
     function refinanceByBorrowerSignature(
         Offer calldata offer,
         bytes memory signature,
-        uint256 nftId
+        uint256 nftId,
+        uint32 expectedLastUpdatedTimestamp
     ) external;
 }

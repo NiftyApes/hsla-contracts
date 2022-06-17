@@ -120,7 +120,8 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         address nftContractAddress,
         uint256 nftId,
         bool floorTerm,
-        bytes32 offerHash
+        bytes32 offerHash,
+        uint32 expectedLastUpdatedTimestamp
     ) external;
 
     /// @notice Refinance a loan against an off chain signed offer as the borrower.
@@ -267,6 +268,7 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     function doRefinanceByBorrower(
         Offer memory offer,
         uint256 nftId,
-        address nftOwner
+        address nftOwner,
+        uint32 expectedLastUpdatedTimestamp
     ) external;
 }

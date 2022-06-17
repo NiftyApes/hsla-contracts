@@ -299,7 +299,8 @@ contract NiftyApesLending is
         address nftContractAddress,
         uint256 nftId,
         bool floorTerm,
-        bytes32 offerHash
+        bytes32 offerHash,
+        uint32 expectedLastUpdatedTimestamp
     ) external whenNotPaused nonReentrant {
         Offer memory offer = IOffers(offersContractAddress).getOffer(
             nftContractAddress,
@@ -320,22 +321,24 @@ contract NiftyApesLending is
             );
         }
 
-        _doRefinanceByBorrower(offer, nftId, msg.sender);
+        _doRefinanceByBorrower(offer, nftId, msg.sender, expectedLastUpdatedTimestamp);
     }
 
     function doRefinanceByBorrower(
         Offer memory offer,
         uint256 nftId,
-        address nftOwner
+        address nftOwner,
+        uint32 expectedLastUpdatedTimestamp
     ) external {
         _requireSigLendingContract();
-        _doRefinanceByBorrower(offer, nftId, nftOwner);
+        _doRefinanceByBorrower(offer, nftId, nftOwner, expectedLastUpdatedTimestamp);
     }
 
     function _doRefinanceByBorrower(
         Offer memory offer,
         uint256 nftId,
-        address nftOwner
+        address nftOwner,
+        uint32 expectedLastUpdatedTimestamp
     ) internal {
         LoanAuction storage loanAuction = _getLoanAuctionInternal(offer.nftContractAddress, nftId);
 
@@ -344,6 +347,10 @@ contract NiftyApesLending is
         _requireMatchingAsset(offer.asset, loanAuction.asset);
         _requireNftOwner(loanAuction, nftOwner);
         _requireNoFixedTerm(loanAuction);
+        // requireExpectedTermsAreActive
+        if (expectedLastUpdatedTimestamp != 0) {
+            require(loanAuction.lastUpdatedTimestamp == expectedLastUpdatedTimestamp, "00026");
+        }
         _requireOpenLoan(loanAuction);
         _requireLoanNotExpired(loanAuction);
         IOffers(offersContractAddress).requireOfferNotExpired(offer);
@@ -351,6 +358,16 @@ contract NiftyApesLending is
         _requireMinDurationForOffer(offer);
 
         address cAsset = ILiquidity(liquidityContractAddress).getCAsset(offer.asset);
+
+        (, uint256 lenderInterest, uint96 interestThreshold) = _checkSufficientInterestAccumulated(
+            loanAuction
+        );
+
+        if (interestThreshold > lenderInterest) {
+            loanAuction.accumulatedLenderInterest += SafeCastUpgradeable.toUint128(
+                interestThreshold - lenderInterest
+            );
+        }
 
         _updateInterest(loanAuction);
 
