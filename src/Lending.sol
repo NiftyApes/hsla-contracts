@@ -251,7 +251,7 @@ contract NiftyApesLending is
         address lender,
         address borrower,
         uint256 nftId
-    ) external {
+    ) external whenNotPaused nonReentrant {
         _requireSigLendingContract();
         _doExecuteLoan(offer, lender, borrower, nftId);
     }
@@ -329,7 +329,7 @@ contract NiftyApesLending is
         uint256 nftId,
         address nftOwner,
         uint32 expectedLastUpdatedTimestamp
-    ) external {
+    ) external whenNotPaused nonReentrant {
         _requireSigLendingContract();
         _doRefinanceByBorrower(offer, nftId, nftOwner, expectedLastUpdatedTimestamp);
     }
