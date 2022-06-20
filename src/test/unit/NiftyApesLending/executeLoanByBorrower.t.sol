@@ -203,8 +203,7 @@ contract TestExecuteLoanByBorrower is
     }
 
     function test_unit_executeLoanByBorrower_events() public {
-        FuzzedOfferFields memory fixedForSpeed = defaultFixedFuzzedFieldsForFastUnitTesting;
-        _test_executeLoanByBorrower_events(fixedForSpeed);
+        _test_executeLoanByBorrower_events(defaultFixedFuzzedFieldsForFastUnitTesting);
     }
 
     function test_fuzz_executeLoanByBorrower_events(FuzzedOfferFields memory fuzzed)
@@ -435,16 +434,16 @@ contract TestExecuteLoanByBorrower is
         tryToExecuteLoanByBorrower(offer, "00012");
     }
 
-    function test_unit_executeLoanByBorrower_if_borrower_offer() public {
-        _test_cannot_executeLoanByBorrower_if_borrower_offer(
-            defaultFixedFuzzedFieldsForFastUnitTesting
-        );
-    }
-
     function test_fuzz_executeLoanByBorrower_if_borrower_offer(FuzzedOfferFields memory fuzzed)
         public
         validateFuzzedOfferFields(fuzzed)
     {
         _test_cannot_executeLoanByBorrower_if_borrower_offer(fuzzed);
+    }
+
+    function test_unit_executeLoanByBorrower_if_borrower_offer() public {
+        _test_cannot_executeLoanByBorrower_if_borrower_offer(
+            defaultFixedFuzzedFieldsForFastUnitTesting
+        );
     }
 }
