@@ -100,3 +100,4 @@ Deploy sequence:
 "00043" == "eth not transferable"
 "00044" == "max casset"
 "00045" == "amount 0"
+"00046" == "offer already exists"

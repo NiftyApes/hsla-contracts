@@ -199,6 +199,9 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
 
         offerHash = getOfferHash(offer);
 
+        //requireOfferDoesntExist
+        require(offerBook[offerHash].creator == address(0), "00046");
+
         offerBook[offerHash] = offer;
 
         emit NewOffer(
