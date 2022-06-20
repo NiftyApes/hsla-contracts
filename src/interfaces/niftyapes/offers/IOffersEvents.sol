@@ -50,18 +50,18 @@ interface IOffersEvents {
     );
 
     /// @notice Emmited when the associated lending contract address is changed
-    /// @param oldLendingContractAdress The old lending contract address
-    /// @param newLendingContractAdress The new lending contract address
+    /// @param oldLendingContractAddress The old lending contract address
+    /// @param newLendingContractAddress The new lending contract address
     event OffersXLendingContractAddressUpdated(
-        address oldLendingContractAdress,
-        address newLendingContractAdress
+        address oldLendingContractAddress,
+        address newLendingContractAddress
     );
 
     /// @notice Emmited when the associated signature lending contract address is changed
-    /// @param oldSigLendingContractAdress The old lending contract address
-    /// @param newSigLendingContractAdress The new lending contract address
+    /// @param oldSigLendingContractAddress The old lending contract address
+    /// @param newSigLendingContractAddress The new lending contract address
     event OffersXSigLendingContractAddressUpdated(
-        address oldSigLendingContractAdress,
-        address newSigLendingContractAdress
+        address oldSigLendingContractAddress,
+        address newSigLendingContractAddress
     );
 }
