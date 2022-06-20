@@ -2,10 +2,24 @@
 pragma solidity 0.8.13;
 
 import "forge-std/Test.sol";
+import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
+
 import "../../utils/fixtures/LenderLiquidityFixtures.sol";
 import "../../../interfaces/niftyapes/offers/IOffersStructs.sol";
+import "../../../interfaces/niftyapes/lending/ILendingEvents.sol";
 
-contract TestExecuteLoanByBorrower is Test, IOffersStructs, LenderLiquidityFixtures {
+contract ContractThatCannotReceiveEth is ERC721HolderUpgradeable {
+    receive() external payable {
+        revert("no Eth!");
+    }
+}
+
+contract TestExecuteLoanByBorrower is
+    Test,
+    IOffersStructs,
+    ILendingEvents,
+    LenderLiquidityFixtures
+{
     struct FuzzedOfferFields {
         bool fixedTerms;
         bool floorTerm;
@@ -26,6 +40,8 @@ contract TestExecuteLoanByBorrower is Test, IOffersStructs, LenderLiquidityFixtu
     FixedOfferFields private defaultFixedOfferFields;
 
     FuzzedOfferFields private defaultFixedFuzzedFieldsForFastUnitTesting;
+
+    ContractThatCannotReceiveEth private contractThatCannotReceiveEth;
 
     function setUp() public override {
         super.setUp();
@@ -50,6 +66,8 @@ contract TestExecuteLoanByBorrower is Test, IOffersStructs, LenderLiquidityFixtu
             expiration: uint32(block.timestamp) + 1 days,
             randomAsset: 0
         });
+
+        contractThatCannotReceiveEth = new ContractThatCannotReceiveEth();
     }
 
     modifier validateFuzzedOfferFields(FuzzedOfferFields memory fuzzed) {
@@ -157,6 +175,43 @@ contract TestExecuteLoanByBorrower is Test, IOffersStructs, LenderLiquidityFixtu
         FuzzedOfferFields memory fixedForSpeed = defaultFixedFuzzedFieldsForFastUnitTesting;
         fixedForSpeed.randomAsset = 1; // ETH
         _test_executeLoanByBorrower_simplest_case(fixedForSpeed);
+    }
+
+    function _test_executeLoanByBorrower_events(FuzzedOfferFields memory fuzzed) private {
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+
+        vm.expectEmit(true, true, true, true);
+        emit LoanExecuted(
+            lender1,
+            offer.asset,
+            borrower1,
+            offer.nftContractAddress,
+            offer.nftId,
+            offer
+        );
+
+        vm.expectEmit(true, true, true, true);
+        emit AmountDrawn(
+            borrower1,
+            offer.nftContractAddress,
+            offer.nftId,
+            offer.amount,
+            offer.amount
+        );
+
+        createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
+    }
+
+    function test_unit_executeLoanByBorrower_events() public {
+        FuzzedOfferFields memory fixedForSpeed = defaultFixedFuzzedFieldsForFastUnitTesting;
+        _test_executeLoanByBorrower_events(fixedForSpeed);
+    }
+
+    function test_fuzz_executeLoanByBorrower_events(FuzzedOfferFields memory fuzzed)
+        public
+        validateFuzzedOfferFields(fuzzed)
+    {
+        _test_executeLoanByBorrower_events(fuzzed);
     }
 
     function _test_cannot_executeLoanByBorrower_if_offer_expired(FuzzedOfferFields memory fuzzed)
@@ -298,5 +353,98 @@ contract TestExecuteLoanByBorrower is Test, IOffersStructs, LenderLiquidityFixtu
         _test_cannot_executeLoanByBorrower_if_not_enough_tokens(
             defaultFixedFuzzedFieldsForFastUnitTesting
         );
+    }
+
+    function _test_cannot_executeLoanByBorrower_if_underlying_transfer_fails(
+        FuzzedOfferFields memory fuzzed
+    ) private {
+        fuzzed.randomAsset = 0; // USDC
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        usdcToken.setTransferFail(true);
+        createOfferAndTryToExecuteLoanByBorrower(
+            offer,
+            "SafeERC20: ERC20 operation did not succeed"
+        );
+    }
+
+    function test_fuzz_cannot_executeLoanByBorrower_if_underlying_transfer_fails(
+        FuzzedOfferFields memory fuzzed
+    ) public validateFuzzedOfferFields(fuzzed) {
+        _test_cannot_executeLoanByBorrower_if_underlying_transfer_fails(fuzzed);
+    }
+
+    function test_unit_cannot_executeLoanByBorrower_if_underlying_transfer_fails() public {
+        _test_cannot_executeLoanByBorrower_if_underlying_transfer_fails(
+            defaultFixedFuzzedFieldsForFastUnitTesting
+        );
+    }
+
+    function _test_cannot_executeLoanByBorrower_if_eth_transfer_fails(
+        FuzzedOfferFields memory fuzzed
+    ) private {
+        fuzzed.randomAsset = 1; // ETH
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+
+        // give NFT to contract
+        vm.startPrank(borrower1);
+        mockNft.safeTransferFrom(borrower1, address(contractThatCannotReceiveEth), 1);
+        vm.stopPrank();
+
+        // set borrower1 to contract
+        borrower1 = payable(address(contractThatCannotReceiveEth));
+
+        createOfferAndTryToExecuteLoanByBorrower(
+            offer,
+            "Address: unable to send value, recipient may have reverted"
+        );
+    }
+
+    function test_fuzz_cannot_executeLoanByBorrower_if_eth_transfer_fails(
+        FuzzedOfferFields memory fuzzed
+    ) public validateFuzzedOfferFields(fuzzed) {
+        _test_cannot_executeLoanByBorrower_if_eth_transfer_fails(fuzzed);
+    }
+
+    function test_unit_cannot_executeLoanByBorrower_if_eth_transfer_fails() public {
+        _test_cannot_executeLoanByBorrower_if_eth_transfer_fails(
+            defaultFixedFuzzedFieldsForFastUnitTesting
+        );
+    }
+
+    function _test_cannot_executeLoanByBorrower_if_borrower_offer(FuzzedOfferFields memory fuzzed)
+        private
+    {
+        defaultFixedOfferFields.lenderOffer = false;
+        fuzzed.floorTerm = false; // borrower can't make a floor term offer
+
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+
+        // pass NFT to lender1 so they can make a borrower offer
+        vm.startPrank(borrower1);
+        mockNft.safeTransferFrom(borrower1, lender1, 1);
+        vm.stopPrank();
+
+        createOffer(offer);
+
+        // pass NFT back to borrower1 so they can try to execute a borrower offer
+        vm.startPrank(lender1);
+        mockNft.safeTransferFrom(lender1, borrower1, 1);
+        vm.stopPrank();
+
+        approveLending(offer);
+        tryToExecuteLoanByBorrower(offer, "00012");
+    }
+
+    function test_unit_executeLoanByBorrower_if_borrower_offer() public {
+        _test_cannot_executeLoanByBorrower_if_borrower_offer(
+            defaultFixedFuzzedFieldsForFastUnitTesting
+        );
+    }
+
+    function test_fuzz_executeLoanByBorrower_if_borrower_offer(FuzzedOfferFields memory fuzzed)
+        public
+        validateFuzzedOfferFields(fuzzed)
+    {
+        _test_cannot_executeLoanByBorrower_if_borrower_offer(fuzzed);
     }
 }
