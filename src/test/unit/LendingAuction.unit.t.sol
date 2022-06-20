@@ -4217,7 +4217,7 @@ contract LendingAuctionUnitTest is
             asset: address(usdcToken),
             amount: 7 ether,
             duration: 3 days,
-            expiration: uint32(block.timestamp + 200)
+            expiration: uint32(block.timestamp + 13 hours)
         });
 
         offersContract.createOffer(offer2);
@@ -4226,14 +4226,14 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        hevm.warp(block.timestamp + 100);
+        hevm.warp(block.timestamp + 12 hours);
 
         lendingAuction.refinanceByBorrower(
             address(mockNft),
             1,
             true,
             offerHash2,
-            uint32(block.timestamp - 100)
+            uint32(block.timestamp - 12 hours)
         );
 
         assertEq(usdcToken.balanceOf(address(this)), 6 ether);
@@ -4254,11 +4254,11 @@ contract LendingAuctionUnitTest is
         assertEq(liquidityProviders.getCAssetBalance(address(this), address(cUSDCToken)), 0);
         assertEq(
             liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken)),
-            6000069444444444400 ether
+            6029999999999980800 ether
         );
         assertEq(
             liquidityProviders.getCAssetBalance(LENDER_2, address(cUSDCToken)),
-            3999930555555555600 ether
+            3970000000000019200 ether
         );
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
@@ -5532,11 +5532,11 @@ contract LendingAuctionUnitTest is
         assertEq(liquidityProviders.getCAssetBalance(address(this), address(cUSDCToken)), 0);
         assertEq(
             liquidityProviders.getCAssetBalance(LENDER_1, address(cUSDCToken)),
-            6000069444444444400 ether
+            6029999999999980800 ether
         );
         assertEq(
             liquidityProviders.getCAssetBalance(SIGNER_1, address(cUSDCToken)),
-            3999930555555555600 ether
+            3970000000000019200 ether
         );
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
@@ -8366,4 +8366,5 @@ contract LendingAuctionUnitTest is
     // TODO: Write tests for full flow with ETH
     // TODO: write tests for _requireExpectedLoanIsActive in repayLoanForAccount
     // TODO: write tests for termGriefing on same lender refinanceByLender
+    // TODO: write tests for gasGriefing on refinanceByBorrower
 }
