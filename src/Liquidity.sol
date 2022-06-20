@@ -385,7 +385,9 @@ contract NiftyApesLiquidity is
 
         _sendValue(cAsset, bpsForRegen, regenCollectiveAddress);
 
-        emit PercentForRegen(regenCollectiveAddress, cAsset, bpsForRegen, bpsForRegen);
+        uint256 regenAmountUnderlying = cAssetAmountToAssetAmount(cAsset, bpsForRegen);
+
+        emit PercentForRegen(regenCollectiveAddress, cAsset, regenAmountUnderlying, bpsForRegen);
 
         emit CErc20Withdrawn(owner(), cAsset, ownerBalanceMinusRegen);
 
