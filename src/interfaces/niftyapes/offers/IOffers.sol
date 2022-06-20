@@ -82,4 +82,8 @@ interface IOffers is IOffersAdmin, IOffersEvents, IOffersStructs, ILendingStruct
     /// @notice Checks that an offer has not expired
     /// @param offer The details of the offer
     function requireOfferNotExpired(Offer memory offer) external view;
+
+    /// @notice Checks that an offer has a minimum duration
+    /// @param offer The details of the offer
+    function requireMinimumDuration(Offer memory offer) external pure;
 }

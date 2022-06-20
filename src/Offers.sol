@@ -178,6 +178,7 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
         address cAsset = ILiquidity(liquidityContractAddress).getCAsset(offer.asset);
 
         requireOfferNotExpired(offer);
+        requireMinimumDuration(offer);
         _requireOfferCreatorOrLendingContract(offer.creator, msg.sender);
 
         if (offer.lenderOffer) {
@@ -199,8 +200,7 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
 
         offerHash = getOfferHash(offer);
 
-        //requireOfferDoesntExist
-        require(offerBook[offerHash].creator == address(0), "00046");
+        _requireOfferDoesntExist(offerBook[offerHash].creator);
 
         offerBook[offerHash] = offer;
 
@@ -281,6 +281,10 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
         require(offer.expiration > SafeCastUpgradeable.toUint32(block.timestamp), "00010");
     }
 
+    function requireMinimumDuration(Offer memory offer) public pure {
+        require(offer.duration >= 1 days, "00011");
+    }
+
     function _requireNoFloorTerms(Offer memory offer) internal pure {
         require(!offer.floorTerm, "00014");
     }
@@ -301,6 +305,10 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
         if (msg.sender != lendingContractAddress) {
             require(signer == expected, "00024");
         }
+    }
+
+    function _requireOfferDoesntExist(address offerCreator) internal pure {
+        require(offerCreator == address(0), "00046");
     }
 
     function _requireCAssetBalance(

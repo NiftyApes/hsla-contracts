@@ -66,6 +66,7 @@ contract NiftyApesSigLending is
         _requireOfferCreator(offer, lender);
         IOffers(offersContractAddress).requireAvailableSignature(signature);
         IOffers(offersContractAddress).requireSignature65(signature);
+        IOffers(offersContractAddress).requireMinimumDuration(offer);
         _requireLenderOffer(offer);
 
         if (!offer.floorTerm) {
@@ -89,6 +90,7 @@ contract NiftyApesSigLending is
         _requireOfferCreator(offer, borrower);
         IOffers(offersContractAddress).requireAvailableSignature(signature);
         IOffers(offersContractAddress).requireSignature65(signature);
+        IOffers(offersContractAddress).requireMinimumDuration(offer);
         _requireBorrowerOffer(offer);
         _requireNoFloorTerms(offer);
 
@@ -109,6 +111,7 @@ contract NiftyApesSigLending is
         _requireOfferCreator(offer, signer);
         IOffers(offersContractAddress).requireAvailableSignature(signature);
         IOffers(offersContractAddress).requireSignature65(signature);
+        IOffers(offersContractAddress).requireMinimumDuration(offer);
 
         if (!offer.floorTerm) {
             _requireMatchingNftId(offer, nftId);
