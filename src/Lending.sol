@@ -1122,25 +1122,18 @@ contract NiftyApesLending is
         uint256 totalPayment,
         bool repayFull
     ) internal {
-        uint256 cTokensToLender;
+        uint256 cTokensToLender = totalCTokens;
 
-        if (repayFull) {
-            if (loanAuction.accumulatedProtocolInterest > 0) {
-                uint256 cTokensToProtocol = totalCTokens /
-                    (totalPayment / loanAuction.accumulatedProtocolInterest);
+        if (repayFull && (loanAuction.accumulatedProtocolInterest > 0)) {
+            uint256 cTokensToProtocol = (totalCTokens * loanAuction.accumulatedProtocolInterest) /
+                totalPayment;
+            cTokensToLender -= cTokensToProtocol;
 
-                cTokensToLender = totalCTokens - cTokensToProtocol;
-
-                ILiquidity(liquidityContractAddress).addToCAssetBalance(
-                    owner(),
-                    cAsset,
-                    cTokensToProtocol
-                );
-            } else {
-                cTokensToLender = totalCTokens;
-            }
-        } else {
-            cTokensToLender = totalCTokens;
+            ILiquidity(liquidityContractAddress).addToCAssetBalance(
+                owner(),
+                cAsset,
+                cTokensToProtocol
+            );
         }
 
         ILiquidity(liquidityContractAddress).addToCAssetBalance(
