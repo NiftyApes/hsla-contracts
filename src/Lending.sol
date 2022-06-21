@@ -13,8 +13,6 @@ import "./interfaces/niftyapes/liquidity/ILiquidity.sol";
 import "./interfaces/niftyapes/offers/IOffers.sol";
 import "./interfaces/sanctions/SanctionsList.sol";
 
-import "./test/Console.sol";
-
 /// @title Implemention of the ILending interface
 contract NiftyApesLending is
     OwnableUpgradeable,
