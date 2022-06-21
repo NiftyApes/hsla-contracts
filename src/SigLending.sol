@@ -92,7 +92,7 @@ contract NiftyApesSigLending is
         IOffers(offersContractAddress).requireSignature65(signature);
         IOffers(offersContractAddress).requireMinimumDuration(offer);
         _requireBorrowerOffer(offer);
-        _requireNoFloorTerms(offer);
+        IOffers(offersContractAddress).requireNoFloorTerms(offer);
 
         IOffers(offersContractAddress).markSignatureUsed(offer, signature);
 
@@ -132,10 +132,6 @@ contract NiftyApesSigLending is
 
     function _requireBorrowerOffer(Offer memory offer) internal pure {
         require(!offer.lenderOffer, "00013");
-    }
-
-    function _requireNoFloorTerms(Offer memory offer) internal pure {
-        require(!offer.floorTerm, "00014");
     }
 
     function _requireMatchingNftId(Offer memory offer, uint256 nftId) internal pure {

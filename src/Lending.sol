@@ -274,7 +274,7 @@ contract NiftyApesLending is
 
         // requireNoOpenLoan
         require(loanAuction.lastUpdatedTimestamp == 0, "00006");
-        IOffers(offersContractAddress).requireOfferNotExpired(offer);
+        _requireOfferNotExpired(offer);
         _requireMinDurationForOffer(offer);
         // require721Owner
         require(IERC721Upgradeable(offer.nftContractAddress).ownerOf(nftId) == borrower, "00018");
@@ -352,7 +352,7 @@ contract NiftyApesLending is
         }
         _requireOpenLoan(loanAuction);
         _requireLoanNotExpired(loanAuction);
-        IOffers(offersContractAddress).requireOfferNotExpired(offer);
+        _requireOfferNotExpired(offer);
         _requireLenderOffer(offer);
         _requireMinDurationForOffer(offer);
 
@@ -443,7 +443,7 @@ contract NiftyApesLending is
         _requireOfferCreator(offer, msg.sender);
         _requireLenderOffer(offer);
         _requireLoanNotExpired(loanAuction);
-        IOffers(offersContractAddress).requireOfferNotExpired(offer);
+        _requireOfferNotExpired(offer);
         _requireOfferParity(loanAuction, offer);
         _requireNoFixedTerm(loanAuction);
         _requireNoFloorTerms(offer);
@@ -961,6 +961,10 @@ contract NiftyApesLending is
 
     function _requireLoanNotExpired(LoanAuction storage loanAuction) internal view {
         require(_currentTimestamp32() < loanAuction.loanEndTimestamp, "00009");
+    }
+
+    function _requireOfferNotExpired(Offer memory offer) internal view {
+        require(offer.expiration > SafeCastUpgradeable.toUint32(block.timestamp), "00010");
     }
 
     function _requireMinDurationForOffer(Offer memory offer) internal pure {

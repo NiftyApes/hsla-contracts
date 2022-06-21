@@ -177,7 +177,7 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
     function createOffer(Offer memory offer) external whenNotPaused returns (bytes32 offerHash) {
         address cAsset = ILiquidity(liquidityContractAddress).getCAsset(offer.asset);
 
-        requireOfferNotExpired(offer);
+        _requireOfferNotExpired(offer);
         requireMinimumDuration(offer);
         _requireOfferCreatorOrLendingContract(offer.creator, msg.sender);
 
@@ -189,7 +189,7 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
             _requireCAssetBalance(msg.sender, cAsset, offerTokens);
         } else {
             _require721Owner(offer.nftContractAddress, offer.nftId, msg.sender);
-            _requireNoFloorTerms(offer);
+            requireNoFloorTerms(offer);
         }
 
         mapping(bytes32 => Offer) storage offerBook = _getOfferBook(
@@ -251,16 +251,17 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
         require(signature.length == 65, "00003");
     }
 
-    /// @inheritdoc IOffers
-    function requireOfferNotExpired(Offer memory offer) public view {
+    function _requireOfferNotExpired(Offer memory offer) internal view {
         require(offer.expiration > SafeCastUpgradeable.toUint32(block.timestamp), "00010");
     }
 
+    /// @inheritdoc IOffers
     function requireMinimumDuration(Offer memory offer) public pure {
         require(offer.duration >= 1 days, "00011");
     }
 
-    function _requireNoFloorTerms(Offer memory offer) internal pure {
+    /// @inheritdoc IOffers
+    function requireNoFloorTerms(Offer memory offer) public pure {
         require(!offer.floorTerm, "00014");
     }
 
