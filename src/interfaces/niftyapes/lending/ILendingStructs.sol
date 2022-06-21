@@ -15,30 +15,32 @@ interface ILendingStructs {
         uint32 lastUpdatedTimestamp;
         // Whether or not the loan can be refinanced
         bool fixedTerms;
-        // SLOT 1 START
         // The current lender of a loan
         address lender;
         // interest rate of loan in basis points
         uint96 interestRatePerSecond;
-        // SLOT 2 START
+        // SLOT 1 START
         // the asset in which the loan has been denominated
         address asset;
         // beginning timestamp of loan
         uint32 loanBeginTimestamp;
         // refinanceByLender was last action, enables slashing
         bool lenderRefi;
-        // SLOT 3 START
         // cumulative interest of varying rates paid by new lenders to buy out the loan auction
         uint128 accumulatedLenderInterest;
+        // 32 unused bytes in slot 1
+        // SLOT 2 START
         // cumulative interest of varying rates accrued by the protocol. To be repaid at the end of the loan.
         uint128 accumulatedProtocolInterest;
-        // SLOT 4 START
         // The maximum amount of tokens that can be drawn from this loan
         uint128 amount;
+        // SLOT 3 START
         // amount withdrawn by the nftOwner. This is the amount they will pay interest on, with this value as minimum
         uint128 amountDrawn;
-        // SLOT 5 START
         // This fee is the rate of interest per second for the protocol
         uint96 protocolInterestRatePerSecond;
+        // 32 unused bytes in slot 3
+        // SLOT 4 START
+        uint128 slashableLenderInterest;
     }
 }

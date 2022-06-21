@@ -7,14 +7,12 @@ import "./IOffersStructs.sol";
 interface IOffersEvents {
     /// @notice Emited when a new offer is stored on chain
     /// @param creator The creator of the offer, this can either be a borrower or a lender (check boolean flag in the offer).
-    /// @param asset The asset in which the offer is denominated
     /// @param nftContractAddress The nft contract address
     /// @param nftId The nft id, this field can be meaningless if the offer is a floor term offer
     /// @param offer The offer details
     /// @param offerHash The offer hash
     event NewOffer(
         address indexed creator,
-        address asset,
         address indexed nftContractAddress,
         uint256 indexed nftId,
         IOffersStructs.Offer offer,
@@ -23,14 +21,12 @@ interface IOffersEvents {
 
     /// @notice Emited when a offer is removed from chain
     /// @param creator The creator of the offer, this can either be a borrower or a lender (check boolean flag in the offer).
-    /// @param asset The asset in which the offer is denominated
     /// @param nftContractAddress The nft contract address
     /// @param nftId The nft id, this field can be meaningless if the offer is a floor term offer
     /// @param offer The offer details
     /// @param offerHash The offer hash
     event OfferRemoved(
         address indexed creator,
-        address asset,
         address indexed nftContractAddress,
         uint256 indexed nftId,
         IOffersStructs.Offer offer,
@@ -50,26 +46,18 @@ interface IOffersEvents {
     );
 
     /// @notice Emmited when the associated lending contract address is changed
-    /// @param oldLendingContractAdress The old lending contract address
-    /// @param newLendingContractAdress The new lending contract address
+    /// @param oldLendingContractAddress The old lending contract address
+    /// @param newLendingContractAddress The new lending contract address
     event OffersXLendingContractAddressUpdated(
-        address oldLendingContractAdress,
-        address newLendingContractAdress
+        address oldLendingContractAddress,
+        address newLendingContractAddress
     );
 
     /// @notice Emmited when the associated signature lending contract address is changed
-    /// @param oldSigLendingContractAdress The old lending contract address
-    /// @param newSigLendingContractAdress The new lending contract address
+    /// @param oldSigLendingContractAddress The old lending contract address
+    /// @param newSigLendingContractAddress The new lending contract address
     event OffersXSigLendingContractAddressUpdated(
-        address oldSigLendingContractAdress,
-        address newSigLendingContractAdress
-    );
-
-    /// @notice Emmited when the associated liquidity contract address is changed
-    /// @param oldLiquidityContractAdress The old liquidity contract address
-    /// @param newLiquidityContractAdress The new liquidity contract address
-    event OffersXLiquidityContractAddressUpdated(
-        address oldLiquidityContractAdress,
-        address newLiquidityContractAdress
+        address oldSigLendingContractAddress,
+        address newSigLendingContractAddress
     );
 }

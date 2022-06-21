@@ -6,45 +6,31 @@ import "../offers/IOffersStructs.sol";
 /// @title Events emmited by the lending part of the protocol.
 interface ILendingEvents {
     /// @notice Emmited when a new loan is executed
-    /// @param lender The lender of the loan
-    /// @param asset The asset in which the offer is denominated
-    /// @param borrower The borrower of the loan
     /// @param nftContractAddress The nft contract address
     /// @param nftId The nft id, this field can be meaningless if the offer is a floor term offer
     /// @param offer The offer details
     event LoanExecuted(
-        address indexed lender,
-        address asset,
-        address borrower,
         address indexed nftContractAddress,
         uint256 indexed nftId,
         IOffersStructs.Offer offer
     );
 
     /// @notice Emited when a loan is refinanced
-    /// @param lender The lender of the loan
-    /// @param asset The asset in which the offer is denominated
-    /// @param borrower The borrower of the loan
     /// @param nftContractAddress The nft contract address
     /// @param nftId The nft id, this field can be meaningless if the offer is a floor term offer
     /// @param offer The offer details
     event Refinance(
-        address indexed lender,
-        address asset,
-        address borrower,
         address indexed nftContractAddress,
         uint256 indexed nftId,
         IOffersStructs.Offer offer
     );
 
     /// @notice Emitted when a loan amount is drawn
-    /// @param borrower The borrower of the loan
     /// @param nftContractAddress The nft contract address
     /// @param nftId The nft id, this field can be meaningless if the offer is a floor term offer
     /// @param drawAmount The added amount drawn
     ///  @param totalDrawn The total amount drawn now
     event AmountDrawn(
-        address indexed borrower,
         address indexed nftContractAddress,
         uint256 indexed nftId,
         uint256 drawAmount,
@@ -140,30 +126,6 @@ interface ILendingEvents {
     event DefaultRefinancePremiumBpsUpdated(
         uint16 oldDefaultRefinancePremiumBps,
         uint16 newDefaultRefinancePremiumBps
-    );
-
-    /// @notice Emmited when the associated offers contract address is changed
-    /// @param oldOffersContractAdress The old offers contract address
-    /// @param newOffersContractAdress The new offers contract address
-    event LendingXOffersContractAddressUpdated(
-        address oldOffersContractAdress,
-        address newOffersContractAdress
-    );
-
-    /// @notice Emmited when the associated liquidity contract address is changed
-    /// @param oldLiquidityContractAdress The old liquidity contract address
-    /// @param newLiquidityContractAdress The new liquidity contract address
-    event LendingXLiquidityContractAddressUpdated(
-        address oldLiquidityContractAdress,
-        address newLiquidityContractAdress
-    );
-
-    /// @notice Emmited when the associated signature lending contract address is changed
-    /// @param oldSigLendingContractAdress The old liquidity contract address
-    /// @param newSigLendingContractAdress The new liquidity contract address
-    event LendingXSigLendingContractAddressUpdated(
-        address oldSigLendingContractAdress,
-        address newSigLendingContractAdress
     );
 
     /// @notice Emmited when sanctions checks are paused

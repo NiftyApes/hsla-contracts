@@ -6,6 +6,8 @@ import "../../interfaces/compound/ICERC20.sol";
 import "../../interfaces/compound/ICEther.sol";
 import "../../Lending.sol";
 import "../../Liquidity.sol";
+import "../../Offers.sol";
+import "../../SigLending.sol";
 import "../../interfaces/niftyapes/lending/ILendingEvents.sol";
 import "../../interfaces/niftyapes/liquidity/ILiquidityEvents.sol";
 import "../common/BaseTest.sol";
@@ -15,7 +17,9 @@ import "../mock/ERC20Mock.sol";
 
 contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
     NiftyApesLending niftyApes;
+    NiftyApesOffers offersContract;
     NiftyApesLiquidity liquidityProviders;
+    NiftyApesSigLending sigLendingAuction;
     ERC20Mock usdcToken;
     CERC20Mock cUSDCToken;
 
@@ -30,11 +34,21 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
     }
 
     function setUp() public {
-        niftyApes = new NiftyApesLending();
-        niftyApes.initialize();
-
         liquidityProviders = new NiftyApesLiquidity();
         liquidityProviders.initialize();
+
+        offersContract = new NiftyApesOffers();
+        offersContract.initialize(address(liquidityProviders));
+
+        sigLendingAuction = new NiftyApesSigLending();
+        sigLendingAuction.initialize(address(offersContract));
+
+        niftyApes = new NiftyApesLending();
+        niftyApes.initialize(
+            address(liquidityProviders),
+            address(offersContract),
+            address(sigLendingAuction)
+        );
 
         usdcToken = new ERC20Mock();
         usdcToken.initialize("USD Coin", "USDC");

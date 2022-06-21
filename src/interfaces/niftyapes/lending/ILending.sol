@@ -20,7 +20,7 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
 
     /// @notice Returns the fee that computes protocol interest
     ///         This fee is the basis points in order to calculate interest per second
-    function protocolInterestBps() external view returns (uint96);
+    function protocolInterestBps() external view returns (uint16);
 
     /// @notice Returns the bps premium for refinancing a loan that the new lender has to pay
     ///         This premium is to compensate lenders for the work of originating a loan
@@ -120,7 +120,8 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         address nftContractAddress,
         uint256 nftId,
         bool floorTerm,
-        bytes32 offerHash
+        bytes32 offerHash,
+        uint32 expectedLastUpdatedTimestamp
     ) external;
 
     /// @notice Refinance a loan against an off chain signed offer as the borrower.
@@ -214,16 +215,6 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         view
         returns (uint256, uint256);
 
-    /// @notice Returns the interestRatePerSecond for a given set of terms
-    /// @param amount The amount of the loan
-    /// @param interestRateBps The interest of the loan in bps
-    /// @param duration The duration of the loan
-    function calculateLenderInterestPerSecond(
-        uint256 amount,
-        uint256 interestRateBps,
-        uint256 duration
-    ) external pure returns (uint96);
-
     /// @notice Returns the protocolInterestRatePerSecond for a given set of terms
     ///         There is a set protocolInterestRateBps so no interestBps value is provided
     /// @param amount The amount of the loan
@@ -233,17 +224,13 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         view
         returns (uint96);
 
-    /// @notice Returns whether interest has accumulated greater than the gas griefing premium requirement
+    /// @notice Returns the delta between the required accumulated interest and the current accumulated interest
     /// @param nftContractAddress The address of the NFT collection
     /// @param nftId The id of the specified NFT
     function checkSufficientInterestAccumulated(address nftContractAddress, uint256 nftId)
         external
         view
-        returns (
-            bool,
-            uint256,
-            uint96
-        );
+        returns (uint256);
 
     /// @notice Returns whether the lender has provided sufficient terms to not be charged a term griefing premium
     /// @param nftContractAddress The address of the NFT collection
@@ -277,6 +264,7 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     function doRefinanceByBorrower(
         Offer memory offer,
         uint256 nftId,
-        address nftOwner
+        address nftOwner,
+        uint32 expectedLastUpdatedTimestamp
     ) external;
 }

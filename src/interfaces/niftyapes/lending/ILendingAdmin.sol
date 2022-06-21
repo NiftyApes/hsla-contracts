@@ -7,7 +7,7 @@ import "./ILendingEvents.sol";
 interface ILendingAdmin {
     /// @notice Updates the fee that computes protocol interest due on loan payback
     ///         Interest is charged per second on a loan.
-    function updateProtocolInterestBps(uint96 newProtocolInterestBps) external;
+    function updateProtocolInterestBps(uint16 newProtocolInterestBps) external;
 
     /// @notice Updates the bps premium for refinancing a loan that the new lender has to pay
     ///         Fees are denomiated in basis points, parts of 10_000
@@ -28,15 +28,6 @@ interface ILendingAdmin {
     /// @notice Updates the bps premium paid to the protocol for refinancing a loan within 1 hour of default
     ///         Fees are denomiated in basis points, parts of 10_000
     function updateDefaultRefinancePremiumBps(uint16 newDefaultRefinancePremiumBps) external;
-
-    /// @notice Updates the associated offers contract address
-    function updateOffersContractAddress(address newOffersContractAddress) external;
-
-    /// @notice Updates the associated liquidity contract address
-    function updateLiquidityContractAddress(address newLiquidityContractAddress) external;
-
-    /// @notice Updates the associated signature lending contract address
-    function updateSigLendingContractAddress(address newSigLendingContractAddress) external;
 
     /// @notice Pauses sanctions checks
     function pauseSanctions() external;

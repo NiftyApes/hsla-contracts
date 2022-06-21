@@ -28,19 +28,12 @@ contract NiftyApesSigLending is
     /// @notice The initializer for the NiftyApes protocol.
     ///         Nifty Apes is intended to be deployed behind a proxy amd thus needs to initialize
     ///         its state outsize of a constructor.
-    function initialize() public initializer {
+    function initialize(address newOffersContractAddress) public initializer {
+        offersContractAddress = newOffersContractAddress;
+
         OwnableUpgradeable.__Ownable_init();
         PausableUpgradeable.__Pausable_init();
         ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
-    }
-
-    /// @inheritdoc ISigLendingAdmin
-    function updateOffersContractAddress(address newOffersContractAddress) external onlyOwner {
-        emit SigLendingXOffersContractAddressUpdated(
-            offersContractAddress,
-            newOffersContractAddress
-        );
-        offersContractAddress = newOffersContractAddress;
     }
 
     /// @inheritdoc ISigLendingAdmin
@@ -73,6 +66,7 @@ contract NiftyApesSigLending is
         _requireOfferCreator(offer, lender);
         IOffers(offersContractAddress).requireAvailableSignature(signature);
         IOffers(offersContractAddress).requireSignature65(signature);
+        IOffers(offersContractAddress).requireMinimumDuration(offer);
         _requireLenderOffer(offer);
 
         if (!offer.floorTerm) {
@@ -96,8 +90,9 @@ contract NiftyApesSigLending is
         _requireOfferCreator(offer, borrower);
         IOffers(offersContractAddress).requireAvailableSignature(signature);
         IOffers(offersContractAddress).requireSignature65(signature);
+        IOffers(offersContractAddress).requireMinimumDuration(offer);
         _requireBorrowerOffer(offer);
-        _requireNoFloorTerms(offer);
+        IOffers(offersContractAddress).requireNoFloorTerms(offer);
 
         IOffers(offersContractAddress).markSignatureUsed(offer, signature);
 
@@ -108,20 +103,27 @@ contract NiftyApesSigLending is
     function refinanceByBorrowerSignature(
         Offer memory offer,
         bytes memory signature,
-        uint256 nftId
+        uint256 nftId,
+        uint32 expectedLastUpdatedTimestamp
     ) external whenNotPaused nonReentrant {
         address signer = IOffers(offersContractAddress).getOfferSigner(offer, signature);
 
         _requireOfferCreator(offer, signer);
         IOffers(offersContractAddress).requireAvailableSignature(signature);
         IOffers(offersContractAddress).requireSignature65(signature);
+        IOffers(offersContractAddress).requireMinimumDuration(offer);
 
         if (!offer.floorTerm) {
             _requireMatchingNftId(offer, nftId);
             IOffers(offersContractAddress).markSignatureUsed(offer, signature);
         }
 
-        ILending(lendingContractAddress).doRefinanceByBorrower(offer, nftId, msg.sender);
+        ILending(lendingContractAddress).doRefinanceByBorrower(
+            offer,
+            nftId,
+            msg.sender,
+            expectedLastUpdatedTimestamp
+        );
     }
 
     function _requireLenderOffer(Offer memory offer) internal pure {
@@ -130,10 +132,6 @@ contract NiftyApesSigLending is
 
     function _requireBorrowerOffer(Offer memory offer) internal pure {
         require(!offer.lenderOffer, "00013");
-    }
-
-    function _requireNoFloorTerms(Offer memory offer) internal pure {
-        require(!offer.floorTerm, "00014");
     }
 
     function _requireMatchingNftId(Offer memory offer, uint256 nftId) internal pure {
