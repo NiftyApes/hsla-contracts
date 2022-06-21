@@ -20,7 +20,7 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
 
     /// @notice Returns the fee that computes protocol interest
     ///         This fee is the basis points in order to calculate interest per second
-    function protocolInterestBps() external view returns (uint96);
+    function protocolInterestBps() external view returns (uint16);
 
     /// @notice Returns the bps premium for refinancing a loan that the new lender has to pay
     ///         This premium is to compensate lenders for the work of originating a loan

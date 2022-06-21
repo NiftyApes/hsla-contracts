@@ -53,7 +53,7 @@ contract NiftyApesLending is
     address public sigLendingContractAddress;
 
     /// @inheritdoc ILending
-    uint96 public protocolInterestBps;
+    uint16 public protocolInterestBps;
 
     /// @inheritdoc ILending
     uint16 public originationPremiumBps;
@@ -102,7 +102,8 @@ contract NiftyApesLending is
     }
 
     /// @inheritdoc ILendingAdmin
-    function updateProtocolInterestBps(uint96 newProtocolInterestBps) external onlyOwner {
+    function updateProtocolInterestBps(uint16 newProtocolInterestBps) external onlyOwner {
+        _requireMaxFee(newProtocolInterestBps);
         emit ProtocolInterestBpsUpdated(protocolInterestBps, newProtocolInterestBps);
         protocolInterestBps = newProtocolInterestBps;
     }

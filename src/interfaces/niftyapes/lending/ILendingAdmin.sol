@@ -7,7 +7,7 @@ import "./ILendingEvents.sol";
 interface ILendingAdmin {
     /// @notice Updates the fee that computes protocol interest due on loan payback
     ///         Interest is charged per second on a loan.
-    function updateProtocolInterestBps(uint96 newProtocolInterestBps) external;
+    function updateProtocolInterestBps(uint16 newProtocolInterestBps) external;
 
     /// @notice Updates the bps premium for refinancing a loan that the new lender has to pay
     ///         Fees are denomiated in basis points, parts of 10_000
