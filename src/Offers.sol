@@ -204,14 +204,7 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
 
         offerBook[offerHash] = offer;
 
-        emit NewOffer(
-            offer.creator,
-            offer.asset,
-            offer.nftContractAddress,
-            offer.nftId,
-            offer,
-            offerHash
-        );
+        emit NewOffer(offer.creator, offer.nftContractAddress, offer.nftId, offer, offerHash);
     }
 
     /// @inheritdoc IOffers
@@ -242,14 +235,7 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
 
         Offer storage offer = offerBook[offerHash];
 
-        emit OfferRemoved(
-            offer.creator,
-            offer.asset,
-            offer.nftContractAddress,
-            nftId,
-            offer,
-            offerHash
-        );
+        emit OfferRemoved(offer.creator, offer.nftContractAddress, nftId, offer, offerHash);
 
         delete offerBook[offerHash];
     }

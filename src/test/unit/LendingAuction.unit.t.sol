@@ -629,7 +629,6 @@ contract LendingAuctionUnitTest is
 
         emit NewOffer(
             address(this),
-            address(usdcToken),
             address(0x0000000000000000000000000000000000000002),
             4,
             offer,
@@ -755,7 +754,6 @@ contract LendingAuctionUnitTest is
 
         emit OfferRemoved(
             address(this),
-            address(usdcToken),
             address(0x0000000000000000000000000000000000000002),
             4,
             offer,
@@ -1340,9 +1338,7 @@ contract LendingAuctionUnitTest is
 
         hevm.expectEmit(true, false, false, true);
 
-        emit LoanExecuted(LENDER_1, address(usdcToken), address(this), address(mockNft), 1, offer);
-
-        emit AmountDrawn(address(this), address(mockNft), 1, 6, 6);
+        emit LoanExecuted(address(mockNft), 1, offer);
 
         lendingAuction.executeLoanByBorrower(
             offer.nftContractAddress,
@@ -1905,9 +1901,9 @@ contract LendingAuctionUnitTest is
 
         hevm.expectEmit(true, true, true, true);
 
-        emit LoanExecuted(SIGNER_1, address(usdcToken), address(this), address(mockNft), 1, offer);
+        emit LoanExecuted(address(mockNft), 1, offer);
 
-        emit AmountDrawn(address(this), address(mockNft), 1, 6, 6);
+        emit AmountDrawn(address(mockNft), 1, 6, 6);
 
         emit OfferSignatureUsed(address(mockNft), 1, offer, signature);
 
@@ -2441,9 +2437,9 @@ contract LendingAuctionUnitTest is
 
         hevm.expectEmit(true, false, false, true);
 
-        emit LoanExecuted(LENDER_1, address(usdcToken), address(this), address(mockNft), 1, offer);
+        emit LoanExecuted(address(mockNft), 1, offer);
 
-        emit AmountDrawn(address(this), address(mockNft), 1, 6, 6);
+        emit AmountDrawn(address(mockNft), 1, 6, 6);
 
         hevm.startPrank(LENDER_1);
 
@@ -2930,9 +2926,9 @@ contract LendingAuctionUnitTest is
 
         hevm.expectEmit(true, true, true, true);
 
-        emit LoanExecuted(LENDER_1, address(usdcToken), SIGNER_1, address(mockNft), 1, offer);
+        emit LoanExecuted(address(mockNft), 1, offer);
 
-        emit AmountDrawn(SIGNER_1, address(mockNft), 1, 6, 6);
+        emit AmountDrawn(address(mockNft), 1, 6, 6);
 
         emit OfferSignatureUsed(address(mockNft), 1, offer, signature);
 
@@ -3928,9 +3924,9 @@ contract LendingAuctionUnitTest is
 
         hevm.expectEmit(true, true, false, true);
 
-        emit Refinance(LENDER_2, offer2.asset, address(this), address(mockNft), 1, offer2);
+        emit Refinance(address(mockNft), 1, offer2);
 
-        emit AmountDrawn(address(this), offer.nftContractAddress, 1, 0, 6);
+        emit AmountDrawn(offer.nftContractAddress, 1, 0, 6);
 
         lendingAuction.refinanceByBorrower(
             address(mockNft),
@@ -5213,9 +5209,9 @@ contract LendingAuctionUnitTest is
 
         emit OfferSignatureUsed(address(mockNft), 1, offer2, signature);
 
-        emit Refinance(SIGNER_1, offer2.asset, address(this), address(mockNft), 1, offer2);
+        emit Refinance(address(mockNft), 1, offer2);
 
-        emit AmountDrawn(address(this), offer.nftContractAddress, 1, 0, 6);
+        emit AmountDrawn(offer.nftContractAddress, 1, 0, 6);
 
         sigLendingAuction.refinanceByBorrowerSignature(
             offer2,
@@ -6319,7 +6315,7 @@ contract LendingAuctionUnitTest is
         });
         hevm.expectEmit(true, true, false, true);
 
-        emit Refinance(LENDER_2, offer2.asset, address(this), address(mockNft), 1, offer2);
+        emit Refinance(address(mockNft), 1, offer2);
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
 

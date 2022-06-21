@@ -224,17 +224,13 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         view
         returns (uint96);
 
-    /// @notice Returns whether interest has accumulated greater than the gas griefing premium requirement
+    /// @notice Returns the delta between the required accumulated interest and the current accumulated interest
     /// @param nftContractAddress The address of the NFT collection
     /// @param nftId The id of the specified NFT
     function checkSufficientInterestAccumulated(address nftContractAddress, uint256 nftId)
         external
         view
-        returns (
-            bool,
-            uint256,
-            uint96
-        );
+        returns (uint256);
 
     /// @notice Returns whether the lender has provided sufficient terms to not be charged a term griefing premium
     /// @param nftContractAddress The address of the NFT collection

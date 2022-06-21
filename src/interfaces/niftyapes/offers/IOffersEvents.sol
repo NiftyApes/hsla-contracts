@@ -7,14 +7,12 @@ import "./IOffersStructs.sol";
 interface IOffersEvents {
     /// @notice Emited when a new offer is stored on chain
     /// @param creator The creator of the offer, this can either be a borrower or a lender (check boolean flag in the offer).
-    /// @param asset The asset in which the offer is denominated
     /// @param nftContractAddress The nft contract address
     /// @param nftId The nft id, this field can be meaningless if the offer is a floor term offer
     /// @param offer The offer details
     /// @param offerHash The offer hash
     event NewOffer(
         address indexed creator,
-        address asset,
         address indexed nftContractAddress,
         uint256 indexed nftId,
         IOffersStructs.Offer offer,
@@ -23,14 +21,12 @@ interface IOffersEvents {
 
     /// @notice Emited when a offer is removed from chain
     /// @param creator The creator of the offer, this can either be a borrower or a lender (check boolean flag in the offer).
-    /// @param asset The asset in which the offer is denominated
     /// @param nftContractAddress The nft contract address
     /// @param nftId The nft id, this field can be meaningless if the offer is a floor term offer
     /// @param offer The offer details
     /// @param offerHash The offer hash
     event OfferRemoved(
         address indexed creator,
-        address asset,
         address indexed nftContractAddress,
         uint256 indexed nftId,
         IOffersStructs.Offer offer,
