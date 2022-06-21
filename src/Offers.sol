@@ -214,19 +214,6 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
         bytes32 offerHash,
         bool floorTerm
     ) external whenNotPaused {
-        Offer memory offer = getOffer(nftContractAddress, nftId, offerHash, floorTerm);
-
-        _requireOfferCreatorOrLendingContract(offer.creator, msg.sender);
-
-        _doRemoveOffer(nftContractAddress, nftId, offerHash, floorTerm);
-    }
-
-    function _doRemoveOffer(
-        address nftContractAddress,
-        uint256 nftId,
-        bytes32 offerHash,
-        bool floorTerm
-    ) internal {
         mapping(bytes32 => Offer) storage offerBook = _getOfferBook(
             nftContractAddress,
             nftId,
@@ -234,6 +221,8 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
         );
 
         Offer storage offer = offerBook[offerHash];
+
+        _requireOfferCreatorOrLendingContract(offer.creator, msg.sender);
 
         emit OfferRemoved(offer.creator, offer.nftContractAddress, nftId, offer, offerHash);
 
