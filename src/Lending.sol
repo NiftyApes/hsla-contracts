@@ -392,6 +392,8 @@ contract NiftyApesLending is
             fullCTokenAmount
         );
 
+        uint128 currentAmountDrawn = loanAuction.amountDrawn;
+
         // update Loan state
         if (loanAuction.lenderRefi) {
             loanAuction.lenderRefi = false;
@@ -416,7 +418,7 @@ contract NiftyApesLending is
         emit AmountDrawn(
             offer.nftContractAddress,
             nftId,
-            loanAuction.accumulatedLenderInterest + loanAuction.accumulatedProtocolInterest,
+            loanAuction.amountDrawn - currentAmountDrawn,
             loanAuction.amountDrawn
         );
     }
