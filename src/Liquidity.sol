@@ -38,8 +38,8 @@ contract NiftyApesLiquidity is
     /// @notice The reverse mapping for assetToCAsset
     mapping(address => address) internal _cAssetToAsset;
 
-    /// @notice The account balance for each asset of a user
-    mapping(address => mapping(address => Balance)) internal _balanceByAccountByAsset;
+    /// @notice The account balance for each cAsset of a user
+    mapping(address => mapping(address => uint256)) internal _balanceByAccountByCAsset;
 
     /// @inheritdoc ILiquidity
     mapping(address => uint256) public override maxBalanceByCAsset;
@@ -57,7 +57,7 @@ contract NiftyApesLiquidity is
     bool internal _ethTransferable;
 
     /// @dev The status of sanctions checks. Can be set to false if oracle becomes malicious.
-    bool internal sanctionsPause;
+    bool internal _sanctionsPause;
 
     /// @dev This empty reserved space is put in place to allow future versions to add new
     /// variables without shifting storage.
@@ -128,13 +128,13 @@ contract NiftyApesLiquidity is
 
     /// @inheritdoc ILiquidityAdmin
     function pauseSanctions() external onlyOwner {
-        sanctionsPause = true;
+        _sanctionsPause = true;
         emit LiquiditySanctionsPaused();
     }
 
     /// @inheritdoc ILiquidityAdmin
     function unpauseSanctions() external onlyOwner {
-        sanctionsPause = false;
+        _sanctionsPause = false;
         emit LiquiditySanctionsUnpaused();
     }
 
@@ -150,7 +150,7 @@ contract NiftyApesLiquidity is
 
     /// @inheritdoc ILiquidity
     function getCAssetBalance(address account, address cAsset) public view returns (uint256) {
-        return _balanceByAccountByAsset[account][cAsset].cAssetBalance;
+        return _balanceByAccountByCAsset[account][cAsset];
     }
 
     /// @inheritdoc ILiquidity
@@ -181,7 +181,7 @@ contract NiftyApesLiquidity is
 
         uint256 cTokensMinted = _mintCErc20(msg.sender, asset, tokenAmount);
 
-        _balanceByAccountByAsset[msg.sender][cAsset].cAssetBalance += cTokensMinted;
+        _balanceByAccountByCAsset[msg.sender][cAsset] += cTokensMinted;
 
         _requireMaxCAssetBalance(cAsset);
 
@@ -205,7 +205,7 @@ contract NiftyApesLiquidity is
 
         cToken.safeTransferFrom(msg.sender, address(this), cTokenAmount);
 
-        _balanceByAccountByAsset[msg.sender][cAsset].cAssetBalance += cTokenAmount;
+        _balanceByAccountByCAsset[msg.sender][cAsset] += cTokenAmount;
 
         _requireMaxCAssetBalance(cAsset);
 
@@ -251,8 +251,6 @@ contract NiftyApesLiquidity is
     {
         _requireIsNotSanctioned(msg.sender);
 
-        // Making sure a mapping for cAsset exists
-        _getAsset(cAsset);
         IERC20Upgradeable cToken = IERC20Upgradeable(cAsset);
 
         if (msg.sender == owner()) {
@@ -277,7 +275,7 @@ contract NiftyApesLiquidity is
 
         uint256 cTokensMinted = _mintCEth(msg.value);
 
-        _balanceByAccountByAsset[msg.sender][cAsset].cAssetBalance += cTokensMinted;
+        _balanceByAccountByCAsset[msg.sender][cAsset] += cTokensMinted;
 
         _requireMaxCAssetBalance(cAsset);
 
@@ -312,7 +310,7 @@ contract NiftyApesLiquidity is
     }
 
     function _requireIsNotSanctioned(address addressToCheck) internal view {
-        if (!sanctionsPause) {
+        if (!_sanctionsPause) {
             SanctionsList sanctionsList = SanctionsList(SANCTIONS_CONTRACT);
             bool isToSanctioned = sanctionsList.isSanctioned(addressToCheck);
             require(!isToSanctioned, "00017");
@@ -387,7 +385,9 @@ contract NiftyApesLiquidity is
 
         _sendValue(cAsset, bpsForRegen, regenCollectiveAddress);
 
-        emit PercentForRegen(regenCollectiveAddress, cAsset, bpsForRegen, bpsForRegen);
+        uint256 regenAmountUnderlying = cAssetAmountToAssetAmount(cAsset, bpsForRegen);
+
+        emit PercentForRegen(regenCollectiveAddress, cAsset, regenAmountUnderlying, bpsForRegen);
 
         emit CErc20Withdrawn(owner(), cAsset, ownerBalanceMinusRegen);
 
@@ -504,7 +504,7 @@ contract NiftyApesLiquidity is
         uint256 cTokenAmount
     ) internal {
         _requireCAssetBalance(account, cAsset, cTokenAmount);
-        _balanceByAccountByAsset[account][cAsset].cAssetBalance -= cTokenAmount;
+        _balanceByAccountByCAsset[account][cAsset] -= cTokenAmount;
     }
 
     /// @inheritdoc ILiquidity
@@ -514,7 +514,7 @@ contract NiftyApesLiquidity is
         uint256 amount
     ) external {
         _requireLendingContract();
-        _balanceByAccountByAsset[account][cAsset].cAssetBalance += amount;
+        _balanceByAccountByCAsset[account][cAsset] += amount;
     }
 
     /// @inheritdoc ILiquidity

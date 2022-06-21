@@ -20,11 +20,7 @@ library Math {
     }
 
     /// see compound Exponential#mulScalarTurncate
-    function mulScalarTruncate(uint256 scalar, uint256 exponent)
-        internal
-        pure
-        returns (uint256)
-    {
+    function mulScalarTruncate(uint256 scalar, uint256 exponent) internal pure returns (uint256) {
         uint256 product = exponent * scalar;
         return product / expScale;
     }

@@ -5,9 +5,6 @@ import "./ISigLendingEvents.sol";
 
 /// @title NiftyApes interface for the admin role.
 interface ISigLendingAdmin {
-    /// @notice Updates the associated offers contract address
-    function updateOffersContractAddress(address newOffersContractAddress) external;
-
     /// @notice Updates the associated liquidity contract address
     function updateLendingContractAddress(address newLendingContractAddress) external;
 

@@ -79,7 +79,11 @@ interface IOffers is IOffersAdmin, IOffersEvents, IOffersStructs, ILendingStruct
     /// @param signature The signature of the offer
     function requireAvailableSignature(bytes memory signature) external view;
 
-    /// @notice Checks that an offer has not expired
+    /// @notice Checks that an offer has a minimum duration
     /// @param offer The details of the offer
-    function requireOfferNotExpired(Offer memory offer) external view;
+    function requireMinimumDuration(Offer memory offer) external pure;
+
+    /// @notice Checks that an offer is not a floor term offer
+    /// @param offer The details of the offer
+    function requireNoFloorTerms(Offer memory offer) external pure;
 }

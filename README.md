@@ -28,6 +28,31 @@ The NiftyApes protocol is made up of four core contracts `Liquidity.sol`, `Offer
 
 `SigLending.sol` allows for lenders and borrowers to execute and refinance loans based on the liquidity and gas-less offers made via signatures and that are stored in a centralized database.
 
+## Deployment Sequence
+
+The NiftyApes are four idependently deployed contracts that reference each other for full functionality. The first contracts to be deployed will have `updateContractAddress` functions that allow them to reference later deployed contracts. These `update` functions are only intended to be used once to intiial the system, not to update in the future, which could have adverse affects. Later deployed contracts will have the addresses of earlier deployed contracts hardcoded into their `initialize` functions.
+
+Deploy sequence:
+
+1. Deploy Liquidity.sol
+2. Call liquidity.initalize()
+   a. Confirm contract ownership
+3. Deploy Offers.sol
+4. Call offers.initalize(address(liquidityContractAddress))
+   a. Confirm contract ownership
+5. Deploy SigLending.sol
+6. Call sigLending.initalize(address(offersContractAddress))
+   a. Confirm contract ownership
+7. Hardcode liquidity contract address in:
+   c. Lending.sol
+8. Deploy Lending.sol
+9. Call lending.initalize(address(liquidityContractAddress), address(offersContractAddress), address(sigLendingContractAddress))
+   a. Confirm contract ownership
+10. Call sigLending.updateLendingContractAddress(lendingContractAddress)
+11. Call offers.updateLendingContractAddress(lendingContractAddress)
+12. Call offers.updateSigLendingContractAddress(sigLendingContractAddress)
+13. Call liquidity.updateLendingContractAddress(lendingContractAddress)
+
 ## NiftyApes Error Messages
 
 "00001" == "lender balance"
@@ -75,3 +100,4 @@ The NiftyApes protocol is made up of four core contracts `Liquidity.sol`, `Offer
 "00043" == "eth not transferable"
 "00044" == "max casset"
 "00045" == "amount 0"
+"00046" == "offer already exists"

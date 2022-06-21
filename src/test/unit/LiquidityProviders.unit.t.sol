@@ -13,6 +13,8 @@ import "../mock/CERC20Mock.sol";
 import "../mock/CEtherMock.sol";
 import "../mock/ERC20Mock.sol";
 
+import "../Console.sol";
+
 contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
     NiftyApesLiquidity liquidityProviders;
     ERC20Mock usdcToken;
@@ -321,8 +323,8 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         liquidityProviders.withdrawErc20(address(usdcToken), 1);
     }
 
-    function testCannotWithdrawCErc20_asset_not_whitelisted() public {
-        hevm.expectRevert("00041");
+    function testCannotWithdrawCErc20_no_asset_balance() public {
+        hevm.expectRevert("00045");
         liquidityProviders.withdrawCErc20(address(0x0000000000000000000000000000000000000001), 1);
     }
 
@@ -676,6 +678,14 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         hevm.startPrank(liquidityProviders.owner());
 
         liquidityProviders.withdrawErc20(address(usdcToken), 100);
+    }
+
+    function testCAssetAmountToAssetAmount() public {
+        cUSDCToken.setExchangeRateCurrent(220154645140434444389595003); // exchange rate of DAI at time of edit
+
+        uint256 result = liquidityProviders.cAssetAmountToAssetAmount(address(cUSDCToken), 1e8); // supply 1 mockCUSDC, would be better to call this mock DAI as USDC has 6 decimals
+
+        assertEq(result, 22015464514043444); // ~ 0.02 DAI
     }
 
     // TODO(miller): Missing unit tests for max c asset balance

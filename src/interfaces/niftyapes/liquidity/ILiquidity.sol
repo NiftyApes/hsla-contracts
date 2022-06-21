@@ -3,10 +3,9 @@ pragma solidity 0.8.13;
 
 import "./ILiquidityAdmin.sol";
 import "./ILiquidityEvents.sol";
-import "./ILiquidityStructs.sol";
 
 /// @title NiftyApes interface for managing liquidity.
-interface ILiquidity is ILiquidityAdmin, ILiquidityEvents, ILiquidityStructs {
+interface ILiquidity is ILiquidityAdmin, ILiquidityEvents {
     /// @notice Returns the address of a compound token if the compound token is in the allow list on NiftyApes, otherwise zero address.
     /// @param asset The assets address (e.g. USDC address)
     function assetToCAsset(address asset) external view returns (address);

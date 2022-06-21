@@ -91,11 +91,11 @@ interface ILiquidityEvents {
     event RegenCollectiveAddressUpdated(address newRegenCollectiveAddress);
 
     /// @notice Emmited when the associated lending contract address is changed
-    /// @param oldLendingContractAdress The old lending contract address
-    /// @param newLendingContractAdress The new lending contract address
+    /// @param oldLendingContractAddress The old lending contract address
+    /// @param newLendingContractAddress The new lending contract address
     event LiquidityXLendingContractAddressUpdated(
-        address oldLendingContractAdress,
-        address newLendingContractAdress
+        address oldLendingContractAddress,
+        address newLendingContractAddress
     );
 
     /// @notice Emmited when sanctions checks are paused
