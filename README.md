@@ -28,30 +28,24 @@ The NiftyApes protocol is made up of four core contracts `Liquidity.sol`, `Offer
 
 `SigLending.sol` allows for lenders and borrowers to execute and refinance loans based on the liquidity and gas-less offers made via signatures and that are stored in a centralized database.
 
-## Deployment Sequence
+## Deployment
 
-The NiftyApes are four idependently deployed contracts that reference each other for full functionality. The first contracts to be deployed will have `updateContractAddress` functions that allow them to reference later deployed contracts. These `update` functions are only intended to be used once to intiial the system, not to update in the future, which could have adverse affects. Later deployed contracts will have the addresses of earlier deployed contracts hardcoded into their `initialize` functions.
+1. Copy `example.env` to a new `.env` file.
 
-Deploy sequence:
+2. Add the appropriate values. NEVER USE YOUR OWN KEYS OR KEYS THAT WILL BE USED ON ANY PRODUCTION NETWORK.
 
-1. Deploy Liquidity.sol
-2. Call liquidity.initalize()
-   a. Confirm contract ownership
-3. Deploy Offers.sol
-4. Call offers.initalize(address(liquidityContractAddress))
-   a. Confirm contract ownership
-5. Deploy SigLending.sol
-6. Call sigLending.initalize(address(offersContractAddress))
-   a. Confirm contract ownership
-7. Hardcode liquidity contract address in:
-   c. Lending.sol
-8. Deploy Lending.sol
-9. Call lending.initalize(address(liquidityContractAddress), address(offersContractAddress), address(sigLendingContractAddress))
-   a. Confirm contract ownership
-10. Call sigLending.updateLendingContractAddress(lendingContractAddress)
-11. Call offers.updateLendingContractAddress(lendingContractAddress)
-12. Call offers.updateSigLendingContractAddress(sigLendingContractAddress)
-13. Call liquidity.updateLendingContractAddress(lendingContractAddress)
+3. For local deployment:
+   a. In a seperate terminal run `$ anvil`. This will start your local chain. You can then copy an anvil private key.
+   b. If you have made any changes to the `.env` run: `$ source .env`
+   c. Then run:
+   `forge script script/NiftyApes.s.sol:NiftyApesScript --fork-url $LOCAL_RPC_URL --private-key $ANVIL_PRIVATE_KEY --broadcast`
+
+4. For deployment to Rinkeby:
+   a. Make sure you have a dedicated test wallet with funding. You can obtain test ETH, ERC20s, and NFTs here: https://faucet.paradigm.xyz/
+   b. Add you test wallet private keys to `.env`.
+   c. If you have made any changes to the `.env` run: `$ source .env`
+   c. Then run:
+   `forge script script/NiftyApes.s.sol:NiftyApesScript --optimize --rpc-url $RINKEBY_RPC_URL --private-key $RINKEBY_PRIVATE_KEY --broadcast`
 
 ## NiftyApes Error Messages
 
