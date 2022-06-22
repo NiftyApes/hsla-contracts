@@ -47,6 +47,9 @@ The NiftyApes protocol is made up of four core contracts `Liquidity.sol`, `Offer
    c. Then run:
    `forge script script/NiftyApes.s.sol:NiftyApesScript --optimize --rpc-url $RINKEBY_RPC_URL --private-key $RINKEBY_PRIVATE_KEY --broadcast`
 
+5. For deployment to Mainnet:
+   d. `forge script script/NiftyApes.s.sol:NiftyApesScript --optimize --slow --rpc-url $MAINNET_RPC_URL --ledger --broadcast`
+
 ## NiftyApes Error Messages
 
 "00001" == "lender balance"
