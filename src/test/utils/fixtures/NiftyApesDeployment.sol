@@ -26,30 +26,24 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
 
         vm.startPrank(owner);
 
-        lending = new NiftyApesLending();
-        lending.initialize();
-
         liquidity = new NiftyApesLiquidity();
         liquidity.initialize();
 
         offers = new NiftyApesOffers();
-        offers.initialize();
+        offers.initialize(address(liquidity));
 
         sigLending = new NiftyApesSigLending();
-        sigLending.initialize();
+        sigLending.initialize(address(offers));
 
-        lending.updateOffersContractAddress(address(offers));
-        lending.updateLiquidityContractAddress(address(liquidity));
-        lending.updateSigLendingContractAddress(address(sigLending));
-
-        liquidity.updateLendingContractAddress(address(lending));
-
-        offers.updateLendingContractAddress(address(lending));
-        offers.updateLiquidityContractAddress(address(liquidity));
-        offers.updateSigLendingContractAddress(address(sigLending));
+        lending = new NiftyApesLending();
+        lending.initialize(address(liquidity), address(offers), address(sigLending));
 
         sigLending.updateLendingContractAddress(address(lending));
-        sigLending.updateOffersContractAddress(address(offers));
+
+        offers.updateLendingContractAddress(address(lending));
+        offers.updateSigLendingContractAddress(address(sigLending));
+
+        liquidity.updateLendingContractAddress(address(lending));
 
         liquidity.setCAssetAddress(ETH_ADDRESS, address(cEtherToken));
         liquidity.setMaxCAssetBalance(ETH_ADDRESS, ~uint256(0));
@@ -58,5 +52,7 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         liquidity.setMaxCAssetBalance(address(usdcToken), ~uint256(0));
 
         vm.stopPrank();
+
+        vm.label(address(0), "NULL !!!!! ");
     }
 }

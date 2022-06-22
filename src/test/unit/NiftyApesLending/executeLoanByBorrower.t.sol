@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 
 import "../../utils/fixtures/LenderLiquidityFixtures.sol";
 import "../../../interfaces/niftyapes/offers/IOffersStructs.sol";
+import "../../../interfaces/niftyapes/lending/ILendingStructs.sol";
 import "../../../interfaces/niftyapes/lending/ILendingEvents.sol";
 
 contract ContractThatCannotReceiveEth is ERC721HolderUpgradeable {
@@ -17,6 +18,7 @@ contract ContractThatCannotReceiveEth is ERC721HolderUpgradeable {
 contract TestExecuteLoanByBorrower is
     Test,
     IOffersStructs,
+    ILendingStructs,
     ILendingEvents,
     LenderLiquidityFixtures
 {
@@ -47,7 +49,7 @@ contract TestExecuteLoanByBorrower is
         super.setUp();
 
         // these fields are fixed, not fuzzed
-        // but specific fields can be overriden in tests
+        // but specific fields can be overridden in tests
         defaultFixedOfferFields = FixedOfferFields({
             creator: lender1,
             lenderOffer: true,
@@ -115,10 +117,11 @@ contract TestExecuteLoanByBorrower is
         assertEq(lending.getLoanAuction(address(mockNft), 1).lastUpdatedTimestamp, block.timestamp);
     }
 
-    function createOffer(Offer memory offer) private {
+    function createOffer(Offer memory offer) private returns (Offer memory) {
         vm.startPrank(lender1);
-        offers.createOffer(offer);
+        bytes32 offerHash = offers.createOffer(offer);
         vm.stopPrank();
+        return offers.getOffer(offer.nftContractAddress, offer.nftId, offerHash, offer.floorTerm);
     }
 
     function approveLending(Offer memory offer) private {
@@ -127,7 +130,10 @@ contract TestExecuteLoanByBorrower is
         vm.stopPrank();
     }
 
-    function tryToExecuteLoanByBorrower(Offer memory offer, bytes memory errorCode) private {
+    function tryToExecuteLoanByBorrower(Offer memory offer, bytes memory errorCode)
+        private
+        returns (LoanAuction memory)
+    {
         vm.startPrank(borrower1);
         bytes32 offerHash = offers.getOfferHash(offer);
 
@@ -142,14 +148,18 @@ contract TestExecuteLoanByBorrower is
             offer.floorTerm
         );
         vm.stopPrank();
+
+        return lending.getLoanAuction(offer.nftContractAddress, offer.nftId);
     }
 
     function createOfferAndTryToExecuteLoanByBorrower(Offer memory offer, bytes memory errorCode)
         private
+        returns (Offer memory, LoanAuction memory)
     {
-        createOffer(offer);
+        Offer memory offerCreated = createOffer(offer);
         approveLending(offer);
-        tryToExecuteLoanByBorrower(offer, errorCode);
+        LoanAuction memory loan = tryToExecuteLoanByBorrower(offer, errorCode);
+        return (offerCreated, loan);
     }
 
     function _test_executeLoanByBorrower_simplest_case(FuzzedOfferFields memory fuzzed) private {
@@ -181,23 +191,7 @@ contract TestExecuteLoanByBorrower is
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
 
         vm.expectEmit(true, true, true, true);
-        emit LoanExecuted(
-            lender1,
-            offer.asset,
-            borrower1,
-            offer.nftContractAddress,
-            offer.nftId,
-            offer
-        );
-
-        vm.expectEmit(true, true, true, true);
-        emit AmountDrawn(
-            borrower1,
-            offer.nftContractAddress,
-            offer.nftId,
-            offer.amount,
-            offer.amount
-        );
+        emit LoanExecuted(offer.nftContractAddress, offer.nftId, offer);
 
         createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
     }
@@ -231,26 +225,6 @@ contract TestExecuteLoanByBorrower is
 
     function test_unit_cannot_executeLoanByBorrower_if_offer_expired() public {
         _test_cannot_executeLoanByBorrower_if_offer_expired(
-            defaultFixedFuzzedFieldsForFastUnitTesting
-        );
-    }
-
-    function _test_cannot_executeLoanByBorrower_if_offer_duration_too_short(
-        FuzzedOfferFields memory fuzzed
-    ) private {
-        fuzzed.duration = 1 days - 1;
-        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
-        createOfferAndTryToExecuteLoanByBorrower(offer, "00011");
-    }
-
-    function test_fuzz_cannot_executeLoanByBorrower_if_offer_duration_too_short(
-        FuzzedOfferFields memory fuzzed
-    ) public validateFuzzedOfferFields(fuzzed) {
-        _test_cannot_executeLoanByBorrower_if_offer_duration_too_short(fuzzed);
-    }
-
-    function test_unit_cannot_executeLoanByBorrower_if_offer_duration_too_short() public {
-        _test_cannot_executeLoanByBorrower_if_offer_duration_too_short(
             defaultFixedFuzzedFieldsForFastUnitTesting
         );
     }

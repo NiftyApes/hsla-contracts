@@ -44,7 +44,7 @@ contract TestExecuteLoanByBorrower is
         super.setUp();
 
         // these fields are fixed, not fuzzed
-        // but specific fields can be overriden in tests
+        // but specific fields can be overridden in tests
         defaultFixedOfferFields = FixedOfferFields({
             fixedTerms: false,
             creator: lender1,
@@ -101,10 +101,11 @@ contract TestExecuteLoanByBorrower is
             });
     }
 
-    function createOffer(Offer memory offer) private {
+    function createOffer(Offer memory offer) private returns (Offer memory) {
         vm.startPrank(lender1);
-        offers.createOffer(offer);
+        bytes32 offerHash = offers.createOffer(offer);
         vm.stopPrank();
+        return offers.getOffer(offer.nftContractAddress, offer.nftId, offerHash, offer.floorTerm);
     }
 
     function approveLending(Offer memory offer) private {
@@ -113,7 +114,10 @@ contract TestExecuteLoanByBorrower is
         vm.stopPrank();
     }
 
-    function tryToExecuteLoanByBorrower(Offer memory offer, bytes memory errorCode) private {
+    function tryToExecuteLoanByBorrower(Offer memory offer, bytes memory errorCode)
+        private
+        returns (LoanAuction memory)
+    {
         vm.startPrank(borrower1);
         bytes32 offerHash = offers.getOfferHash(offer);
 
@@ -128,14 +132,18 @@ contract TestExecuteLoanByBorrower is
             offer.floorTerm
         );
         vm.stopPrank();
+
+        return lending.getLoanAuction(offer.nftContractAddress, offer.nftId);
     }
 
     function createOfferAndTryToExecuteLoanByBorrower(Offer memory offer, bytes memory errorCode)
         private
+        returns (Offer memory, LoanAuction memory)
     {
-        createOffer(offer);
+        Offer memory offerCreated = createOffer(offer);
         approveLending(offer);
-        tryToExecuteLoanByBorrower(offer, errorCode);
+        LoanAuction memory loan = tryToExecuteLoanByBorrower(offer, errorCode);
+        return (offerCreated, loan);
     }
 
     function tryToRefinanceLoan(Offer memory newOffer, bytes memory errorCode) private {
@@ -171,7 +179,10 @@ contract TestExecuteLoanByBorrower is
         assertEq(lending.gasGriefingProtocolPremiumBps(), updatedGasGriefingAmount);
 
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
-        createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
+        (, LoanAuction memory firstLoan) = createOfferAndTryToExecuteLoanByBorrower(
+            offer,
+            "should work"
+        );
 
         // new offer from lender2 with +1 amount
         // will trigger term griefing and gas griefing
@@ -180,11 +191,6 @@ contract TestExecuteLoanByBorrower is
         fuzzed.floorTerm = false; // refinance can't be floor term
         fuzzed.expiration = uint32(block.timestamp) + secondsBeforeRefinance + 1;
         Offer memory newOffer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
-
-        LoanAuction memory firstLoan = lending.getLoanAuction(
-            offer.nftContractAddress,
-            offer.nftId
-        );
 
         vm.warp(block.timestamp + secondsBeforeRefinance);
 
