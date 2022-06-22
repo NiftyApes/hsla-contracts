@@ -11,7 +11,7 @@ interface ILiquidityAdmin {
     /// @notice Updates the maximum cAsset balance that the contracts will allow
     ///         This allows a guarded launch with NiftyApes limiting the amount of liquidity
     ///         in the protocol.
-    function setMaxCAssetBalance(address asset, uint256 maxBalance) external;
+    function setMaxCAssetBalance(address cAsset, uint256 maxBalance) external;
 
     /// @notice Updates the associated lending contract address
     function updateLendingContractAddress(address newLendingContractAddress) external;

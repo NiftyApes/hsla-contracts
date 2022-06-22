@@ -93,8 +93,8 @@ contract NiftyApesLiquidity is
     }
 
     /// @inheritdoc ILiquidityAdmin
-    function setMaxCAssetBalance(address asset, uint256 maxBalance) external onlyOwner {
-        maxBalanceByCAsset[getCAsset(asset)] = maxBalance;
+    function setMaxCAssetBalance(address cAsset, uint256 maxBalance) external onlyOwner {
+        maxBalanceByCAsset[cAsset] = maxBalance;
     }
 
     /// @inheritdoc ILiquidityAdmin
