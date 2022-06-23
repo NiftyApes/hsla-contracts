@@ -38,14 +38,20 @@ The NiftyApes protocol is made up of four core contracts `Liquidity.sol`, `Offer
    a. In a seperate terminal run `$ anvil`. This will start your local chain. You can then copy an anvil private key.
    b. If you have made any changes to the `.env` run: `$ source .env`
    c. Then run:
-   `forge script script/NiftyApes.s.sol:NiftyApesScript --fork-url $LOCAL_RPC_URL --private-key $ANVIL_PRIVATE_KEY --broadcast`
+   `forge script script/Rinkeby_Deploy_NiftyApes.s.sol:DeployNiftyApesScript --fork-url $LOCAL_RPC_URL --private-key $ANVIL_PRIVATE_KEY --broadcast`
 
 4. For deployment to Rinkeby:
    a. Make sure you have a dedicated test wallet with funding. You can obtain test ETH, ERC20s, and NFTs here: https://faucet.paradigm.xyz/
    b. Add you test wallet private keys to `.env`.
    c. If you have made any changes to the `.env` run: `$ source .env`
    c. Then run:
-   `forge script script/NiftyApes.s.sol:NiftyApesScript --optimize --rpc-url $RINKEBY_RPC_URL --private-key $RINKEBY_PRIVATE_KEY --broadcast`
+   `forge script script/Rinkeby_Deploy_NiftyApes.s.sol:DeployNiftyApesScript --optimize --rpc-url $RINKEBY_RPC_URL --private-key $RINKEBY_PRIVATE_KEY --slow --broadcast`
+
+   Rinkeby contract addresses:
+   Liquidity: 0x8bC67d5177dD930CD9c9d3cA6Fc33E4f454f30e4
+   Offers: 0x9891589826C0e386009819a9DC82e94656036875
+   Siglending: 0x13066734874c538606e5589eE9BB6BbC3C018fAF
+   Lending: 0xd830dcFC57816aDeB9Bf34A5dA38197810fA8Fd4
 
 5. For deployment to Mainnet:
    d. `forge script script/NiftyApes.s.sol:NiftyApesScript --optimize --slow --rpc-url $MAINNET_RPC_URL --ledger --broadcast`
