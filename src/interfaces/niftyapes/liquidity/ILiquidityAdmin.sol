@@ -17,7 +17,7 @@ interface ILiquidityAdmin {
     function updateLendingContractAddress(address newLendingContractAddress) external;
 
     /// @notice Updates the bps of revenue sent to the Regen Collective
-    ///         Fees are denomiated in basis points, parts of 10_000
+    ///         Fees are denominated in basis points, parts of 10_000
     function updateRegenCollectiveBpsOfRevenue(uint16 newRegenCollectiveBpsOfRevenue) external;
 
     /// @notice Updates the address for the Regen Collective

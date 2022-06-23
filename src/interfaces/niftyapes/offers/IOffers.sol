@@ -18,7 +18,7 @@ interface IOffers is IOffersAdmin, IOffersEvents, IOffersStructs, ILendingStruct
     /// @notice Returns the address for the associated liquidity contract
     function liquidityContractAddress() external view returns (address);
 
-    /// @notice Returns an EIP712 standard compatiable hash for a given offer
+    /// @notice Returns an EIP712 standard compatible hash for a given offer
     ///         This hash can be signed to create a valid offer.
     /// @param offer The offer to compute the hash for
     function getOfferHash(Offer memory offer) external view returns (bytes32);
