@@ -6,7 +6,7 @@ import "../src/Offers.sol";
 import "../src/SigLending.sol";
 import "../src/Lending.sol";
 
-contract NiftyApesScript is Script {
+contract DeployNiftyApesScript is Script {
     function run() external {
         NiftyApesLending lendingAuction;
         NiftyApesOffers offersContract;
@@ -38,22 +38,22 @@ contract NiftyApesScript is Script {
         sigLendingAuction.updateLendingContractAddress(address(lendingAuction));
 
         // Rinkeby Addresses
-        address usdcToken = address(0xeb8f08a975Ab53E34D8a0330E0D34de942C95926);
-        address cUSDCToken = address(0x5B281A6DdA0B271e91ae35DE655Ad301C976edb1);
-        address ETH_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
-        address cEtherToken = address(0xd6801a1DfFCd0a410336Ef88DeF4320D6DF1883e);
+        address usdcToken = 0xeb8f08a975Ab53E34D8a0330E0D34de942C95926;
+        address cUSDCToken = 0x5B281A6DdA0B271e91ae35DE655Ad301C976edb1;
+        address ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+        address cEtherToken = 0xd6801a1DfFCd0a410336Ef88DeF4320D6DF1883e;
 
         // USDC
         liquidityProviders.setCAssetAddress(usdcToken, cUSDCToken);
 
-        uint256 cUSDCAmount = liquidityProviders.assetAmountToCAssetAmount(usdcToken, 500_000);
+        uint256 cUSDCAmount = liquidityProviders.assetAmountToCAssetAmount(usdcToken, 500000);
 
         liquidityProviders.setMaxCAssetBalance(cUSDCToken, cUSDCAmount);
 
         // ETH
         liquidityProviders.setCAssetAddress(ETH_ADDRESS, cEtherToken);
 
-        uint256 cEtherAmount = liquidityProviders.assetAmountToCAssetAmount(ETH_ADDRESS, 500_000);
+        uint256 cEtherAmount = liquidityProviders.assetAmountToCAssetAmount(ETH_ADDRESS, 500);
 
         liquidityProviders.setMaxCAssetBalance(cEtherToken, cEtherAmount);
 
