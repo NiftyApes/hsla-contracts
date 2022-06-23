@@ -11,11 +11,11 @@ import "./interfaces/niftyapes/offers/IOffers.sol";
 import "./interfaces/niftyapes/liquidity/ILiquidity.sol";
 import "./lib/ECDSABridge.sol";
 
-/// @title Implemention of the IOffers interface
+/// @title Implementation of the IOffers interface
 contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgradeable, IOffers {
     /// @dev A mapping for a NFT to an Offer
-    ///      The mapping has to be broken into three parts since an NFT is denomiated by its address (first part)
-    ///      and its nftId (second part), offers are reffered to by their hash (see #getEIP712EncodedOffer for details) (third part).
+    ///      The mapping has to be broken into three parts since an NFT is denominated by its address (first part)
+    ///      and its nftId (second part), offers are referred to by their hash (see #getEIP712EncodedOffer for details) (third part).
     mapping(address => mapping(uint256 => mapping(bytes32 => Offer))) private _nftOfferBooks;
 
     /// @dev A mapping for a NFT to a floor offer

@@ -13,7 +13,7 @@ import "./interfaces/niftyapes/liquidity/ILiquidity.sol";
 import "./interfaces/niftyapes/offers/IOffers.sol";
 import "./interfaces/sanctions/SanctionsList.sol";
 
-/// @title Implemention of the ILending interface
+/// @title Implementation of the ILending interface
 contract NiftyApesLending is
     OwnableUpgradeable,
     PausableUpgradeable,
@@ -26,18 +26,18 @@ contract NiftyApesLending is
     /// @dev Internal address used for for ETH in our mappings
     address private constant ETH_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
 
-    /// @dev Internal constant address for the Chinalysis OFAC sanctions oracle
+    /// @dev Internal constant address for the Chainalysis OFAC sanctions oracle
     address private constant SANCTIONS_CONTRACT = 0x40C57923924B5c5c5455c48D93317139ADDaC8fb;
 
     /// @notice The maximum value that any fee on the protocol can be set to.
-    ///         Fees on the protocol are denomimated in parts of 10_000.
+    ///         Fees on the protocol are denominated in parts of 10_000.
     uint256 private constant MAX_FEE = 1_000;
 
     /// @notice The base value for fees in the protocol.
     uint256 private constant MAX_BPS = 10_000;
 
     /// @dev A mapping for a NFT to a loan auction.
-    ///      The mapping has to be broken into two parts since an NFT is denomiated by its address (first part)
+    ///      The mapping has to be broken into two parts since an NFT is denominated by its address (first part)
     ///      and its nftId (second part) in our code base.
     mapping(address => mapping(uint256 => LoanAuction)) private _loanAuctions;
 
@@ -463,7 +463,7 @@ contract NiftyApesLending is
         (uint256 lenderInterest, uint256 protocolInterest) = _updateInterest(loanAuction);
 
         uint256 protocolInterestAndPremium;
-        uint256 protocolPremimuimInCtokens;
+        uint256 protocolPremiumInCtokens;
 
         if (!sufficientTerms) {
             protocolInterestAndPremium +=
@@ -483,25 +483,25 @@ contract NiftyApesLending is
             uint256 additionalTokens = ILiquidity(liquidityContractAddress)
                 .assetAmountToCAssetAmount(offer.asset, offer.amount - loanAuction.amountDrawn);
 
-            protocolPremimuimInCtokens = ILiquidity(liquidityContractAddress)
+            protocolPremiumInCtokens = ILiquidity(liquidityContractAddress)
                 .assetAmountToCAssetAmount(offer.asset, protocolInterestAndPremium);
 
             _requireSufficientBalance(
                 offer.creator,
                 cAsset,
-                additionalTokens + protocolPremimuimInCtokens
+                additionalTokens + protocolPremiumInCtokens
             );
 
-            if (protocolPremimuimInCtokens > 0) {
+            if (protocolPremiumInCtokens > 0) {
                 ILiquidity(liquidityContractAddress).withdrawCBalance(
                     offer.creator,
                     cAsset,
-                    protocolPremimuimInCtokens
+                    protocolPremiumInCtokens
                 );
                 ILiquidity(liquidityContractAddress).addToCAssetBalance(
                     owner(),
                     cAsset,
-                    protocolPremimuimInCtokens
+                    protocolPremiumInCtokens
                 );
             }
         } else {
@@ -542,7 +542,7 @@ contract NiftyApesLending is
             // require prospective lender has sufficient available balance to refinance loan
             _requireSufficientBalance(offer.creator, cAsset, fullCTokenAmount);
 
-            protocolPremimuimInCtokens = ILiquidity(liquidityContractAddress)
+            protocolPremiumInCtokens = ILiquidity(liquidityContractAddress)
                 .assetAmountToCAssetAmount(offer.asset, protocolInterestAndPremium);
 
             address currentlender = loanAuction.lender;
@@ -553,7 +553,7 @@ contract NiftyApesLending is
             ILiquidity(liquidityContractAddress).addToCAssetBalance(
                 currentlender,
                 cAsset,
-                (fullCTokenAmount - protocolPremimuimInCtokens)
+                (fullCTokenAmount - protocolPremiumInCtokens)
             );
             ILiquidity(liquidityContractAddress).withdrawCBalance(
                 offer.creator,
@@ -563,7 +563,7 @@ contract NiftyApesLending is
             ILiquidity(liquidityContractAddress).addToCAssetBalance(
                 owner(),
                 cAsset,
-                protocolPremimuimInCtokens
+                protocolPremiumInCtokens
             );
         }
 

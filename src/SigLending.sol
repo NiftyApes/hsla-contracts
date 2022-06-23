@@ -8,7 +8,7 @@ import "./interfaces/niftyapes/lending/ILending.sol";
 import "./interfaces/niftyapes/sigLending/ISigLending.sol";
 import "./interfaces/niftyapes/offers/IOffers.sol";
 
-/// @title Implemention of the ILending interface
+/// @title Implementation of the ILending interface
 contract NiftyApesSigLending is
     OwnableUpgradeable,
     PausableUpgradeable,

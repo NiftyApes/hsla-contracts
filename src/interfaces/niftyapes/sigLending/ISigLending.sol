@@ -5,7 +5,7 @@ import "./ISigLendingAdmin.sol";
 import "./ISigLendingEvents.sol";
 import "../offers/IOffersStructs.sol";
 
-/// @title The signautre lending interface for Nifty Apes
+/// @title The signature lending interface for Nifty Apes
 ///        This interface is intended to be used for interacting with loans on the protocol.
 interface ISigLending is ISigLendingAdmin, ISigLendingEvents, IOffersStructs {
     /// @notice Returns the address for the associated offers contract
