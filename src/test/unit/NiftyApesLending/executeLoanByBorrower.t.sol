@@ -182,9 +182,9 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
 
         vm.startPrank(lender1);
         if (offer.asset == address(usdcToken)) {
-            liquidity.withdrawErc20(address(usdcToken), 1000 ether);
+            liquidity.withdrawErc20(address(usdcToken), defaultUsdcLiquiditySupplied);
         } else {
-            liquidity.withdrawEth(1000 ether);
+            liquidity.withdrawEth(defaultEthLiquiditySupplied);
         }
         vm.stopPrank();
 
@@ -206,13 +206,23 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
     function _test_cannot_executeLoanByBorrower_if_underlying_transfer_fails(
         FuzzedOfferFields memory fuzzed
     ) private {
-        fuzzed.randomAsset = 0; // USDC
-        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
-        usdcToken.setTransferFail(true);
-        createOfferAndTryToExecuteLoanByBorrower(
-            offer,
-            "SafeERC20: ERC20 operation did not succeed"
-        );
+        // Can only be mocked
+        bool integration = false;
+        try vm.envBool("INTEGRATION") returns (bool isIntegration) {
+            integration = isIntegration;
+        } catch (bytes memory) {
+            // This catches revert that occurs if env variable not supplied
+        }
+
+        if (!integration) {
+            fuzzed.randomAsset = 0; // USDC
+            Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+            usdcToken.setTransferFail(true);
+            createOfferAndTryToExecuteLoanByBorrower(
+                offer,
+                "SafeERC20: ERC20 operation did not succeed"
+            );
+        }
     }
 
     function test_fuzz_cannot_executeLoanByBorrower_if_underlying_transfer_fails(

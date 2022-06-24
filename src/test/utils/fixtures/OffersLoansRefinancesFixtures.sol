@@ -53,29 +53,38 @@ contract OffersLoansRefinancesFixtures is
             nftId: 1
         });
 
+        uint8 randomAsset = 0; // 0 == USDC, 1 == ETH
+
         // in addition to fuzz tests, we have fast unit tests
         // using these default values instead of fuzzing
         defaultFixedFuzzedFieldsForFastUnitTesting = FuzzedOfferFields({
             floorTerm: false,
-            amount: 1 ether,
-            interestRatePerSecond: 10**13,
+            amount: randomAsset % 2 == 0 ? 10 * uint128(10**usdcToken.decimals()) : 1 ether,
+            interestRatePerSecond: randomAsset % 2 == 0 ? 100 : 10**6,
             duration: 1 weeks,
             expiration: uint32(block.timestamp) + 1 days,
-            randomAsset: 0
+            randomAsset: randomAsset
         });
     }
 
     modifier validateFuzzedOfferFields(FuzzedOfferFields memory fuzzed) {
-        vm.assume(fuzzed.amount > 0);
         // -10 ether to give refinancing lender some wiggle room for fees
-        vm.assume(fuzzed.amount < defaultLiquiditySupplied - 10 ether);
+        if (fuzzed.randomAsset % 2 == 0) {
+            vm.assume(fuzzed.amount > 0);
+            vm.assume(fuzzed.amount < (defaultUsdcLiquiditySupplied * 90) / 100);
+        } else {
+            vm.assume(fuzzed.amount > 0);
+            vm.assume(fuzzed.amount < (defaultEthLiquiditySupplied * 90) / 100);
+        }
+
         vm.assume(fuzzed.duration > 1 days);
         // to avoid overflow when loanAuction.loanEndTimestamp = _currentTimestamp32() + offer.duration;
         vm.assume(fuzzed.duration < ~uint32(0) - block.timestamp);
         vm.assume(fuzzed.expiration > block.timestamp);
         // to avoid "Division or modulo by 0"
         vm.assume(fuzzed.interestRatePerSecond > 0);
-        vm.assume(fuzzed.interestRatePerSecond < 10**13);
+        // don't want interest to be too much for refinancing lender
+        vm.assume(fuzzed.interestRatePerSecond < (fuzzed.randomAsset % 2 == 0 ? 100 : 10**13));
         _;
     }
 
@@ -95,7 +104,9 @@ contract OffersLoansRefinancesFixtures is
                 asset: asset,
                 floorTerm: fuzzed.floorTerm,
                 interestRatePerSecond: fuzzed.interestRatePerSecond,
-                amount: fuzzed.amount,
+                amount: fuzzed.amount + (fuzzed.randomAsset % 2) == 0
+                    ? 10 * uint128(10**usdcToken.decimals())
+                    : 250000000,
                 duration: fuzzed.duration,
                 expiration: fuzzed.expiration
             });
@@ -160,10 +171,17 @@ contract OffersLoansRefinancesFixtures is
 
     function assetBalance(address account, address asset) internal returns (uint256) {
         address cAsset = liquidity.assetToCAsset(asset);
-        return
-            liquidity.cAssetAmountToAssetAmount(
-                address(cAsset),
-                liquidity.getCAssetBalance(account, address(cAsset))
-            );
+
+        uint256 cTokens = liquidity.getCAssetBalance(account, address(cAsset));
+
+        return liquidity.cAssetAmountToAssetAmount(address(cAsset), cTokens);
+    }
+
+    function assetBalancePlusOneCToken(address account, address asset) internal returns (uint256) {
+        address cAsset = liquidity.assetToCAsset(asset);
+
+        uint256 cTokens = liquidity.getCAssetBalance(account, address(cAsset)) + 1;
+
+        return liquidity.cAssetAmountToAssetAmount(address(cAsset), cTokens);
     }
 }

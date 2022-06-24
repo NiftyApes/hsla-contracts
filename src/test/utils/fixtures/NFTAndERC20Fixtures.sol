@@ -11,6 +11,8 @@ import "../../mock/CERC20Mock.sol";
 import "../../mock/ERC721Mock.sol";
 import "../../mock/CEtherMock.sol";
 
+import "forge-std/Test.sol";
+
 // mints NFTs to borrowers
 // supplies USDC to lenders
 contract NFTAndERC20Fixtures is Test, UsersFixtures {
@@ -22,22 +24,62 @@ contract NFTAndERC20Fixtures is Test, UsersFixtures {
     function setUp() public virtual override {
         super.setUp();
 
-        usdcToken = new ERC20Mock();
-        usdcToken.initialize("USD Coin", "USDC");
+        bool integration = false;
+        try vm.envBool("INTEGRATION") returns (bool isIntegration) {
+            integration = isIntegration;
+        } catch (bytes memory) {
+            // This catches revert that occurs if env variable not supplied
+        }
 
-        cUSDCToken = new CERC20Mock();
-        cUSDCToken.initialize(usdcToken);
+        if (integration) {
+            usdcToken = ERC20Mock(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
 
-        cEtherToken = new CEtherMock();
-        cEtherToken.initialize();
+            cUSDCToken = CERC20Mock(0x39AA39c021dfbaE8faC545936693aC917d5E7563);
 
-        usdcToken.mint(lender1, 1000 ether);
-        usdcToken.mint(lender2, 1000 ether);
+            cEtherToken = CEtherMock(0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5);
+
+            vm.startPrank(0x68A99f89E475a078645f4BAC491360aFe255Dff1);
+            usdcToken.transfer(lender1, 1000 * (10**usdcToken.decimals()));
+            usdcToken.transfer(lender2, 1000 * (10**usdcToken.decimals()));
+            vm.stopPrank();
+        } else {
+            usdcToken = new ERC20Mock();
+            usdcToken.initialize("USD Coin", "USDC");
+
+            cUSDCToken = new CERC20Mock();
+            cUSDCToken.initialize(usdcToken);
+
+            cEtherToken = new CEtherMock();
+            cEtherToken.initialize();
+
+            usdcToken.mint(lender1, 1000 ether);
+            usdcToken.mint(lender2, 1000 ether);
+        }
 
         mockNft = new ERC721Mock();
         mockNft.initialize("BoredApe", "BAYC");
 
         mockNft.safeMint(address(borrower1), 1);
         mockNft.safeMint(address(borrower2), 2);
+    }
+
+    function assertBetween(
+        uint256 value,
+        uint256 lowerBound,
+        uint256 upperBound
+    ) internal view {
+        if (value > upperBound) {
+            console.log("***assertBetween log***");
+            console.log("value", value);
+            console.log("value", upperBound);
+            revert("assertBetween: value greater than upper bound");
+        }
+
+        if (value < lowerBound) {
+            console.log("***assertBetween log***");
+            console.log("value", value);
+            console.log("value", lowerBound);
+            revert("assertBetween: value less than lower bound");
+        }
     }
 }

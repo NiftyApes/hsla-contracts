@@ -520,7 +520,7 @@ contract NiftyApesLiquidity is
     }
 
     /// @inheritdoc ILiquidity
-    function assetAmountToCAssetAmount(address asset, uint256 amount) external returns (uint256) {
+    function assetAmountToCAssetAmount(address asset, uint256 amount) public returns (uint256) {
         address cAsset = assetToCAsset[asset];
         ICERC20 cToken = ICERC20(cAsset);
 

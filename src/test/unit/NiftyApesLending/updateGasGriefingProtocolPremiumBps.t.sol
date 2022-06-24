@@ -57,21 +57,31 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
 
         if (offer.asset == address(usdcToken)) {
             if (interest < threshold) {
-                assertEq(
+                assertBetween(
+                    gasGriefingToProtocol + termGriefingToProtocol,
                     assetBalance(owner, address(usdcToken)),
-                    gasGriefingToProtocol + termGriefingToProtocol
+                    assetBalancePlusOneCToken(owner, address(usdcToken))
                 );
             } else {
-                assertEq(assetBalance(owner, address(usdcToken)), termGriefingToProtocol);
+                assertBetween(
+                    termGriefingToProtocol,
+                    assetBalance(owner, address(usdcToken)),
+                    assetBalancePlusOneCToken(owner, address(usdcToken))
+                );
             }
         } else {
             if (interest < threshold) {
-                assertEq(
+                assertBetween(
+                    gasGriefingToProtocol + termGriefingToProtocol,
                     assetBalance(owner, ETH_ADDRESS),
-                    gasGriefingToProtocol + termGriefingToProtocol
+                    assetBalancePlusOneCToken(owner, ETH_ADDRESS)
                 );
             } else {
-                assertEq(assetBalance(owner, ETH_ADDRESS), termGriefingToProtocol);
+                assertBetween(
+                    termGriefingToProtocol,
+                    assetBalance(owner, ETH_ADDRESS),
+                    assetBalancePlusOneCToken(owner, ETH_ADDRESS)
+                );
             }
         }
     }
@@ -118,12 +128,12 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         uint16 updatedGasGriefingAmount = 10_001;
 
         vm.startPrank(owner);
-        vm.expectRevert("Ownable: caller is not the owner");
+        vm.expectRevert("00002");
         lending.updateGasGriefingProtocolPremiumBps(updatedGasGriefingAmount);
         vm.stopPrank();
     }
 
     function test_unit_cannot_updateGasGriefingProtocolPremiumBps_beyond_max_bps() public {
-        _test_cannot_updateGasGriefingProtocolPremiumBps_if_not_owner();
+        _test_cannot_updateGasGriefingProtocolPremiumBps_beyond_max_bps();
     }
 }
