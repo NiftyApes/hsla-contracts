@@ -653,38 +653,5 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         assertEq(result, 22015464514043444); // ~ 0.02 DAI
     }
 
-    function testCAssetAmountToAssetAmount_plusOne() public {
-        cUSDCToken.setExchangeRateCurrent(220154645140434444389595003); // exchange rate of DAI at time of edit
-
-        hevm.startPrank(NOT_ADMIN);
-
-        usdcToken.mint(address(NOT_ADMIN), 25000 ether);
-        usdcToken.approve(address(liquidityProviders), 25000 ether);
-
-        uint256 cTokensMinted = liquidityProviders.supplyErc20(address(usdcToken), 25000 ether);
-
-        console.log("cTokensMinted", cTokensMinted);
-
-        uint256 result1 = liquidityProviders.cAssetAmountToAssetAmount(
-            address(cUSDCToken),
-            liquidityProviders.getCAssetBalance(NOT_ADMIN, address(cUSDCToken))
-        );
-
-        console.log("result1", result1);
-
-        // Lender 1 has 1 USDC
-        // assertEq(
-        //     liquidityProviders.cAssetAmountToAssetAmount(
-        //         address(cUSDCToken),
-        //         liquidityProviders.getCAssetBalance(NOT_ADMIN, address(cUSDCToken))
-        //     ),
-        //     1 ether
-        // );
-
-        uint256 result = liquidityProviders.cAssetAmountToAssetAmount(address(cUSDCToken), 1e8); // supply 1 mockCUSDC, would be better to call this mock DAI as USDC has 6 decimals
-
-        assertEq(result, 22015464514043444); // ~ 0.02 DAI
-    }
-
     // TODO(miller): Missing unit tests for max c asset balance
 }
