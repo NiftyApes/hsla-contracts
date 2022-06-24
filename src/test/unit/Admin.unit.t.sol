@@ -70,7 +70,7 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
     }
 
     function testSetCAddressMapping_can_be_set_by_owner() public {
-        hevm.expectEmit(true, false, false, true);
+        hevm.expectEmit(false, false, false, true);
 
         emit AssetToCAssetSet(
             address(0x0000000000000000000000000000000000000001),
@@ -106,47 +106,47 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
 
     function testUpdateProtocolInterestBps_owner() public {
         assertEq(niftyApes.protocolInterestBps(), 0);
-        hevm.expectEmit(true, false, false, true);
+        hevm.expectEmit(false, false, false, true);
 
         emit ProtocolInterestBpsUpdated(0, 1);
         niftyApes.updateProtocolInterestBps(1);
         assertEq(niftyApes.protocolInterestBps(), 1);
     }
 
-    function testCannotUpdateRefinancePremiumLenderFee_not_owner() public {
+    function testCannotUpdateOriginationPremiumLenderBps_not_owner() public {
         hevm.startPrank(NOT_ADMIN);
         hevm.expectRevert("Ownable: caller is not the owner");
         niftyApes.updateOriginationPremiumLenderBps(1);
     }
 
-    function testCannotUpdateRefinancePremiumLenderFee_max_fee() public {
+    function testCannotUpdateOriginationPremiumLenderBps_max_fee() public {
         hevm.expectRevert("00002");
         niftyApes.updateOriginationPremiumLenderBps(1001);
     }
 
-    function testUpdateRefinancePremiumLenderFee_owner() public {
+    function testUpdateOriginationPremiumLenderBps_owner() public {
         assertEq(niftyApes.originationPremiumBps(), 50);
-        hevm.expectEmit(true, false, false, true);
+        hevm.expectEmit(false, false, false, true);
 
         emit OriginationPremiumBpsUpdated(50, 1);
         niftyApes.updateOriginationPremiumLenderBps(1);
         assertEq(niftyApes.originationPremiumBps(), 1);
     }
 
-    function testCannotUpdateRefinancePremiumProtocolFee_not_owner() public {
+    function testCannotUpdateGasGriefingPremiumBps_not_owner() public {
         hevm.startPrank(NOT_ADMIN);
         hevm.expectRevert("Ownable: caller is not the owner");
         niftyApes.updateGasGriefingPremiumBps(1);
     }
 
-    function testCannotUpdateRefinancePremiumProtocolFee_max_fee() public {
+    function testCannotUpdateGasGriefingPremiumBps_max_fee() public {
         hevm.expectRevert("00002");
         niftyApes.updateGasGriefingPremiumBps(1001);
     }
 
-    function testUpdateRefinancePremiumProtocolFee_owner() public {
+    function testUpdateGasGriefingPremiumBps_owner() public {
         assertEq(niftyApes.gasGriefingPremiumBps(), 25);
-        hevm.expectEmit(true, false, false, true);
+        hevm.expectEmit(false, false, false, true);
 
         emit GasGriefingPremiumBpsUpdated(25, 1);
         niftyApes.updateGasGriefingPremiumBps(1);
