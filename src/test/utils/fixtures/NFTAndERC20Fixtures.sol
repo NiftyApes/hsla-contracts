@@ -61,6 +61,7 @@ contract NFTAndERC20Fixtures is Test, UsersFixtures {
 
         mockNft.safeMint(address(borrower1), 1);
         mockNft.safeMint(address(borrower2), 2);
+        mockNft.safeMint(SANCTIONED_ADDRESS, 3);
     }
 
     function assertBetween(

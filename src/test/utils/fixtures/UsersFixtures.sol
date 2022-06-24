@@ -44,6 +44,10 @@ contract UsersFixtures is Test {
         vm.deal(owner, defaultInitialEthBalance);
         vm.label(owner, "owner");
 
+        owner = getNextUserAddress();
+        vm.deal(SANCTIONED_ADDRESS, defaultInitialEthBalance);
+        vm.label(SANCTIONED_ADDRESS, "SANCTIONED_ADDRESS");
+
         for (uint256 i = 0; i < 10; i++) {
             address payable user = getNextUserAddress();
             vm.deal(user, defaultInitialEthBalance);
