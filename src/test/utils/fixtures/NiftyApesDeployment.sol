@@ -46,10 +46,10 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         liquidity.updateLendingContractAddress(address(lending));
 
         liquidity.setCAssetAddress(ETH_ADDRESS, address(cEtherToken));
-        liquidity.setMaxCAssetBalance(ETH_ADDRESS, ~uint256(0));
+        liquidity.setMaxCAssetBalance(address(cEtherToken), ~uint256(0));
 
         liquidity.setCAssetAddress(address(usdcToken), address(cUSDCToken));
-        liquidity.setMaxCAssetBalance(address(usdcToken), ~uint256(0));
+        liquidity.setMaxCAssetBalance(address(cUSDCToken), ~uint256(0));
 
         vm.stopPrank();
 

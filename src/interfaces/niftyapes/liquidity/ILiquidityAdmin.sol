@@ -11,13 +11,13 @@ interface ILiquidityAdmin {
     /// @notice Updates the maximum cAsset balance that the contracts will allow
     ///         This allows a guarded launch with NiftyApes limiting the amount of liquidity
     ///         in the protocol.
-    function setMaxCAssetBalance(address asset, uint256 maxBalance) external;
+    function setMaxCAssetBalance(address cAsset, uint256 maxBalance) external;
 
     /// @notice Updates the associated lending contract address
     function updateLendingContractAddress(address newLendingContractAddress) external;
 
     /// @notice Updates the bps of revenue sent to the Regen Collective
-    ///         Fees are denomiated in basis points, parts of 10_000
+    ///         Fees are denominated in basis points, parts of 10_000
     function updateRegenCollectiveBpsOfRevenue(uint16 newRegenCollectiveBpsOfRevenue) external;
 
     /// @notice Updates the address for the Regen Collective

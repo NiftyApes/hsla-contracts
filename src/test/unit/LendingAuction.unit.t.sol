@@ -96,7 +96,7 @@ contract LendingAuctionUnitTest is
 
         hevm.startPrank(OWNER);
         liquidityProviders.setCAssetAddress(address(usdcToken), address(cUSDCToken));
-        liquidityProviders.setMaxCAssetBalance(address(usdcToken), 2**256 - 1);
+        liquidityProviders.setMaxCAssetBalance(address(cUSDCToken), 2**256 - 1);
 
         cEtherToken = new CEtherMock();
         cEtherToken.initialize();
@@ -104,10 +104,7 @@ contract LendingAuctionUnitTest is
             address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
             address(cEtherToken)
         );
-        liquidityProviders.setMaxCAssetBalance(
-            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
-            2**256 - 1
-        );
+        liquidityProviders.setMaxCAssetBalance(address(cEtherToken), 2**256 - 1);
 
         hevm.stopPrank();
 

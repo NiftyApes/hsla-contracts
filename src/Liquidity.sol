@@ -16,9 +16,7 @@ import "./interfaces/niftyapes/offers/IOffers.sol";
 import "./interfaces/sanctions/SanctionsList.sol";
 import "./lib/Math.sol";
 
-import "forge-std/Test.sol";
-
-/// @title Implemention of the ILiquidity interface
+/// @title Implementation of the ILiquidity interface
 contract NiftyApesLiquidity is
     OwnableUpgradeable,
     PausableUpgradeable,
@@ -95,8 +93,8 @@ contract NiftyApesLiquidity is
     }
 
     /// @inheritdoc ILiquidityAdmin
-    function setMaxCAssetBalance(address asset, uint256 maxBalance) external onlyOwner {
-        maxBalanceByCAsset[getCAsset(asset)] = maxBalance;
+    function setMaxCAssetBalance(address cAsset, uint256 maxBalance) external onlyOwner {
+        maxBalanceByCAsset[cAsset] = maxBalance;
     }
 
     /// @inheritdoc ILiquidityAdmin
@@ -475,7 +473,7 @@ contract NiftyApesLiquidity is
         return _burnCErc20(asset, amount);
     }
 
-    // @notice param amount is demoninated in the underlying asset, not cAsset
+    // @notice param amount is denominated in the underlying asset, not cAsset
     function _burnCErc20(address asset, uint256 amount) internal returns (uint256) {
         _requireAmountGreaterThanZero(amount);
 
@@ -539,7 +537,7 @@ contract NiftyApesLiquidity is
     // solhint-disable-next-line no-empty-blocks
     function renounceOwnership() public override onlyOwner {}
 
-    // This is needed to receive ETH when calling withdrawing ETH from compund
+    // This is needed to receive ETH when calling withdrawing ETH from compound
     receive() external payable {
         _requireEthTransferable();
     }

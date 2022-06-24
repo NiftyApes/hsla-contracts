@@ -24,35 +24,35 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
 
     /// @notice Returns the bps premium for refinancing a loan that the new lender has to pay
     ///         This premium is to compensate lenders for the work of originating a loan
-    ///         Fees are denomiated in basis points, parts of 10_000
+    ///         Fees are denominated in basis points, parts of 10_000
     function originationPremiumBps() external view returns (uint16);
 
     /// @notice Returns the bps premium for refinancing a loan before the current lender has earned the equivalent amount of interest
     ///         The amount paid decreases as the current lender earns interest
     ///         The maximum amount paid is the value of gasGriefingPremiumBps
     ///         For example, if the value of gasGriefingPremiumBps is 25 and 10 bps of interest has been earned, the premium will be 15 bps paid to the current lender
-    ///         Fees are denomiated in basis points, parts of 10_000
+    ///         Fees are denominated in basis points, parts of 10_000
     function gasGriefingPremiumBps() external view returns (uint16);
 
     /// @notice Returns the bps premium paid to the protocol for refinancing a loan before the current lender has earned the equivalent amount of interest
     ///         This value represents the percentage of the gas griefing premium taken by the protocol.
     ///         For example, if the value of gasGriefingPremiumBps is 25 and 10 bps of interest has been earned, the premium will be 15 bps paid to the current lender
-    ///         This premium is a percentage of the delta from the gasGriefingPremium. In effect, it is an additional percentage paid equivalent to the ineterest earned X the gasGriefingProtocol premium
-    ///         Fees are denomiated in basis points, parts of 10_000
+    ///         This premium is a percentage of the delta from the gasGriefingPremium. In effect, it is an additional percentage paid equivalent to the interest earned X the gasGriefingProtocol premium
+    ///         Fees are denominated in basis points, parts of 10_000
     function gasGriefingProtocolPremiumBps() external view returns (uint16);
 
-    /// @notice Returns the bps premium paid to the protocol for refinancing a loan with terms that do not improve the cumulative terms of the loan by the equivalant basis points
+    /// @notice Returns the bps premium paid to the protocol for refinancing a loan with terms that do not improve the cumulative terms of the loan by the equivalent basis points
     ///         For example, if termGriefingPremiumBps is 25 then the cumulative improvement of amount, interestRatePerSecond, and duration must be more than 25 bps
     ///         If the amount is 8 bps better, interestRatePerSecond is 7 bps better, and duration is 10 bps better, then no premium is paid
-    ///         If any one of those terms is worse then a full premimum is paid
-    ///         Fees are denomiated in basis points, parts of 10_000
+    ///         If any one of those terms is worse then a full premium is paid
+    ///         Fees are denominated in basis points, parts of 10_000
     function termGriefingPremiumBps() external view returns (uint16);
 
     /// @notice Returns the bps premium paid to the protocol for refinancing a loan within 1 hour of default
-    ///         Fees are denomiated in basis points, parts of 10_000
+    ///         Fees are denominated in basis points, parts of 10_000
     function defaultRefinancePremiumBps() external view returns (uint16);
 
-    /// @notice Returns a loan aution identified by a given nft.
+    /// @notice Returns a loan auction identified by a given nft.
     /// @param nftContractAddress The address of the NFT collection
     /// @param nftId The id of a specified NFT
     function getLoanAuction(address nftContractAddress, uint256 nftId)
@@ -115,7 +115,7 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     /// @param nftContractAddress The address of the NFT collection
     /// @param nftId The id of the specified NFT
     /// @param floorTerm Indicates whether this is a floor or individual NFT offer.
-    /// @param offerHash The hash of all parameters in an offer. This is used as the uniquge identifer of an offer.
+    /// @param offerHash The hash of all parameters in an offer. This is used as the unique identifier of an offer.
     function refinanceByBorrower(
         address nftContractAddress,
         uint256 nftId,
@@ -141,15 +141,15 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     ///         Lender must improve terms by a cumulative 25 bps or pay a 25 bps premium
     ///         For example, if termGriefingPremiumBps is 25 then the cumulative improvement of amount, interestRatePerSecond, and duration must be more than 25 bps
     ///         If the amount is 8 bps better, interestRatePerSecond is 7 bps better, and duration is 10 bps better, then no premium is paid
-    ///         If any one of those terms is worse then a full premimum is paid
-    ///         The Lender must allow 25 bps on interest to accrue or pay a gas greifing premium to the current lender
-    ///         This premium is equal to gasGreifingPremiumBps - interestEarned
+    ///         If any one of those terms is worse then a full premium is paid
+    ///         The Lender must allow 25 bps on interest to accrue or pay a gas griefing premium to the current lender
+    ///         This premium is equal to gasGriefingPremiumBps - interestEarned
     /// @param offer The details of the loan auction offer
     /// @param expectedLastUpdatedTimestamp The timestamp of the expected terms. This allows lenders to avoid being frontrun and forced to pay a gasGriefingPremium.
     ///        Lenders can provide a 0 value if they are willing to pay the gasGriefingPremium in a high volume loanAuction
     function refinanceByLender(Offer calldata offer, uint32 expectedLastUpdatedTimestamp) external;
 
-    /// @notice Allows borrowers to draw a higher balance on their loan if it has been refianced with a higher maximum amount
+    /// @notice Allows borrowers to draw a higher balance on their loan if it has been refinanced with a higher maximum amount
     ///         Drawing down value increases the maximum loan pay back amount and so is not automatically imposed on a refinance by lender, hence this function.
     ///         If a lender does not have liquidity to support a refinanced amount the borrower will draw whatever amount is available,
     ///         the lender's interest earned so far is slashed, and the loan amount is set to the amount currently drawn

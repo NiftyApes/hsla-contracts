@@ -18,7 +18,7 @@ interface ILiquidity is ILiquidityAdmin, ILiquidityEvents {
     function lendingContractAddress() external view returns (address);
 
     /// @notice Returns the basis points of revenue sent to the Regen Collective
-    ///         Denomiated in basis points, parts of 10_000
+    ///         denominated in basis points, parts of 10_000
     function regenCollectiveBpsOfRevenue() external view returns (uint16);
 
     /// @notice Returns the address for the Regen Collective
@@ -55,9 +55,9 @@ interface ILiquidity is ILiquidityAdmin, ILiquidityEvents {
     /// @param amount The number of tokens to withdraw
     function withdrawErc20(address asset, uint256 amount) external returns (uint256);
 
-    /// @notice Withdraw a given compund ERC20 token.
+    /// @notice Withdraw a given compound ERC20 token.
     ///         This method returns compound tokens directly to the user without returning the underlying
-    /// @param cAsset The address of the compund ERC20 token
+    /// @param cAsset The address of the compound ERC20 token
     /// @param amount The number of tokens to withdraw
     function withdrawCErc20(address cAsset, uint256 amount) external returns (uint256);
 
@@ -108,7 +108,7 @@ interface ILiquidity is ILiquidityAdmin, ILiquidityEvents {
     /// @notice Function only callable by the NiftyApesLending contract
     ///         Allows lending contract to affect liquidity directly
     /// @param account The users account address
-    /// @param cAsset The address of the compund ERC20 token
+    /// @param cAsset The address of the compound ERC20 token
     /// @param cTokenAmount The amount of cToken to withdraw
     function withdrawCBalance(
         address account,
@@ -119,7 +119,7 @@ interface ILiquidity is ILiquidityAdmin, ILiquidityEvents {
     /// @notice Function only callable by the NiftyApesLending contract
     ///         Allows lending contract to affect liquidity directly
     /// @param account The users account address
-    /// @param cAsset The address of the compund ERC20 token
+    /// @param cAsset The address of the compound ERC20 token
     /// @param amount The amount of cAsset to add
     function addToCAssetBalance(
         address account,

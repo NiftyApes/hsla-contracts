@@ -3,9 +3,9 @@ pragma solidity 0.8.13;
 
 import "../offers/IOffersStructs.sol";
 
-/// @title Events emmited by the lending part of the protocol.
+/// @title Events emitted by the lending part of the protocol.
 interface ILendingEvents {
-    /// @notice Emmited when a new loan is executed
+    /// @notice Emitted when a new loan is executed
     /// @param nftContractAddress The nft contract address
     /// @param nftId The nft id, this field can be meaningless if the offer is a floor term offer
     /// @param offer The offer details
@@ -15,7 +15,7 @@ interface ILendingEvents {
         IOffersStructs.Offer offer
     );
 
-    /// @notice Emited when a loan is refinanced
+    /// @notice Emitted when a loan is refinanced
     /// @param nftContractAddress The nft contract address
     /// @param nftId The nft id, this field can be meaningless if the offer is a floor term offer
     /// @param offer The offer details
@@ -81,14 +81,14 @@ interface ILendingEvents {
         uint256 indexed nftId
     );
 
-    /// @notice Emmited when the protocol interest fee is updated.
+    /// @notice Emitted when the protocol interest fee is updated.
     ///         Interest is charged per second on a loan.
     ///         This is the fee that the protocol charges for facilitating the loan
     /// @param oldProtocolInterestBps The old value denominated in tokens per second
     /// @param newProtocolInterestBps The new value denominated in tokens per second
     event ProtocolInterestBpsUpdated(uint96 oldProtocolInterestBps, uint96 newProtocolInterestBps);
 
-    /// @notice Emmited when the the bps premium for refinancing a loan that the new lender has to pay is changed
+    /// @notice Emitted when the the bps premium for refinancing a loan that the new lender has to pay is changed
     /// @param oldOriginationPremiumBps The old basis points denominated in parts of 10_000
     /// @param newOriginationPremiumBps The new basis points denominated in parts of 10_000
     event OriginationPremiumBpsUpdated(
@@ -96,7 +96,7 @@ interface ILendingEvents {
         uint16 newOriginationPremiumBps
     );
 
-    /// @notice Emmited when the bps premium for refinancing a loan before the current lender has earned the equivalent amount of interest has changed
+    /// @notice Emitted when the bps premium for refinancing a loan before the current lender has earned the equivalent amount of interest has changed
     /// @param oldGasGriefingPremiumBps The old basis points denominated in parts of 10_000
     /// @param newGasGriefingPremiumBps The new basis points denominated in parts of 10_000
     event GasGriefingPremiumBpsUpdated(
@@ -104,7 +104,7 @@ interface ILendingEvents {
         uint16 newGasGriefingPremiumBps
     );
 
-    /// @notice Emmited when the bps premium paid to the protocol for refinancing a loan before the current lender has earned the equivalent amount of interest is changed
+    /// @notice Emitted when the bps premium paid to the protocol for refinancing a loan before the current lender has earned the equivalent amount of interest is changed
     /// @param oldGasGriefingProtocolPremiumBps The old basis points denominated in parts of 10_000
     /// @param newGasGriefingProtocolPremiumBps The new basis points denominated in parts of 10_000
     event GasGriefingProtocolPremiumBpsUpdated(
@@ -112,7 +112,7 @@ interface ILendingEvents {
         uint16 newGasGriefingProtocolPremiumBps
     );
 
-    /// @notice Emmited when the bps premium paid to the protocol for refinancing a loan with terms that do not improve the cumulative terms of the loan by the equivalant basis points is changed
+    /// @notice Emitted when the bps premium paid to the protocol for refinancing a loan with terms that do not improve the cumulative terms of the loan by the equivalent basis points is changed
     /// @param oldTermGriefingPremiumBps The old basis points denominated in parts of 10_000
     /// @param newTermGriefingPremiumBps The new basis points denominated in parts of 10_000
     event TermGriefingPremiumBpsUpdated(
@@ -120,7 +120,7 @@ interface ILendingEvents {
         uint16 newTermGriefingPremiumBps
     );
 
-    /// @notice Emmited when the bps premium paid to the protocol for refinancing a loan within 1 hour of default is changed
+    /// @notice Emitted when the bps premium paid to the protocol for refinancing a loan within 1 hour of default is changed
     /// @param oldDefaultRefinancePremiumBps The old basis points denominated in parts of 10_000
     /// @param newDefaultRefinancePremiumBps The new basis points denominated in parts of 10_000
     event DefaultRefinancePremiumBpsUpdated(
@@ -128,9 +128,9 @@ interface ILendingEvents {
         uint16 newDefaultRefinancePremiumBps
     );
 
-    /// @notice Emmited when sanctions checks are paused
+    /// @notice Emitted when sanctions checks are paused
     event LendingSanctionsPaused();
 
-    /// @notice Emmited when sanctions checks are unpaused
+    /// @notice Emitted when sanctions checks are unpaused
     event LendingSanctionsUnpaused();
 }
