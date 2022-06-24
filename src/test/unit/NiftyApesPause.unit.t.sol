@@ -24,7 +24,7 @@ contract NiftyApesPauseUnitTest is
     IOffersStructs,
     ERC721HolderUpgradeable
 {
-    NiftyApesLending niftyApes;
+    NiftyApesLending lendingAuction;
     NiftyApesOffers offersContract;
     NiftyApesLiquidity liquidityProviders;
     NiftyApesSigLending sigLendingAuction;
@@ -58,14 +58,14 @@ contract NiftyApesPauseUnitTest is
         sigLendingAuction = new NiftyApesSigLending();
         sigLendingAuction.initialize(address(offersContract));
 
-        niftyApes = new NiftyApesLending();
-        niftyApes.initialize(
+        lendingAuction = new NiftyApesLending();
+        lendingAuction.initialize(
             address(liquidityProviders),
             address(offersContract),
             address(sigLendingAuction)
         );
 
-        offersContract.updateLendingContractAddress(address(niftyApes));
+        offersContract.updateLendingContractAddress(address(lendingAuction));
 
         usdcToken = new ERC20Mock();
         usdcToken.initialize("USD Coin", "USDC");
@@ -80,7 +80,7 @@ contract NiftyApesPauseUnitTest is
             address(cEtherToken)
         );
 
-        niftyApes.pause();
+        lendingAuction.pause();
         liquidityProviders.pause();
         offersContract.pause();
         sigLendingAuction.pause();
@@ -91,10 +91,10 @@ contract NiftyApesPauseUnitTest is
         mockNft.initialize("BoredApe", "BAYC");
 
         mockNft.safeMint(address(this), 1);
-        mockNft.approve(address(niftyApes), 1);
+        mockNft.approve(address(lendingAuction), 1);
 
         mockNft.safeMint(address(this), 2);
-        mockNft.approve(address(niftyApes), 2);
+        mockNft.approve(address(lendingAuction), 2);
     }
 
     function getOffer() internal view returns (Offer memory offer) {
@@ -119,7 +119,7 @@ contract NiftyApesPauseUnitTest is
 
         hevm.expectRevert("Ownable: caller is not the owner");
 
-        niftyApes.pause();
+        lendingAuction.pause();
     }
 
     function testCannotUnpause_not_owner() public {
@@ -127,7 +127,55 @@ contract NiftyApesPauseUnitTest is
 
         hevm.expectRevert("Ownable: caller is not the owner");
 
-        niftyApes.unpause();
+        lendingAuction.unpause();
+    }
+
+    function testCannotPauseLiquidityProviders_not_owner() public {
+        hevm.startPrank(LENDER_1);
+
+        hevm.expectRevert("Ownable: caller is not the owner");
+
+        liquidityProviders.pause();
+    }
+
+    function testCannotUnpauseLiquidityProviders_not_owner() public {
+        hevm.startPrank(LENDER_1);
+
+        hevm.expectRevert("Ownable: caller is not the owner");
+
+        liquidityProviders.unpause();
+    }
+
+    function testCannotPauseOffersContract_not_owner() public {
+        hevm.startPrank(LENDER_1);
+
+        hevm.expectRevert("Ownable: caller is not the owner");
+
+        offersContract.pause();
+    }
+
+    function testCannotUnpauseOffersContract_not_owner() public {
+        hevm.startPrank(LENDER_1);
+
+        hevm.expectRevert("Ownable: caller is not the owner");
+
+        offersContract.unpause();
+    }
+
+    function testCannotPauseSigLendingAuction_not_owner() public {
+        hevm.startPrank(LENDER_1);
+
+        hevm.expectRevert("Ownable: caller is not the owner");
+
+        sigLendingAuction.pause();
+    }
+
+    function testCannotUnpauseSigLendingAuction_not_owner() public {
+        hevm.startPrank(LENDER_1);
+
+        hevm.expectRevert("Ownable: caller is not the owner");
+
+        sigLendingAuction.unpause();
     }
 
     function testCannotsupplyErc20_paused() public {
@@ -175,7 +223,7 @@ contract NiftyApesPauseUnitTest is
     function testCannotExecuteLoanByBorrower_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        niftyApes.executeLoanByBorrower(address(0), 1, bytes32(0), false);
+        lendingAuction.executeLoanByBorrower(address(0), 1, bytes32(0), false);
     }
 
     function testCannotExecuteLoanByBorrowerSignature_paused() public {
@@ -187,7 +235,7 @@ contract NiftyApesPauseUnitTest is
     function testCannotExecuteLoanByLender_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        niftyApes.executeLoanByLender(address(0), 1, bytes32(0), false);
+        lendingAuction.executeLoanByLender(address(0), 1, bytes32(0), false);
     }
 
     function testCannotExecuteLoanByLenderSignature_paused() public {
@@ -199,7 +247,13 @@ contract NiftyApesPauseUnitTest is
     function testCannotRefinanceByBorrower_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        niftyApes.refinanceByBorrower(address(0), 1, false, bytes32(0), uint32(block.timestamp));
+        lendingAuction.refinanceByBorrower(
+            address(0),
+            1,
+            false,
+            bytes32(0),
+            uint32(block.timestamp)
+        );
     }
 
     function testCannotRefinanceByBorrowerSignature_paused() public {
@@ -211,36 +265,36 @@ contract NiftyApesPauseUnitTest is
     function testCannotRefinanceByLender_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        niftyApes.refinanceByLender(getOffer(), 0);
+        lendingAuction.refinanceByLender(getOffer(), 0);
     }
 
     function testCannotDrawLoanAmount_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        niftyApes.drawLoanAmount(address(0), 1, 2);
+        lendingAuction.drawLoanAmount(address(0), 1, 2);
     }
 
     function testCannotRepayLoan_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        niftyApes.repayLoan(address(0), 1);
+        lendingAuction.repayLoan(address(0), 1);
     }
 
     function testCannotRepayLoanForAccount_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        niftyApes.repayLoanForAccount(address(0), 1, uint32(block.timestamp));
+        lendingAuction.repayLoanForAccount(address(0), 1, uint32(block.timestamp));
     }
 
     function testCannotPartialRepayLoan_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        niftyApes.partialRepayLoan(address(0), 1, 2);
+        lendingAuction.partialRepayLoan(address(0), 1, 2);
     }
 
     function testCannotSeizeAsset_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        niftyApes.seizeAsset(address(0), 1);
+        lendingAuction.seizeAsset(address(0), 1);
     }
 }
