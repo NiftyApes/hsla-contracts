@@ -152,4 +152,29 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
         niftyApes.updateGasGriefingPremiumBps(1);
         assertEq(niftyApes.gasGriefingPremiumBps(), 1);
     }
+
+    function testCannotUpdateRegenCollectiveBpsOfRevenue_not_owner() public {
+        hevm.startPrank(NOT_ADMIN);
+        hevm.expectRevert("Ownable: caller is not the owner");
+        liquidityProviders.updateRegenCollectiveBpsOfRevenue(1);
+    }
+
+    function testCannotUpdateRegenCollectiveBpsOfRevenue_max_fee() public {
+        hevm.expectRevert("00002");
+        liquidityProviders.updateRegenCollectiveBpsOfRevenue(1001);
+    }
+
+    function testCannotUpdateRegenCollectiveBpsOfRevenue_mustBeGreater() public {
+        hevm.expectRevert("00039");
+        liquidityProviders.updateRegenCollectiveBpsOfRevenue(1);
+    }
+
+    function testUpdateRegenCollectiveBpsOfRevenue_works() public {
+        assertEq(liquidityProviders.regenCollectiveBpsOfRevenue(), 100);
+        hevm.expectEmit(true, false, false, true);
+
+        emit RegenCollectiveBpsOfRevenueUpdated(100, 101);
+        liquidityProviders.updateRegenCollectiveBpsOfRevenue(101);
+        assertEq(liquidityProviders.regenCollectiveBpsOfRevenue(), 101);
+    }
 }

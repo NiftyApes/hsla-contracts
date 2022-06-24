@@ -17,6 +17,7 @@ contract UsersFixtures is Test {
     address payable internal lender1;
     address payable internal lender2;
     address payable internal owner;
+    address constant SANCTIONED_ADDRESS = address(0x7FF9cFad3877F21d41Da833E2F775dB0569eE3D9);
 
     address payable[10] internal users;
 
