@@ -125,7 +125,7 @@ contract NiftyApesLending is
         external
         onlyOwner
     {
-        _requireMaxFee(newGasGriefingProtocolPremiumBps);
+        require(newGasGriefingProtocolPremiumBps <= MAX_BPS, "00002");
         emit GasGriefingProtocolPremiumBpsUpdated(
             gasGriefingProtocolPremiumBps,
             newGasGriefingProtocolPremiumBps

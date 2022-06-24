@@ -178,12 +178,6 @@ contract NiftyApesPauseUnitTest is
         sigLendingAuction.unpause();
     }
 
-    function testCannotsupplyErc20_paused() public {
-        hevm.expectRevert("Pausable: paused");
-
-        liquidityProviders.supplyErc20(address(usdcToken), 1);
-    }
-
     function testCannotSupplyErc20_paused() public {
         hevm.expectRevert("Pausable: paused");
 
