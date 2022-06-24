@@ -113,18 +113,18 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
         assertEq(niftyApes.protocolInterestBps(), 1);
     }
 
-    function testCannotUpdateRefinancePremiumLenderFee_not_owner() public {
+    function testCannotUpdateOriginationPremiumLenderFee_not_owner() public {
         hevm.startPrank(NOT_ADMIN);
         hevm.expectRevert("Ownable: caller is not the owner");
         niftyApes.updateOriginationPremiumLenderBps(1);
     }
 
-    function testCannotUpdateRefinancePremiumLenderFee_max_fee() public {
+    function testCannotUpdateOriginationPremiumLenderFee_max_fee() public {
         hevm.expectRevert("00002");
         niftyApes.updateOriginationPremiumLenderBps(1001);
     }
 
-    function testUpdateRefinancePremiumLenderFee_owner() public {
+    function testUpdateOriginationPremiumLenderFee_owner() public {
         assertEq(niftyApes.originationPremiumBps(), 50);
         hevm.expectEmit(true, false, false, true);
 
@@ -133,23 +133,48 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
         assertEq(niftyApes.originationPremiumBps(), 1);
     }
 
-    function testCannotUpdateRefinancePremiumProtocolFee_not_owner() public {
+    function testCannotUpdateGasGriefingPremiumProtocolFee_not_owner() public {
         hevm.startPrank(NOT_ADMIN);
         hevm.expectRevert("Ownable: caller is not the owner");
         niftyApes.updateGasGriefingPremiumBps(1);
     }
 
-    function testCannotUpdateRefinancePremiumProtocolFee_max_fee() public {
+    function testCannotUpdateGasGriefingPremiumProtocolFee_max_fee() public {
         hevm.expectRevert("00002");
         niftyApes.updateGasGriefingPremiumBps(1001);
     }
 
-    function testUpdateRefinancePremiumProtocolFee_owner() public {
+    function testUpdateGasGriefingPremiumProtocolFee_owner() public {
         assertEq(niftyApes.gasGriefingPremiumBps(), 25);
         hevm.expectEmit(true, false, false, true);
 
         emit GasGriefingPremiumBpsUpdated(25, 1);
         niftyApes.updateGasGriefingPremiumBps(1);
         assertEq(niftyApes.gasGriefingPremiumBps(), 1);
+    }
+
+    function testCannotUpdateRegenCollectiveBpsOfRevenue_not_owner() public {
+        hevm.startPrank(NOT_ADMIN);
+        hevm.expectRevert("Ownable: caller is not the owner");
+        liquidityProviders.updateRegenCollectiveBpsOfRevenue(1);
+    }
+
+    function testCannotUpdateRegenCollectiveBpsOfRevenue_max_fee() public {
+        hevm.expectRevert("00002");
+        liquidityProviders.updateRegenCollectiveBpsOfRevenue(1001);
+    }
+
+    function testCannotUpdateRegenCollectiveBpsOfRevenue_mustBeGreater() public {
+        hevm.expectRevert("00039");
+        liquidityProviders.updateRegenCollectiveBpsOfRevenue(1);
+    }
+
+    function testUpdateRegenCollectiveBpsOfRevenue_works() public {
+        assertEq(liquidityProviders.regenCollectiveBpsOfRevenue(), 100);
+        hevm.expectEmit(true, false, false, true);
+
+        emit RegenCollectiveBpsOfRevenueUpdated(100, 101);
+        liquidityProviders.updateRegenCollectiveBpsOfRevenue(101);
+        assertEq(liquidityProviders.regenCollectiveBpsOfRevenue(), 101);
     }
 }

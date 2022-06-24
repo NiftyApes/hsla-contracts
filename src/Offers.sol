@@ -251,10 +251,6 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
         require(signature.length == 65, "00003");
     }
 
-    function _requireOfferNotExpired(Offer memory offer) internal view {
-        require(offer.expiration > SafeCastUpgradeable.toUint32(block.timestamp), "00010");
-    }
-
     /// @inheritdoc IOffers
     function requireMinimumDuration(Offer memory offer) public pure {
         require(offer.duration >= 1 days, "00011");
@@ -263,6 +259,10 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
     /// @inheritdoc IOffers
     function requireNoFloorTerms(Offer memory offer) public pure {
         require(!offer.floorTerm, "00014");
+    }
+
+    function _requireOfferNotExpired(Offer memory offer) internal view {
+        require(offer.expiration > SafeCastUpgradeable.toUint32(block.timestamp), "00010");
     }
 
     function _require721Owner(

@@ -133,6 +133,12 @@ interface ILiquidity is ILiquidityAdmin, ILiquidityEvents {
     function assetAmountToCAssetAmount(address asset, uint256 amount) external returns (uint256);
 
     /// @notice Returns the current amount of tokens to be redeemed for a given amount of cTokens
+    /// @notice This function results in a slightly lower amount of the underlying asset than might be expected
+    ///         Compound math truncates at the 8th decimal when going from underlying to cToken
+    ///         When converting cToken to underlying this previous truncation results in a rounding down at the 8th decimal place
+    ///         This only affects the NiftyApes protocol when the Owner withdraws and sends fund to the Regen Collective
+    ///         And when a lender is slashed for insufficient funds they are left with a very small amount of cTokens
+    ///         in their NiftyApes balance instead of a strict 0
     /// @param cAsset The compound token address
     /// @param amount The amount of asset to convert to cAsset
     function cAssetAmountToAssetAmount(address cAsset, uint256 amount) external returns (uint256);
