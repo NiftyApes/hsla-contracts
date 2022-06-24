@@ -14,7 +14,7 @@ contract TestLiquidityPauseSanctions is Test, OffersLoansRefinancesFixtures {
         super.setUp();
     }
 
-    function test_pauseSanctions_works() public {
+    function test_unit_pauseSanctions_works() public {
         vm.prank(owner);
         liquidity.pauseSanctions();
 
@@ -25,7 +25,12 @@ contract TestLiquidityPauseSanctions is Test, OffersLoansRefinancesFixtures {
         liquidity.supplyErc20(address(usdcToken), 1);
     }
 
-    function test_unpauseSanctions_works() public {
+    function test_unit_cannot_pauseSanctions_notOwner() public {
+        vm.expectRevert("Ownable: caller is not the owner");
+        liquidity.pauseSanctions();
+    }
+
+    function test_unit_unpauseSanctions_works() public {
         vm.prank(owner);
         liquidity.pauseSanctions();
 
@@ -42,5 +47,10 @@ contract TestLiquidityPauseSanctions is Test, OffersLoansRefinancesFixtures {
         vm.startPrank(SANCTIONED_ADDRESS);
         vm.expectRevert("00017");
         liquidity.withdrawErc20(address(usdcToken), 1);
+    }
+
+    function test_unit_cannot_unpauseSanctions_notOwner() public {
+        vm.expectRevert("Ownable: caller is not the owner");
+        liquidity.unpauseSanctions();
     }
 }
