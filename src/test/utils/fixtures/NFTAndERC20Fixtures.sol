@@ -23,6 +23,8 @@ contract NFTAndERC20Fixtures is Test, UsersFixtures {
 
     bool internal integration = false;
 
+    address constant usdcWhale = 0x68A99f89E475a078645f4BAC491360aFe255Dff1;
+
     function setUp() public virtual override {
         super.setUp();
 
@@ -39,7 +41,7 @@ contract NFTAndERC20Fixtures is Test, UsersFixtures {
 
             cEtherToken = CEtherMock(0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5);
 
-            vm.startPrank(0x68A99f89E475a078645f4BAC491360aFe255Dff1);
+            vm.startPrank(usdcWhale);
             usdcToken.transfer(lender1, 1000 * (10**usdcToken.decimals()));
             usdcToken.transfer(lender2, 1000 * (10**usdcToken.decimals()));
             vm.stopPrank();

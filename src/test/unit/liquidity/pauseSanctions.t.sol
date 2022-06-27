@@ -18,7 +18,7 @@ contract TestLiquidityPauseSanctions is Test, OffersLoansRefinancesFixtures {
         vm.prank(owner);
         liquidity.pauseSanctions();
 
-        vm.startPrank(0x68A99f89E475a078645f4BAC491360aFe255Dff1);
+        vm.startPrank(usdcWhale);
         if (integration) {
             vm.expectRevert("Blacklistable: account is blacklisted");
         }
@@ -47,7 +47,7 @@ contract TestLiquidityPauseSanctions is Test, OffersLoansRefinancesFixtures {
         vm.prank(owner);
         liquidity.pauseSanctions();
 
-        vm.startPrank(0x68A99f89E475a078645f4BAC491360aFe255Dff1);
+        vm.startPrank(usdcWhale);
         if (integration) {
             vm.expectRevert("Blacklistable: account is blacklisted");
         }
