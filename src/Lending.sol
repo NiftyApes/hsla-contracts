@@ -827,6 +827,7 @@ contract NiftyApesLending is
     /// @notice allows a borrower to claim their NFT, perform arbitary actions with that NFT (like claim an airdrop),
     ///         and return the NFT in the same transcation
     /// @notice caller must call setApprovalForAll and approve this contract address as operator prior to calling for function to work
+    /// @notice this function is VULNERABLE all NFTs in the contract could be stolen
     function flashClaim(
         address nftContractAddress,
         uint256 nftId,
