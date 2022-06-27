@@ -21,10 +21,11 @@ contract NFTAndERC20Fixtures is Test, UsersFixtures {
     CEtherMock internal cEtherToken;
     ERC721Mock internal mockNft;
 
+    bool internal integration = false;
+
     function setUp() public virtual override {
         super.setUp();
 
-        bool integration = false;
         try vm.envBool("INTEGRATION") returns (bool isIntegration) {
             integration = isIntegration;
         } catch (bytes memory) {
