@@ -826,20 +826,21 @@ contract NiftyApesLending is
 
     /// @notice allows a borrower to claim their NFT, perform arbitary actions with that NFT (like claim an airdrop),
     ///         and return the NFT in the same transcation
-    /// @notice caller must call setApprovalForAll and supply this contract address prior to calling for function to work
+    /// @notice caller must call setApprovalForAll and approve this contract address as operator prior to calling for function to work
     function flashClaim(
         address nftContractAddress,
         uint256 nftId,
         address interactionAddress,
-        bytes calldata interaction CallData,) external whenNotPaused nonReentrant {
+        bytes calldata interactionCallData
+    ) external whenNotPaused nonReentrant {
         LoanAuction storage loanAuction = _getLoanAuctionInternal(nftContractAddress, nftId);
-        
+
         // require msg.sender is loanAuction.nftOwner;
         _requireNftOwner(loanAuction, msg.sender);
 
         // transfer NFT to nftOwner
         _transferNft(nftContractAddress, nftId, address(this), loanAuction.nftOwner);
-        
+
         // calldata function
         AddressUpgradeable.functionCall(interactionAddress, interactionCallData);
 
@@ -847,7 +848,7 @@ contract NiftyApesLending is
         _transferNft(nftContractAddress, nftId, loanAuction.nftOwner, address(this));
 
         // require contract is owner
-        require(IERC721Upgradeable(offer.nftContractAddress).ownerOf(nftId) == address(this));
+        require(IERC721Upgradeable(nftContractAddress).ownerOf(nftId) == address(this), "00048");
     }
 
     /// @inheritdoc ILending
