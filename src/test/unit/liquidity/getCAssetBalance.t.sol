@@ -22,7 +22,7 @@ contract TestGetCAssetBalance is Test, ILiquidityEvents, OffersLoansRefinancesFi
         );
     }
 
-    function test_unit_setMaxCAssetBalance() public {
+    function test_unit_getCAssetBalance_works() public {
         if (!integration) {
             assertEq(
                 liquidity.getCAssetBalance(address(lender1), address(cUSDCToken)),
