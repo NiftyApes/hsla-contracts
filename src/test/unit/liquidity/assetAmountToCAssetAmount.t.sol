@@ -13,10 +13,12 @@ contract TestAssetAmountToCAssetAmount is Test, ILiquidityEvents, OffersLoansRef
     }
 
     function testAssetAmountToAssetAmount() public {
-        cUSDCToken.setExchangeRateCurrent(220154645140434444389595003); // recent exchange rate of DAI
+        if (!integration) {
+            cUSDCToken.setExchangeRateCurrent(220154645140434444389595003); // recent exchange rate of DAI
 
-        uint256 result = liquidity.assetAmountToCAssetAmount(address(usdcToken), 1e18); // supply 1 mockCUSDC, would be better to call this mock DAI as USDC has 6 decimals
+            uint256 result = liquidity.assetAmountToCAssetAmount(address(usdcToken), 1e18); // supply 1 mockCUSDC, would be better to call this mock DAI as USDC has 6 decimals
 
-        assertEq(result, 4542261642);
+            assertEq(result, 4542261642);
+        }
     }
 }
