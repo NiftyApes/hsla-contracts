@@ -46,16 +46,6 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         acceptEth = true;
     }
 
-    function testCAssetBalance_starts_at_zero() public {
-        assertEq(
-            liquidityProviders.getCAssetBalance(
-                address(0x0000000000000000000000000000000000000001),
-                address(0x0000000000000000000000000000000000000002)
-            ),
-            0
-        );
-    }
-
     function testCannotSupplyErc20_asset_not_whitelisted() public {
         hevm.expectRevert("00040");
         liquidityProviders.supplyErc20(address(0x0000000000000000000000000000000000000001), 1);
