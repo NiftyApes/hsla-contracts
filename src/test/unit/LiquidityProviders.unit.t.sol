@@ -13,6 +13,8 @@ import "../mock/CERC20Mock.sol";
 import "../mock/CEtherMock.sol";
 import "../mock/ERC20Mock.sol";
 
+import "../Console.sol";
+
 contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
     NiftyApesLiquidity liquidityProviders;
     ERC20Mock usdcToken;
@@ -264,6 +266,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 0);
 
         assertEq(usdcToken.balanceOf(address(this)), 99);
+        assertEq(usdcToken.balanceOf(address(0x252de94Ae0F07fb19112297F299f8c9Cc10E28a6)), 1);
     }
 
     function testWithdrawErc20_works_event() public {
@@ -349,9 +352,52 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         liquidityProviders.withdrawErc20(address(usdcToken), 1 ether);
     }
 
+    function testWithdrawErc20_regen_collective_event_emits_when_owner() public {
+        hevm.startPrank(liquidityProviders.owner());
+        usdcToken.mint(liquidityProviders.owner(), 100);
+        usdcToken.approve(address(liquidityProviders), 100);
+        liquidityProviders.supplyErc20(address(usdcToken), 100);
+        hevm.stopPrank();
+
+        hevm.warp(block.timestamp + 1 weeks);
+
+        hevm.expectEmit(true, true, false, false);
+
+        emit PercentForRegen(
+            liquidityProviders.regenCollectiveAddress(),
+            address(usdcToken),
+            1,
+            100000000000000000
+        );
+
+        hevm.startPrank(liquidityProviders.owner());
+
+        liquidityProviders.withdrawErc20(address(usdcToken), 100);
+    }
+
     function testCannotWithdrawCErc20_no_asset_balance() public {
         hevm.expectRevert("00045");
         liquidityProviders.withdrawCErc20(address(0x0000000000000000000000000000000000000001), 1);
+    }
+
+    function testWithdrawCErc20_works_owner() public {
+        usdcToken.mint(address(this), 100);
+        usdcToken.approve(address(liquidityProviders), 100);
+        liquidityProviders.supplyErc20(address(usdcToken), 100);
+
+        uint256 cTokensBurnt = liquidityProviders.withdrawCErc20(address(cUSDCToken), 99);
+        assertEq(cTokensBurnt, 100 ether);
+
+        assertEq(liquidityProviders.getCAssetBalance(address(this), address(cUSDCToken)), 0);
+
+        assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
+        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 0);
+
+        assertEq(cUSDCToken.balanceOf(address(this)), 99 ether);
+        assertEq(
+            cUSDCToken.balanceOf(address(0x252de94Ae0F07fb19112297F299f8c9Cc10E28a6)),
+            1 ether
+        );
     }
 
     function testWithdrawCErc20_works() public {
@@ -434,6 +480,29 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         hevm.expectRevert("00017");
         hevm.prank(SANCTIONED_ADDRESS);
         liquidityProviders.withdrawCErc20(address(cUSDCToken), 1 ether);
+    }
+
+    function testWithdrawCErc20_regen_collective_event_emits_when_owner() public {
+        hevm.startPrank(liquidityProviders.owner());
+        usdcToken.mint(liquidityProviders.owner(), 100);
+        usdcToken.approve(address(liquidityProviders), 100);
+        liquidityProviders.supplyErc20(address(usdcToken), 100);
+        hevm.stopPrank();
+
+        hevm.warp(block.timestamp + 1 weeks);
+
+        hevm.expectEmit(true, true, false, false);
+
+        emit PercentForRegen(
+            liquidityProviders.regenCollectiveAddress(),
+            address(cUSDCToken),
+            1,
+            100000000000000000
+        );
+
+        hevm.startPrank(liquidityProviders.owner());
+
+        liquidityProviders.withdrawCErc20(address(cUSDCToken), 100);
     }
 
     function testCannotSupplyEth_asset_not_whitelisted() public {
@@ -654,36 +723,16 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         liquidityProviders.withdrawEth(2);
     }
 
-    // this test was throwing on 'amount 0' error due to owner() withdrawl
-    // contract owner should be updated and propogated through other tests
-    function testCannotWithdrawEth_underlying_transfer_fails() public {
+    function testWithdrawEth_regen_collective_event_emits_when_owner() public {
         liquidityProviders.setCAssetAddress(
             address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
             address(cEtherToken)
         );
         liquidityProviders.setMaxCAssetBalance(address(cEtherToken), 2**256 - 1);
 
-        hevm.deal(address(this), 2);
-
-        liquidityProviders.supplyEth{ value: 1 }();
-
-        acceptEth = false;
-
-        // hevm.expectRevert("Address: unable to send value, recipient may have reverted");
-        hevm.expectRevert("00045");
-
-        liquidityProviders.withdrawEth(1);
-    }
-
-    function testWithdrawEth_regen_collective_event_emits_when_owner() public {
-        usdcToken.mint(address(this), 1);
-        usdcToken.approve(address(liquidityProviders), 1);
-        liquidityProviders.supplyErc20(address(usdcToken), 1);
-
         hevm.startPrank(liquidityProviders.owner());
-        usdcToken.mint(liquidityProviders.owner(), 100);
-        usdcToken.approve(address(liquidityProviders), 100);
-        liquidityProviders.supplyErc20(address(usdcToken), 100);
+        hevm.deal(liquidityProviders.owner(), 100);
+        liquidityProviders.supplyEth{ value: 100 }();
         hevm.stopPrank();
 
         hevm.warp(block.timestamp + 1 weeks);
@@ -692,14 +741,13 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
 
         emit PercentForRegen(
             liquidityProviders.regenCollectiveAddress(),
-            address(usdcToken),
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
             1,
-            1010000000000000000
+            1000000000000000000
         );
 
         hevm.startPrank(liquidityProviders.owner());
-
-        liquidityProviders.withdrawErc20(address(usdcToken), 100);
+        liquidityProviders.withdrawEth(100);
     }
 
     function testCannotWithdrawEth_if_sanctioned() public {
