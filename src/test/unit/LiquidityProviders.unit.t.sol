@@ -331,6 +331,24 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         liquidityProviders.withdrawErc20(address(usdcToken), 1);
     }
 
+    function testCannotWithdrawErc20_if_sanctioned() public {
+        usdcToken.mint(SANCTIONED_ADDRESS, 1);
+
+        hevm.prank(SANCTIONED_ADDRESS);
+        usdcToken.approve(address(liquidityProviders), 1);
+
+        liquidityProviders.pauseSanctions();
+
+        hevm.prank(SANCTIONED_ADDRESS);
+        liquidityProviders.supplyErc20(address(usdcToken), 1);
+
+        liquidityProviders.unpauseSanctions();
+
+        hevm.expectRevert("00017");
+        hevm.prank(SANCTIONED_ADDRESS);
+        liquidityProviders.withdrawErc20(address(usdcToken), 1 ether);
+    }
+
     function testCannotWithdrawCErc20_no_asset_balance() public {
         hevm.expectRevert("00045");
         liquidityProviders.withdrawCErc20(address(0x0000000000000000000000000000000000000001), 1);
@@ -397,6 +415,24 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
 
         hevm.expectRevert("SafeERC20: ERC20 operation did not succeed");
 
+        liquidityProviders.withdrawCErc20(address(cUSDCToken), 1 ether);
+    }
+
+    function testCannotWithdrawCErc20_if_sanctioned() public {
+        usdcToken.mint(SANCTIONED_ADDRESS, 1);
+
+        hevm.prank(SANCTIONED_ADDRESS);
+        usdcToken.approve(address(liquidityProviders), 1);
+
+        liquidityProviders.pauseSanctions();
+
+        hevm.prank(SANCTIONED_ADDRESS);
+        liquidityProviders.supplyErc20(address(usdcToken), 1);
+
+        liquidityProviders.unpauseSanctions();
+
+        hevm.expectRevert("00017");
+        hevm.prank(SANCTIONED_ADDRESS);
         liquidityProviders.withdrawCErc20(address(cUSDCToken), 1 ether);
     }
 
@@ -664,5 +700,26 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         hevm.startPrank(liquidityProviders.owner());
 
         liquidityProviders.withdrawErc20(address(usdcToken), 100);
+    }
+
+    function testCannotWithdrawEth_if_sanctioned() public {
+        liquidityProviders.setCAssetAddress(
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
+            address(cEtherToken)
+        );
+        liquidityProviders.setMaxCAssetBalance(address(cEtherToken), 2**256 - 1);
+
+        liquidityProviders.pauseSanctions();
+
+        hevm.deal(SANCTIONED_ADDRESS, 1);
+
+        hevm.prank(SANCTIONED_ADDRESS);
+        liquidityProviders.supplyEth{ value: 1 }();
+
+        liquidityProviders.unpauseSanctions();
+
+        hevm.expectRevert("00017");
+        hevm.prank(SANCTIONED_ADDRESS);
+        liquidityProviders.withdrawEth(1);
     }
 }
