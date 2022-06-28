@@ -72,6 +72,15 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 1 ether);
     }
 
+    function testCannotSupplyErc20_amount_must_be_greater_than_0() public {
+        usdcToken.mint(address(this), 2);
+        usdcToken.approve(address(liquidityProviders), 2);
+
+        hevm.expectRevert("00045");
+
+        liquidityProviders.supplyErc20(address(usdcToken), 0);
+    }
+
     function testCannotSupplyErc20_maxCAsset_hit() public {
         usdcToken.mint(address(this), 2);
         usdcToken.approve(address(liquidityProviders), 2);
@@ -165,6 +174,17 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         emit CErc20Supplied(address(this), address(cUSDCToken), 1);
 
         liquidityProviders.supplyCErc20(address(cUSDCToken), 1);
+    }
+
+    function testCannotSupplyCErc20_amount_must_be_greater_than_0() public {
+        usdcToken.mint(address(this), 2);
+
+        cUSDCToken.mint(2);
+        cUSDCToken.approve(address(liquidityProviders), 2 ether);
+
+        hevm.expectRevert("00045");
+
+        liquidityProviders.supplyCErc20(address(cUSDCToken), 0 ether);
     }
 
     function testCannotSupplyCErc20_maxCAsset_hit() public {
@@ -423,6 +443,17 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         emit EthSupplied(address(this), 1, 1 ether);
 
         liquidityProviders.supplyEth{ value: 1 }();
+    }
+
+    function testCannotSupplyEth_amount_must_be_greater_than_0() public {
+        liquidityProviders.setCAssetAddress(
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
+            address(cEtherToken)
+        );
+
+        hevm.expectRevert("00045");
+
+        liquidityProviders.supplyEth{ value: 0 }();
     }
 
     function testCannotSupplyEth_maxCAsset_hit() public {
