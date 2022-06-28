@@ -54,6 +54,9 @@ contract CERC20Mock is ERC20Upgradeable, ICERC20 {
         return 0;
     }
 
+    // solhint-disable-next-line no-empty-blocks
+    function redeem(uint256 redeemTokens) external returns (uint256) {}
+
     function setMintFail(bool _mintFail) external {
         mintFail = _mintFail;
     }
