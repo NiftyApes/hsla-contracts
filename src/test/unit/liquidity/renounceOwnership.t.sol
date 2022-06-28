@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 import "../../utils/fixtures/OffersLoansRefinancesFixtures.sol";
 import "../../../interfaces/niftyapes/liquidity/ILiquidityEvents.sol";
 
-contract TestRenounceOwnership is Test, ILiquidityEvents, OffersLoansRefinancesFixtures {
+contract TestLiquidityRenounceOwnership is Test, ILiquidityEvents, OffersLoansRefinancesFixtures {
     function setUp() public override {
         super.setUp();
     }
