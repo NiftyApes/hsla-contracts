@@ -12,10 +12,11 @@ contract DeployNiftyApesScript is Script {
         NiftyApesOffers offersContract;
         NiftyApesLiquidity liquidityProviders;
         NiftyApesSigLending sigLendingAuction;
+        address compContractAddress = 0xbbEB7c67fa3cfb40069D19E598713239497A3CA5;
         vm.startBroadcast();
 
         liquidityProviders = new NiftyApesLiquidity();
-        liquidityProviders.initialize();
+        liquidityProviders.initialize(compContractAddress);
 
         offersContract = new NiftyApesOffers();
         offersContract.initialize(address(liquidityProviders));

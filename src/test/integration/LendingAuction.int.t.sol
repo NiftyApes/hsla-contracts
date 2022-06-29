@@ -26,6 +26,7 @@ contract TestLendingAuctionIntegrationTest is BaseTest, ERC721HolderUpgradeable 
     ICEther cETH;
     NiftyApesLending LA;
     NiftyApesLiquidity liquidityProviders;
+    address compContractAddress = 0xbbEB7c67fa3cfb40069D19E598713239497A3CA5;
     uint256 immutable pk = 0x60b919c82f0b4791a5b7c6a7275970ace1748759ebdaa4076d7eeed9dbcff3c3;
     address immutable signer = 0x503408564C50b43208529faEf9bdf9794c015d52;
 
@@ -78,11 +79,14 @@ contract TestLendingAuctionIntegrationTest is BaseTest, ERC721HolderUpgradeable 
         LA = new NiftyApesLending();
 
         liquidityProviders = new NiftyApesLiquidity();
-        liquidityProviders.initialize();
+        liquidityProviders.initialize(compContractAddress);
 
         // Allow assets for testing
         liquidityProviders.setCAssetAddress(address(DAI), address(cDAI));
-        liquidityProviders.setCAssetAddress(address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE), address(cETH));
+        liquidityProviders.setCAssetAddress(
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE),
+            address(cETH)
+        );
         uint256 max = type(uint256).max;
 
         // Setup mock NFT

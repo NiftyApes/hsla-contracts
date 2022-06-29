@@ -18,6 +18,7 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
     NiftyApesOffers offers;
     NiftyApesLiquidity liquidity;
     NiftyApesSigLending sigLending;
+    address compContractAddress = 0xbbEB7c67fa3cfb40069D19E598713239497A3CA5;
 
     address constant ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
@@ -27,7 +28,7 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         vm.startPrank(owner);
 
         liquidity = new NiftyApesLiquidity();
-        liquidity.initialize();
+        liquidity.initialize(compContractAddress);
 
         offers = new NiftyApesOffers();
         offers.initialize(address(liquidity));

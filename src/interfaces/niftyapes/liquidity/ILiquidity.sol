@@ -24,6 +24,9 @@ interface ILiquidity is ILiquidityAdmin, ILiquidityEvents {
     /// @notice Returns the address for the Regen Collective
     function regenCollectiveAddress() external view returns (address);
 
+    /// @notice Returns the address for COMP token
+    function compContractAddress() external view returns (address);
+
     /// @notice Returns an accounts balance in compound tokens.
     /// @param account The users account address
     /// @param cAsset The compound token address
@@ -71,6 +74,9 @@ interface ILiquidity is ILiquidityAdmin, ILiquidityEvents {
     ///         the underlying asset to the user.
     /// @param amount The amount of eth to withdraw
     function withdrawEth(uint256 amount) external returns (uint256);
+
+    /// @notice OnlyOwner can call Withdraw COMP rewards from NiftyApes.
+    function withdrawComp() external returns (uint256);
 
     /// @notice Function only callable by the NiftyApesLending contract
     ///         Allows lending contract to affect liquidity directly

@@ -17,8 +17,8 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
     NiftyApesLiquidity liquidityProviders;
     ERC20Mock usdcToken;
     CERC20Mock cUSDCToken;
-
     CEtherMock cEtherToken;
+    address compContractAddress = 0xbbEB7c67fa3cfb40069D19E598713239497A3CA5;
 
     bool acceptEth;
 
@@ -31,7 +31,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
 
     function setUp() public {
         liquidityProviders = new NiftyApesLiquidity();
-        liquidityProviders.initialize();
+        liquidityProviders.initialize(compContractAddress);
 
         usdcToken = new ERC20Mock();
         usdcToken.initialize("USD Coin", "USDC");
