@@ -17,6 +17,7 @@ import "forge-std/Test.sol";
 // supplies USDC to lenders
 contract NFTAndERC20Fixtures is Test, UsersFixtures {
     ERC20Mock internal usdcToken;
+    ERC20Mock internal compToken;
     CERC20Mock internal cUSDCToken;
     CEtherMock internal cEtherToken;
     ERC721Mock internal mockNft;
@@ -24,6 +25,7 @@ contract NFTAndERC20Fixtures is Test, UsersFixtures {
     bool internal integration = false;
 
     address constant usdcWhale = 0x68A99f89E475a078645f4BAC491360aFe255Dff1;
+    address constant compWhale = 0x2775b1c75658Be0F640272CCb8c72ac986009e38;
 
     function setUp() public virtual override {
         super.setUp();
@@ -37,6 +39,8 @@ contract NFTAndERC20Fixtures is Test, UsersFixtures {
         if (integration) {
             usdcToken = ERC20Mock(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
 
+            compToken = ERC20Mock(0xc00e94Cb662C3520282E6f5717214004A7f26888);
+
             cUSDCToken = CERC20Mock(0x39AA39c021dfbaE8faC545936693aC917d5E7563);
 
             cEtherToken = CEtherMock(0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5);
@@ -48,6 +52,9 @@ contract NFTAndERC20Fixtures is Test, UsersFixtures {
         } else {
             usdcToken = new ERC20Mock();
             usdcToken.initialize("USD Coin", "USDC");
+
+            compToken = new ERC20Mock();
+            compToken.initialize("Compound", "COMP");
 
             cUSDCToken = new CERC20Mock();
             cUSDCToken.initialize(usdcToken);
