@@ -5,23 +5,10 @@ import "forge-std/Test.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 
 import "../../utils/fixtures/OffersLoansRefinancesFixtures.sol";
-import "../../../interfaces/niftyapes/offers/IOffersStructs.sol";
-import "../../../interfaces/niftyapes/lending/ILendingStructs.sol";
-import "../../../interfaces/niftyapes/lending/ILendingEvents.sol";
-
-contract ContractThatCannotReceiveEth is ERC721HolderUpgradeable {
-    receive() external payable {
-        revert("no Eth!");
-    }
-}
 
 contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
-    ContractThatCannotReceiveEth private contractThatCannotReceiveEth;
-
     function setUp() public override {
         super.setUp();
-
-        contractThatCannotReceiveEth = new ContractThatCannotReceiveEth();
     }
 
     function refinanceSetup(FuzzedOfferFields memory fuzzed, uint16 secondsBeforeRefinance)
@@ -29,16 +16,13 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
     {
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
 
-        (, LoanAuction memory firstLoan) = createOfferAndTryToExecuteLoanByBorrower(
-            offer,
-            "should work"
-        );
+        createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
 
         assertionsForExecutedLoan(offer);
 
         vm.warp(block.timestamp + secondsBeforeRefinance);
 
-        uint256 hasSufficientInterestAccumulated = lending.checkSufficientInterestAccumulated(
+        uint256 interestShortfall = lending.checkSufficientInterestAccumulated(
             offer.nftContractAddress,
             offer.nftId
         );
@@ -49,33 +33,17 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         fuzzed.duration = fuzzed.duration + 1; // make sure offer is better
         fuzzed.floorTerm = false; // refinance can't be floor term
         fuzzed.expiration = uint32(block.timestamp) + secondsBeforeRefinance + 1;
-        console.log("offer.amount", offer.amount);
-        console.log(
-            "offer.interestRatePerSecond * secondsBeforeRefinance",
-            offer.interestRatePerSecond * secondsBeforeRefinance
-        );
-        console.log("hasSufficientInterestAccumulated", hasSufficientInterestAccumulated);
-
         fuzzed.amount = uint128(
             offer.amount +
                 (offer.interestRatePerSecond * secondsBeforeRefinance) +
-                hasSufficientInterestAccumulated
+                interestShortfall
         );
 
-        console.log("fuzzed.amount", fuzzed.amount);
         Offer memory newOffer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
 
-        console.log("hasSufficientInterestAccumulated", hasSufficientInterestAccumulated);
-
-        console.log("newOffer.amount", newOffer.amount);
-        // TODO not by borrower, must fix
         tryToRefinanceLoanByBorrower(newOffer, "should work");
 
-        assertionsForExecutedRefinance(
-            offer,
-            secondsBeforeRefinance,
-            hasSufficientInterestAccumulated
-        );
+        assertionsForExecutedRefinance(offer, secondsBeforeRefinance, interestShortfall);
     }
 
     function assertionsForExecutedLoan(Offer memory offer) private {

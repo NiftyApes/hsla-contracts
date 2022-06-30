@@ -103,8 +103,6 @@ contract OffersLoansRefinancesFixtures is
     ) internal view returns (Offer memory) {
         address asset = fuzzed.randomAsset % 2 == 0 ? address(usdcToken) : address(ETH_ADDRESS);
 
-        console.log("offerStructFromFields: fuzzed.amount", fuzzed.amount);
-
         bool isAmountEnough;
 
         if (fuzzed.randomAsset % 2 == 0) {
@@ -235,7 +233,6 @@ contract OffersLoansRefinancesFixtures is
 
     function tryToRefinanceLoanByBorrower(Offer memory newOffer, bytes memory errorCode) internal {
         vm.startPrank(lender2);
-        console.log("tryToRefinanceLoanByBorrower: newOffer.amount", newOffer.amount);
         bytes32 offerHash = offers.createOffer(newOffer);
         vm.stopPrank();
 
