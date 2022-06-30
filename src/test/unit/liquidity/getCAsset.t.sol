@@ -14,15 +14,9 @@ contract TestGetCAsset is Test, ILiquidityEvents, OffersLoansRefinancesFixtures 
 
     function test_unit_getCAsset_works() public {
         if (!integration) {
-            assertEq(
-                liquidity.getCAsset(address(usdcToken)),
-                0x0C7BBB021d72dB4FfBa37bDF4ef055eECdbc0a29
-            );
+            assertEq(liquidity.getCAsset(address(usdcToken)), address(cUSDCToken));
         } else {
-            assertEq(
-                liquidity.getCAsset(address(usdcToken)),
-                address(0x39AA39c021dfbaE8faC545936693aC917d5E7563)
-            );
+            assertEq(liquidity.getCAsset(address(usdcToken)), address(cUSDCToken));
         }
     }
 }
