@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/utils/StringsUpgradeable.sol";
@@ -42,8 +41,8 @@ contract NFTAndERC20Fixtures is Test, UsersFixtures {
             cEtherToken = CEtherMock(0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5);
 
             vm.startPrank(usdcWhale);
-            usdcToken.transfer(lender1, 1000 * (10**usdcToken.decimals()));
-            usdcToken.transfer(lender2, 1000 * (10**usdcToken.decimals()));
+            usdcToken.transfer(lender1, 1001 * (10**usdcToken.decimals()));
+            usdcToken.transfer(lender2, 1001 * (10**usdcToken.decimals()));
             vm.stopPrank();
         } else {
             usdcToken = new ERC20Mock();

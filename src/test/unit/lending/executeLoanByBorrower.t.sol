@@ -305,4 +305,33 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
             defaultFixedFuzzedFieldsForFastUnitTesting
         );
     }
+
+    function _test_cannot_executeLoanByBorrower_if_loan_active(FuzzedOfferFields memory fuzzed)
+        private
+    {
+        defaultFixedOfferFields.lenderOffer = true;
+        fuzzed.floorTerm = true;
+
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+
+        createOffer(offer);
+
+        approveLending(offer);
+        tryToExecuteLoanByBorrower(offer, "should work");
+
+        tryToExecuteLoanByBorrower(offer, "00006");
+    }
+
+    function test_fuzz_executeLoanByBorrower_if_loan_active(FuzzedOfferFields memory fuzzed)
+        public
+        validateFuzzedOfferFields(fuzzed)
+    {
+        _test_cannot_executeLoanByBorrower_if_loan_active(fuzzed);
+    }
+
+    function test_unit_executeLoanByBorrower_if_loan_active() public {
+        _test_cannot_executeLoanByBorrower_if_loan_active(
+            defaultFixedFuzzedFieldsForFastUnitTesting
+        );
+    }
 }
