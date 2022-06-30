@@ -381,6 +381,12 @@ contract NiftyApesLending is
             fullAmount
         );
 
+        uint256 protocolInterestCTokenAmount = ILiquidity(liquidityContractAddress)
+            .assetAmountToCAssetAmount(
+                offer.asset,
+                (loanAuction.accumulatedProtocolInterest + loanAuction.slashableLenderInterest)
+            );
+
         ILiquidity(liquidityContractAddress).withdrawCBalance(
             offer.creator,
             cAsset,
@@ -389,7 +395,12 @@ contract NiftyApesLending is
         ILiquidity(liquidityContractAddress).addToCAssetBalance(
             loanAuction.lender,
             cAsset,
-            fullCTokenAmount
+            fullCTokenAmount - protocolInterestCTokenAmount
+        );
+        ILiquidity(liquidityContractAddress).addToCAssetBalance(
+            owner(),
+            cAsset,
+            protocolInterestCTokenAmount
         );
 
         uint128 currentAmountDrawn = loanAuction.amountDrawn;
@@ -409,7 +420,6 @@ contract NiftyApesLending is
             loanAuction.fixedTerms = offer.fixedTerms;
         }
         if (loanAuction.slashableLenderInterest > 0) {
-            loanAuction.accumulatedLenderInterest += loanAuction.slashableLenderInterest;
             loanAuction.slashableLenderInterest = 0;
         }
 
@@ -494,18 +504,16 @@ contract NiftyApesLending is
                 additionalTokens + protocolPremiumInCtokens
             );
 
-            if (protocolPremiumInCtokens > 0) {
-                ILiquidity(liquidityContractAddress).withdrawCBalance(
-                    offer.creator,
-                    cAsset,
-                    protocolPremiumInCtokens
-                );
-                ILiquidity(liquidityContractAddress).addToCAssetBalance(
-                    owner(),
-                    cAsset,
-                    protocolPremiumInCtokens
-                );
-            }
+            ILiquidity(liquidityContractAddress).withdrawCBalance(
+                offer.creator,
+                cAsset,
+                protocolPremiumInCtokens
+            );
+            ILiquidity(liquidityContractAddress).addToCAssetBalance(
+                owner(),
+                cAsset,
+                protocolPremiumInCtokens
+            );
         } else {
             if (loanAuction.slashableLenderInterest > 0) {
                 loanAuction.accumulatedLenderInterest += loanAuction.slashableLenderInterest;
@@ -552,15 +560,15 @@ contract NiftyApesLending is
             // update LoanAuction lender
             loanAuction.lender = offer.creator;
 
-            ILiquidity(liquidityContractAddress).addToCAssetBalance(
-                currentlender,
-                cAsset,
-                (fullCTokenAmount - protocolPremiumInCtokens)
-            );
             ILiquidity(liquidityContractAddress).withdrawCBalance(
                 offer.creator,
                 cAsset,
                 fullCTokenAmount
+            );
+            ILiquidity(liquidityContractAddress).addToCAssetBalance(
+                currentlender,
+                cAsset,
+                (fullCTokenAmount - protocolPremiumInCtokens)
             );
             ILiquidity(liquidityContractAddress).addToCAssetBalance(
                 owner(),

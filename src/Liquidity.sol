@@ -50,8 +50,11 @@ contract NiftyApesLiquidity is
     /// @inheritdoc ILiquidity
     uint16 public regenCollectiveBpsOfRevenue;
 
-    /// @dev @inheritdoc ILiquidity
+    /// @inheritdoc ILiquidity
     address public regenCollectiveAddress;
+
+    /// @inheritdoc ILiquidity
+    address public compContractAddress;
 
     /// @notice A bool to prevent external eth from being received and locked in the contract
     bool internal _ethTransferable;
@@ -66,9 +69,10 @@ contract NiftyApesLiquidity is
     /// @notice The initializer for the NiftyApes protocol.
     ///         NiftyApes is intended to be deployed behind a proxy and thus needs to initialize
     ///         its state outside of a constructor.
-    function initialize() public initializer {
+    function initialize(address newCompContractAddress) public initializer {
         regenCollectiveBpsOfRevenue = 100;
         regenCollectiveAddress = address(0x252de94Ae0F07fb19112297F299f8c9Cc10E28a6);
+        compContractAddress = newCompContractAddress;
 
         OwnableUpgradeable.__Ownable_init();
         PausableUpgradeable.__Pausable_init();
@@ -303,6 +307,27 @@ contract NiftyApesLiquidity is
 
             return cTokensBurnt;
         }
+    }
+
+    /// @inheritdoc ILiquidity
+    function withdrawComp() external whenNotPaused nonReentrant onlyOwner returns (uint256) {
+        _requireIsNotSanctioned(msg.sender);
+
+        uint256 ownerBalance = IERC20Upgradeable(compContractAddress).balanceOf(address(this));
+
+        uint256 bpsForRegen = (ownerBalance * regenCollectiveBpsOfRevenue) / 10_000;
+
+        uint256 ownerBalanceMinusRegen = ownerBalance - bpsForRegen;
+
+        _sendValue(compContractAddress, ownerBalanceMinusRegen, owner());
+
+        _sendValue(compContractAddress, bpsForRegen, regenCollectiveAddress);
+
+        emit PercentForRegen(regenCollectiveAddress, compContractAddress, bpsForRegen, 0);
+
+        emit Erc20Withdrawn(owner(), compContractAddress, ownerBalanceMinusRegen, 0);
+
+        return ownerBalance;
     }
 
     function _requireEthTransferable() internal view {

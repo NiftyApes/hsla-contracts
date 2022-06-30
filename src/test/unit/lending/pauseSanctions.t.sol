@@ -14,7 +14,7 @@ contract TestLendingPauseSanctions is Test, OffersLoansRefinancesFixtures {
         super.setUp();
     }
 
-    function test_unit_pauseSanctions_works(FuzzedOfferFields memory fuzzed)
+    function test_fuzz_lending_pauseSanctions_works(FuzzedOfferFields memory fuzzed)
         public
         validateFuzzedOfferFields(fuzzed)
     {
@@ -41,12 +41,12 @@ contract TestLendingPauseSanctions is Test, OffersLoansRefinancesFixtures {
         );
     }
 
-    function test_unit_cannot_pauseSanctions_notOwner() public {
+    function test_unit_lending_cannot_pauseSanctions_notOwner() public {
         vm.expectRevert("Ownable: caller is not the owner");
         lending.pauseSanctions();
     }
 
-    function test_unit_unpauseSanctions_works(FuzzedOfferFields memory fuzzed)
+    function test_fuzz_lending_unpauseSanctions_works(FuzzedOfferFields memory fuzzed)
         public
         validateFuzzedOfferFields(fuzzed)
     {
@@ -81,7 +81,7 @@ contract TestLendingPauseSanctions is Test, OffersLoansRefinancesFixtures {
         lending.repayLoan(offer.nftContractAddress, offer.nftId);
     }
 
-    function test_unit_cannot_unpauseSanctions_notOwner() public {
+    function test_unit_lending_cannot_unpauseSanctions_notOwner() public {
         vm.expectRevert("Ownable: caller is not the owner");
         lending.unpauseSanctions();
     }

@@ -14,7 +14,7 @@ contract TestLiquidityPauseSanctions is Test, OffersLoansRefinancesFixtures {
         super.setUp();
     }
 
-    function test_unit_pauseSanctions_works() public {
+    function test_unit_liquidity_pauseSanctions_works() public {
         vm.prank(owner);
         liquidity.pauseSanctions();
 
@@ -23,6 +23,9 @@ contract TestLiquidityPauseSanctions is Test, OffersLoansRefinancesFixtures {
             vm.expectRevert("Blacklistable: account is blacklisted");
             usdcToken.transfer(SANCTIONED_ADDRESS, 1);
             vm.stopPrank();
+        } else {
+            vm.prank(SANCTIONED_ADDRESS);
+            usdcToken.mint(SANCTIONED_ADDRESS, 1);
         }
 
         vm.startPrank(SANCTIONED_ADDRESS);
@@ -38,12 +41,12 @@ contract TestLiquidityPauseSanctions is Test, OffersLoansRefinancesFixtures {
         vm.stopPrank();
     }
 
-    function test_unit_cannot_pauseSanctions_notOwner() public {
+    function test_unit_liquidity_cannot_pauseSanctions_notOwner() public {
         vm.expectRevert("Ownable: caller is not the owner");
         liquidity.pauseSanctions();
     }
 
-    function test_unit_unpauseSanctions_works() public {
+    function test_unit_liquidity_unpauseSanctions_works() public {
         vm.prank(owner);
         liquidity.pauseSanctions();
 
@@ -52,6 +55,9 @@ contract TestLiquidityPauseSanctions is Test, OffersLoansRefinancesFixtures {
             vm.expectRevert("Blacklistable: account is blacklisted");
             usdcToken.transfer(SANCTIONED_ADDRESS, 1);
             vm.stopPrank();
+        } else {
+            vm.prank(SANCTIONED_ADDRESS);
+            usdcToken.mint(SANCTIONED_ADDRESS, 1);
         }
 
         vm.startPrank(SANCTIONED_ADDRESS);
@@ -74,7 +80,7 @@ contract TestLiquidityPauseSanctions is Test, OffersLoansRefinancesFixtures {
         liquidity.withdrawErc20(address(usdcToken), 1);
     }
 
-    function test_unit_cannot_unpauseSanctions_notOwner() public {
+    function test_unit_liquidity_cannot_unpauseSanctions_notOwner() public {
         vm.expectRevert("Ownable: caller is not the owner");
         liquidity.unpauseSanctions();
     }

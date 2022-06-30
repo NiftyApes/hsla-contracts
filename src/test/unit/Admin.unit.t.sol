@@ -22,8 +22,8 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
     NiftyApesSigLending sigLendingAuction;
     ERC20Mock usdcToken;
     CERC20Mock cUSDCToken;
-
     CEtherMock cEtherToken;
+    address compContractAddress = 0xbbEB7c67fa3cfb40069D19E598713239497A3CA5;
 
     bool acceptEth;
 
@@ -35,7 +35,7 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
 
     function setUp() public {
         liquidityProviders = new NiftyApesLiquidity();
-        liquidityProviders.initialize();
+        liquidityProviders.initialize(compContractAddress);
 
         offersContract = new NiftyApesOffers();
         offersContract.initialize(address(liquidityProviders));

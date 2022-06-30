@@ -27,7 +27,7 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         vm.startPrank(owner);
 
         liquidity = new NiftyApesLiquidity();
-        liquidity.initialize();
+        liquidity.initialize(address(compToken));
 
         offers = new NiftyApesOffers();
         offers.initialize(address(liquidity));
