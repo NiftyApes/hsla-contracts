@@ -84,14 +84,14 @@ contract TestExecuteLoanByLender is Test, OffersLoansRefinancesFixtures {
         tryToExecuteLoanByLender(offer, "00013");
     }
 
-    function test_fuzz_executeLoanByLender_if_borrower_offer(FuzzedOfferFields memory fuzzed)
+    function test_fuzz_executeLoanByLender_if_lender_offer(FuzzedOfferFields memory fuzzed)
         public
         validateFuzzedOfferFields(fuzzed)
     {
         _test_cannot_executeLoanByLender_if_lender_offer(fuzzed);
     }
 
-    function test_unit_executeLoanByLender_if_borrower_offer() public {
+    function test_unit_executeLoanByLender_if_lender_offer() public {
         _test_cannot_executeLoanByLender_if_lender_offer(
             defaultFixedFuzzedFieldsForFastUnitTesting
         );
