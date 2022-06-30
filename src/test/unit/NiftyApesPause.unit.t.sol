@@ -30,8 +30,8 @@ contract NiftyApesPauseUnitTest is
     NiftyApesSigLending sigLendingAuction;
     ERC20Mock usdcToken;
     CERC20Mock cUSDCToken;
-
     CEtherMock cEtherToken;
+    address compContractAddress = 0xbbEB7c67fa3cfb40069D19E598713239497A3CA5;
 
     ERC721Mock mockNft;
 
@@ -50,7 +50,7 @@ contract NiftyApesPauseUnitTest is
 
     function setUp() public {
         liquidityProviders = new NiftyApesLiquidity();
-        liquidityProviders.initialize();
+        liquidityProviders.initialize(compContractAddress);
 
         offersContract = new NiftyApesOffers();
         offersContract.initialize(address(liquidityProviders));
