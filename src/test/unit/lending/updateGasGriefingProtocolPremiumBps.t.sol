@@ -41,7 +41,7 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
 
         vm.warp(block.timestamp + secondsBeforeRefinance);
 
-        tryToRefinanceLoan(newOffer, "should work");
+        tryToRefinanceByLender(newOffer, "should work");
 
         uint256 interest = offer.interestRatePerSecond * secondsBeforeRefinance;
 

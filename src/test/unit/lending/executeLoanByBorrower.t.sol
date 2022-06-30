@@ -86,7 +86,7 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         private
     {
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
-        createOffer(offer);
+        createOffer(offer, lender1);
         vm.warp(offer.expiration);
         approveLending(offer);
         tryToExecuteLoanByBorrower(offer, "00010");
@@ -108,7 +108,7 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         FuzzedOfferFields memory fuzzed
     ) public {
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
-        createOffer(offer);
+        createOffer(offer, lender1);
         vm.startPrank(owner);
         liquidity.setCAssetAddress(offer.asset, address(0));
         vm.stopPrank();
@@ -152,7 +152,7 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         private
     {
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
-        createOffer(offer);
+        createOffer(offer, lender1);
         approveLending(offer);
         vm.startPrank(borrower1);
         mockNft.safeTransferFrom(borrower1, borrower2, 1);
@@ -177,7 +177,7 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         FuzzedOfferFields memory fuzzed
     ) private {
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
-        createOffer(offer);
+        createOffer(offer, lender1);
         approveLending(offer);
 
         vm.startPrank(lender1);
@@ -282,7 +282,7 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         mockNft.safeTransferFrom(borrower1, lender1, 1);
         vm.stopPrank();
 
-        createOffer(offer);
+        createOffer(offer, lender1);
 
         // pass NFT back to borrower1 so they can try to execute a borrower offer
         vm.startPrank(lender1);
@@ -314,7 +314,7 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
 
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
 
-        createOffer(offer);
+        createOffer(offer, lender1);
 
         approveLending(offer);
         tryToExecuteLoanByBorrower(offer, "should work");

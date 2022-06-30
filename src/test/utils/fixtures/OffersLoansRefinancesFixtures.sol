@@ -112,8 +112,9 @@ contract OffersLoansRefinancesFixtures is
             });
     }
 
-    function createOffer(Offer memory offer) internal returns (Offer memory) {
-        vm.startPrank(lender1);
+    function createOffer(Offer memory offer, address lender) internal returns (Offer memory) {
+        vm.startPrank(lender);
+        offer.creator = lender;
         bytes32 offerHash = offers.createOffer(offer);
         vm.stopPrank();
         return offers.getOffer(offer.nftContractAddress, offer.nftId, offerHash, offer.floorTerm);
@@ -151,13 +152,16 @@ contract OffersLoansRefinancesFixtures is
         internal
         returns (Offer memory, LoanAuction memory)
     {
-        Offer memory offerCreated = createOffer(offer);
+        Offer memory offerCreated = createOffer(offer, lender1);
         approveLending(offer);
         LoanAuction memory loan = tryToExecuteLoanByBorrower(offer, errorCode);
         return (offerCreated, loan);
     }
 
-    function tryToRefinanceLoan(Offer memory newOffer, bytes memory errorCode) internal {
+    function tryToRefinanceByLender(Offer memory newOffer, bytes memory errorCode)
+        internal
+        returns (LoanAuction memory)
+    {
         vm.startPrank(lender2);
         if (bytes16(errorCode) != bytes16("should work")) {
             vm.expectRevert(errorCode);
@@ -167,6 +171,16 @@ contract OffersLoansRefinancesFixtures is
             lending.getLoanAuction(address(mockNft), 1).lastUpdatedTimestamp
         );
         vm.stopPrank();
+        return lending.getLoanAuction(newOffer.nftContractAddress, newOffer.nftId);
+    }
+
+    function createOfferAndTryToRefinanceByLender(Offer memory newOffer, bytes memory errorCode)
+        internal
+        returns (Offer memory, LoanAuction memory)
+    {
+        Offer memory offerCreated = createOffer(newOffer, lender2);
+        LoanAuction memory loan = tryToRefinanceByLender(offerCreated, errorCode);
+        return (offerCreated, loan);
     }
 
     function assetBalance(address account, address asset) internal returns (uint256) {
