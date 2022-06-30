@@ -379,11 +379,11 @@ contract NiftyApesLending is
             fullAmount
         );
 
-        uint256 protocolInterestCTokenAmount = ILiquidity(liquidityContractAddress).assetAmountToCAssetAmount(
-            offer.asset,
-            (loanAuction.accumulatedProtocolInterest +
-            loanAuction.slashableLenderInterest);
-        );
+        uint256 protocolInterestCTokenAmount = ILiquidity(liquidityContractAddress)
+            .assetAmountToCAssetAmount(
+                offer.asset,
+                (loanAuction.accumulatedProtocolInterest + loanAuction.slashableLenderInterest)
+            );
 
         ILiquidity(liquidityContractAddress).withdrawCBalance(
             offer.creator,
@@ -393,12 +393,12 @@ contract NiftyApesLending is
         ILiquidity(liquidityContractAddress).addToCAssetBalance(
             loanAuction.lender,
             cAsset,
-            fullCTokenAmount - protocolInterestCTokenAmount;
+            fullCTokenAmount - protocolInterestCTokenAmount
         );
         ILiquidity(liquidityContractAddress).addToCAssetBalance(
             owner(),
             cAsset,
-            protocolInterestCTokenAmount;
+            protocolInterestCTokenAmount
         );
 
         uint128 currentAmountDrawn = loanAuction.amountDrawn;
@@ -502,16 +502,16 @@ contract NiftyApesLending is
                 additionalTokens + protocolPremiumInCtokens
             );
 
-                ILiquidity(liquidityContractAddress).withdrawCBalance(
-                    offer.creator,
-                    cAsset,
-                    protocolPremiumInCtokens
-                );
-                ILiquidity(liquidityContractAddress).addToCAssetBalance(
-                    owner(),
-                    cAsset,
-                    protocolPremiumInCtokens
-                );
+            ILiquidity(liquidityContractAddress).withdrawCBalance(
+                offer.creator,
+                cAsset,
+                protocolPremiumInCtokens
+            );
+            ILiquidity(liquidityContractAddress).addToCAssetBalance(
+                owner(),
+                cAsset,
+                protocolPremiumInCtokens
+            );
         } else {
             if (loanAuction.slashableLenderInterest > 0) {
                 loanAuction.accumulatedLenderInterest += loanAuction.slashableLenderInterest;
