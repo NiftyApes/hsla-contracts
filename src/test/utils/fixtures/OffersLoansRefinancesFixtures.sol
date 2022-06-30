@@ -37,6 +37,7 @@ contract OffersLoansRefinancesFixtures is
     }
 
     FixedOfferFields internal defaultFixedOfferFields;
+    FixedOfferFields internal defaultFixedBorrowerOfferFields;
 
     FuzzedOfferFields internal defaultFixedFuzzedFieldsForFastUnitTesting;
 
@@ -49,6 +50,14 @@ contract OffersLoansRefinancesFixtures is
             fixedTerms: false,
             creator: lender1,
             lenderOffer: true,
+            nftContractAddress: address(mockNft),
+            nftId: 1
+        });
+
+        defaultFixedBorrowerOfferFields = FixedOfferFields({
+            fixedTerms: false,
+            creator: borrower1,
+            lenderOffer: false,
             nftContractAddress: address(mockNft),
             nftId: 1
         });
@@ -119,6 +128,13 @@ contract OffersLoansRefinancesFixtures is
         return offers.getOffer(offer.nftContractAddress, offer.nftId, offerHash, offer.floorTerm);
     }
 
+    function createBorrowerOffer(Offer memory offer) internal returns (Offer memory) {
+        vm.startPrank(offer.creator);
+        bytes32 offerHash = offers.createOffer(offer);
+        vm.stopPrank();
+        return offers.getOffer(offer.nftContractAddress, offer.nftId, offerHash, offer.floorTerm);
+    }
+
     function approveLending(Offer memory offer) internal {
         vm.startPrank(borrower1);
         mockNft.approve(address(lending), offer.nftId);
@@ -147,6 +163,28 @@ contract OffersLoansRefinancesFixtures is
         return lending.getLoanAuction(offer.nftContractAddress, offer.nftId);
     }
 
+    function tryToExecuteLoanByLender(Offer memory offer, bytes memory errorCode)
+        internal
+        returns (LoanAuction memory)
+    {
+        vm.startPrank(lender1);
+        bytes32 offerHash = offers.getOfferHash(offer);
+
+        if (bytes16(errorCode) != bytes16("should work")) {
+            vm.expectRevert(errorCode);
+        }
+
+        lending.executeLoanByLender(
+            offer.nftContractAddress,
+            offer.nftId,
+            offerHash,
+            offer.floorTerm
+        );
+        vm.stopPrank();
+
+        return lending.getLoanAuction(offer.nftContractAddress, offer.nftId);
+    }
+
     function createOfferAndTryToExecuteLoanByBorrower(Offer memory offer, bytes memory errorCode)
         internal
         returns (Offer memory, LoanAuction memory)
@@ -154,6 +192,16 @@ contract OffersLoansRefinancesFixtures is
         Offer memory offerCreated = createOffer(offer);
         approveLending(offer);
         LoanAuction memory loan = tryToExecuteLoanByBorrower(offer, errorCode);
+        return (offerCreated, loan);
+    }
+
+    function createOfferAndTryToExecuteLoanByLender(Offer memory offer, bytes memory errorCode)
+        internal
+        returns (Offer memory, LoanAuction memory)
+    {
+        Offer memory offerCreated = createBorrowerOffer(offer);
+        approveLending(offer);
+        LoanAuction memory loan = tryToExecuteLoanByLender(offer, errorCode);
         return (offerCreated, loan);
     }
 
