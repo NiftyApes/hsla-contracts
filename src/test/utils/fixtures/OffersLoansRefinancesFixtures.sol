@@ -103,6 +103,16 @@ contract OffersLoansRefinancesFixtures is
     ) internal view returns (Offer memory) {
         address asset = fuzzed.randomAsset % 2 == 0 ? address(usdcToken) : address(ETH_ADDRESS);
 
+        console.log("offerStructFromFields: fuzzed.amount", fuzzed.amount);
+
+        bool isAmountEnough;
+
+        if (fuzzed.randomAsset % 2 == 0) {
+            isAmountEnough = fuzzed.amount >= 10 * uint128(10**usdcToken.decimals());
+        } else {
+            isAmountEnough = fuzzed.amount >= 250000000;
+        }
+
         return
             Offer({
                 creator: fixedFields.creator,
@@ -113,9 +123,13 @@ contract OffersLoansRefinancesFixtures is
                 asset: asset,
                 floorTerm: fuzzed.floorTerm,
                 interestRatePerSecond: fuzzed.interestRatePerSecond,
-                amount: fuzzed.amount + (fuzzed.randomAsset % 2) == 0
-                    ? 10 * uint128(10**usdcToken.decimals())
-                    : 250000000,
+                amount: isAmountEnough
+                    ? fuzzed.amount
+                    : (
+                        fuzzed.randomAsset % 2 == 0
+                            ? 10 * uint128(10**usdcToken.decimals())
+                            : 250000000
+                    ),
                 duration: fuzzed.duration,
                 expiration: fuzzed.expiration
             });
@@ -168,6 +182,7 @@ contract OffersLoansRefinancesFixtures is
         returns (LoanAuction memory)
     {
         vm.startPrank(lender1);
+
         bytes32 offerHash = offers.getOfferHash(offer);
 
         if (bytes16(errorCode) != bytes16("should work")) {
@@ -207,11 +222,33 @@ contract OffersLoansRefinancesFixtures is
 
     function tryToRefinanceLoan(Offer memory newOffer, bytes memory errorCode) internal {
         vm.startPrank(lender2);
+
         if (bytes16(errorCode) != bytes16("should work")) {
             vm.expectRevert(errorCode);
         }
         lending.refinanceByLender(
             newOffer,
+            lending.getLoanAuction(address(mockNft), 1).lastUpdatedTimestamp
+        );
+        vm.stopPrank();
+    }
+
+    function tryToRefinanceLoanByBorrower(Offer memory newOffer, bytes memory errorCode) internal {
+        vm.startPrank(lender2);
+        console.log("tryToRefinanceLoanByBorrower: newOffer.amount", newOffer.amount);
+        bytes32 offerHash = offers.createOffer(newOffer);
+        vm.stopPrank();
+
+        if (bytes16(errorCode) != bytes16("should work")) {
+            vm.expectRevert(errorCode);
+        }
+
+        vm.startPrank(borrower1);
+        lending.refinanceByBorrower(
+            newOffer.nftContractAddress,
+            newOffer.nftId,
+            newOffer.floorTerm,
+            offerHash,
             lending.getLoanAuction(address(mockNft), 1).lastUpdatedTimestamp
         );
         vm.stopPrank();

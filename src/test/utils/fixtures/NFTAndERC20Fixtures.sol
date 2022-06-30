@@ -57,6 +57,7 @@ contract NFTAndERC20Fixtures is Test, UsersFixtures {
 
             usdcToken.mint(lender1, 1000 ether);
             usdcToken.mint(lender2, 1000 ether);
+            usdcToken.mint(SANCTIONED_ADDRESS, 1000 ether);
         }
 
         mockNft = new ERC721Mock();

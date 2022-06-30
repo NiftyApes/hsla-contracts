@@ -18,12 +18,12 @@ contract TestLiquidityPauseSanctions is Test, OffersLoansRefinancesFixtures {
         vm.prank(owner);
         liquidity.pauseSanctions();
 
-        vm.startPrank(usdcWhale);
         if (integration) {
+            vm.startPrank(usdcWhale);
             vm.expectRevert("Blacklistable: account is blacklisted");
+            usdcToken.transfer(SANCTIONED_ADDRESS, 1);
+            vm.stopPrank();
         }
-        usdcToken.transfer(SANCTIONED_ADDRESS, 1);
-        vm.stopPrank();
 
         vm.startPrank(SANCTIONED_ADDRESS);
         if (integration) {
@@ -47,12 +47,12 @@ contract TestLiquidityPauseSanctions is Test, OffersLoansRefinancesFixtures {
         vm.prank(owner);
         liquidity.pauseSanctions();
 
-        vm.startPrank(usdcWhale);
         if (integration) {
+            vm.startPrank(usdcWhale);
             vm.expectRevert("Blacklistable: account is blacklisted");
+            usdcToken.transfer(SANCTIONED_ADDRESS, 1);
+            vm.stopPrank();
         }
-        usdcToken.transfer(SANCTIONED_ADDRESS, 1);
-        vm.stopPrank();
 
         vm.startPrank(SANCTIONED_ADDRESS);
         if (integration) {
