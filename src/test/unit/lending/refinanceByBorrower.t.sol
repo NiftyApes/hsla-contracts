@@ -20,6 +20,10 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
 
         assertionsForExecutedLoan(offer);
 
+        uint256 amountDrawn = lending
+            .getLoanAuction(offer.nftContractAddress, offer.nftId)
+            .amountDrawn;
+
         vm.warp(block.timestamp + secondsBeforeRefinance);
 
         uint256 interestShortfall = lending.checkSufficientInterestAccumulated(
@@ -27,8 +31,7 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
             offer.nftId
         );
 
-        // new offer from lender2 with +1 amount
-        // will trigger term griefing and gas griefing
+        // will trigger gas griefing (but not term griefing with borrower refinance)
         defaultFixedOfferFields.creator = lender2;
         fuzzed.duration = fuzzed.duration + 1; // make sure offer is better
         fuzzed.floorTerm = false; // refinance can't be floor term
@@ -41,9 +44,23 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
 
         Offer memory newOffer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
 
+        uint256 beforeRefinanceLenderBalance = assetBalance(lender1, address(usdcToken));
+
+        if (offer.asset == address(usdcToken)) {
+            beforeRefinanceLenderBalance = assetBalance(lender1, address(usdcToken));
+        } else {
+            beforeRefinanceLenderBalance = assetBalance(lender1, ETH_ADDRESS);
+        }
+
         tryToRefinanceLoanByBorrower(newOffer, "should work");
 
-        assertionsForExecutedRefinance(offer, secondsBeforeRefinance, interestShortfall);
+        assertionsForExecutedRefinance(
+            offer,
+            amountDrawn,
+            secondsBeforeRefinance,
+            interestShortfall,
+            beforeRefinanceLenderBalance
+        );
     }
 
     function assertionsForExecutedLoan(Offer memory offer) private {
@@ -61,18 +78,36 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
 
     function assertionsForExecutedRefinance(
         Offer memory offer,
+        uint256 amountDrawn,
         uint16 secondsBeforeRefinance,
-        uint256 interestShortfall
+        uint256 interestShortfall,
+        uint256 beforeRefinanceLenderBalance
     ) private {
         // lender1 has money
         if (offer.asset == address(usdcToken)) {
             console.log(assetBalance(lender1, address(usdcToken)));
             console.log(offer.interestRatePerSecond * secondsBeforeRefinance);
             console.log(interestShortfall);
+            assertBetween(
+                beforeRefinanceLenderBalance +
+                    amountDrawn +
+                    (offer.interestRatePerSecond * secondsBeforeRefinance) +
+                    interestShortfall,
+                assetBalance(lender1, address(usdcToken)),
+                assetBalancePlusOneCToken(lender1, address(usdcToken))
+            );
         } else {
             console.log(assetBalance(lender1, ETH_ADDRESS));
             console.log(offer.interestRatePerSecond * secondsBeforeRefinance);
             console.log(interestShortfall);
+            assertBetween(
+                beforeRefinanceLenderBalance +
+                    amountDrawn +
+                    (offer.interestRatePerSecond * secondsBeforeRefinance) +
+                    interestShortfall,
+                assetBalance(lender1, ETH_ADDRESS),
+                assetBalancePlusOneCToken(lender1, ETH_ADDRESS)
+            );
         }
     }
 
