@@ -368,40 +368,35 @@ contract NiftyApesLending is
 
         _updateInterest(loanAuction);
 
-        uint256 fullAmount = loanAuction.amountDrawn +
-            loanAuction.accumulatedLenderInterest +
-            loanAuction.accumulatedProtocolInterest +
+        uint256 toLenderUnderlying = loanAuction.amountDrawn +
+            loanAuction.accumulatedLenderInterest;
+
+        uint256 toProtocolUnderlying = loanAuction.accumulatedProtocolInterest +
             loanAuction.slashableLenderInterest;
 
-        // requireOfferAmount
-        require(offer.amount >= fullAmount, "00005");
+        require(offer.amount >= toLenderUnderlying + toProtocolUnderlying, "00005");
 
-        uint256 fullCTokenAmount = ILiquidity(liquidityContractAddress).assetAmountToCAssetAmount(
+        uint256 toLenderCToken = ILiquidity(liquidityContractAddress).assetAmountToCAssetAmount(
             offer.asset,
-            fullAmount
+            toLenderUnderlying
         );
 
-        uint256 protocolInterestCTokenAmount = ILiquidity(liquidityContractAddress)
-            .assetAmountToCAssetAmount(
-                offer.asset,
-                (loanAuction.accumulatedProtocolInterest + loanAuction.slashableLenderInterest)
-            );
+        uint256 toProtocolCToken = ILiquidity(liquidityContractAddress).assetAmountToCAssetAmount(
+            offer.asset,
+            toProtocolUnderlying
+        );
 
         ILiquidity(liquidityContractAddress).withdrawCBalance(
             offer.creator,
             cAsset,
-            fullCTokenAmount
+            toLenderCToken + toProtocolCToken
         );
         ILiquidity(liquidityContractAddress).addToCAssetBalance(
             loanAuction.lender,
             cAsset,
-            fullCTokenAmount - protocolInterestCTokenAmount
+            toLenderCToken
         );
-        ILiquidity(liquidityContractAddress).addToCAssetBalance(
-            owner(),
-            cAsset,
-            protocolInterestCTokenAmount
-        );
+        ILiquidity(liquidityContractAddress).addToCAssetBalance(owner(), cAsset, toProtocolCToken);
 
         uint128 currentAmountDrawn = loanAuction.amountDrawn;
 
@@ -413,7 +408,9 @@ contract NiftyApesLending is
         loanAuction.amount = offer.amount;
         loanAuction.interestRatePerSecond = offer.interestRatePerSecond;
         loanAuction.loanEndTimestamp = loanAuction.loanBeginTimestamp + offer.duration;
-        loanAuction.amountDrawn = SafeCastUpgradeable.toUint128(fullAmount);
+        loanAuction.amountDrawn = SafeCastUpgradeable.toUint128(
+            toLenderUnderlying + toProtocolUnderlying
+        );
         loanAuction.accumulatedLenderInterest = 0;
         loanAuction.accumulatedProtocolInterest = 0;
         if (offer.fixedTerms) {

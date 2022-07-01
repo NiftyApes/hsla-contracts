@@ -39,7 +39,8 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         fuzzed.amount = uint128(
             offer.amount +
                 (offer.interestRatePerSecond * secondsBeforeRefinance) +
-                interestShortfall
+                interestShortfall +
+                ((amountDrawn * lending.protocolInterestBps()) / 10_000)
         );
 
         Offer memory newOffer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
@@ -85,9 +86,6 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
     ) private {
         // lender1 has money
         if (offer.asset == address(usdcToken)) {
-            console.log(assetBalance(lender1, address(usdcToken)));
-            console.log(offer.interestRatePerSecond * secondsBeforeRefinance);
-            console.log(interestShortfall);
             assertBetween(
                 beforeRefinanceLenderBalance +
                     amountDrawn +
@@ -97,9 +95,6 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
                 assetBalancePlusOneCToken(lender1, address(usdcToken))
             );
         } else {
-            console.log(assetBalance(lender1, ETH_ADDRESS));
-            console.log(offer.interestRatePerSecond * secondsBeforeRefinance);
-            console.log(interestShortfall);
             assertBetween(
                 beforeRefinanceLenderBalance +
                     amountDrawn +
@@ -111,10 +106,19 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         }
     }
 
-    function test_unit_refinanceByBorrower(
+    function test_fuzz_refinanceByBorrower(
         FuzzedOfferFields memory fuzzedOffer,
-        uint16 secondsBeforeRefinance
+        uint16 secondsBeforeRefinance,
+        uint16 gasGriefingPremiumBps,
+        uint16 protocolInterestBps
     ) public validateFuzzedOfferFields(fuzzedOffer) {
+        uint256 MAX_FEE = 1_000;
+        vm.assume(gasGriefingPremiumBps <= MAX_FEE);
+        vm.assume(protocolInterestBps <= MAX_FEE);
+        vm.startPrank(owner);
+        lending.updateProtocolInterestBps(protocolInterestBps);
+        lending.updateGasGriefingPremiumBps(gasGriefingPremiumBps);
+        vm.stopPrank();
         refinanceSetup(fuzzedOffer, secondsBeforeRefinance);
     }
 }
