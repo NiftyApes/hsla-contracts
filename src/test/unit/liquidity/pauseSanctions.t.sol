@@ -19,9 +19,10 @@ contract TestLiquidityPauseSanctions is Test, OffersLoansRefinancesFixtures {
         liquidity.pauseSanctions();
 
         if (integration) {
-            vm.prank(usdcWhale);
+            vm.startPrank(usdcWhale);
             vm.expectRevert("Blacklistable: account is blacklisted");
             usdcToken.transfer(SANCTIONED_ADDRESS, 1);
+            vm.stopPrank();
         } else {
             vm.prank(SANCTIONED_ADDRESS);
             usdcToken.mint(SANCTIONED_ADDRESS, 1);
@@ -50,9 +51,10 @@ contract TestLiquidityPauseSanctions is Test, OffersLoansRefinancesFixtures {
         liquidity.pauseSanctions();
 
         if (integration) {
-            vm.prank(usdcWhale);
+            vm.startPrank(usdcWhale);
             vm.expectRevert("Blacklistable: account is blacklisted");
             usdcToken.transfer(SANCTIONED_ADDRESS, 1);
+            vm.stopPrank();
         } else {
             vm.prank(SANCTIONED_ADDRESS);
             usdcToken.mint(SANCTIONED_ADDRESS, 1);
