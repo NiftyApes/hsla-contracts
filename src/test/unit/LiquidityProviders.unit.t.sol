@@ -13,8 +13,6 @@ import "../mock/CERC20Mock.sol";
 import "../mock/CEtherMock.sol";
 import "../mock/ERC20Mock.sol";
 
-import "../Console.sol";
-
 contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
     NiftyApesLiquidity liquidityProviders;
     ERC20Mock usdcToken;

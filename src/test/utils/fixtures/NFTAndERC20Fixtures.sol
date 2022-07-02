@@ -63,6 +63,7 @@ contract NFTAndERC20Fixtures is Test, UsersFixtures {
 
             usdcToken.mint(lender1, 1000 ether);
             usdcToken.mint(lender2, 1000 ether);
+            usdcToken.mint(SANCTIONED_ADDRESS, 1000 ether);
         }
 
         mockNft = new ERC721Mock();
@@ -81,14 +82,14 @@ contract NFTAndERC20Fixtures is Test, UsersFixtures {
         if (value > upperBound) {
             console.log("***assertBetween log***");
             console.log("value", value);
-            console.log("value", upperBound);
+            console.log("upperBound", upperBound);
             revert("assertBetween: value greater than upper bound");
         }
 
         if (value < lowerBound) {
             console.log("***assertBetween log***");
             console.log("value", value);
-            console.log("value", lowerBound);
+            console.log("lowerBound", lowerBound);
             revert("assertBetween: value less than lower bound");
         }
     }
