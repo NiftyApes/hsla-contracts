@@ -29,6 +29,12 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         Offer memory offer2,
         LoanAuction memory loanAuction
     ) private {
+        // borrower has money
+        if (offer1.asset == address(usdcToken)) {
+            assertEq(usdcToken.balanceOf(borrower1), offer1.amount);
+        } else {
+            assertEq(borrower1.balance, defaultInitialEthBalance + offer1.amount);
+        }
         // lending contract has NFT
         assertEq(mockNft.ownerOf(1), address(lending));
         // loan auction exists
@@ -71,45 +77,65 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         assertEq(loanAuction.protocolInterestRatePerSecond, calcProtocolInterestPerSecond);
     }
 
-    function _test_refinanceByLender_simplest_case(FuzzedOfferFields memory fuzzed1) private {
-        vm.prank(owner);
-        lending.updateProtocolInterestBps(100);
+    function _test_refinanceByLender_simplest_case(
+        FuzzedOfferFields memory fuzzed,
+        uint16 secondsBeforeRefinance
+    ) private {
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
 
-        Offer memory offer1 = offerStructFromFields(fuzzed1, defaultFixedOfferFields);
-        createOfferAndTryToExecuteLoanByBorrower(offer1, "should work");
+        uint256 amountDrawn = lending
+            .getLoanAuction(offer.nftContractAddress, offer.nftId)
+            .amountDrawn;
 
-        vm.warp(block.timestamp + 12 hours);
+        vm.warp(block.timestamp + secondsBeforeRefinance);
 
-        Offer memory offer2 = offer1;
-        offer2.creator = lender2;
-        offer2.amount += 1;
-        offer2.expiration = uint32(block.timestamp + 1);
-        offer2.floorTerm = false;
+        uint256 interestShortfall = lending.checkSufficientInterestAccumulated(
+            offer.nftContractAddress,
+            offer.nftId
+        );
+
+        // will trigger gas griefing (but not term griefing with borrower refinance)
+        defaultFixedOfferFields.creator = lender2;
+        fuzzed.duration = fuzzed.duration + 1; // make sure offer is better
+        fuzzed.floorTerm = false; // refinance can't be floor term
+        fuzzed.expiration = uint32(block.timestamp) + secondsBeforeRefinance + 1;
+        fuzzed.amount = uint128(
+            offer.amount +
+                (offer.interestRatePerSecond * secondsBeforeRefinance) +
+                interestShortfall +
+                ((amountDrawn * lending.protocolInterestBps()) / 10_000)
+        );
+
+        Offer memory newOffer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
 
         (uint256 lenderInterest, uint256 protocolInterest) = lending.calculateInterestAccrued(
-            offer2.nftContractAddress,
-            offer2.nftId
+            newOffer.nftContractAddress,
+            newOffer.nftId
         );
 
-        console.log("lenderInterest", lenderInterest);
-        console.log("protocolInterest", protocolInterest);
+        LoanAuction memory loanAuction = tryToRefinanceByLender(newOffer, "should work");
 
-        (, LoanAuction memory loanAuction) = createOfferAndTryToRefinanceByLender(
-            offer2,
-            "should work"
-        );
-
-        assertionsForRefinancedLoan(offer1, offer2, loanAuction);
+        assertionsForRefinancedLoan(offer, newOffer, loanAuction);
         assertEq(loanAuction.accumulatedLenderInterest, 0);
         assertEq(loanAuction.accumulatedProtocolInterest, protocolInterest);
         assertEq(loanAuction.slashableLenderInterest, lenderInterest);
     }
 
-    function test_fuzz_refinanceByLender_simplest_case(FuzzedOfferFields memory fuzzed1)
-        public
-        validateFuzzedOfferFields(fuzzed1)
-    {
-        _test_refinanceByLender_simplest_case(fuzzed1);
+    function test_fuzz_refinanceByLender_simplest_case(
+        FuzzedOfferFields memory fuzzed,
+        uint16 secondsBeforeRefinance,
+        uint16 gasGriefingPremiumBps,
+        uint16 protocolInterestBps
+    ) public validateFuzzedOfferFields(fuzzed) {
+        uint256 MAX_FEE = 1_000;
+        vm.assume(gasGriefingPremiumBps <= MAX_FEE);
+        vm.assume(protocolInterestBps <= MAX_FEE);
+        vm.startPrank(owner);
+        lending.updateProtocolInterestBps(protocolInterestBps);
+        lending.updateGasGriefingPremiumBps(gasGriefingPremiumBps);
+        vm.stopPrank();
+        _test_refinanceByLender_simplest_case(fuzzed, secondsBeforeRefinance);
     }
 
     function test_unit_refinanceByLender_simplest_case_usdc() public {
@@ -117,10 +143,11 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         FuzzedOfferFields memory fixedForSpeed2 = defaultFixedFuzzedFieldsForFastUnitTesting;
 
         fixedForSpeed2.duration += 1 days;
+        uint16 secondsBeforeRefinance = 12 hours;
 
         fixedForSpeed1.randomAsset = 0; // USDC
         fixedForSpeed2.randomAsset = 0; // USDC
-        _test_refinanceByLender_simplest_case(fixedForSpeed1);
+        _test_refinanceByLender_simplest_case(fixedForSpeed1, secondsBeforeRefinance);
     }
 
     // function test_unit_refinanceByLender_simplest_case_eth() public {

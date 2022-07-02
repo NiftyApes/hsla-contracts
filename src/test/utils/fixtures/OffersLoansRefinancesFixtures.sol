@@ -219,32 +219,6 @@ contract OffersLoansRefinancesFixtures is
         return (offerCreated, loan);
     }
 
-    function tryToRefinanceByLender(Offer memory newOffer, bytes memory errorCode)
-        internal
-        returns (LoanAuction memory)
-    {
-        vm.startPrank(lender2);
-
-        if (bytes16(errorCode) != bytes16("should work")) {
-            vm.expectRevert(errorCode);
-        }
-        lending.refinanceByLender(
-            newOffer,
-            lending.getLoanAuction(address(mockNft), 1).lastUpdatedTimestamp
-        );
-        vm.stopPrank();
-        return lending.getLoanAuction(newOffer.nftContractAddress, newOffer.nftId);
-    }
-
-    function createOfferAndTryToRefinanceByLender(Offer memory newOffer, bytes memory errorCode)
-        internal
-        returns (Offer memory, LoanAuction memory)
-    {
-        Offer memory offerCreated = createOffer(newOffer, lender2);
-        LoanAuction memory loan = tryToRefinanceByLender(offerCreated, errorCode);
-        return (offerCreated, loan);
-    }
-
     function tryToRefinanceLoanByBorrower(Offer memory newOffer, bytes memory errorCode) internal {
         vm.startPrank(lender2);
         bytes32 offerHash = offers.createOffer(newOffer);
@@ -263,6 +237,23 @@ contract OffersLoansRefinancesFixtures is
             lending.getLoanAuction(address(mockNft), 1).lastUpdatedTimestamp
         );
         vm.stopPrank();
+    }
+
+    function tryToRefinanceByLender(Offer memory newOffer, bytes memory errorCode)
+        internal
+        returns (LoanAuction memory)
+    {
+        vm.startPrank(lender2);
+
+        if (bytes16(errorCode) != bytes16("should work")) {
+            vm.expectRevert(errorCode);
+        }
+        lending.refinanceByLender(
+            newOffer,
+            lending.getLoanAuction(address(mockNft), 1).lastUpdatedTimestamp
+        );
+        vm.stopPrank();
+        return lending.getLoanAuction(newOffer.nftContractAddress, newOffer.nftId);
     }
 
     function assetBalance(address account, address asset) internal returns (uint256) {
