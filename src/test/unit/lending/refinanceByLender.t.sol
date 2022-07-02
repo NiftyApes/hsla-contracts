@@ -24,14 +24,16 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         // contractThatCannotReceiveEth = new ContractThatCannotReceiveEth();
     }
 
-    function assertionsForRefinancedLoan(Offer memory offer, LoanAuction memory loanAuction)
-        private
-    {
+    function assertionsForRefinancedLoan(
+        Offer memory offer1,
+        Offer memory offer2,
+        LoanAuction memory loanAuction
+    ) private {
         // lending contract has NFT
         assertEq(mockNft.ownerOf(1), address(lending));
         // loan auction exists
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
-        assertEq(loanAuction.lender, offer.creator);
+        assertEq(loanAuction.lender, offer2.creator);
 
         console.log("nftOwner", loanAuction.nftOwner);
         console.log("loanEndTimestamp", loanAuction.loanEndTimestamp);
@@ -49,31 +51,40 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         console.log("protocolInterestRatePerSecond", loanAuction.protocolInterestRatePerSecond);
         console.log("slashableLenderInterest", loanAuction.slashableLenderInterest);
 
-        assertEq(loanAuction.loanBeginTimestamp, loanAuction.loanEndTimestamp - offer.duration);
-        assertEq(loanAuction.lender, offer.creator);
+        assertEq(loanAuction.loanBeginTimestamp, loanAuction.loanEndTimestamp - offer2.duration);
+        assertEq(loanAuction.lender, offer2.creator);
         assertEq(loanAuction.nftOwner, borrower1);
-        assertEq(loanAuction.loanEndTimestamp, loanAuction.loanBeginTimestamp + offer.duration);
+        assertEq(loanAuction.loanEndTimestamp, loanAuction.loanBeginTimestamp + offer2.duration);
         assertTrue(!loanAuction.fixedTerms);
-        assertEq(loanAuction.interestRatePerSecond, offer.interestRatePerSecond);
-        assertEq(loanAuction.asset, offer.asset);
+        assertEq(loanAuction.interestRatePerSecond, offer2.interestRatePerSecond);
+        assertEq(loanAuction.asset, offer2.asset);
         assertEq(loanAuction.lenderRefi, true);
+        assertEq(loanAuction.amount, offer2.amount);
+        assertEq(loanAuction.amountDrawn, offer1.amount);
+        uint256 calcProtocolInterestPerSecond = lending.calculateProtocolInterestPerSecond(
+            loanAuction.amountDrawn,
+            offer1.duration
+        );
 
-        // assertEq(loanAuction.amount, 7 ether);
-        // assertEq(loanAuction.amountDrawn, 6 ether);
-        // assertEq(loanAuction.protocolInterestRatePerSecond, 6 ether);
-        // assertEq(loanAuction.slashableLenderInterest, 6 ether);
+        console.log("calcProtocolInterestPerSecond", calcProtocolInterestPerSecond);
+
+        assertEq(loanAuction.protocolInterestRatePerSecond, calcProtocolInterestPerSecond);
     }
 
-    function _test_refinanceByLender_simplest_case(
-        FuzzedOfferFields memory fuzzed1,
-        FuzzedOfferFields memory fuzzed2
-    ) private {
+    function _test_refinanceByLender_simplest_case(FuzzedOfferFields memory fuzzed1) private {
+        vm.prank(owner);
+        lending.updateProtocolInterestBps(100);
+
         Offer memory offer1 = offerStructFromFields(fuzzed1, defaultFixedOfferFields);
         createOfferAndTryToExecuteLoanByBorrower(offer1, "should work");
 
         vm.warp(block.timestamp + 12 hours);
 
-        Offer memory offer2 = offerStructFromFields(fuzzed2, defaultFixedOfferFields);
+        Offer memory offer2 = offer1;
+        offer2.creator = lender2;
+        offer2.amount += 1;
+        offer2.expiration = uint32(block.timestamp + 1);
+        offer2.floorTerm = false;
 
         (uint256 lenderInterest, uint256 protocolInterest) = lending.calculateInterestAccrued(
             offer2.nftContractAddress,
@@ -88,16 +99,17 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
             "should work"
         );
 
-        assertionsForRefinancedLoan(offer2, loanAuction);
-        assertEq(loanAuction.accumulatedLenderInterest, lenderInterest);
+        assertionsForRefinancedLoan(offer1, offer2, loanAuction);
+        assertEq(loanAuction.accumulatedLenderInterest, 0);
         assertEq(loanAuction.accumulatedProtocolInterest, protocolInterest);
+        assertEq(loanAuction.slashableLenderInterest, lenderInterest);
     }
 
-    function test_fuzz_refinanceByLender_simplest_case(
-        FuzzedOfferFields memory fuzzed1,
-        FuzzedOfferFields memory fuzzed2
-    ) public validateFuzzedOfferFields(fuzzed1) {
-        _test_refinanceByLender_simplest_case(fuzzed1, fuzzed2);
+    function test_fuzz_refinanceByLender_simplest_case(FuzzedOfferFields memory fuzzed1)
+        public
+        validateFuzzedOfferFields(fuzzed1)
+    {
+        _test_refinanceByLender_simplest_case(fuzzed1);
     }
 
     function test_unit_refinanceByLender_simplest_case_usdc() public {
@@ -108,7 +120,7 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
 
         fixedForSpeed1.randomAsset = 0; // USDC
         fixedForSpeed2.randomAsset = 0; // USDC
-        _test_refinanceByLender_simplest_case(fixedForSpeed1, fixedForSpeed2);
+        _test_refinanceByLender_simplest_case(fixedForSpeed1);
     }
 
     // function test_unit_refinanceByLender_simplest_case_eth() public {

@@ -470,6 +470,13 @@ contract NiftyApesLending is
             offer.duration
         );
 
+        loanAuction.lenderRefi = true;
+
+        if (loanAuction.slashableLenderInterest > 0 && loanAuction.lender != offer.creator) {
+            loanAuction.accumulatedLenderInterest += loanAuction.slashableLenderInterest;
+            loanAuction.slashableLenderInterest = 0;
+        }
+
         (uint256 lenderInterest, uint256 protocolInterest) = _updateInterest(loanAuction);
 
         uint256 protocolInterestAndPremium;
@@ -485,7 +492,6 @@ contract NiftyApesLending is
         loanAuction.amount = offer.amount;
         loanAuction.interestRatePerSecond = offer.interestRatePerSecond;
         loanAuction.loanEndTimestamp = loanAuction.loanBeginTimestamp + offer.duration;
-        loanAuction.lenderRefi = true;
 
         if (loanAuction.lender == offer.creator) {
             // If current lender is refinancing the loan they do not need to pay any fees or buy themselves out.
@@ -513,11 +519,6 @@ contract NiftyApesLending is
                 protocolPremiumInCtokens
             );
         } else {
-            if (loanAuction.slashableLenderInterest > 0) {
-                loanAuction.accumulatedLenderInterest += loanAuction.slashableLenderInterest;
-                loanAuction.slashableLenderInterest = 0;
-            }
-
             // calculate interest earned
             uint256 interestAndPremiumOwedToCurrentLender = loanAuction.accumulatedLenderInterest +
                 loanAuction.accumulatedProtocolInterest +
