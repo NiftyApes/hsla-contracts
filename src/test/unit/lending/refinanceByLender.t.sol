@@ -5,84 +5,20 @@ import "forge-std/Test.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 
 import "../../utils/fixtures/OffersLoansRefinancesFixtures.sol";
-import "../../../interfaces/niftyapes/offers/IOffersStructs.sol";
-import "../../../interfaces/niftyapes/lending/ILendingStructs.sol";
-import "../../../interfaces/niftyapes/lending/ILendingEvents.sol";
-
-// contract ContractThatCannotReceiveEth is ERC721HolderUpgradeable {
-//     receive() external payable {
-//         revert("no Eth!");
-//     }
-// }
 
 contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
-    // ContractThatCannotReceiveEth private contractThatCannotReceiveEth;
-
     function setUp() public override {
         super.setUp();
-
-        // contractThatCannotReceiveEth = new ContractThatCannotReceiveEth();
     }
 
-    function assertionsForRefinancedLoan(
-        Offer memory offer1,
-        Offer memory offer2,
-        LoanAuction memory loanAuction
-    ) private {
-        // borrower has money
-        if (offer1.asset == address(usdcToken)) {
-            assertEq(usdcToken.balanceOf(borrower1), offer1.amount);
-        } else {
-            assertEq(borrower1.balance, defaultInitialEthBalance + offer1.amount);
-        }
-        // lending contract has NFT
-        assertEq(mockNft.ownerOf(1), address(lending));
-        // loan auction exists
-        assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
-        assertEq(loanAuction.lender, offer2.creator);
-
-        console.log("nftOwner", loanAuction.nftOwner);
-        console.log("loanEndTimestamp", loanAuction.loanEndTimestamp);
-        console.log("lastUpdatedTimestamp", loanAuction.lastUpdatedTimestamp);
-        console.log("fixedTerms", loanAuction.fixedTerms);
-        console.log("lender", loanAuction.lender);
-        console.log("interestRatePerSecond", loanAuction.interestRatePerSecond);
-        console.log("asset", loanAuction.asset);
-        console.log("loanBeginTimestamp", loanAuction.loanBeginTimestamp);
-        console.log("lenderRefi", loanAuction.lenderRefi);
-        console.log("accumulatedLenderInterest", loanAuction.accumulatedLenderInterest);
-        console.log("accumulatedProtocolInterest", loanAuction.accumulatedProtocolInterest);
-        console.log("amount", loanAuction.amount);
-        console.log("amountDrawn", loanAuction.amountDrawn);
-        console.log("protocolInterestRatePerSecond", loanAuction.protocolInterestRatePerSecond);
-        console.log("slashableLenderInterest", loanAuction.slashableLenderInterest);
-
-        assertEq(loanAuction.loanBeginTimestamp, loanAuction.loanEndTimestamp - offer2.duration);
-        assertEq(loanAuction.lender, offer2.creator);
-        assertEq(loanAuction.nftOwner, borrower1);
-        assertEq(loanAuction.loanEndTimestamp, loanAuction.loanBeginTimestamp + offer2.duration);
-        assertTrue(!loanAuction.fixedTerms);
-        assertEq(loanAuction.interestRatePerSecond, offer2.interestRatePerSecond);
-        assertEq(loanAuction.asset, offer2.asset);
-        assertEq(loanAuction.lenderRefi, true);
-        assertEq(loanAuction.amount, offer2.amount);
-        assertEq(loanAuction.amountDrawn, offer1.amount);
-        uint256 calcProtocolInterestPerSecond = lending.calculateProtocolInterestPerSecond(
-            loanAuction.amountDrawn,
-            offer1.duration
-        );
-
-        console.log("calcProtocolInterestPerSecond", calcProtocolInterestPerSecond);
-
-        assertEq(loanAuction.protocolInterestRatePerSecond, calcProtocolInterestPerSecond);
-    }
-
-    function _test_refinanceByLender_simplest_case(
-        FuzzedOfferFields memory fuzzed,
-        uint16 secondsBeforeRefinance
-    ) private {
+    function refinanceSetup(FuzzedOfferFields memory fuzzed, uint16 secondsBeforeRefinance)
+        private
+    {
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+
         createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
+
+        assertionsForExecutedLoan(offer);
 
         uint256 amountDrawn = lending
             .getLoanAuction(offer.nftContractAddress, offer.nftId)
@@ -109,6 +45,14 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
 
         Offer memory newOffer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
 
+        uint256 beforeRefinanceLenderBalance = assetBalance(lender1, address(usdcToken));
+
+        if (offer.asset == address(usdcToken)) {
+            beforeRefinanceLenderBalance = assetBalance(lender1, address(usdcToken));
+        } else {
+            beforeRefinanceLenderBalance = assetBalance(lender1, ETH_ADDRESS);
+        }
+
         (uint256 lenderInterest, uint256 protocolInterest) = lending.calculateInterestAccrued(
             newOffer.nftContractAddress,
             newOffer.nftId
@@ -116,10 +60,103 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
 
         LoanAuction memory loanAuction = tryToRefinanceByLender(newOffer, "should work");
 
-        assertionsForRefinancedLoan(offer, newOffer, loanAuction);
+        assertionsForExecutedLenderRefinance(
+            offer,
+            newOffer,
+            loanAuction,
+            secondsBeforeRefinance,
+            interestShortfall,
+            beforeRefinanceLenderBalance
+        );
         assertEq(loanAuction.accumulatedLenderInterest, 0);
         assertEq(loanAuction.accumulatedProtocolInterest, protocolInterest);
         assertEq(loanAuction.slashableLenderInterest, lenderInterest);
+    }
+
+    function assertionsForExecutedLoan(Offer memory offer) private {
+        // borrower has money
+        if (offer.asset == address(usdcToken)) {
+            assertEq(usdcToken.balanceOf(borrower1), offer.amount);
+        } else {
+            assertEq(borrower1.balance, defaultInitialEthBalance + offer.amount);
+        }
+        // lending contract has NFT
+        assertEq(mockNft.ownerOf(1), address(lending));
+        // loan auction exists
+        assertEq(lending.getLoanAuction(address(mockNft), 1).lastUpdatedTimestamp, block.timestamp);
+    }
+
+    function assertionsForExecutedLenderRefinance(
+        Offer memory offer1,
+        Offer memory offer2,
+        LoanAuction memory loanAuction,
+        uint16 secondsBeforeRefinance,
+        uint256 interestShortfall,
+        uint256 beforeRefinanceLenderBalance
+    ) private {
+        // lender1 has money
+        if (offer2.asset == address(usdcToken)) {
+            assertBetween(
+                beforeRefinanceLenderBalance +
+                    loanAuction.amountDrawn +
+                    (offer2.interestRatePerSecond * secondsBeforeRefinance) +
+                    interestShortfall,
+                assetBalance(lender1, address(usdcToken)),
+                assetBalancePlusOneCToken(lender1, address(usdcToken))
+            );
+        } else {
+            assertBetween(
+                beforeRefinanceLenderBalance +
+                    loanAuction.amountDrawn +
+                    (offer2.interestRatePerSecond * secondsBeforeRefinance) +
+                    interestShortfall,
+                assetBalance(lender1, ETH_ADDRESS),
+                assetBalancePlusOneCToken(lender1, ETH_ADDRESS)
+            );
+        }
+
+        console.log("nftOwner", loanAuction.nftOwner);
+        console.log("loanEndTimestamp", loanAuction.loanEndTimestamp);
+        console.log("lastUpdatedTimestamp", loanAuction.lastUpdatedTimestamp);
+        console.log("fixedTerms", loanAuction.fixedTerms);
+        console.log("lender", loanAuction.lender);
+        console.log("interestRatePerSecond", loanAuction.interestRatePerSecond);
+        console.log("asset", loanAuction.asset);
+        console.log("loanBeginTimestamp", loanAuction.loanBeginTimestamp);
+        console.log("lenderRefi", loanAuction.lenderRefi);
+        console.log("accumulatedLenderInterest", loanAuction.accumulatedLenderInterest);
+        console.log("accumulatedProtocolInterest", loanAuction.accumulatedProtocolInterest);
+        console.log("amount", loanAuction.amount);
+        console.log("amountDrawn", loanAuction.amountDrawn);
+        console.log("protocolInterestRatePerSecond", loanAuction.protocolInterestRatePerSecond);
+        console.log("slashableLenderInterest", loanAuction.slashableLenderInterest);
+
+        // lender2 is now lender
+        assertEq(loanAuction.lender, offer2.creator);
+        assertEq(loanAuction.loanBeginTimestamp, loanAuction.loanEndTimestamp - offer2.duration);
+        assertEq(loanAuction.nftOwner, borrower1);
+        assertEq(loanAuction.loanEndTimestamp, loanAuction.loanBeginTimestamp + offer2.duration);
+        assertTrue(!loanAuction.fixedTerms);
+        assertEq(loanAuction.interestRatePerSecond, offer2.interestRatePerSecond);
+        assertEq(loanAuction.asset, offer2.asset);
+        assertEq(loanAuction.lenderRefi, true);
+        assertEq(loanAuction.amount, offer2.amount);
+        assertEq(loanAuction.amountDrawn, offer1.amount);
+        uint256 calcProtocolInterestPerSecond = lending.calculateProtocolInterestPerSecond(
+            loanAuction.amountDrawn,
+            offer1.duration
+        );
+
+        console.log("calcProtocolInterestPerSecond", calcProtocolInterestPerSecond);
+
+        assertEq(loanAuction.protocolInterestRatePerSecond, calcProtocolInterestPerSecond);
+    }
+
+    function _test_refinanceByLender_simplest_case(
+        FuzzedOfferFields memory fuzzed,
+        uint16 secondsBeforeRefinance
+    ) private {
+        refinanceSetup(fuzzed, secondsBeforeRefinance);
     }
 
     function test_fuzz_refinanceByLender_simplest_case(
