@@ -476,9 +476,9 @@ contract NiftyApesLiquidity is
     }
 
     /// @inheritdoc ILiquidity
-    function mintCEth(uint256 amount) external payable returns (uint256) {
+    function mintCEth() external payable returns (uint256) {
         _requireLendingContract();
-        return _mintCEth(amount);
+        return _mintCEth(msg.value);
     }
 
     function _mintCEth(uint256 amount) internal returns (uint256) {

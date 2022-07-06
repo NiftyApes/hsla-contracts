@@ -24,7 +24,7 @@ contract TestMustBeLendingContact is Test, ILiquidityEvents, OffersLoansRefinanc
 
     function test_unit_cannot_mintCEth_notLendingContract() public {
         vm.expectRevert("00031");
-        liquidity.mintCEth(100_000);
+        liquidity.mintCEth{ value: 100_000 }();
     }
 
     function test_unit_cannot_addToCAssetBalance_notLendingContract() public {

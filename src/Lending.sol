@@ -1125,8 +1125,7 @@ contract NiftyApesLending is
 
     function _handleLoanPayment(address asset, uint256 payment) internal returns (uint256) {
         if (asset == ETH_ADDRESS) {
-            payable(address(liquidityContractAddress)).sendValue(payment);
-            return ILiquidity(liquidityContractAddress).mintCEth(payment);
+            return ILiquidity(liquidityContractAddress).mintCEth{ value: payment }();
         } else {
             require(msg.value == 0, "00023");
             return ILiquidity(liquidityContractAddress).mintCErc20(msg.sender, asset, payment);
