@@ -37,7 +37,6 @@ contract LendingAuctionUnitTest is
     CEtherMock cEtherToken;
     address compContractAddress = 0xbbEB7c67fa3cfb40069D19E598713239497A3CA5;
 
-
     ERC721Mock mockNft;
 
     bool acceptEth;
