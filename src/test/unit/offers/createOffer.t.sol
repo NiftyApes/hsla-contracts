@@ -11,7 +11,7 @@ contract TestCreateOffer is Test, IOffersEvents, OffersLoansRefinancesFixtures {
         super.setUp();
     }
 
-    function test_unit_cannot_createOffer_if_offer_expired(FuzzedOfferFields memory fuzzed)
+    function test_fuzz_cannot_createOffer_if_offer_expired(FuzzedOfferFields memory fuzzed)
         public
         validateFuzzedOfferFields(fuzzed)
     {
@@ -24,7 +24,7 @@ contract TestCreateOffer is Test, IOffersEvents, OffersLoansRefinancesFixtures {
         offers.createOffer(offer);
     }
 
-    function test_unit_cannot_createOffer_if_offer_duration_less_than_24_hours(
+    function test_fuzz_cannot_createOffer_if_offer_duration_less_than_24_hours(
         FuzzedOfferFields memory fuzzed
     ) public validateFuzzedOfferFields(fuzzed) {
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
