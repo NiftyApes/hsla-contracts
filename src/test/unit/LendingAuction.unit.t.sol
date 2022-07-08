@@ -678,6 +678,40 @@ contract LendingAuctionUnitTest is
         );
     }
 
+    function testRemoveOffer_works_as_lendingContract() public {
+        usdcToken.mint(address(this), 6);
+        usdcToken.approve(address(liquidityProviders), 6);
+
+        liquidityProviders.supplyErc20(address(usdcToken), 6);
+
+        Offer memory offer = Offer({
+            creator: address(this),
+            nftContractAddress: address(0x0000000000000000000000000000000000000002),
+            interestRatePerSecond: 3,
+            fixedTerms: true,
+            floorTerm: true,
+            lenderOffer: true,
+            nftId: 4,
+            asset: address(usdcToken),
+            amount: 6,
+            duration: 1 days,
+            expiration: uint32(block.timestamp + 1)
+        });
+
+        offersContract.createOffer(offer);
+
+        bytes32 offerHash = offersContract.getOfferHash(offer);
+
+        hevm.prank(address(lendingAuction));
+
+        offersContract.removeOffer(
+            offer.nftContractAddress,
+            offer.nftId,
+            offerHash,
+            offer.floorTerm
+        );
+    }
+
     function testRemoveOffer_works() public {
         usdcToken.mint(address(this), 6);
         usdcToken.approve(address(liquidityProviders), 6);

@@ -35,4 +35,44 @@ contract TestCreateOffer is Test, IOffersEvents, OffersLoansRefinancesFixtures {
         vm.startPrank(lender1);
         offers.createOffer(offer);
     }
+
+    function test_fuzz_cannot_createOffer_not_NFT_owner(FuzzedOfferFields memory fuzzed)
+        public
+        validateFuzzedOfferFields(fuzzed)
+    {
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedBorrowerOfferFields);
+
+        offer.nftId = 2;
+
+        vm.expectRevert("00021");
+        vm.startPrank(borrower1);
+        offers.createOffer(offer);
+    }
+
+    function test_fuzz_cannot_createOffer_no_floor_terms_for_borrower_offer(
+        FuzzedOfferFields memory fuzzed
+    ) public validateFuzzedOfferFields(fuzzed) {
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedBorrowerOfferFields);
+
+        offer.floorTerm = true;
+
+        vm.expectRevert("00014");
+        vm.startPrank(borrower1);
+        offers.createOffer(offer);
+    }
+
+    function test_fuzz_cannot_createOffer_offerHash_already_exists(FuzzedOfferFields memory fuzzed)
+        public
+        validateFuzzedOfferFields(fuzzed)
+    {
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedBorrowerOfferFields);
+
+        offer.floorTerm = false;
+
+        vm.startPrank(borrower1);
+        offers.createOffer(offer);
+
+        vm.expectRevert("00046");
+        offers.createOffer(offer);
+    }
 }
