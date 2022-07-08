@@ -87,6 +87,11 @@ contract LendingAuctionUnitTest is
 
         sigLendingAuction.updateLendingContractAddress(address(lendingAuction));
 
+        if (block.number == 1) {
+            lendingAuction.pauseSanctions();
+            liquidityProviders.pauseSanctions();
+        }
+
         hevm.stopPrank();
 
         usdcToken = new ERC20Mock();

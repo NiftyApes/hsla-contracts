@@ -40,6 +40,12 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         liquidityProviders.setCAssetAddress(address(usdcToken), address(cUSDCToken));
         liquidityProviders.setMaxCAssetBalance(address(cUSDCToken), 2**256 - 1);
 
+        if (block.number == 1) {
+            hevm.startPrank(liquidityProviders.owner());
+            liquidityProviders.pauseSanctions();
+            hevm.stopPrank();
+        }
+
         cEtherToken = new CEtherMock();
         cEtherToken.initialize();
 
