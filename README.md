@@ -8,6 +8,13 @@ Testing is done with forge. Prettier, solhint, slither, can be used to perform f
 
 `forge update`, `forge clean`, and then `forge test --optimize --fork-url $ETH_RPC_URL`
 
+Tests can be run offline simply with `forge test` and adding  
+`hevm.startPrank(lendingAuction.owner());`
+`lendingAuction.pauseSanctions();`
+`liquidityProviders.pauseSanctions();`
+`hevm.stopPrank();`
+or variant where needed. Not all tests will pass given integration with Compound, but will allow most testing development to continue.
+
 ## Linting
 
 `npm run lint` or `npm run lint:check`
