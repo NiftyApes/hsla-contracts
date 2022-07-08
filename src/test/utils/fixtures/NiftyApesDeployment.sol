@@ -55,4 +55,27 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
 
         vm.label(address(0), "NULL !!!!! ");
     }
+
+    function logBalances(address account) public {
+        console.log(account, "ETH", account.balance);
+        console.log(account, "USDC", usdcToken.balanceOf(account));
+        console.log(account, "cETH", liquidity.getCAssetBalance(account, address(cEtherToken)));
+        console.log(account, "cUSDC", liquidity.getCAssetBalance(account, address(cUSDCToken)));
+        console.log(
+            account,
+            "cETH -> ETH",
+            liquidity.cAssetAmountToAssetAmount(
+                address(cEtherToken),
+                liquidity.getCAssetBalance(account, address(cEtherToken))
+            )
+        );
+        console.log(
+            account,
+            "cUSDC -> USDC",
+            liquidity.cAssetAmountToAssetAmount(
+                address(cUSDCToken),
+                liquidity.getCAssetBalance(account, address(cUSDCToken))
+            )
+        );
+    }
 }

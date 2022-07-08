@@ -74,6 +74,16 @@ contract NFTAndERC20Fixtures is Test, UsersFixtures {
         mockNft.safeMint(SANCTIONED_ADDRESS, 3);
     }
 
+    function mintUsdc(address recipient, uint256 amount) internal {
+        if (integration) {
+            vm.startPrank(usdcWhale);
+            usdcToken.transfer(recipient, amount);
+            vm.stopPrank();
+        } else {
+            usdcToken.mint(recipient, amount);
+        }
+    }
+
     function assertBetween(
         uint256 value,
         uint256 lowerBound,
@@ -91,6 +101,26 @@ contract NFTAndERC20Fixtures is Test, UsersFixtures {
             console.log("value", value);
             console.log("lowerBound", lowerBound);
             revert("assertBetween: value less than lower bound");
+        }
+    }
+
+    function isApproxEqual(
+        uint256 expected,
+        uint256 actual,
+        uint256 tolerance
+    ) public returns (bool) {
+        uint256 leftBound = (expected * (1000 - tolerance)) / 1000;
+        uint256 rightBound = (expected * (1000 + tolerance)) / 1000;
+        return (leftBound <= actual && actual <= rightBound);
+    }
+
+    function assertCloseEnough(
+        uint256 value,
+        uint256 lowerBound,
+        uint256 upperBound
+    ) internal {
+        if (isApproxEqual(value, lowerBound, 1)) {} else {
+            assertBetween(value, lowerBound, upperBound);
         }
     }
 }
