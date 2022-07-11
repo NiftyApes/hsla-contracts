@@ -334,4 +334,44 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
             defaultFixedFuzzedFieldsForFastUnitTesting
         );
     }
+
+    function _test_cannot_executeLoanByBorrower_notFloorTerm_mismatchNftIds(
+        FuzzedOfferFields memory fuzzed
+    ) private {
+        defaultFixedOfferFields.lenderOffer = true;
+        defaultFixedOfferFields.nftId = 2;
+        fuzzed.floorTerm = false;
+
+        Offer memory offer1 = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+
+        createOffer(offer1, lender1);
+
+        bytes32 offerHash = offers.getOfferHash(offer1);
+
+        Offer memory offer2 = offer1;
+
+        offer2.nftId = 1;
+
+        createOffer(offer2, lender1);
+
+        vm.startPrank(borrower1);
+        mockNft.approve(address(lending), 1);
+
+        //results in 00012 error because it points to an empty struct in the mapping, rather than 00022 and having mismatch nftId's
+        vm.expectRevert("00012");
+        lending.executeLoanByBorrower(offer1.nftContractAddress, 1, offerHash, offer1.floorTerm);
+        vm.stopPrank();
+    }
+
+    function test_fuzz_executeLoanByBorrower_notFloorTerm_mismatchNftIds(
+        FuzzedOfferFields memory fuzzed
+    ) public validateFuzzedOfferFields(fuzzed) {
+        _test_cannot_executeLoanByBorrower_notFloorTerm_mismatchNftIds(fuzzed);
+    }
+
+    function test_unit_executeLoanByBorrower_notFloorTerm_mismatchNftIds() public {
+        _test_cannot_executeLoanByBorrower_notFloorTerm_mismatchNftIds(
+            defaultFixedFuzzedFieldsForFastUnitTesting
+        );
+    }
 }
