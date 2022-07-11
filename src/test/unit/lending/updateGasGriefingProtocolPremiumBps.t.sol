@@ -17,13 +17,13 @@ contract TestUpdateGasGriefingProtocolPremiumBps is Test, OffersLoansRefinancesF
     function _test_updateGasGriefingProtocolPremiumBps_works(
         FuzzedOfferFields memory fuzzed,
         uint16 secondsBeforeRefinance,
-        uint16 updatedGasGriefingAmount
+        uint16 updatedGasGriefingProtocolPremiumAmount
     ) private {
         vm.startPrank(owner);
-        lending.updateGasGriefingProtocolPremiumBps(updatedGasGriefingAmount);
+        lending.updateGasGriefingProtocolPremiumBps(updatedGasGriefingProtocolPremiumAmount);
         vm.stopPrank();
 
-        assertEq(lending.gasGriefingProtocolPremiumBps(), updatedGasGriefingAmount);
+        assertEq(lending.gasGriefingProtocolPremiumBps(), updatedGasGriefingProtocolPremiumAmount);
 
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
         (, LoanAuction memory firstLoan) = createOfferAndTryToExecuteLoanByBorrower(
@@ -89,34 +89,34 @@ contract TestUpdateGasGriefingProtocolPremiumBps is Test, OffersLoansRefinancesF
     function test_fuzz_updateGasGriefingProtocolPremiumBps_works(
         FuzzedOfferFields memory fuzzedOffer,
         uint16 secondsBeforeRefinance,
-        uint16 updatedGasGriefingAmount
+        uint16 updatedGasGriefingProtocolPremiumAmount
     ) public validateFuzzedOfferFields(fuzzedOffer) {
-        vm.assume(updatedGasGriefingAmount < MAX_BPS);
+        vm.assume(updatedGasGriefingProtocolPremiumAmount < MAX_BPS);
 
         _test_updateGasGriefingProtocolPremiumBps_works(
             fuzzedOffer,
             secondsBeforeRefinance,
-            updatedGasGriefingAmount
+            updatedGasGriefingProtocolPremiumAmount
         );
     }
 
     function test_unit_updateGasGriefingProtocolPremiumBps_works() public {
         uint16 secondsBeforeRefinance = 300;
-        uint16 updatedGasGriefingAmount = 5000;
+        uint16 updatedGasGriefingProtocolPremiumAmount = 5000;
 
         _test_updateGasGriefingProtocolPremiumBps_works(
             defaultFixedFuzzedFieldsForFastUnitTesting,
             secondsBeforeRefinance,
-            updatedGasGriefingAmount
+            updatedGasGriefingProtocolPremiumAmount
         );
     }
 
     function _test_cannot_updateGasGriefingProtocolPremiumBps_if_not_owner() private {
-        uint16 updatedGasGriefingAmount = 5000;
+        uint16 updatedGasGriefingProtocolPremiumAmount = 5000;
 
         vm.startPrank(borrower1);
         vm.expectRevert("Ownable: caller is not the owner");
-        lending.updateGasGriefingProtocolPremiumBps(updatedGasGriefingAmount);
+        lending.updateGasGriefingProtocolPremiumBps(updatedGasGriefingProtocolPremiumAmount);
         vm.stopPrank();
     }
 
@@ -125,11 +125,11 @@ contract TestUpdateGasGriefingProtocolPremiumBps is Test, OffersLoansRefinancesF
     }
 
     function _test_cannot_updateGasGriefingProtocolPremiumBps_beyond_max_bps() private {
-        uint16 updatedGasGriefingAmount = 10_001;
+        uint16 updatedGasGriefingProtocolPremiumAmount = 10_001;
 
         vm.startPrank(owner);
         vm.expectRevert("00002");
-        lending.updateGasGriefingProtocolPremiumBps(updatedGasGriefingAmount);
+        lending.updateGasGriefingProtocolPremiumBps(updatedGasGriefingProtocolPremiumAmount);
         vm.stopPrank();
     }
 
