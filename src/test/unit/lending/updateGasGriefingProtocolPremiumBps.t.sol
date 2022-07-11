@@ -9,7 +9,7 @@ import "../../../interfaces/niftyapes/offers/IOffersStructs.sol";
 import "../../../interfaces/niftyapes/lending/ILendingStructs.sol";
 import "../../../interfaces/niftyapes/lending/ILendingEvents.sol";
 
-contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
+contract TestUpdateGasGriefingProtocolPremiumBps is Test, OffersLoansRefinancesFixtures {
     function setUp() public override {
         super.setUp();
     }
