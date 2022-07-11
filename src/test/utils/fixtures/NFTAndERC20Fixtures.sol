@@ -119,7 +119,9 @@ contract NFTAndERC20Fixtures is Test, UsersFixtures {
         uint256 lowerBound,
         uint256 upperBound
     ) internal {
-        if (isApproxEqual(value, lowerBound, 1)) {} else {
+        if (isApproxEqual(value, lowerBound, 1)) {
+            // all good
+        } else {
             assertBetween(value, lowerBound, upperBound);
         }
     }

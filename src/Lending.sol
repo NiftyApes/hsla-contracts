@@ -469,14 +469,16 @@ contract NiftyApesLending is
             offer.duration
         );
 
-        loanAuction.lenderRefi = true;
-
+        // Unclear if first conjunction of this condition can ever be true
+        // given current contracts
         if (loanAuction.slashableLenderInterest > 0 && loanAuction.lender != offer.creator) {
             loanAuction.accumulatedLenderInterest += loanAuction.slashableLenderInterest;
             loanAuction.slashableLenderInterest = 0;
         }
 
         (uint256 lenderInterest, uint256 protocolInterest) = _updateInterest(loanAuction);
+
+        loanAuction.lenderRefi = true;
 
         uint256 protocolInterestAndPremium;
         uint256 protocolPremiumInCtokens;
