@@ -374,4 +374,118 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
             defaultFixedFuzzedFieldsForFastUnitTesting
         );
     }
+
+    function _test_cannot_executeLoanByBorrower_sanctioned_address_borrower(
+        FuzzedOfferFields memory fuzzed
+    ) private {
+        defaultFixedOfferFields.lenderOffer = true;
+        defaultFixedOfferFields.nftId = 3;
+
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+
+        createOffer(offer, lender1);
+
+        bytes32 offerHash = offers.getOfferHash(offer);
+
+        vm.startPrank(SANCTIONED_ADDRESS);
+        mockNft.approve(address(lending), 3);
+
+        vm.expectRevert("00017");
+        lending.executeLoanByBorrower(
+            offer.nftContractAddress,
+            offer.nftId,
+            offerHash,
+            offer.floorTerm
+        );
+        vm.stopPrank();
+    }
+
+    function test_fuzz_executeLoanByBorrower_sanctioned_address_borrower(
+        FuzzedOfferFields memory fuzzed
+    ) public validateFuzzedOfferFields(fuzzed) {
+        _test_cannot_executeLoanByBorrower_sanctioned_address_borrower(fuzzed);
+    }
+
+    function test_unit_executeLoanByBorrower_sanctioned_address_borrower() public {
+        _test_cannot_executeLoanByBorrower_sanctioned_address_borrower(
+            defaultFixedFuzzedFieldsForFastUnitTesting
+        );
+    }
+
+    function _test_cannot_executeLoanByBorrower_sanctioned_address_lender(
+        FuzzedOfferFields memory fuzzed
+    ) private {
+        vm.startPrank(owner);
+        liquidity.pauseSanctions();
+        vm.stopPrank();
+
+        fuzzed.randomAsset = 0;
+
+        if (integration) {
+            vm.startPrank(usdcWhale);
+            vm.expectRevert("Blacklistable: account is blacklisted");
+            usdcToken.transfer(SANCTIONED_ADDRESS, 1001);
+            vm.stopPrank();
+        } else {
+            vm.startPrank(SANCTIONED_ADDRESS);
+            usdcToken.mint(SANCTIONED_ADDRESS, 1001);
+            vm.stopPrank();
+        }
+
+        vm.startPrank(SANCTIONED_ADDRESS);
+        if (integration) {
+            vm.expectRevert("Blacklistable: account is blacklisted");
+        }
+        usdcToken.approve(address(liquidity), defaultUsdcLiquiditySupplied);
+
+        if (integration) {
+            vm.expectRevert("Blacklistable: account is blacklisted");
+        }
+        liquidity.supplyErc20(address(usdcToken), defaultUsdcLiquiditySupplied);
+        vm.stopPrank();
+
+        defaultFixedOfferFields.lenderOffer = true;
+
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+
+        if (integration) {
+            vm.expectRevert("00034");
+        }
+        createOffer(offer, SANCTIONED_ADDRESS);
+
+        vm.startPrank(owner);
+        liquidity.unpauseSanctions();
+        vm.stopPrank();
+
+        bytes32 offerHash = offers.getOfferHash(offer);
+
+        vm.startPrank(borrower1);
+        mockNft.approve(address(lending), 1);
+
+        if (integration) {
+            //results in 00012 error because createOffer fails and offerHash points to an empty struct in the mapping
+            vm.expectRevert("00012");
+        } else {
+            vm.expectRevert("00017");
+        }
+        lending.executeLoanByBorrower(
+            offer.nftContractAddress,
+            offer.nftId,
+            offerHash,
+            offer.floorTerm
+        );
+        vm.stopPrank();
+    }
+
+    function test_fuzz_executeLoanByBorrower_sanctioned_address_lender(
+        FuzzedOfferFields memory fuzzed
+    ) public validateFuzzedOfferFields(fuzzed) {
+        _test_cannot_executeLoanByBorrower_sanctioned_address_lender(fuzzed);
+    }
+
+    function test_unit_executeLoanByBorrower_sanctioned_address_lender() public {
+        _test_cannot_executeLoanByBorrower_sanctioned_address_lender(
+            defaultFixedFuzzedFieldsForFastUnitTesting
+        );
+    }
 }
