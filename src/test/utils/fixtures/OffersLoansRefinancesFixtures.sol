@@ -69,7 +69,9 @@ contract OffersLoansRefinancesFixtures is
         defaultFixedFuzzedFieldsForFastUnitTesting = FuzzedOfferFields({
             floorTerm: false,
             amount: randomAsset % 2 == 0 ? 10 * uint128(10**usdcToken.decimals()) : 1 ether,
-            interestRatePerSecond: randomAsset % 2 == 0 ? 100 : 10**6,
+            interestRatePerSecond: randomAsset % 2 == 0
+                ? uint96(10**usdcToken.decimals() / 10000)
+                : 10**6,
             duration: 1 weeks,
             expiration: uint32(block.timestamp) + 1 days,
             randomAsset: randomAsset

@@ -100,7 +100,5 @@ contract TestRepayLoan is Test, OffersLoansRefinancesFixtures {
                 assetBalancePlusOneCToken(lender1, address(ETH_ADDRESS))
             );
         }
-
-        vm.stopPrank();
     }
 }
