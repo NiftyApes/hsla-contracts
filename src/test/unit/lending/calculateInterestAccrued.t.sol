@@ -49,16 +49,6 @@ contract TestCalculateInterestAccrued is Test, OffersLoansRefinancesFixtures {
         uint256 expectedProtocolInterest = firstLoan.protocolInterestRatePerSecond *
             secondsBeforeRefinance;
 
-        console.log("expectedLenderInterest", expectedLenderInterest);
-        console.log("lenderInterest", lenderInterest);
-        console.log("expectedProtocolInterest", expectedProtocolInterest);
-        console.log("protocolInterest", protocolInterest);
-        console.log("secondLoan.accumulatedLenderInterest", secondLoan.accumulatedLenderInterest);
-        console.log(
-            "secondLoan.accumulatedProtocolInterest",
-            secondLoan.accumulatedProtocolInterest
-        );
-
         assertEq(lenderInterest, expectedLenderInterest);
         assertEq(protocolInterest, expectedProtocolInterest);
         assertEq(secondLoan.accumulatedLenderInterest, expectedLenderInterest);
