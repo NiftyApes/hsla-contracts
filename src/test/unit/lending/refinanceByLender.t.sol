@@ -222,25 +222,19 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         // 1 hour passes after refinance
         vm.warp(block.timestamp + 1 hours);
 
-        console.log("1");
-
         // 1 hour of interest becomes accumulated
         assertEq(
             loanAuctionBeforeDraw.accumulatedLenderInterest,
             1 hours * loanAuctionBeforeDraw.interestRatePerSecond
         );
-        console.log("1-1", 1 hours * loanAuctionBeforeDraw.interestRatePerSecond);
+        // 1 hour of interest accrued
         (lenderAccruedInterest, protocolAccruedInterest) = lending.calculateInterestAccrued(
             offer.nftContractAddress,
             offer.nftId
         );
-        // 1 hour of interest accrued
         assertEq(lenderAccruedInterest, 1 hours * loanAuctionBeforeDraw.interestRatePerSecond);
-        console.log("1-2");
         // lenderRefi switches to true
         assertEq(loanAuctionBeforeDraw.lenderRefi, true);
-
-        console.log("2");
 
         // ensure attempt to draw 1000 USDC overdraws
         vm.startPrank(lender2);
@@ -279,7 +273,6 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         // lenderRefi toggled back to false
         assertEq(loanAuctionAfterDraw.lenderRefi, false);
 
-        console.log("4");
         // 1 hour passes after draw and slash
         vm.warp(block.timestamp + 1 hours);
 
