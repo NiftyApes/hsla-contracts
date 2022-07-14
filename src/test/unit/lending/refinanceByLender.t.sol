@@ -177,8 +177,6 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         fuzzed.randomAsset = 0; // USDC
         fuzzed.amount = uint128(1000 * 10**usdcToken.decimals()); // $1000
 
-        uint16 secondsBeforeRefinance = 1 hours;
-
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
 
         createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
@@ -193,21 +191,20 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
             offer.nftId
         );
 
-        uint256 lenderAccruedInterest;
-        uint256 protocolAccruedInterest;
-
-        (lenderAccruedInterest, protocolAccruedInterest) = lending.calculateInterestAccrued(
-            offer.nftContractAddress,
-            offer.nftId
-        );
+        // accumulated is 0
+        assertEq(loanAuctionBeforeRefinance.accumulatedLenderInterest, 0);
+        // slashable is 0
+        assertEq(loanAuctionBeforeRefinance.slashableLenderInterest, 0);
         // should have 1 hour of accrued interest
+        (uint256 lenderAccruedInterest, uint256 protocolAccruedInterest) = lending
+            .calculateInterestAccrued(offer.nftContractAddress, offer.nftId);
         assertEq(lenderAccruedInterest, 1 hours * loanAuctionBeforeRefinance.interestRatePerSecond);
         // lenderRefi should be false
         assertEq(loanAuctionBeforeRefinance.lenderRefi, false);
 
         // set up refinance
         defaultFixedOfferFields.creator = lender2;
-        fuzzed.expiration = uint32(block.timestamp) + secondsBeforeRefinance + 1;
+        fuzzed.expiration = uint32(block.timestamp) + 1 hours + 1;
         fuzzed.amount = uint128(1000 * 10**usdcToken.decimals() + 1000 * 10**usdcToken.decimals());
 
         Offer memory newOffer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
@@ -219,21 +216,39 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
             offer.nftId
         );
 
-        // 1 hour passes after refinance
-        vm.warp(block.timestamp + 1 hours);
-
         // 1 hour of interest becomes accumulated
         assertEq(
             loanAuctionBeforeDraw.accumulatedLenderInterest,
             1 hours * loanAuctionBeforeDraw.interestRatePerSecond
         );
-        // 1 hour of interest accrued
+        // slashable is 0
+        assertEq(loanAuctionBeforeDraw.slashableLenderInterest, 0);
+        // 0 accrued (this became accumulated)
+        (lenderAccruedInterest, protocolAccruedInterest) = lending.calculateInterestAccrued(
+            offer.nftContractAddress,
+            offer.nftId
+        );
+        assertEq(lenderAccruedInterest, 0);
+        // lenderRefi switches to true
+        assertEq(loanAuctionBeforeDraw.lenderRefi, true);
+
+        // 1 hour passes after refinance
+        vm.warp(block.timestamp + 1 hours);
+
+        // 1 hour of interest still accumulated
+        assertEq(
+            loanAuctionBeforeDraw.accumulatedLenderInterest,
+            1 hours * loanAuctionBeforeDraw.interestRatePerSecond
+        );
+        // slashable is 0
+        assertEq(loanAuctionBeforeDraw.slashableLenderInterest, 0);
+        // but 1 new hour of interest accrued
         (lenderAccruedInterest, protocolAccruedInterest) = lending.calculateInterestAccrued(
             offer.nftContractAddress,
             offer.nftId
         );
         assertEq(lenderAccruedInterest, 1 hours * loanAuctionBeforeDraw.interestRatePerSecond);
-        // lenderRefi switches to true
+        // lenderRefi still true
         assertEq(loanAuctionBeforeDraw.lenderRefi, true);
 
         // ensure attempt to draw 1000 USDC overdraws
@@ -285,7 +300,7 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         assertEq(loanAuctionAfterDraw.slashableLenderInterest, 0);
         // lenderRefi still false
         assertEq(loanAuctionAfterDraw.lenderRefi, false);
-        // but 1 hour of accrued interest
+        // but 1 new hour of accrued interest
         (lenderAccruedInterest, protocolAccruedInterest) = lending.calculateInterestAccrued(
             offer.nftContractAddress,
             offer.nftId
