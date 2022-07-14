@@ -180,6 +180,9 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         createOffer(offer, lender1);
         approveLending(offer);
 
+        console.log("balance", usdcToken.balanceOf(lender1));
+        console.log("liquidity", defaultUsdcLiquiditySupplied);
+
         vm.startPrank(lender1);
         if (offer.asset == address(usdcToken)) {
             liquidity.withdrawErc20(address(usdcToken), defaultUsdcLiquiditySupplied);

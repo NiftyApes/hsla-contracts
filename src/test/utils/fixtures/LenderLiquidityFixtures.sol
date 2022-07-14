@@ -13,7 +13,7 @@ contract LenderLiquidityFixtures is Test, NiftyApesDeployment {
         super.setUp();
 
         if (integration) {
-            defaultUsdcLiquiditySupplied = 3672711471 * uint128(10**usdcToken.decimals());
+            defaultUsdcLiquiditySupplied = usdcToken.balanceOf(lender1);
         } else {
             defaultUsdcLiquiditySupplied = 3672711471 * uint128(10**usdcToken.decimals());
         }
