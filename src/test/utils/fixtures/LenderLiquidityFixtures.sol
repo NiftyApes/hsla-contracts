@@ -12,7 +12,7 @@ contract LenderLiquidityFixtures is Test, NiftyApesDeployment {
     function setUp() public virtual override {
         super.setUp();
 
-        defaultUsdcLiquiditySupplied = 1000 * (10**usdcToken.decimals());
+        defaultUsdcLiquiditySupplied = 2000 * (10**usdcToken.decimals());
 
         vm.startPrank(lender1);
         liquidity.supplyEth{ value: defaultEthLiquiditySupplied }();

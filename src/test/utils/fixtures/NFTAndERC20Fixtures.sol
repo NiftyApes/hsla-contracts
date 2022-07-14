@@ -45,8 +45,8 @@ contract NFTAndERC20Fixtures is Test, UsersFixtures {
             cEtherToken = CEtherMock(0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5);
 
             vm.startPrank(usdcWhale);
-            usdcToken.transfer(lender1, 1001 * (10**usdcToken.decimals()));
-            usdcToken.transfer(lender2, 1001 * (10**usdcToken.decimals()));
+            usdcToken.transfer(lender1, 2000 * (10**usdcToken.decimals()));
+            usdcToken.transfer(lender2, 2000 * (10**usdcToken.decimals()));
             vm.stopPrank();
         } else {
             usdcToken = new ERC20Mock();
@@ -61,8 +61,8 @@ contract NFTAndERC20Fixtures is Test, UsersFixtures {
             cEtherToken = new CEtherMock();
             cEtherToken.initialize();
 
-            usdcToken.mint(lender1, 1000 ether);
-            usdcToken.mint(lender2, 1000 ether);
+            usdcToken.mint(lender1, 2000 ether);
+            usdcToken.mint(lender2, 2000 ether);
             usdcToken.mint(SANCTIONED_ADDRESS, 1000 ether);
         }
 

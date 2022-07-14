@@ -31,7 +31,6 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
             offer.nftId
         );
 
-        // will trigger gas griefing (but not term griefing with borrower refinance)
         defaultFixedOfferFields.creator = lender2;
         fuzzed.duration = fuzzed.duration + 1; // make sure offer is better
         fuzzed.floorTerm = false; // refinance can't be floor term
@@ -170,6 +169,173 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         fixedForSpeed1.randomAsset = 0; // USDC
         fixedForSpeed2.randomAsset = 0; // USDC
         _test_refinanceByLender_simplest_case(fixedForSpeed1, secondsBeforeRefinance);
+    }
+
+    function test_unit_refinanceByLender_simplest_slashed() public {
+        // Borrower1/Lender1 originate loan
+        FuzzedOfferFields memory fuzzed = defaultFixedFuzzedFieldsForFastUnitTesting;
+        fuzzed.randomAsset = 0; // USDC
+        fuzzed.amount = uint128(1000 * 10**usdcToken.decimals()); // $1000
+
+        uint16 secondsBeforeRefinance = 1 hours;
+
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+
+        createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
+
+        assertionsForExecutedLoan(offer);
+
+        // 1 hour passes after loan execution
+        vm.warp(block.timestamp + 1 hours);
+
+        LoanAuction memory loanAuctionBeforeRefinance = lending.getLoanAuction(
+            offer.nftContractAddress,
+            offer.nftId
+        );
+
+        uint256 lenderAccruedInterest;
+        uint256 protocolAccruedInterest;
+
+        (lenderAccruedInterest, protocolAccruedInterest) = lending.calculateInterestAccrued(
+            offer.nftContractAddress,
+            offer.nftId
+        );
+        // should have 1 hour of accrued interest
+        assertEq(lenderAccruedInterest, 1 hours * loanAuctionBeforeRefinance.interestRatePerSecond);
+        // lenderRefi should be false
+        assertEq(loanAuctionBeforeRefinance.lenderRefi, false);
+
+        // set up refinance
+        defaultFixedOfferFields.creator = lender2;
+        fuzzed.expiration = uint32(block.timestamp) + secondsBeforeRefinance + 1;
+        fuzzed.amount = uint128(1000 * 10**usdcToken.decimals() + 1000 * 10**usdcToken.decimals());
+
+        Offer memory newOffer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+
+        tryToRefinanceByLender(newOffer, "should work");
+
+        LoanAuction memory loanAuctionBeforeDraw = lending.getLoanAuction(
+            offer.nftContractAddress,
+            offer.nftId
+        );
+
+        // 1 hour passes after refinance
+        vm.warp(block.timestamp + 1 hours);
+
+        console.log("1");
+
+        // 1 hour of interest becomes accumulated
+        assertEq(
+            loanAuctionBeforeDraw.accumulatedLenderInterest,
+            1 hours * loanAuctionBeforeDraw.interestRatePerSecond
+        );
+        console.log("1-1", 1 hours * loanAuctionBeforeDraw.interestRatePerSecond);
+        (lenderAccruedInterest, protocolAccruedInterest) = lending.calculateInterestAccrued(
+            offer.nftContractAddress,
+            offer.nftId
+        );
+        // 1 hour of interest accrued
+        assertEq(lenderAccruedInterest, 1 hours * loanAuctionBeforeDraw.interestRatePerSecond);
+        console.log("1-2");
+        // lenderRefi switches to true
+        assertEq(loanAuctionBeforeDraw.lenderRefi, true);
+
+        console.log("2");
+
+        // ensure attempt to draw 1000 USDC overdraws
+        vm.startPrank(lender2);
+        liquidity.withdrawErc20(address(usdcToken), 500 * 10**usdcToken.decimals());
+        vm.stopPrank();
+
+        // borrower attempts to draw 1000 USDC
+        vm.startPrank(borrower1);
+        lending.drawLoanAmount(
+            offer.nftContractAddress,
+            offer.nftId,
+            1000 * 10**usdcToken.decimals()
+        );
+        vm.stopPrank();
+
+        LoanAuction memory loanAuctionAfterDraw = lending.getLoanAuction(
+            offer.nftContractAddress,
+            offer.nftId
+        );
+
+        // 1 hour of interest still accumulated
+        assertEq(
+            loanAuctionAfterDraw.accumulatedLenderInterest,
+            1 hours * loanAuctionBeforeDraw.interestRatePerSecond
+        );
+        // slashable is 0
+        assertEq(loanAuctionAfterDraw.slashableLenderInterest, 0);
+        (lenderAccruedInterest, protocolAccruedInterest) = lending.calculateInterestAccrued(
+            offer.nftContractAddress,
+            offer.nftId
+        );
+        // 1 hour of interest accrued has been slashed
+        // (in drawLoanAmount, this gets turned into slashable in _updateInterest,
+        // and slashable gets set to 0 in _slashUnsupportedAmount)
+        assertEq(lenderAccruedInterest, 0);
+        // lenderRefi toggled back to false
+        assertEq(loanAuctionAfterDraw.lenderRefi, false);
+
+        console.log("4");
+        // 1 hour passes after draw and slash
+        vm.warp(block.timestamp + 1 hours);
+
+        // 1 hour of interest still accumulated
+        assertEq(
+            loanAuctionAfterDraw.accumulatedLenderInterest,
+            1 hours * loanAuctionBeforeDraw.interestRatePerSecond
+        );
+        // slashable 0
+        assertEq(loanAuctionAfterDraw.slashableLenderInterest, 0);
+        // lenderRefi still false
+        assertEq(loanAuctionAfterDraw.lenderRefi, false);
+        // but 1 hour of accrued interest
+        (lenderAccruedInterest, protocolAccruedInterest) = lending.calculateInterestAccrued(
+            offer.nftContractAddress,
+            offer.nftId
+        );
+        assertEq(lenderAccruedInterest, 1 hours * loanAuctionAfterDraw.interestRatePerSecond);
+
+        // set up borrower repay full amount
+        vm.startPrank(borrower1);
+        mintUsdc(borrower1, ~uint128(0));
+        usdcToken.increaseAllowance(address(liquidity), ~uint256(0));
+
+        // most important part here is the amount repaid, the last argument to the event
+        // the amount drawn + 1 hour at initial interest rate + 1 hour at "after draw" interest rate
+        // even though the borrower couldn't draw 1000 USDC, they could draw some, so the rate changes
+        vm.expectEmit(true, true, true, true);
+        emit LoanRepaid(
+            loanAuctionAfterDraw.lender,
+            loanAuctionAfterDraw.nftOwner,
+            offer.nftContractAddress,
+            offer.nftId,
+            loanAuctionAfterDraw.asset,
+            loanAuctionAfterDraw.amountDrawn +
+                1 hours *
+                loanAuctionBeforeDraw.interestRatePerSecond +
+                1 hours *
+                loanAuctionAfterDraw.interestRatePerSecond
+        );
+
+        lending.repayLoan(offer.nftContractAddress, offer.nftId);
+        vm.stopPrank();
+
+        // check borrower balance
+        assertEq(assetBalance(borrower1, address(usdcToken)), 0);
+
+        // check lender balance
+        assertEq(
+            assetBalance(lender2, address(usdcToken)),
+            loanAuctionAfterDraw.amountDrawn +
+                1 hours *
+                loanAuctionBeforeDraw.interestRatePerSecond +
+                1 hours *
+                loanAuctionAfterDraw.interestRatePerSecond
+        );
     }
 
     // function test_unit_refinanceByLender_simplest_case_eth() public {
