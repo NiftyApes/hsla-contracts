@@ -112,7 +112,6 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         uint16 gasGriefingPremiumBps,
         uint16 protocolInterestBps
     ) public validateFuzzedOfferFields(fuzzedOffer) {
-        uint256 MAX_FEE = 1_000;
         vm.assume(gasGriefingPremiumBps <= MAX_FEE);
         vm.assume(protocolInterestBps <= MAX_FEE);
         vm.startPrank(owner);

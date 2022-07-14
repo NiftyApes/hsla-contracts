@@ -21,7 +21,8 @@ contract UsersFixtures is Test {
 
     address payable[10] internal users;
 
-    uint256 internal defaultInitialEthBalance = 1000 ether;
+    // current total supply of ether
+    uint256 internal defaultInitialEthBalance = 121520307 ether;
 
     function setUp() public virtual {
         borrower1 = getNextUserAddress();
