@@ -58,6 +58,15 @@ contract TestUpdateDefaultRefinancePremiumBps is Test, OffersLoansRefinancesFixt
         uint256 defaultPremiumToProtocol = (lending.defaultRefinancePremiumBps() *
             firstLoan.amountDrawn) / MAX_BPS;
 
+        console.log("interest", interest);
+        console.log("threshold", threshold);
+        console.log(
+            "defaultPremiumToProtocol",
+            defaultPremiumToProtocol + gasGriefingToProtocol + termGriefingToProtocol
+        );
+        console.log("lower", assetBalance(owner, address(usdcToken)));
+        console.log("upper", assetBalancePlusOneCToken(owner, address(usdcToken)));
+
         if (offer.asset == address(usdcToken)) {
             if (interest < threshold) {
                 assertBetween(
