@@ -14,46 +14,51 @@ contract TestCheckSufficientInterestAccumulated is Test, OffersLoansRefinancesFi
         super.setUp();
     }
 
-    // function _test_checkSufficientInterestAccumulated_works(
-    //     uint128 amount,
-    //     uint32 duration,
-    //     uint16 protocolInterestBps
-    // ) private {
-    //     vm.startPrank(owner);
-    //     lending.updateProtocolInterestBps(protocolInterestBps);
-    //     vm.stopPrank();
+    function _test_checkSufficientInterestAccumulated_works(
+        FuzzedOfferFields memory fuzzed,
+        uint16 secondsBeforeRefinance
+    ) private {
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        (, LoanAuction memory firstLoan) = createOfferAndTryToExecuteLoanByBorrower(
+            offer,
+            "should work"
+        );
 
-    //     uint96 protocolInterestPerSecond = lending.checkSufficientInterestAccumulated(
-    //         amount,
-    //         duration
-    //     );
+        vm.warp(block.timestamp + secondsBeforeRefinance);
 
-    //     uint96 expectedProtocolInterestPerSecond = uint96(
-    //         (amount * protocolInterestBps) / MAX_BPS / duration
-    //     );
+        uint256 calculatedDelta = lending.checkSufficientInterestAccumulated(
+            offer.nftContractAddress,
+            offer.nftId
+        );
 
-    //     assertEq(protocolInterestPerSecond, expectedProtocolInterestPerSecond);
-    // }
+        uint256 interest = offer.interestRatePerSecond * secondsBeforeRefinance;
 
-    // function test_fuzz_checkSufficientInterestAccumulated_works(
-    //     uint128 amount,
-    //     uint32 duration,
-    //     uint16 protocolInterestBps
-    // ) public {
-    //     vm.assume(amount > 0);
-    //     // current total supply of ether
-    //     vm.assume(amount < 121520307 ether);
-    //     vm.assume(duration > 0);
-    //     vm.assume(duration < ~uint32(0) - block.timestamp);
-    //     vm.assume(protocolInterestBps <= MAX_FEE);
-    //     _test_checkSufficientInterestAccumulated_works(amount, duration, protocolInterestBps);
-    // }
+        uint256 threshold = (lending.gasGriefingPremiumBps() * firstLoan.amountDrawn) / MAX_BPS;
 
-    // function test_unit_checkSufficientInterestAccumulated_works() public {
-    //     uint128 amount = 1 ether;
-    //     uint32 duration = 1 days;
-    //     uint16 protocolInterestBps = 100;
+        uint256 interestDelta;
 
-    //     _test_checkSufficientInterestAccumulated_works(amount, duration, protocolInterestBps);
-    // }
+        if (threshold > interest) {
+            interestDelta = threshold - interest;
+        } else {
+            interestDelta = 0;
+        }
+
+        assertEq(calculatedDelta, interestDelta);
+    }
+
+    function test_fuzz_checkSufficientInterestAccumulated_works(
+        FuzzedOfferFields memory fuzzedOffer,
+        uint16 secondsBeforeRefinance
+    ) public validateFuzzedOfferFields(fuzzedOffer) {
+        _test_checkSufficientInterestAccumulated_works(fuzzedOffer, secondsBeforeRefinance);
+    }
+
+    function test_unit_checkSufficientInterestAccumulated_works() public {
+        uint16 secondsBeforeRefinance = 50;
+
+        _test_checkSufficientInterestAccumulated_works(
+            defaultFixedFuzzedFieldsForFastUnitTesting,
+            secondsBeforeRefinance
+        );
+    }
 }
