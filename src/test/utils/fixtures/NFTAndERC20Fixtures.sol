@@ -47,6 +47,7 @@ contract NFTAndERC20Fixtures is Test, UsersFixtures {
             vm.startPrank(usdcWhale);
             usdcToken.transfer(lender1, 2000 * (10**usdcToken.decimals()));
             usdcToken.transfer(lender2, 2000 * (10**usdcToken.decimals()));
+            usdcToken.transfer(lender3, 2000 * (10**usdcToken.decimals()));
             vm.stopPrank();
         } else {
             usdcToken = new ERC20Mock();
@@ -63,6 +64,7 @@ contract NFTAndERC20Fixtures is Test, UsersFixtures {
 
             usdcToken.mint(lender1, 2000 ether);
             usdcToken.mint(lender2, 2000 ether);
+            usdcToken.mint(lender3, 2000 ether);
             usdcToken.mint(SANCTIONED_ADDRESS, 1000 ether);
         }
 

@@ -64,6 +64,59 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         );
     }
 
+    function refinanceByLenderSetup(FuzzedOfferFields memory fuzzed, uint16 secondsBeforeRefinance)
+        private
+    {
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+
+        createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
+
+        assertionsForExecutedLoan(offer);
+
+        uint256 amountDrawn = lending
+            .getLoanAuction(offer.nftContractAddress, offer.nftId)
+            .amountDrawn;
+
+        vm.warp(block.timestamp + secondsBeforeRefinance);
+
+        uint256 interestShortfall = lending.checkSufficientInterestAccumulated(
+            offer.nftContractAddress,
+            offer.nftId
+        );
+
+        defaultFixedOfferFields.creator = lender2;
+        fuzzed.duration = fuzzed.duration + 1; // make sure offer is better
+        fuzzed.floorTerm = false; // refinance can't be floor term
+        fuzzed.expiration = uint32(block.timestamp) + secondsBeforeRefinance + 1;
+        fuzzed.amount = uint128(
+            offer.amount +
+                (offer.interestRatePerSecond * secondsBeforeRefinance) +
+                interestShortfall +
+                ((amountDrawn * lending.protocolInterestBps()) / 10_000)
+        );
+
+        Offer memory newOffer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+
+        uint256 beforeRefinanceLenderBalance = assetBalance(lender1, address(usdcToken));
+
+        if (offer.asset == address(usdcToken)) {
+            beforeRefinanceLenderBalance = assetBalance(lender1, address(usdcToken));
+        } else {
+            beforeRefinanceLenderBalance = assetBalance(lender1, ETH_ADDRESS);
+        }
+
+        (uint256 lenderInterest, uint256 protocolInterest) = lending.calculateInterestAccrued(
+            newOffer.nftContractAddress,
+            newOffer.nftId
+        );
+
+        LoanAuction memory loanAuction = tryToRefinanceByLender(newOffer, "should work");
+
+        assertEq(loanAuction.accumulatedLenderInterest, lenderInterest);
+        assertEq(loanAuction.accumulatedProtocolInterest, protocolInterest);
+        assertEq(loanAuction.slashableLenderInterest, 0);
+    }
+
     function assertionsForExecutedLoan(Offer memory offer) private {
         // borrower has money
         if (offer.asset == address(usdcToken)) {
@@ -120,5 +173,44 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         lending.updateGasGriefingPremiumBps(gasGriefingPremiumBps);
         vm.stopPrank();
         refinanceSetup(fuzzedOffer, secondsBeforeRefinance);
+    }
+
+    function test_unit_refinanceByBorrower_creates_slashable_interest() public {
+        // refinance by lender
+        refinanceByLenderSetup(defaultFixedFuzzedFieldsForFastUnitTesting, 12 hours);
+
+        // 12 hours
+        vm.warp(block.timestamp + 1 hours);
+
+        // set up refinance by borrower
+        FuzzedOfferFields memory fuzzed = defaultFixedFuzzedFieldsForFastUnitTesting;
+
+        defaultFixedOfferFields.creator = lender3;
+        fuzzed.duration = fuzzed.duration + 1; // make sure offer is better
+        fuzzed.floorTerm = false; // refinance can't be floor term
+        fuzzed.expiration = uint32(block.timestamp) + 12 hours + 1;
+        fuzzed.amount = uint128(
+            10 * uint128(10**usdcToken.decimals()) + 10 * uint128(10**usdcToken.decimals())
+        );
+
+        Offer memory newOffer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+
+        vm.startPrank(lender3);
+        bytes32 offerHash = offers.createOffer(newOffer);
+        vm.stopPrank();
+
+        // refinance by borrower
+        vm.startPrank(borrower1);
+        lending.refinanceByBorrower(
+            newOffer.nftContractAddress,
+            newOffer.nftId,
+            newOffer.floorTerm,
+            offerHash,
+            lending.getLoanAuction(address(mockNft), 1).lastUpdatedTimestamp
+        );
+        vm.stopPrank();
+
+        // brand new lender after refinance means slashable should = 0
+        assertEq(lending.getLoanAuction(address(mockNft), 1).slashableLenderInterest, 0);
     }
 }
