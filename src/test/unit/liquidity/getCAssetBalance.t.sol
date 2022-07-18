@@ -26,7 +26,7 @@ contract TestGetCAssetBalance is Test, ILiquidityEvents, OffersLoansRefinancesFi
         if (!integration) {
             assertEq(
                 liquidity.getCAssetBalance(address(lender1), address(cUSDCToken)),
-                1000000000000000000000000000000000000000
+                2000000000000000000000000000000000000000
             );
         }
     }

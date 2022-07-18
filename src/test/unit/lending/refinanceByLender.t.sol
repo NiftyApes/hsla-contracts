@@ -413,7 +413,7 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         // set up 2nd refinance
         defaultFixedOfferFields.creator = lender2;
         fuzzed.expiration = uint32(block.timestamp) + 1 hours + 1;
-        fuzzed.amount = uint128(1000 * 10**usdcToken.decimals() + 1000 * 10**usdcToken.decimals());
+        fuzzed.amount = uint128(1000 * 10**usdcToken.decimals() + 900 * 10**usdcToken.decimals());
 
         Offer memory newOffer2 = offerStructFromFields(fuzzed, defaultFixedOfferFields);
 
