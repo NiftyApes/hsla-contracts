@@ -308,9 +308,9 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         assertEq(lenderAccruedInterest, 1 hours * loanAuctionAfterDraw.interestRatePerSecond);
 
         // set up borrower repay full amount
+        mintUsdc(borrower1, 10_000 * 10**usdcToken.decimals());
         vm.startPrank(borrower1);
-        mintUsdc(borrower1, ~uint128(0));
-        usdcToken.increaseAllowance(address(liquidity), ~uint256(0));
+        usdcToken.increaseAllowance(address(liquidity), 10_000 * 10**usdcToken.decimals());
 
         // most important part here is the amount repaid, the last argument to the event
         // the amount drawn + 1 hour at initial interest rate + 1 hour at "after draw" interest rate
@@ -519,9 +519,9 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         assertEq(lenderAccruedInterest, 1 hours * loanAuctionAfterDraw.interestRatePerSecond);
 
         // set up borrower repay full amount
+        mintUsdc(borrower1, 10_000 * 10**usdcToken.decimals());
         vm.startPrank(borrower1);
-        mintUsdc(borrower1, ~uint128(0));
-        usdcToken.increaseAllowance(address(liquidity), ~uint256(0));
+        usdcToken.increaseAllowance(address(liquidity), 10_000 * 10**usdcToken.decimals());
 
         // most important part here is the amount repaid, the last argument to the event
         // the amount drawn + 1 hour at initial interest rate + 1 hour at "after draw" interest rate
