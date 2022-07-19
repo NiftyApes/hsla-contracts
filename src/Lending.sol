@@ -558,17 +558,24 @@ contract NiftyApesLending is
                     MAX_BPS;
             }
 
-            // calculate fullRefinanceAmount
-            uint256 fullAmount = interestAndPremiumOwedToCurrentLender +
-                protocolInterestAndPremium +
-                loanAuction.amountDrawn;
+            uint256 fullCTokenAmountRequired = ILiquidity(liquidityContractAddress)
+                .assetAmountToCAssetAmount(
+                    offer.asset,
+                    interestAndPremiumOwedToCurrentLender +
+                        protocolInterestAndPremium +
+                        loanAuction.amount
+                );
 
-            // If refinancing is done by another lender they must buy out the loan and pay fees
-            uint256 fullCTokenAmount = ILiquidity(liquidityContractAddress)
-                .assetAmountToCAssetAmount(offer.asset, fullAmount);
+            uint256 fullCTokenAmountToWithdraw = ILiquidity(liquidityContractAddress)
+                .assetAmountToCAssetAmount(
+                    offer.asset,
+                    interestAndPremiumOwedToCurrentLender +
+                        protocolInterestAndPremium +
+                        loanAuction.amountDrawn
+                );
 
             // require prospective lender has sufficient available balance to refinance loan
-            _requireSufficientBalance(offer.creator, cAsset, fullCTokenAmount);
+            _requireSufficientBalance(offer.creator, cAsset, fullCTokenAmountRequired);
 
             protocolPremiumInCtokens = ILiquidity(liquidityContractAddress)
                 .assetAmountToCAssetAmount(offer.asset, protocolInterestAndPremium);
@@ -581,12 +588,12 @@ contract NiftyApesLending is
             ILiquidity(liquidityContractAddress).withdrawCBalance(
                 offer.creator,
                 cAsset,
-                fullCTokenAmount
+                fullCTokenAmountToWithdraw
             );
             ILiquidity(liquidityContractAddress).addToCAssetBalance(
                 currentlender,
                 cAsset,
-                (fullCTokenAmount - protocolPremiumInCtokens)
+                (fullCTokenAmountToWithdraw - protocolPremiumInCtokens)
             );
             ILiquidity(liquidityContractAddress).addToCAssetBalance(
                 owner(),

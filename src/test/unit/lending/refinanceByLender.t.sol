@@ -205,7 +205,7 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         // set up refinance
         defaultFixedOfferFields.creator = lender2;
         fuzzed.expiration = uint32(block.timestamp) + 1 hours + 1;
-        fuzzed.amount = uint128(1000 * 10**usdcToken.decimals() + 1000 * 10**usdcToken.decimals());
+        fuzzed.amount = uint128(1000 * 10**usdcToken.decimals() + 900 * 10**usdcToken.decimals());
 
         Offer memory newOffer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
 
@@ -261,7 +261,7 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         lending.drawLoanAmount(
             offer.nftContractAddress,
             offer.nftId,
-            1000 * 10**usdcToken.decimals()
+            900 * 10**usdcToken.decimals()
         );
         vm.stopPrank();
 
