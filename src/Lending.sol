@@ -597,56 +597,38 @@ contract NiftyApesLending is
 
         address cAsset = ILiquidity(liquidityContractAddress).getCAsset(loanAuction.asset);
 
-        console.log("here 1");
-
         _updateInterest(loanAuction);
-
-        console.log("here 2");
 
         uint256 slashedDrawAmount = _slashUnsupportedAmount(loanAuction, drawAmount, cAsset);
 
         if (slashedDrawAmount != 0) {
-            console.log("here 9");
-
             uint256 currentAmountDrawn = loanAuction.amountDrawn;
             loanAuction.amountDrawn += SafeCastUpgradeable.toUint128(slashedDrawAmount);
 
-            console.log("here 10");
-
             if (loanAuction.interestRatePerSecond != 0) {
-                uint256 interestRatePerSecond256 = (loanAuction.interestRatePerSecond *
-                    loanAuction.amountDrawn) / currentAmountDrawn;
                 loanAuction.interestRatePerSecond = SafeCastUpgradeable.toUint96(
-                    interestRatePerSecond256
+                    (uint256(loanAuction.interestRatePerSecond) *
+                        uint256(loanAuction.amountDrawn)) / currentAmountDrawn
                 );
             }
-
-            console.log("here 11");
 
             if (loanAuction.protocolInterestRatePerSecond != 0) {
-                uint256 protocolInterestPerSecond256 = (loanAuction.protocolInterestRatePerSecond *
-                    loanAuction.amountDrawn) / currentAmountDrawn;
                 loanAuction.protocolInterestRatePerSecond = SafeCastUpgradeable.toUint96(
-                    protocolInterestPerSecond256
+                    (uint256(loanAuction.protocolInterestRatePerSecond) *
+                        uint256(loanAuction.amountDrawn)) / currentAmountDrawn
                 );
             }
-
-            console.log("here 12");
 
             uint256 cTokensBurnt = ILiquidity(liquidityContractAddress).burnCErc20(
                 loanAuction.asset,
                 slashedDrawAmount
             );
 
-            console.log("here 13");
-
             ILiquidity(liquidityContractAddress).withdrawCBalance(
                 loanAuction.lender,
                 cAsset,
                 cTokensBurnt
             );
-
-            console.log("here 14");
 
             ILiquidity(liquidityContractAddress).sendValue(
                 loanAuction.asset,
@@ -817,21 +799,15 @@ contract NiftyApesLending is
         if (loanAuction.lenderRefi) {
             loanAuction.lenderRefi = false;
 
-            console.log("here 3");
-
             uint256 lenderBalance = ILiquidity(liquidityContractAddress).getCAssetBalance(
                 loanAuction.lender,
                 cAsset
             );
 
-            console.log("here 4");
-
             uint256 drawTokens = ILiquidity(liquidityContractAddress).assetAmountToCAssetAmount(
                 loanAuction.asset,
                 drawAmount
             );
-
-            console.log("here 5");
 
             if (lenderBalance < drawTokens) {
                 drawAmount = ILiquidity(liquidityContractAddress).cAssetAmountToAssetAmount(
@@ -839,22 +815,17 @@ contract NiftyApesLending is
                     lenderBalance
                 );
 
-                console.log("here 6");
-
                 // This eliminates all accumulated interest for this lender on the loan
                 loanAuction.slashableLenderInterest = 0;
 
                 loanAuction.amount =
                     loanAuction.amountDrawn +
                     SafeCastUpgradeable.toUint128(drawAmount);
-
-                console.log("here 7");
             } else {
                 if (loanAuction.slashableLenderInterest > 0) {
                     loanAuction.accumulatedLenderInterest += loanAuction.slashableLenderInterest;
                     loanAuction.slashableLenderInterest = 0;
                 }
-                console.log("here 8");
             }
         }
 
@@ -928,7 +899,8 @@ contract NiftyApesLending is
     {
         (uint256 lenderInterest, ) = _calculateInterestAccrued(loanAuction);
 
-        uint256 interestThreshold = (loanAuction.amountDrawn * gasGriefingPremiumBps) / MAX_BPS;
+        uint256 interestThreshold = (uint256(loanAuction.amountDrawn) * gasGriefingPremiumBps) /
+            MAX_BPS;
 
         if (interestThreshold > lenderInterest) {
             return interestThreshold - lenderInterest;
