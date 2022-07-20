@@ -369,14 +369,14 @@ contract NiftyApesLending is
         _updateInterest(loanAuction);
 
         uint256 toLenderUnderlying = loanAuction.amountDrawn +
-            loanAuction.accumulatedLenderInterest;
+            loanAuction.accumulatedLenderInterest +
+            loanAuction.slashableLenderInterest;
 
         console.log("toLenderUnderlying", toLenderUnderlying);
         console.log("loanAuction.accumulatedLenderInterest", loanAuction.accumulatedLenderInterest);
         console.log("loanAuction.slashableLenderInterest", loanAuction.slashableLenderInterest);
 
-        uint256 toProtocolUnderlying = loanAuction.accumulatedProtocolInterest +
-            loanAuction.slashableLenderInterest;
+        uint256 toProtocolUnderlying = loanAuction.accumulatedProtocolInterest;
 
         require(offer.amount >= toLenderUnderlying + toProtocolUnderlying, "00005");
 
