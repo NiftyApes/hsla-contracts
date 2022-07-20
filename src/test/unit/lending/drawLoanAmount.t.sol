@@ -25,13 +25,19 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
 
         assertionsForExecutedLoan(offer);
 
-        uint256 amountDrawn = lending
-            .getLoanAuction(offer.nftContractAddress, offer.nftId)
-            .amountDrawn;
+        LoanAuction memory loanAuction = lending.getLoanAuction(
+            offer.nftContractAddress,
+            offer.nftId
+        );
 
         vm.warp(block.timestamp + secondsBeforeRefinance);
 
         uint256 interestShortfall = lending.checkSufficientInterestAccumulated(
+            offer.nftContractAddress,
+            offer.nftId
+        );
+
+        (, uint256 protocolInterest) = lending.calculateInterestAccrued(
             offer.nftContractAddress,
             offer.nftId
         );
@@ -44,9 +50,23 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
             offer.amount +
                 (offer.interestRatePerSecond * secondsBeforeRefinance) +
                 interestShortfall +
-                ((amountDrawn * lending.protocolInterestBps()) / 10_000) +
+                protocolInterest +
                 amountExtraOnRefinance
         );
+        console.log("offer.amount", offer.amount);
+
+        console.log(
+            "(offer.interestRatePerSecond * secondsBeforeRefinance)",
+            (offer.interestRatePerSecond * secondsBeforeRefinance)
+        );
+        console.log("interestShortfall", interestShortfall);
+        console.log("protocolInterest", protocolInterest);
+
+        console.log("amountExtraOnRefinance", amountExtraOnRefinance);
+
+        console.log("fuzzed.amount", fuzzed.amount);
+
+        console.log("loanAuction.amount", loanAuction.amount);
 
         Offer memory newOffer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
 
@@ -60,9 +80,16 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
 
         tryToRefinanceLoanByBorrower(newOffer, "should work");
 
+        LoanAuction memory loanAuction2 = lending.getLoanAuction(
+            offer.nftContractAddress,
+            offer.nftId
+        );
+
+        console.log("loanAuction.amount 2", loanAuction2.amount);
+
         assertionsForExecutedRefinance(
             offer,
-            amountDrawn,
+            loanAuction.amountDrawn,
             secondsBeforeRefinance,
             interestShortfall,
             beforeRefinanceLenderBalance
@@ -144,6 +171,70 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
             );
 
         refinanceSetup(fuzzedOffer, secondsBeforeRefinance, amountExtraOnRefinance);
+
+        vm.startPrank(borrower1);
+        if (excessDraw) {
+            vm.expectRevert("00020");
+        }
+
+        lending.drawLoanAmount(
+            defaultFixedOfferFields.nftContractAddress,
+            defaultFixedOfferFields.nftId,
+            excessDraw ? amountExtraOnRefinance + 1 : amountExtraOnRefinance
+        );
+        vm.stopPrank();
+    }
+
+    function test_fuzz_drawLoanAmount_math_works(
+        FuzzedOfferFields memory fuzzedOffer,
+        uint16 secondsBeforeRefinance,
+        uint64 amountExtraOnRefinance,
+        bool excessDraw
+    ) public validateFuzzedOfferFields(fuzzedOffer) {
+        vm.startPrank(owner);
+        lending.updateProtocolInterestBps(100);
+        vm.stopPrank();
+
+        vm.assume(amountExtraOnRefinance > 0);
+        // since we add 1 to amountExtraOnRefinance sometimes below
+        // we want to make sure adding 1 doesn't overflow
+        vm.assume(amountExtraOnRefinance < ~uint64(0));
+        if (fuzzedOffer.randomAsset % 2 == 0) {
+            vm.assume(amountExtraOnRefinance < (defaultUsdcLiquiditySupplied * 2) / 100);
+        } else {
+            vm.assume(amountExtraOnRefinance < (defaultEthLiquiditySupplied * 2) / 100);
+        }
+
+        bool isRefinanceExtraEnough; // to avoid "redeemTokens zero" when borrower draws more
+        if (fuzzedOffer.randomAsset % 2 == 0) {
+            isRefinanceExtraEnough =
+                amountExtraOnRefinance >= 10 * uint128(10**usdcToken.decimals());
+        } else {
+            isRefinanceExtraEnough = amountExtraOnRefinance >= 250000000;
+        }
+
+        amountExtraOnRefinance = isRefinanceExtraEnough
+            ? amountExtraOnRefinance
+            : uint64(
+                fuzzedOffer.randomAsset % 2 == 0
+                    ? 10 * uint128(10**usdcToken.decimals())
+                    : 250000000
+            );
+
+        refinanceSetup(fuzzedOffer, secondsBeforeRefinance, amountExtraOnRefinance);
+
+        LoanAuction memory loanAuction = lending.getLoanAuction(
+            defaultFixedOfferFields.nftContractAddress,
+            defaultFixedOfferFields.nftId
+        );
+
+        console.log("loanAuction.amount", loanAuction.amount);
+        console.log("loanAuction.amountDrawn", loanAuction.amountDrawn);
+        console.log(
+            "loanAuction.amount - loanAuction.amountDrawn",
+            loanAuction.amount - loanAuction.amountDrawn
+        );
+        console.log("amountExtraOnRefinance", amountExtraOnRefinance);
 
         vm.startPrank(borrower1);
         if (excessDraw) {
