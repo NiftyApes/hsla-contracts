@@ -204,7 +204,7 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         // set up refinance
         defaultFixedOfferFields.creator = lender2;
         fuzzed.expiration = uint32(block.timestamp) + 1 hours + 1;
-        fuzzed.amount = uint128(1000 * 10**usdcToken.decimals() + 1000 * 10**usdcToken.decimals());
+        fuzzed.amount = uint128(1000 * 10**usdcToken.decimals() + 900 * 10**usdcToken.decimals());
 
         Offer memory newOffer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
 
@@ -260,7 +260,7 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         lending.drawLoanAmount(
             offer.nftContractAddress,
             offer.nftId,
-            1000 * 10**usdcToken.decimals()
+            900 * 10**usdcToken.decimals()
         );
         vm.stopPrank();
 
@@ -307,9 +307,220 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         assertEq(lenderAccruedInterest, 1 hours * loanAuctionAfterDraw.interestRatePerSecond);
 
         // set up borrower repay full amount
+        mintUsdc(borrower1, 10_000 * 10**usdcToken.decimals());
         vm.startPrank(borrower1);
-        mintUsdc(borrower1, ~uint128(0));
-        usdcToken.increaseAllowance(address(liquidity), ~uint256(0));
+        usdcToken.increaseAllowance(address(liquidity), 10_000 * 10**usdcToken.decimals());
+
+        // most important part here is the amount repaid, the last argument to the event
+        // the amount drawn + 1 hour at initial interest rate + 1 hour at "after draw" interest rate
+        // even though the borrower couldn't draw 1000 USDC, they could draw some, so the rate changes
+        vm.expectEmit(true, true, true, true);
+        emit LoanRepaid(
+            loanAuctionAfterDraw.lender,
+            loanAuctionAfterDraw.nftOwner,
+            offer.nftContractAddress,
+            offer.nftId,
+            loanAuctionAfterDraw.asset,
+            loanAuctionAfterDraw.amountDrawn +
+                1 hours *
+                loanAuctionBeforeDraw.interestRatePerSecond +
+                1 hours *
+                loanAuctionAfterDraw.interestRatePerSecond
+        );
+
+        lending.repayLoan(offer.nftContractAddress, offer.nftId);
+        vm.stopPrank();
+
+        // check borrower balance
+        assertEq(assetBalance(borrower1, address(usdcToken)), 0);
+
+        // check lender balance
+        assertEq(
+            assetBalance(lender2, address(usdcToken)),
+            loanAuctionAfterDraw.amountDrawn +
+                1 hours *
+                loanAuctionBeforeDraw.interestRatePerSecond +
+                1 hours *
+                loanAuctionAfterDraw.interestRatePerSecond
+        );
+    }
+
+    function test_unit_refinanceByLender_same_lender_refinances_twice_slashed() public {
+        // Borrower1/Lender1 originate loan
+        FuzzedOfferFields memory fuzzed = defaultFixedFuzzedFieldsForFastUnitTesting;
+        fuzzed.randomAsset = 0; // USDC
+        fuzzed.amount = uint128(1000 * 10**usdcToken.decimals()); // $1000
+
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+
+        createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
+
+        assertionsForExecutedLoan(offer);
+
+        // 1 hour passes after loan execution
+        vm.warp(block.timestamp + 1 hours);
+
+        LoanAuction memory loanAuctionBeforeRefinance = lending.getLoanAuction(
+            offer.nftContractAddress,
+            offer.nftId
+        );
+
+        // accumulated is 0
+        assertEq(loanAuctionBeforeRefinance.accumulatedLenderInterest, 0);
+        // slashable is 0
+        assertEq(loanAuctionBeforeRefinance.slashableLenderInterest, 0);
+        // should have 1 hour of accrued interest
+        (uint256 lenderAccruedInterest, uint256 protocolAccruedInterest) = lending
+            .calculateInterestAccrued(offer.nftContractAddress, offer.nftId);
+        assertEq(lenderAccruedInterest, 1 hours * loanAuctionBeforeRefinance.interestRatePerSecond);
+        // lenderRefi should be false
+        assertEq(loanAuctionBeforeRefinance.lenderRefi, false);
+
+        // set up refinance
+        defaultFixedOfferFields.creator = lender2;
+        fuzzed.expiration = uint32(block.timestamp) + 1 hours + 1;
+        fuzzed.amount = uint128(1000 * 10**usdcToken.decimals() + 500 * 10**usdcToken.decimals());
+
+        Offer memory newOffer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+
+        tryToRefinanceByLender(newOffer, "should work");
+
+        LoanAuction memory loanAuctionBeforeDraw = lending.getLoanAuction(
+            offer.nftContractAddress,
+            offer.nftId
+        );
+
+        // 1 hour of interest becomes accumulated
+        assertEq(
+            loanAuctionBeforeDraw.accumulatedLenderInterest,
+            1 hours * loanAuctionBeforeDraw.interestRatePerSecond
+        );
+        // slashable is 0
+        assertEq(loanAuctionBeforeDraw.slashableLenderInterest, 0);
+        // 0 accrued (this became accumulated)
+        (lenderAccruedInterest, protocolAccruedInterest) = lending.calculateInterestAccrued(
+            offer.nftContractAddress,
+            offer.nftId
+        );
+        assertEq(lenderAccruedInterest, 0);
+        // lenderRefi switches to true
+        assertEq(loanAuctionBeforeDraw.lenderRefi, true);
+
+        // 1 hour passes after refinance
+        vm.warp(block.timestamp + 1 hours);
+
+        // set up 2nd refinance
+        defaultFixedOfferFields.creator = lender2;
+        fuzzed.expiration = uint32(block.timestamp) + 1 hours + 1;
+        fuzzed.amount = uint128(1000 * 10**usdcToken.decimals() + 900 * 10**usdcToken.decimals());
+
+        Offer memory newOffer2 = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+
+        tryToRefinanceByLender(newOffer2, "should work");
+
+        loanAuctionBeforeDraw = lending.getLoanAuction(offer.nftContractAddress, offer.nftId);
+
+        // 2 hour of interest becomes accumulated
+        assertEq(
+            loanAuctionBeforeDraw.accumulatedLenderInterest,
+            1 hours * loanAuctionBeforeDraw.interestRatePerSecond
+        );
+        // slashable is 1
+        assertEq(
+            loanAuctionBeforeDraw.slashableLenderInterest,
+            1 hours * loanAuctionBeforeDraw.interestRatePerSecond
+        );
+        // 0 accrued (this became accumulated)
+        (lenderAccruedInterest, protocolAccruedInterest) = lending.calculateInterestAccrued(
+            offer.nftContractAddress,
+            offer.nftId
+        );
+        assertEq(lenderAccruedInterest, 0);
+        // lenderRefi switches to true
+        assertEq(loanAuctionBeforeDraw.lenderRefi, true);
+
+        // 1 hour passes after refinance
+        vm.warp(block.timestamp + 1 hours);
+
+        // 1 hour of interest still accumulated
+        assertEq(
+            loanAuctionBeforeDraw.accumulatedLenderInterest,
+            1 hours * loanAuctionBeforeDraw.interestRatePerSecond
+        );
+        // slashable is 0
+        assertEq(
+            loanAuctionBeforeDraw.slashableLenderInterest,
+            1 hours * loanAuctionBeforeDraw.interestRatePerSecond
+        );
+        // but 1 new hour of interest accrued
+        (lenderAccruedInterest, protocolAccruedInterest) = lending.calculateInterestAccrued(
+            offer.nftContractAddress,
+            offer.nftId
+        );
+        assertEq(lenderAccruedInterest, 1 hours * loanAuctionBeforeDraw.interestRatePerSecond);
+        // lenderRefi still true
+        assertEq(loanAuctionBeforeDraw.lenderRefi, true);
+
+        // ensure attempt to draw 1000 USDC overdraws
+        vm.startPrank(lender2);
+        liquidity.withdrawErc20(address(usdcToken), 500 * 10**usdcToken.decimals());
+        vm.stopPrank();
+
+        // borrower attempts to draw 1000 USDC
+        vm.startPrank(borrower1);
+        lending.drawLoanAmount(
+            offer.nftContractAddress,
+            offer.nftId,
+            600 * 10**usdcToken.decimals()
+        );
+        vm.stopPrank();
+
+        LoanAuction memory loanAuctionAfterDraw = lending.getLoanAuction(
+            offer.nftContractAddress,
+            offer.nftId
+        );
+
+        // 1 hour of interest still accumulated
+        assertEq(
+            loanAuctionAfterDraw.accumulatedLenderInterest,
+            1 hours * loanAuctionBeforeDraw.interestRatePerSecond
+        );
+        // slashable is 0
+        assertEq(loanAuctionAfterDraw.slashableLenderInterest, 0);
+        (lenderAccruedInterest, protocolAccruedInterest) = lending.calculateInterestAccrued(
+            offer.nftContractAddress,
+            offer.nftId
+        );
+        // 1 hour of interest accrued has been slashed
+        // (in drawLoanAmount, this gets turned into slashable in _updateInterest,
+        // and slashable gets set to 0 in _slashUnsupportedAmount)
+        assertEq(lenderAccruedInterest, 0);
+        // lenderRefi toggled back to false
+        assertEq(loanAuctionAfterDraw.lenderRefi, false);
+
+        // 1 hour passes after draw and slash
+        vm.warp(block.timestamp + 1 hours);
+
+        // 1 hour of interest still accumulated
+        assertEq(
+            loanAuctionAfterDraw.accumulatedLenderInterest,
+            1 hours * loanAuctionBeforeDraw.interestRatePerSecond
+        );
+        // slashable 0
+        assertEq(loanAuctionAfterDraw.slashableLenderInterest, 0);
+        // lenderRefi still false
+        assertEq(loanAuctionAfterDraw.lenderRefi, false);
+        // but 1 new hour of accrued interest
+        (lenderAccruedInterest, protocolAccruedInterest) = lending.calculateInterestAccrued(
+            offer.nftContractAddress,
+            offer.nftId
+        );
+        assertEq(lenderAccruedInterest, 1 hours * loanAuctionAfterDraw.interestRatePerSecond);
+
+        // set up borrower repay full amount
+        mintUsdc(borrower1, 10_000 * 10**usdcToken.decimals());
+        vm.startPrank(borrower1);
+        usdcToken.increaseAllowance(address(liquidity), 10_000 * 10**usdcToken.decimals());
 
         // most important part here is the amount repaid, the last argument to the event
         // the amount drawn + 1 hour at initial interest rate + 1 hour at "after draw" interest rate

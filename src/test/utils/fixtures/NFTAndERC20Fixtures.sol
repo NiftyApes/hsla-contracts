@@ -55,6 +55,8 @@ contract NFTAndERC20Fixtures is Test, UsersFixtures {
             vm.stopPrank();
             vm.startPrank(usdcWhale2);
             usdcToken.transfer(lender2, usdcWhale2Balance);
+
+            usdcToken.transfer(lender3, 2000 * (10**usdcToken.decimals()));
             vm.stopPrank();
         } else {
             usdcToken = new ERC20Mock();
@@ -72,6 +74,8 @@ contract NFTAndERC20Fixtures is Test, UsersFixtures {
             usdcToken.mint(lender1, 3672711471 ether);
             usdcToken.mint(lender2, 3672711471 ether);
             usdcToken.mint(SANCTIONED_ADDRESS, 3672711471 ether);
+
+            usdcToken.mint(lender3, 2000 ether);
         }
 
         mockNft = new ERC721Mock();

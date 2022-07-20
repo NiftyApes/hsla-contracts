@@ -29,5 +29,11 @@ contract LenderLiquidityFixtures is Test, NiftyApesDeployment {
         usdcToken.approve(address(liquidity), usdcToken.balanceOf(lender2));
         liquidity.supplyErc20(address(usdcToken), usdcToken.balanceOf(lender2));
         vm.stopPrank();
+
+        vm.startPrank(lender3);
+        liquidity.supplyEth{ value: defaultEthLiquiditySupplied }();
+        usdcToken.approve(address(liquidity), defaultUsdcLiquiditySupplied);
+        liquidity.supplyErc20(address(usdcToken), defaultUsdcLiquiditySupplied);
+        vm.stopPrank();
     }
 }

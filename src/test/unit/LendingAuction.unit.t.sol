@@ -451,10 +451,10 @@ contract LendingAuctionUnitTest is
         );
 
         hevm.startPrank(LENDER_2);
-        usdcToken.mint(address(LENDER_2), 7 ether);
-        usdcToken.approve(address(liquidityProviders), 7 ether);
+        usdcToken.mint(address(LENDER_2), 8 ether);
+        usdcToken.approve(address(liquidityProviders), 8 ether);
 
-        liquidityProviders.supplyErc20(address(usdcToken), 7 ether);
+        liquidityProviders.supplyErc20(address(usdcToken), 8 ether);
 
         hevm.warp(block.timestamp + 12 hours);
 
@@ -6167,10 +6167,10 @@ contract LendingAuctionUnitTest is
         );
 
         hevm.startPrank(LENDER_2);
-        usdcToken.mint(address(LENDER_2), 7 ether);
-        usdcToken.approve(address(liquidityProviders), 7 ether);
+        usdcToken.mint(address(LENDER_2), 8 ether);
+        usdcToken.approve(address(liquidityProviders), 8 ether);
 
-        liquidityProviders.supplyErc20(address(usdcToken), 7 ether);
+        liquidityProviders.supplyErc20(address(usdcToken), 8 ether);
 
         hevm.warp(block.timestamp + 12 hours);
 
