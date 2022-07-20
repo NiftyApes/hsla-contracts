@@ -607,15 +607,15 @@ contract NiftyApesLending is
 
             if (loanAuction.interestRatePerSecond != 0) {
                 loanAuction.interestRatePerSecond = SafeCastUpgradeable.toUint96(
-                    (uint256(loanAuction.interestRatePerSecond) *
-                        uint256(loanAuction.amountDrawn)) / currentAmountDrawn
+                    (uint256(loanAuction.interestRatePerSecond) * loanAuction.amountDrawn) /
+                        currentAmountDrawn
                 );
             }
 
             if (loanAuction.protocolInterestRatePerSecond != 0) {
                 loanAuction.protocolInterestRatePerSecond = SafeCastUpgradeable.toUint96(
-                    (uint256(loanAuction.protocolInterestRatePerSecond) *
-                        uint256(loanAuction.amountDrawn)) / currentAmountDrawn
+                    (uint256(loanAuction.protocolInterestRatePerSecond) * loanAuction.amountDrawn) /
+                        currentAmountDrawn
                 );
             }
 
@@ -742,18 +742,16 @@ contract NiftyApesLending is
             loanAuction.amountDrawn -= SafeCastUpgradeable.toUint128(paymentAmount);
 
             if (loanAuction.interestRatePerSecond != 0) {
-                uint256 interestRatePerSecond256 = (loanAuction.interestRatePerSecond *
-                    loanAuction.amountDrawn) / currentAmountDrawn;
                 loanAuction.interestRatePerSecond = SafeCastUpgradeable.toUint96(
-                    interestRatePerSecond256
+                    (uint256(loanAuction.interestRatePerSecond) * loanAuction.amountDrawn) /
+                        currentAmountDrawn
                 );
             }
 
             if (loanAuction.protocolInterestRatePerSecond != 0) {
-                uint256 protocolInterestPerSecond256 = (loanAuction.protocolInterestRatePerSecond *
-                    loanAuction.amountDrawn) / currentAmountDrawn;
                 loanAuction.protocolInterestRatePerSecond = SafeCastUpgradeable.toUint96(
-                    protocolInterestPerSecond256
+                    (uint256(loanAuction.protocolInterestRatePerSecond) * loanAuction.amountDrawn) /
+                        currentAmountDrawn
                 );
             }
 
