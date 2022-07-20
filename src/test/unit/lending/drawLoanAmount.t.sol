@@ -185,7 +185,7 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
         vm.stopPrank();
     }
 
-    function test_fuzz_drawLoanAmount_math_works(
+    function test_fuzz_drawLoanAmount_math_works_2(
         FuzzedOfferFields memory fuzzedOffer,
         uint16 secondsBeforeRefinance,
         uint64 amountExtraOnRefinance,
