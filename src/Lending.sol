@@ -469,7 +469,7 @@ contract NiftyApesLending is
             offer.duration
         );
 
-        // Unclear if first conjunction of this condition can ever be true
+        // TODO(captnseagraves): Unclear if first conjunction of this condition can ever be true
         // given current contracts
         if (loanAuction.slashableLenderInterest > 0 && loanAuction.lender != offer.creator) {
             loanAuction.accumulatedLenderInterest += loanAuction.slashableLenderInterest;
@@ -485,7 +485,7 @@ contract NiftyApesLending is
 
         if (!sufficientTerms) {
             protocolInterestAndPremium +=
-                (loanAuction.amountDrawn * termGriefingPremiumBps) /
+                (uint256(loanAuction.amountDrawn) * termGriefingPremiumBps) /
                 MAX_BPS;
         }
 
