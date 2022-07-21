@@ -68,9 +68,12 @@ contract TestPartialRepayLoan is Test, OffersLoansRefinancesFixtures {
             vm.stopPrank();
         }
 
-        assertEq(
-            interestShortfallBeforePartialPayment,
-            lending.checkSufficientInterestAccumulated(offer.nftContractAddress, offer.nftId)
+        uint256 interestShortfallAfter = lending.checkSufficientInterestAccumulated(
+            offer.nftContractAddress,
+            offer.nftId
         );
+
+        assertEq(interestShortfallBeforePartialPayment, 0);
+        assertEq(interestShortfallAfter, 24999);
     }
 }

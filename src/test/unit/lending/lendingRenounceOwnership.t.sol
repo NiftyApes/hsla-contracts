@@ -5,17 +5,17 @@ import "forge-std/Test.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 
 import "../../utils/fixtures/OffersLoansRefinancesFixtures.sol";
-import "../../../interfaces/niftyapes/liquidity/ILiquidityEvents.sol";
+import "../../../interfaces/niftyapes/lending/ILendingEvents.sol";
 
-contract TestLiquidityRenounceOwnership is Test, ILiquidityEvents, OffersLoansRefinancesFixtures {
+contract TestLendingRenounceOwnership is Test, ILendingEvents, OffersLoansRefinancesFixtures {
     function setUp() public override {
         super.setUp();
     }
 
-    function test_unit_renounceOwnership_does_nothing() public {
+    function test_unit_lending_renounceOwnership_does_nothing() public {
         vm.prank(owner);
-        liquidity.renounceOwnership();
+        lending.renounceOwnership();
 
-        assertEq(liquidity.owner(), owner);
+        assertEq(lending.owner(), owner);
     }
 }

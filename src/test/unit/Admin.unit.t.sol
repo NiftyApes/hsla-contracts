@@ -104,6 +104,11 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
         niftyApes.updateProtocolInterestBps(1);
     }
 
+    function testCannotUpdateProtocolInterestBps_max_fee() public {
+        hevm.expectRevert("00002");
+        niftyApes.updateProtocolInterestBps(1001);
+    }
+
     function testUpdateProtocolInterestBps_owner() public {
         assertEq(niftyApes.protocolInterestBps(), 0);
         hevm.expectEmit(false, false, false, true);
