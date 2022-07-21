@@ -469,7 +469,7 @@ contract NiftyApesLending is
             offer.duration
         );
 
-        // TODO(captnseagraves): Unclear if first conjunction of this condition can ever be true
+        // TODO(miller): Unclear if first conjunction of this condition can ever be true
         // given current contracts
         if (loanAuction.slashableLenderInterest > 0 && loanAuction.lender != offer.creator) {
             loanAuction.accumulatedLenderInterest += loanAuction.slashableLenderInterest;
@@ -523,7 +523,7 @@ contract NiftyApesLending is
             // calculate interest earned
             uint256 interestAndPremiumOwedToCurrentLender = loanAuction.accumulatedLenderInterest +
                 loanAuction.accumulatedProtocolInterest +
-                ((loanAuction.amountDrawn * originationPremiumBps) / MAX_BPS);
+                ((uint256(loanAuction.amountDrawn) * originationPremiumBps) / MAX_BPS);
 
             protocolInterestAndPremium += protocolInterest;
 
@@ -536,12 +536,12 @@ contract NiftyApesLending is
 
             if (_currentTimestamp32() > loanAuction.loanEndTimestamp - 1 hours) {
                 protocolInterestAndPremium +=
-                    (loanAuction.amountDrawn * defaultRefinancePremiumBps) /
+                    (uint256(loanAuction.amountDrawn) * defaultRefinancePremiumBps) /
                     MAX_BPS;
             }
 
             // calculate fullRefinanceAmount
-            uint256 fullAmount = interestAndPremiumOwedToCurrentLender +
+            uint256 fullAmount = uint256(interestAndPremiumOwedToCurrentLender) +
                 protocolInterestAndPremium +
                 loanAuction.amountDrawn;
 
@@ -693,7 +693,7 @@ contract NiftyApesLending is
 
         if (repayFull) {
             paymentAmount =
-                loanAuction.accumulatedLenderInterest +
+                uint256(loanAuction.accumulatedLenderInterest) +
                 loanAuction.accumulatedProtocolInterest +
                 loanAuction.slashableLenderInterest +
                 loanAuction.amountDrawn;
@@ -816,9 +816,9 @@ contract NiftyApesLending is
                 // This eliminates all accumulated interest for this lender on the loan
                 loanAuction.slashableLenderInterest = 0;
 
-                loanAuction.amount =
-                    loanAuction.amountDrawn +
-                    SafeCastUpgradeable.toUint128(drawAmount);
+                loanAuction.amount = SafeCastUpgradeable.toUint128(
+                    loanAuction.amountDrawn + drawAmount
+                );
             } else {
                 if (loanAuction.slashableLenderInterest > 0) {
                     loanAuction.accumulatedLenderInterest += loanAuction.slashableLenderInterest;
@@ -933,10 +933,11 @@ contract NiftyApesLending is
         uint256 loanDuration = loanAuction.loanEndTimestamp - loanAuction.loanBeginTimestamp;
 
         // calculate the Bps improvement of each offer term
-        uint256 amountImprovement = ((amount - loanAuction.amount) * MAX_BPS) / loanAuction.amount;
-        uint256 interestImprovement = ((loanAuction.interestRatePerSecond - interestRatePerSecond) *
-            MAX_BPS) / loanAuction.interestRatePerSecond;
-        uint256 durationImprovement = ((duration - loanDuration) * MAX_BPS) / loanDuration;
+        uint256 amountImprovement = ((uint256(amount) - loanAuction.amount) * MAX_BPS) /
+            loanAuction.amount;
+        uint256 interestImprovement = ((uint256(loanAuction.interestRatePerSecond) -
+            interestRatePerSecond) * MAX_BPS) / loanAuction.interestRatePerSecond;
+        uint256 durationImprovement = ((uint256(duration) - loanDuration) * MAX_BPS) / loanDuration;
 
         // sum improvements
         uint256 improvementSum = amountImprovement + interestImprovement + durationImprovement;
