@@ -188,8 +188,7 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
     function test_fuzz_drawLoanAmount_math_works(
         FuzzedOfferFields memory fuzzedOffer,
         uint16 secondsBeforeRefinance,
-        uint64 amountExtraOnRefinance,
-        bool excessDraw
+        uint64 amountExtraOnRefinance
     ) public validateFuzzedOfferFields(fuzzedOffer) {
         vm.startPrank(owner);
         lending.updateProtocolInterestBps(100);
@@ -223,29 +222,65 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
 
         refinanceSetup(fuzzedOffer, secondsBeforeRefinance, amountExtraOnRefinance);
 
-        LoanAuction memory loanAuction = lending.getLoanAuction(
+        LoanAuction memory loanAuctionBefore = lending.getLoanAuction(
             defaultFixedOfferFields.nftContractAddress,
             defaultFixedOfferFields.nftId
         );
 
-        console.log("loanAuction.amount", loanAuction.amount);
-        console.log("loanAuction.amountDrawn", loanAuction.amountDrawn);
-        console.log(
-            "loanAuction.amount - loanAuction.amountDrawn",
-            loanAuction.amount - loanAuction.amountDrawn
-        );
-        console.log("amountExtraOnRefinance", amountExtraOnRefinance);
+        console.log("loanAuctionBefore.amount", loanAuctionBefore.amount);
+        console.log("loanAuctionBefore.amountDrawn", loanAuctionBefore.amountDrawn);
+        console.log("loanAuctionBefore.loanEndTimestamp", loanAuctionBefore.loanEndTimestamp);
+        console.log("loanAuctionBefore.loanBeginTimestamp", loanAuctionBefore.loanBeginTimestamp);
+
+        uint256 amountDrawnBefore = loanAuctionBefore.amountDrawn;
+
+        uint256 interestRatePerSecondBefore = loanAuctionBefore.interestRatePerSecond;
+        uint256 protocolInterestRatePerSecondBefore = loanAuctionBefore
+            .protocolInterestRatePerSecond;
+
+        console.log("interestRatePerSecondBefore", interestRatePerSecondBefore);
+        console.log("protocolInterestRatePerSecondBefore", protocolInterestRatePerSecondBefore);
 
         vm.startPrank(borrower1);
-        if (excessDraw) {
-            vm.expectRevert("00020");
-        }
-
         lending.drawLoanAmount(
             defaultFixedOfferFields.nftContractAddress,
             defaultFixedOfferFields.nftId,
-            excessDraw ? amountExtraOnRefinance + 1 : amountExtraOnRefinance
+            amountExtraOnRefinance
         );
         vm.stopPrank();
+
+        LoanAuction memory loanAuctionAfter = lending.getLoanAuction(
+            defaultFixedOfferFields.nftContractAddress,
+            defaultFixedOfferFields.nftId
+        );
+
+        uint256 interestRatePerSecondAfter = loanAuctionAfter.interestRatePerSecond;
+        uint256 protocolInterestRatePerSecondAfter = loanAuctionAfter.protocolInterestRatePerSecond;
+
+        uint256 calculatedInterestRatePerSecond = (uint256(interestRatePerSecondBefore) *
+            loanAuctionAfter.amountDrawn) / amountDrawnBefore;
+        uint96 calculatedProtocolInterestRatePerSecond = lending.calculateProtocolInterestPerSecond(
+            loanAuctionAfter.amountDrawn,
+            (loanAuctionAfter.loanEndTimestamp - loanAuctionAfter.loanBeginTimestamp)
+        );
+
+        console.log("calculatedInterestRatePerSecond", calculatedInterestRatePerSecond);
+        console.log(
+            "calculatedProtocolInterestRatePerSecond",
+            calculatedProtocolInterestRatePerSecond
+        );
+
+        console.log("loanAuctionAfter.loanEndTimestamp", loanAuctionAfter.loanEndTimestamp);
+        console.log("loanAuctionAfter.loanBeginTimestamp", loanAuctionAfter.loanBeginTimestamp);
+
+        console.log("loanAuctionAfter.amount", loanAuctionAfter.amount);
+        console.log("loanAuctionAfter.amountDrawn", loanAuctionAfter.amountDrawn);
+
+        console.log("interestRatePerSecondAfter", interestRatePerSecondAfter);
+        console.log("protocolInterestRatePerSecondAfter", protocolInterestRatePerSecondAfter);
+
+        assertEq(calculatedInterestRatePerSecond, interestRatePerSecondAfter);
+        assertEq(calculatedProtocolInterestRatePerSecond, protocolInterestRatePerSecondAfter);
+        assertEq(loanAuctionAfter.amountDrawn, amountDrawnBefore + amountExtraOnRefinance);
     }
 }

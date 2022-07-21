@@ -613,6 +613,7 @@ contract NiftyApesLending is
             }
 
             if (loanAuction.protocolInterestRatePerSecond != 0) {
+                console.log("here");
                 loanAuction.protocolInterestRatePerSecond = SafeCastUpgradeable.toUint96(
                     (uint256(loanAuction.protocolInterestRatePerSecond) * loanAuction.amountDrawn) /
                         currentAmountDrawn
