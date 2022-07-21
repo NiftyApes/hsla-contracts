@@ -50,11 +50,20 @@ contract NFTAndERC20Fixtures is Test, UsersFixtures {
             uint256 usdcWhale1Balance = usdcToken.balanceOf(usdcWhale1);
             uint256 usdcWhale2Balance = usdcToken.balanceOf(usdcWhale2);
 
+            address whaleCombiner = address(0xabcd);
             vm.startPrank(usdcWhale1);
-            usdcToken.transfer(lender1, usdcWhale1Balance);
+            usdcToken.transfer(whaleCombiner, usdcWhale1Balance);
             vm.stopPrank();
             vm.startPrank(usdcWhale2);
-            usdcToken.transfer(lender2, usdcWhale2Balance);
+            usdcToken.transfer(whaleCombiner, usdcWhale2Balance);
+            vm.stopPrank();
+
+            uint256 amtToEachLender = usdcToken.balanceOf(whaleCombiner) / 3;
+
+            vm.startPrank(whaleCombiner);
+            usdcToken.transfer(lender1, amtToEachLender);
+            usdcToken.transfer(lender2, amtToEachLender);
+            usdcToken.transfer(lender3, amtToEachLender);
             vm.stopPrank();
         } else {
             usdcToken = new ERC20Mock();
