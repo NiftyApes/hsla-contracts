@@ -88,12 +88,7 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         fuzzed.duration = fuzzed.duration + 1; // make sure offer is better
         fuzzed.floorTerm = false; // refinance can't be floor term
         fuzzed.expiration = uint32(block.timestamp) + secondsBeforeRefinance + 1;
-        fuzzed.amount = uint128(
-            offer.amount +
-                (offer.interestRatePerSecond * secondsBeforeRefinance) +
-                interestShortfall +
-                ((amountDrawn * lending.protocolInterestBps()) / 10_000)
-        );
+        fuzzed.amount = offer.amount * 2;
 
         Offer memory newOffer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
 
@@ -212,5 +207,66 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
 
         // brand new lender after refinance means slashable should = 0
         assertEq(lending.getLoanAuction(address(mockNft), 1).slashableLenderInterest, 0);
+    }
+
+    // At one point (~ Jul 20, 2022) in refinanceByBorrower, slashable interest
+    // was being added to what was owed to the protocol, as opposed to what was owed to the lender
+    // The following regression test will fail if this bug is present,
+    // but pass if it's fixed
+    function test_unit_refinanceByBorrower_gives_slashable_interest_to_refinanced_lender() public {
+        uint256 beforeLenderBalance = assetBalance(lender2, address(usdcToken));
+
+        // refinance by lender2
+        refinanceByLenderSetup(defaultFixedFuzzedFieldsForFastUnitTesting, 12 hours);
+
+        // 12 hours
+        vm.warp(block.timestamp + 12 hours);
+
+        // set up refinance by borrower
+        FuzzedOfferFields memory fuzzed = defaultFixedFuzzedFieldsForFastUnitTesting;
+
+        defaultFixedOfferFields.creator = lender3;
+        fuzzed.duration = fuzzed.duration;
+        fuzzed.floorTerm = false; // refinance can't be floor term
+        fuzzed.expiration = uint32(block.timestamp) + 12 hours + 1;
+        fuzzed.amount = uint128(
+            10 * uint128(10**usdcToken.decimals()) + 10 * uint128(10**usdcToken.decimals())
+        );
+
+        Offer memory newOffer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+
+        vm.startPrank(lender3);
+        bytes32 offerHash = offers.createOffer(newOffer);
+        vm.stopPrank();
+
+        uint256 amountDrawn = lending
+            .getLoanAuction(newOffer.nftContractAddress, newOffer.nftId)
+            .amountDrawn;
+
+        // should be zero but keeping this in in case we convert this to a fuzz test
+        uint256 interestShortfall = lending.checkSufficientInterestAccumulated(
+            newOffer.nftContractAddress,
+            newOffer.nftId
+        );
+
+        // refinance by borrower
+        vm.startPrank(borrower1);
+        lending.refinanceByBorrower(
+            newOffer.nftContractAddress,
+            newOffer.nftId,
+            newOffer.floorTerm,
+            offerHash,
+            lending.getLoanAuction(address(mockNft), 1).lastUpdatedTimestamp
+        );
+        vm.stopPrank();
+
+        assertBetween(
+            beforeLenderBalance +
+                (newOffer.interestRatePerSecond * 12 hours) +
+                interestShortfall -
+                ((amountDrawn * lending.originationPremiumBps()) / 10_000),
+            assetBalance(lender2, address(usdcToken)),
+            assetBalancePlusOneCToken(lender2, address(usdcToken))
+        );
     }
 }

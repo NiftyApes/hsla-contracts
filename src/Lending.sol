@@ -440,17 +440,6 @@ contract NiftyApesLending is
         whenNotPaused
         nonReentrant
     {
-        console.log(
-            "jul 15 2022 --- start of rbl",
-            ILiquidity(liquidityContractAddress).getCAssetBalance(
-                offer.creator,
-                ILiquidity(liquidityContractAddress).getCAsset(offer.asset)
-            ),
-            ILiquidity(liquidityContractAddress).assetAmountToCAssetAmount(
-                offer.asset,
-                offer.amount
-            )
-        );
         LoanAuction storage loanAuction = _getLoanAuctionInternal(
             offer.nftContractAddress,
             offer.nftId
@@ -603,15 +592,6 @@ contract NiftyApesLending is
         }
 
         emit Refinance(offer.nftContractAddress, offer.nftId, offer);
-
-        console.log(
-            "jul 15 2022 --- end of rbl",
-            ILiquidity(liquidityContractAddress).getCAssetBalance(offer.creator, cAsset),
-            ILiquidity(liquidityContractAddress).assetAmountToCAssetAmount(
-                offer.asset,
-                offer.amount
-            )
-        );
     }
 
     /// @inheritdoc ILending
@@ -942,13 +922,6 @@ contract NiftyApesLending is
     {
         uint256 timePassed = _currentTimestamp32() - loanAuction.lastUpdatedTimestamp;
 
-        console.log(
-            "timePassed",
-            _currentTimestamp32(),
-            loanAuction.lastUpdatedTimestamp,
-            timePassed
-        );
-
         lenderInterest = (timePassed * loanAuction.interestRatePerSecond);
         protocolInterest = (timePassed * loanAuction.protocolInterestRatePerSecond);
     }
@@ -1031,11 +1004,6 @@ contract NiftyApesLending is
         address cAsset,
         uint256 amount
     ) internal view {
-        console.log(
-            "jul 15 2022 --- ",
-            ILiquidity(liquidityContractAddress).getCAssetBalance(creator, cAsset),
-            amount
-        );
         require(
             ILiquidity(liquidityContractAddress).getCAssetBalance(creator, cAsset) >= amount,
             "00001"
