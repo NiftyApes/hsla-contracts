@@ -171,6 +171,8 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
     }
 
     function test_unit_refinanceByLender_simplest_slashed() public {
+        resetSuppliedUsdcLiquidity(lender2, 2000 * 10**usdcToken.decimals());
+
         // Borrower1/Lender1 originate loan
         FuzzedOfferFields memory fuzzed = defaultFixedFuzzedFieldsForFastUnitTesting;
         fuzzed.randomAsset = 0; // USDC
@@ -346,6 +348,8 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
     }
 
     function test_unit_refinanceByLender_same_lender_refinances_twice_slashed() public {
+        resetSuppliedUsdcLiquidity(lender2, 2000 * 10**usdcToken.decimals());
+
         // Borrower1/Lender1 originate loan
         FuzzedOfferFields memory fuzzed = defaultFixedFuzzedFieldsForFastUnitTesting;
         fuzzed.randomAsset = 0; // USDC

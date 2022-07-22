@@ -21,19 +21,45 @@ contract LenderLiquidityFixtures is Test, NiftyApesDeployment {
         vm.startPrank(lender1);
         liquidity.supplyEth{ value: defaultEthLiquiditySupplied }();
         usdcToken.approve(address(liquidity), usdcToken.balanceOf(lender1));
-        liquidity.supplyErc20(address(usdcToken), usdcToken.balanceOf(lender1));
+        liquidity.supplyErc20(address(usdcToken), defaultUsdcLiquiditySupplied);
         vm.stopPrank();
 
         vm.startPrank(lender2);
         liquidity.supplyEth{ value: defaultEthLiquiditySupplied }();
         usdcToken.approve(address(liquidity), usdcToken.balanceOf(lender2));
-        liquidity.supplyErc20(address(usdcToken), usdcToken.balanceOf(lender2));
+        liquidity.supplyErc20(address(usdcToken), defaultUsdcLiquiditySupplied);
         vm.stopPrank();
 
         vm.startPrank(lender3);
         liquidity.supplyEth{ value: defaultEthLiquiditySupplied }();
         usdcToken.approve(address(liquidity), defaultUsdcLiquiditySupplied);
         liquidity.supplyErc20(address(usdcToken), defaultUsdcLiquiditySupplied);
+        vm.stopPrank();
+    }
+
+    function resetSuppliedUsdcLiquidity(address lender, uint256 amount) internal {
+        vm.startPrank(lender);
+        liquidity.withdrawErc20(
+            address(usdcToken),
+            liquidity.cAssetAmountToAssetAmount(
+                address(cUSDCToken),
+                liquidity.getCAssetBalance(lender, address(cUSDCToken))
+            )
+        );
+        usdcToken.approve(address(liquidity), amount);
+        liquidity.supplyErc20(address(usdcToken), amount);
+        vm.stopPrank();
+    }
+
+    function resetSuppliedEthLiquidity(address lender, uint256 amount) internal {
+        vm.startPrank(lender);
+        liquidity.withdrawEth(
+            liquidity.cAssetAmountToAssetAmount(
+                address(cEtherToken),
+                liquidity.getCAssetBalance(lender, address(cEtherToken))
+            )
+        );
+        liquidity.supplyEth{ value: amount }();
         vm.stopPrank();
     }
 }
