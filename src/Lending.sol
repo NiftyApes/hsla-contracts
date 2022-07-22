@@ -605,18 +605,26 @@ contract NiftyApesLending is
             uint256 currentAmountDrawn = loanAuction.amountDrawn;
             loanAuction.amountDrawn += SafeCastUpgradeable.toUint128(slashedDrawAmount);
 
+            uint32 duration = (loanAuction.loanEndTimestamp - loanAuction.loanBeginTimestamp);
+
             if (loanAuction.interestRatePerSecond != 0) {
-                loanAuction.interestRatePerSecond = SafeCastUpgradeable.toUint96(
-                    (uint256(loanAuction.interestRatePerSecond) * loanAuction.amountDrawn) /
-                        currentAmountDrawn
+                uint256 interestBps = _calculateInterestBps(
+                    currentAmountDrawn,
+                    loanAuction.interestRatePerSecond,
+                    duration
+                );
+                loanAuction.interestRatePerSecond = calculateInterestPerSecond(
+                    loanAuction.amountDrawn,
+                    interestBps,
+                    duration
                 );
             }
 
             if (loanAuction.protocolInterestRatePerSecond != 0) {
-                console.log("here");
-                loanAuction.protocolInterestRatePerSecond = SafeCastUpgradeable.toUint96(
-                    (uint256(loanAuction.protocolInterestRatePerSecond) * loanAuction.amountDrawn) /
-                        currentAmountDrawn
+                loanAuction.protocolInterestRatePerSecond = calculateInterestPerSecond(
+                    loanAuction.amountDrawn,
+                    protocolInterestBps,
+                    duration
                 );
             }
 
@@ -742,17 +750,26 @@ contract NiftyApesLending is
             uint256 currentAmountDrawn = loanAuction.amountDrawn;
             loanAuction.amountDrawn -= SafeCastUpgradeable.toUint128(paymentAmount);
 
+            uint32 duration = (loanAuction.loanEndTimestamp - loanAuction.loanBeginTimestamp);
+
             if (loanAuction.interestRatePerSecond != 0) {
-                loanAuction.interestRatePerSecond = SafeCastUpgradeable.toUint96(
-                    (uint256(loanAuction.interestRatePerSecond) * loanAuction.amountDrawn) /
-                        currentAmountDrawn
+                uint256 interestBps = _calculateInterestBps(
+                    currentAmountDrawn,
+                    loanAuction.interestRatePerSecond,
+                    duration
+                );
+                loanAuction.interestRatePerSecond = calculateInterestPerSecond(
+                    loanAuction.amountDrawn,
+                    interestBps,
+                    duration
                 );
             }
 
             if (loanAuction.protocolInterestRatePerSecond != 0) {
-                loanAuction.protocolInterestRatePerSecond = SafeCastUpgradeable.toUint96(
-                    (uint256(loanAuction.protocolInterestRatePerSecond) * loanAuction.amountDrawn) /
-                        currentAmountDrawn
+                loanAuction.protocolInterestRatePerSecond = calculateInterestPerSecond(
+                    loanAuction.amountDrawn,
+                    protocolInterestBps,
+                    duration
                 );
             }
 
@@ -873,12 +890,33 @@ contract NiftyApesLending is
     }
 
     /// @inheritdoc ILending
-    function calculateProtocolInterestPerSecond(uint256 amount, uint256 duration)
-        public
-        view
-        returns (uint96)
-    {
-        return SafeCastUpgradeable.toUint96((amount * protocolInterestBps) / MAX_BPS / duration);
+    function calculateInterestPerSecond(
+        uint256 amount,
+        uint256 interestBps,
+        uint256 duration
+    ) public view returns (uint96) {
+        console.log("amount", amount);
+        console.log("interestBps", interestBps);
+        console.log("duration", duration);
+
+        console.log("(amount * MAX_BPS)", (amount * MAX_BPS));
+        console.log("(amount * MAX_BPS) / interestBps ", (amount * MAX_BPS) / interestBps);
+        console.log(
+            "(amount * MAX_BPS) / interestBps / duration",
+            (amount * MAX_BPS) / interestBps / duration
+        );
+        return SafeCastUpgradeable.toUint96((amount * MAX_BPS) / interestBps / duration);
+    }
+
+    function _calculateInterestBps(
+        uint256 amount,
+        uint96 interestRatePerSecond,
+        uint256 duration
+    ) private view returns (uint256) {
+        console.log("amount", amount);
+        console.log("interestRatePerSecond", interestRatePerSecond);
+        console.log("duration", duration);
+        return (((uint256(interestRatePerSecond) * duration) * MAX_BPS) / amount) + 1;
     }
 
     /// @inheritdoc ILending
@@ -1081,9 +1119,16 @@ contract NiftyApesLending is
         loanAuction.accumulatedLenderInterest = 0;
         loanAuction.accumulatedProtocolInterest = 0;
         loanAuction.interestRatePerSecond = offer.interestRatePerSecond;
-        loanAuction.protocolInterestRatePerSecond = calculateProtocolInterestPerSecond(
+        console.log("createLoan", protocolInterestBps);
+        loanAuction.protocolInterestRatePerSecond = calculateInterestPerSecond(
             offer.amount,
+            protocolInterestBps,
             offer.duration
+        );
+
+        console.log(
+            "createLoan loanAuction.protocolInterestRatePerSecond",
+            loanAuction.protocolInterestRatePerSecond
         );
         loanAuction.slashableLenderInterest = 0;
     }

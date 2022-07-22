@@ -179,6 +179,8 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
 
         _requireOfferNotExpired(offer);
         requireMinimumDuration(offer);
+        // requireSignificantAmount
+        require(offer.amount >= ~uint32(0), "00047");
         _requireOfferCreatorOrLendingContract(offer.creator, msg.sender);
 
         if (offer.lenderOffer) {

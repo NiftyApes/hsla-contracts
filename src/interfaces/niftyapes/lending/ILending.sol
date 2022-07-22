@@ -215,14 +215,15 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         view
         returns (uint256, uint256);
 
-    /// @notice Returns the protocolInterestRatePerSecond for a given set of terms
-    ///         There is a set protocolInterestRateBps so no interestBps value is provided
+    /// @notice Returns the pinterestRatePerSecond for a given set of terms
     /// @param amount The amount of the loan
+    /// @param interestBps in basis points
     /// @param duration The duration of the loan
-    function calculateProtocolInterestPerSecond(uint256 amount, uint256 duration)
-        external
-        view
-        returns (uint96);
+    function calculateInterestPerSecond(
+        uint256 amount,
+        uint256 interestBps,
+        uint256 duration
+    ) external view returns (uint96);
 
     /// @notice Returns the delta between the required accumulated interest and the current accumulated interest
     /// @param nftContractAddress The address of the NFT collection

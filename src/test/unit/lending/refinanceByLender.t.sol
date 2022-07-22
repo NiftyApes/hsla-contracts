@@ -128,8 +128,9 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         assertEq(loanAuction.amount, offer2.amount);
         assertEq(loanAuction.amountDrawn, offer1.amount);
 
-        uint256 calcProtocolInterestPerSecond = lending.calculateProtocolInterestPerSecond(
+        uint256 calcProtocolInterestPerSecond = lending.calculateInterestPerSecond(
             loanAuction.amountDrawn,
+            lending.protocolInterestBps(),
             offer1.duration
         );
 

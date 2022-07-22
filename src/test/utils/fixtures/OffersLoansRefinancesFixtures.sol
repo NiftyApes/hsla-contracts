@@ -81,16 +81,16 @@ contract OffersLoansRefinancesFixtures is
     modifier validateFuzzedOfferFields(FuzzedOfferFields memory fuzzed) {
         // -10 ether to give refinancing lender some wiggle room for fees
         if (fuzzed.randomAsset % 2 == 0) {
-            vm.assume(fuzzed.amount > 0);
+            vm.assume(fuzzed.amount > ~uint32(0));
             vm.assume(fuzzed.amount < (defaultUsdcLiquiditySupplied * 90) / 100);
         } else {
-            vm.assume(fuzzed.amount > 0);
+            vm.assume(fuzzed.amount > ~uint32(0));
             vm.assume(fuzzed.amount < (defaultEthLiquiditySupplied * 90) / 100);
         }
 
         vm.assume(fuzzed.duration > 1 days);
         // to avoid overflow when loanAuction.loanEndTimestamp = _currentTimestamp32() + offer.duration;
-        vm.assume(fuzzed.duration < ~uint32(0) - block.timestamp);
+        vm.assume(fuzzed.duration < (~uint32(0) - block.timestamp));
         vm.assume(fuzzed.expiration > block.timestamp);
         // to avoid "Division or modulo by 0"
         vm.assume(fuzzed.interestRatePerSecond > 0);

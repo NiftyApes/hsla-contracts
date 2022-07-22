@@ -53,20 +53,6 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
                 protocolInterest +
                 amountExtraOnRefinance
         );
-        console.log("offer.amount", offer.amount);
-
-        console.log(
-            "(offer.interestRatePerSecond * secondsBeforeRefinance)",
-            (offer.interestRatePerSecond * secondsBeforeRefinance)
-        );
-        console.log("interestShortfall", interestShortfall);
-        console.log("protocolInterest", protocolInterest);
-
-        console.log("amountExtraOnRefinance", amountExtraOnRefinance);
-
-        console.log("fuzzed.amount", fuzzed.amount);
-
-        console.log("loanAuction.amount", loanAuction.amount);
 
         Offer memory newOffer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
 
@@ -84,8 +70,6 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
             offer.nftContractAddress,
             offer.nftId
         );
-
-        console.log("loanAuction.amount 2", loanAuction2.amount);
 
         assertionsForExecutedRefinance(
             offer,
@@ -191,7 +175,7 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
         uint64 amountExtraOnRefinance
     ) public validateFuzzedOfferFields(fuzzedOffer) {
         vm.startPrank(owner);
-        lending.updateProtocolInterestBps(100);
+        lending.updateProtocolInterestBps(1);
         vm.stopPrank();
 
         vm.assume(amountExtraOnRefinance > 0);
@@ -257,10 +241,18 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
         uint256 interestRatePerSecondAfter = loanAuctionAfter.interestRatePerSecond;
         uint256 protocolInterestRatePerSecondAfter = loanAuctionAfter.protocolInterestRatePerSecond;
 
-        uint256 calculatedInterestRatePerSecond = (uint256(interestRatePerSecondBefore) *
-            loanAuctionAfter.amountDrawn) / amountDrawnBefore;
-        uint96 calculatedProtocolInterestRatePerSecond = lending.calculateProtocolInterestPerSecond(
+        uint256 interestBps = (((interestRatePerSecondBefore *
+            (loanAuctionAfter.loanEndTimestamp - loanAuctionAfter.loanBeginTimestamp)) * MAX_BPS) /
+            loanAuctionBefore.amountDrawn) + 1;
+
+        console.log("interestBps", interestBps);
+
+        uint256 calculatedInterestRatePerSecond = ((loanAuctionAfter.amountDrawn * MAX_BPS) /
+            interestBps /
+            (loanAuctionAfter.loanEndTimestamp - loanAuctionAfter.loanBeginTimestamp));
+        uint96 calculatedProtocolInterestRatePerSecond = lending.calculateInterestPerSecond(
             loanAuctionAfter.amountDrawn,
+            lending.protocolInterestBps(),
             (loanAuctionAfter.loanEndTimestamp - loanAuctionAfter.loanBeginTimestamp)
         );
 
