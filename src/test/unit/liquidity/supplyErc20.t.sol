@@ -16,7 +16,9 @@ contract TestSupplyErc20 is Test, OffersLoansRefinancesFixtures {
 
     function _test_supplyErc20_works(uint128 amount) private {
         if (integration) {
-            daiToken.mint(borrower1, daiToken.balanceOf(daiWhale));
+            vm.startPrank(daiWhale);
+            daiToken.transfer(borrower1, daiToken.balanceOf(daiWhale));
+            vm.stopPrank();
         } else {
             daiToken.mint(borrower1, 3672711471 ether);
         }
