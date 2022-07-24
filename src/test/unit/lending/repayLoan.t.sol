@@ -42,7 +42,7 @@ contract TestRepayLoan is Test, OffersLoansRefinancesFixtures {
 
         if (offer.asset == address(daiToken)) {
             // Give borrower enough to pay interest
-            mintUsdc(borrower1, interest);
+            mintDai(borrower1, interest);
 
             uint256 liquidityBalanceBeforeRepay = cDAIToken.balanceOf(address(liquidity));
 

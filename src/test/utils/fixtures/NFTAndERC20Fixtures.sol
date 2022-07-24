@@ -23,10 +23,9 @@ contract NFTAndERC20Fixtures is Test, UsersFixtures {
 
     bool internal integration = false;
 
-    // need to replace dai whales with DAI whales
-    address constant daiWhale1 = 0x0A59649758aa4d66E25f08Dd01271e891fe52199;
-    address constant daiWhale2 = 0x47ac0Fb4F2D84898e4D9E7b4DaB3C24507a6D503;
-    address constant daiWhale = 0x40ec5B33f54e0E8A33A975908C5BA1c14e5BbbDf;
+    address constant daiWhale1 = 0x6c6Bc977E13Df9b0de53b251522280BB72383700;
+    address constant daiWhale2 = 0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643;
+    address constant daiWhale = 0x5777d92f208679DB4b9778590Fa3CAB3aC9e2168;
 
     address constant compWhale = 0x2775b1c75658Be0F640272CCb8c72ac986009e38;
 
@@ -39,13 +38,12 @@ contract NFTAndERC20Fixtures is Test, UsersFixtures {
             // This catches revert that occurs if env variable not supplied
         }
 
-        // need to replace DAI contracts with DAI
         if (integration) {
-            daiToken = ERC20Mock(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
+            daiToken = ERC20Mock(0x6B175474E89094C44Da98b954EedeAC495271d0F);
 
             compToken = ERC20Mock(0xc00e94Cb662C3520282E6f5717214004A7f26888);
 
-            cDAIToken = CERC20Mock(0x39AA39c021dfbaE8faC545936693aC917d5E7563);
+            cDAIToken = CERC20Mock(0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643);
 
             cEtherToken = CEtherMock(0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5);
 
@@ -60,7 +58,7 @@ contract NFTAndERC20Fixtures is Test, UsersFixtures {
             vm.stopPrank();
         } else {
             daiToken = new ERC20Mock();
-            daiToken.initialize("USD Coin", "DAI");
+            daiToken.initialize("MakerDAO DAI", "DAI");
 
             compToken = new ERC20Mock();
             compToken.initialize("Compound", "COMP");
@@ -73,6 +71,7 @@ contract NFTAndERC20Fixtures is Test, UsersFixtures {
 
             daiToken.mint(lender1, 3672711471 ether);
             daiToken.mint(lender2, 3672711471 ether);
+            console.log("daiToken.balanceOf(lender2)", daiToken.balanceOf(lender2));
             daiToken.mint(SANCTIONED_ADDRESS, 3672711471 ether);
         }
 
@@ -84,7 +83,7 @@ contract NFTAndERC20Fixtures is Test, UsersFixtures {
         mockNft.safeMint(SANCTIONED_ADDRESS, 3);
     }
 
-    function mintUsdc(address recipient, uint256 amount) internal {
+    function mintDai(address recipient, uint256 amount) internal {
         if (integration) {
             vm.startPrank(daiWhale);
             daiToken.transfer(recipient, amount);

@@ -39,8 +39,8 @@ contract DeployNiftyApesScript is Script {
         sigLendingAuction.updateLendingContractAddress(address(lendingAuction));
 
         // Rinkeby Addresses
-        address daiToken = 0xc7AD46e0b8a400Bb3C915120d284AafbA8fc4735;
-        address cDAIToken = 0x6D7F0754FFeb405d23C51CE938289d4835bE3b14;
+        address daiToken = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
+        address cDAIToken = 0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643;
         address ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
         address cEtherToken = 0xd6801a1DfFCd0a410336Ef88DeF4320D6DF1883e;
 

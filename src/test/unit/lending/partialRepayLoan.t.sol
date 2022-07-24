@@ -48,7 +48,7 @@ contract TestPartialRepayLoan is Test, OffersLoansRefinancesFixtures {
         );
 
         if (offer.asset == address(daiToken)) {
-            mintUsdc(borrower1, 1);
+            mintDai(borrower1, 1);
 
             vm.startPrank(borrower1);
             daiToken.increaseAllowance(address(liquidity), ~uint256(0));

@@ -309,7 +309,7 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
 
         // set up borrower repay full amount
         vm.startPrank(borrower1);
-        mintUsdc(borrower1, ~uint128(0));
+        mintDai(borrower1, ~uint128(0));
         daiToken.increaseAllowance(address(liquidity), ~uint256(0));
 
         // most important part here is the amount repaid, the last argument to the event

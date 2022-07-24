@@ -22,11 +22,8 @@ contract LenderLiquidityFixtures is Test, NiftyApesDeployment {
 
         vm.startPrank(lender1);
         liquidity.supplyEth{ value: defaultEthLiquiditySupplied }();
-
         daiToken.approve(address(liquidity), daiToken.balanceOf(lender1));
-
         liquidity.supplyErc20(address(daiToken), daiToken.balanceOf(lender1));
-
         vm.stopPrank();
 
         vm.startPrank(lender2);
