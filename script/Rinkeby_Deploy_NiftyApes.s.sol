@@ -39,17 +39,17 @@ contract DeployNiftyApesScript is Script {
         sigLendingAuction.updateLendingContractAddress(address(lendingAuction));
 
         // Rinkeby Addresses
-        address usdcToken = 0xeb8f08a975Ab53E34D8a0330E0D34de942C95926;
-        address cUSDCToken = 0x5B281A6DdA0B271e91ae35DE655Ad301C976edb1;
+        address daiToken = 0xc7AD46e0b8a400Bb3C915120d284AafbA8fc4735;
+        address cDAIToken = 0x6D7F0754FFeb405d23C51CE938289d4835bE3b14;
         address ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
         address cEtherToken = 0xd6801a1DfFCd0a410336Ef88DeF4320D6DF1883e;
 
-        // USDC
-        liquidityProviders.setCAssetAddress(usdcToken, cUSDCToken);
+        // DAI
+        liquidityProviders.setCAssetAddress(daiToken, cDAIToken);
 
-        uint256 cUSDCAmount = liquidityProviders.assetAmountToCAssetAmount(usdcToken, 500000);
+        uint256 cDAIAmount = liquidityProviders.assetAmountToCAssetAmount(daiToken, 500000);
 
-        liquidityProviders.setMaxCAssetBalance(cUSDCToken, cUSDCAmount);
+        liquidityProviders.setMaxCAssetBalance(cDAIToken, cDAIAmount);
 
         // ETH
         liquidityProviders.setCAssetAddress(ETH_ADDRESS, cEtherToken);

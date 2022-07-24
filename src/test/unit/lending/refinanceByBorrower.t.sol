@@ -45,10 +45,10 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
 
         Offer memory newOffer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
 
-        uint256 beforeRefinanceLenderBalance = assetBalance(lender1, address(usdcToken));
+        uint256 beforeRefinanceLenderBalance = assetBalance(lender1, address(daiToken));
 
-        if (offer.asset == address(usdcToken)) {
-            beforeRefinanceLenderBalance = assetBalance(lender1, address(usdcToken));
+        if (offer.asset == address(daiToken)) {
+            beforeRefinanceLenderBalance = assetBalance(lender1, address(daiToken));
         } else {
             beforeRefinanceLenderBalance = assetBalance(lender1, ETH_ADDRESS);
         }
@@ -66,8 +66,8 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
 
     function assertionsForExecutedLoan(Offer memory offer) private {
         // borrower has money
-        if (offer.asset == address(usdcToken)) {
-            assertEq(usdcToken.balanceOf(borrower1), offer.amount);
+        if (offer.asset == address(daiToken)) {
+            assertEq(daiToken.balanceOf(borrower1), offer.amount);
         } else {
             assertEq(borrower1.balance, defaultInitialEthBalance + offer.amount);
         }
@@ -85,14 +85,14 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         uint256 beforeRefinanceLenderBalance
     ) private {
         // lender1 has money
-        if (offer.asset == address(usdcToken)) {
+        if (offer.asset == address(daiToken)) {
             assertBetween(
                 beforeRefinanceLenderBalance +
                     amountDrawn +
                     (offer.interestRatePerSecond * secondsBeforeRefinance) +
                     interestShortfall,
-                assetBalance(lender1, address(usdcToken)),
-                assetBalancePlusOneCToken(lender1, address(usdcToken))
+                assetBalance(lender1, address(daiToken)),
+                assetBalancePlusOneCToken(lender1, address(daiToken))
             );
         } else {
             assertBetween(

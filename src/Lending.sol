@@ -894,7 +894,11 @@ contract NiftyApesLending is
         uint256 amount,
         uint256 interestBps,
         uint256 duration
-    ) public pure returns (uint96) {
+    ) public view returns (uint96) {
+        console.log("amount", amount);
+        console.log("interestBps", interestBps);
+        console.log("duration", duration);
+
         // account for 0 protocolInterestBps
         if (interestBps == 0) {
             return 0;

@@ -12,8 +12,8 @@ contract TestRepayLoan is Test, OffersLoansRefinancesFixtures {
 
     function assertionsForExecutedLoan(Offer memory offer) private {
         // borrower has money
-        if (offer.asset == address(usdcToken)) {
-            assertEq(usdcToken.balanceOf(borrower1), offer.amount);
+        if (offer.asset == address(daiToken)) {
+            assertEq(daiToken.balanceOf(borrower1), offer.amount);
         } else {
             assertEq(borrower1.balance, defaultInitialEthBalance + offer.amount);
         }
@@ -40,14 +40,14 @@ contract TestRepayLoan is Test, OffersLoansRefinancesFixtures {
 
         uint256 interest = offer.interestRatePerSecond * secondsBeforeRepayment;
 
-        if (offer.asset == address(usdcToken)) {
+        if (offer.asset == address(daiToken)) {
             // Give borrower enough to pay interest
             mintUsdc(borrower1, interest);
 
-            uint256 liquidityBalanceBeforeRepay = cUSDCToken.balanceOf(address(liquidity));
+            uint256 liquidityBalanceBeforeRepay = cDAIToken.balanceOf(address(liquidity));
 
             vm.startPrank(borrower1);
-            usdcToken.increaseAllowance(address(liquidity), ~uint256(0));
+            daiToken.increaseAllowance(address(liquidity), ~uint256(0));
             lending.repayLoan(
                 defaultFixedOfferFields.nftContractAddress,
                 defaultFixedOfferFields.nftId
@@ -56,19 +56,19 @@ contract TestRepayLoan is Test, OffersLoansRefinancesFixtures {
 
             // Liquidity contract cToken balance
             assertEq(
-                cUSDCToken.balanceOf(address(liquidity)),
+                cDAIToken.balanceOf(address(liquidity)),
                 liquidityBalanceBeforeRepay +
-                    liquidity.assetAmountToCAssetAmount(address(usdcToken), offer.amount + interest)
+                    liquidity.assetAmountToCAssetAmount(address(daiToken), offer.amount + interest)
             );
 
             // Borrower back to 0
-            assertEq(usdcToken.balanceOf(address(borrower1)), 0);
+            assertEq(daiToken.balanceOf(address(borrower1)), 0);
 
             // Lender back with interest
             assertCloseEnough(
                 defaultUsdcLiquiditySupplied + interest,
-                assetBalance(lender1, address(usdcToken)),
-                assetBalancePlusOneCToken(lender1, address(usdcToken))
+                assetBalance(lender1, address(daiToken)),
+                assetBalancePlusOneCToken(lender1, address(daiToken))
             );
         } else {
             uint256 liquidityBalanceBeforeRepay = cEtherToken.balanceOf(address(liquidity));

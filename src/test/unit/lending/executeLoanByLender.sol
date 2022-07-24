@@ -13,8 +13,8 @@ contract TestExecuteLoanByLender is Test, OffersLoansRefinancesFixtures {
 
     function assertionsForExecutedLoan(Offer memory offer) private {
         // borrower has money
-        if (offer.asset == address(usdcToken)) {
-            assertEq(usdcToken.balanceOf(borrower1), offer.amount);
+        if (offer.asset == address(daiToken)) {
+            assertEq(daiToken.balanceOf(borrower1), offer.amount);
         } else {
             assertEq(borrower1.balance, defaultInitialEthBalance + offer.amount);
         }

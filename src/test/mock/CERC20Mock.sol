@@ -17,7 +17,7 @@ contract CERC20Mock is ERC20Upgradeable, ICERC20 {
     uint256 exchangeRateCurrentValue;
 
     function initialize(ERC20Mock _underlying) public initializer {
-        ERC20Upgradeable.__ERC20_init("cUSDC", "cUSD");
+        ERC20Upgradeable.__ERC20_init("cDAI", "cUSD");
         underlying = _underlying;
         exchangeRateCurrentValue = 1;
     }

@@ -15,8 +15,8 @@ import "../mock/ERC20Mock.sol";
 
 contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
     NiftyApesLiquidity liquidityProviders;
-    ERC20Mock usdcToken;
-    CERC20Mock cUSDCToken;
+    ERC20Mock daiToken;
+    CERC20Mock cDAIToken;
     CEtherMock cEtherToken;
     address compContractAddress = 0xbbEB7c67fa3cfb40069D19E598713239497A3CA5;
 
@@ -33,12 +33,12 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         liquidityProviders = new NiftyApesLiquidity();
         liquidityProviders.initialize(compContractAddress);
 
-        usdcToken = new ERC20Mock();
-        usdcToken.initialize("USD Coin", "USDC");
-        cUSDCToken = new CERC20Mock();
-        cUSDCToken.initialize(usdcToken);
-        liquidityProviders.setCAssetAddress(address(usdcToken), address(cUSDCToken));
-        liquidityProviders.setMaxCAssetBalance(address(cUSDCToken), 2**256 - 1);
+        daiToken = new ERC20Mock();
+        daiToken.initialize("USD Coin", "DAI");
+        cDAIToken = new CERC20Mock();
+        cDAIToken.initialize(daiToken);
+        liquidityProviders.setCAssetAddress(address(daiToken), address(cDAIToken));
+        liquidityProviders.setMaxCAssetBalance(address(cDAIToken), 2**256 - 1);
 
         if (block.number == 1) {
             hevm.startPrank(liquidityProviders.owner());
@@ -58,96 +58,96 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
     }
 
     function testSupplyErc20_supply_erc20() public {
-        assertEq(usdcToken.balanceOf(address(this)), 0);
-        assertEq(cUSDCToken.balanceOf(address(this)), 0);
+        assertEq(daiToken.balanceOf(address(this)), 0);
+        assertEq(cDAIToken.balanceOf(address(this)), 0);
 
-        usdcToken.mint(address(this), 1);
-        usdcToken.approve(address(liquidityProviders), 1);
+        daiToken.mint(address(this), 1);
+        daiToken.approve(address(liquidityProviders), 1);
 
-        assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
-        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 0);
+        assertEq(daiToken.balanceOf(address(liquidityProviders)), 0);
+        assertEq(cDAIToken.balanceOf(address(liquidityProviders)), 0);
 
-        uint256 cTokensMinted = liquidityProviders.supplyErc20(address(usdcToken), 1);
+        uint256 cTokensMinted = liquidityProviders.supplyErc20(address(daiToken), 1);
         assertEq(cTokensMinted, 1 ether);
 
-        assertEq(liquidityProviders.getCAssetBalance(address(this), address(cUSDCToken)), 1 ether);
-        assertEq(usdcToken.balanceOf(address(this)), 0);
-        assertEq(cUSDCToken.balanceOf(address(this)), 0);
+        assertEq(liquidityProviders.getCAssetBalance(address(this), address(cDAIToken)), 1 ether);
+        assertEq(daiToken.balanceOf(address(this)), 0);
+        assertEq(cDAIToken.balanceOf(address(this)), 0);
 
-        assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
-        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 1 ether);
+        assertEq(daiToken.balanceOf(address(liquidityProviders)), 0);
+        assertEq(cDAIToken.balanceOf(address(liquidityProviders)), 1 ether);
     }
 
     function testCannotSupplyErc20_amount_must_be_greater_than_0() public {
-        usdcToken.mint(address(this), 2);
-        usdcToken.approve(address(liquidityProviders), 2);
+        daiToken.mint(address(this), 2);
+        daiToken.approve(address(liquidityProviders), 2);
 
         hevm.expectRevert("00045");
 
-        liquidityProviders.supplyErc20(address(usdcToken), 0);
+        liquidityProviders.supplyErc20(address(daiToken), 0);
     }
 
     function testCannotSupplyErc20_maxCAsset_hit() public {
-        usdcToken.mint(address(this), 2);
-        usdcToken.approve(address(liquidityProviders), 2);
+        daiToken.mint(address(this), 2);
+        daiToken.approve(address(liquidityProviders), 2);
 
-        liquidityProviders.setMaxCAssetBalance(address(cUSDCToken), 1 ether);
+        liquidityProviders.setMaxCAssetBalance(address(cDAIToken), 1 ether);
 
-        liquidityProviders.supplyErc20(address(usdcToken), 1);
+        liquidityProviders.supplyErc20(address(daiToken), 1);
 
         hevm.expectRevert("00044");
 
-        liquidityProviders.supplyErc20(address(usdcToken), 1);
+        liquidityProviders.supplyErc20(address(daiToken), 1);
     }
 
     function testSupplyErc20_supply_erc20_with_event() public {
-        usdcToken.mint(address(this), 1);
-        usdcToken.approve(address(liquidityProviders), 1);
+        daiToken.mint(address(this), 1);
+        daiToken.approve(address(liquidityProviders), 1);
 
         hevm.expectEmit(true, false, false, true);
 
-        emit Erc20Supplied(address(this), address(usdcToken), 1, 1 ether);
+        emit Erc20Supplied(address(this), address(daiToken), 1, 1 ether);
 
-        liquidityProviders.supplyErc20(address(usdcToken), 1);
+        liquidityProviders.supplyErc20(address(daiToken), 1);
     }
 
     function testSupplyErc20_supply_erc20_different_exchange_rate() public {
-        usdcToken.mint(address(this), 1);
-        usdcToken.approve(address(liquidityProviders), 1);
+        daiToken.mint(address(this), 1);
+        daiToken.approve(address(liquidityProviders), 1);
 
-        cUSDCToken.setExchangeRateCurrent(2);
+        cDAIToken.setExchangeRateCurrent(2);
 
-        uint256 cTokensMinted = liquidityProviders.supplyErc20(address(usdcToken), 1);
+        uint256 cTokensMinted = liquidityProviders.supplyErc20(address(daiToken), 1);
         assertEq(cTokensMinted, 0.5 ether);
 
         assertEq(
-            liquidityProviders.getCAssetBalance(address(this), address(cUSDCToken)),
+            liquidityProviders.getCAssetBalance(address(this), address(cDAIToken)),
             0.5 ether
         );
 
-        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 0.5 ether);
+        assertEq(cDAIToken.balanceOf(address(liquidityProviders)), 0.5 ether);
     }
 
     function testCannotSupplyErc20_mint_fails() public {
-        usdcToken.mint(address(this), 1);
-        usdcToken.approve(address(liquidityProviders), 1);
+        daiToken.mint(address(this), 1);
+        daiToken.approve(address(liquidityProviders), 1);
 
-        cUSDCToken.setMintFail(true);
+        cDAIToken.setMintFail(true);
 
         hevm.expectRevert("00037");
 
-        liquidityProviders.supplyErc20(address(usdcToken), 1);
+        liquidityProviders.supplyErc20(address(daiToken), 1);
     }
 
     function testCannotSupplyErc20_if_sanctioned() public {
-        usdcToken.mint(address(this), 1);
-        usdcToken.approve(address(liquidityProviders), 1);
+        daiToken.mint(address(this), 1);
+        daiToken.approve(address(liquidityProviders), 1);
 
         hevm.expectRevert("00017");
 
         hevm.startPrank(SANCTIONED_ADDRESS);
 
-        liquidityProviders.supplyErc20(address(usdcToken), 1);
+        liquidityProviders.supplyErc20(address(daiToken), 1);
     }
 
     function testCannotSupplyCErc20_asset_not_whitelisted() public {
@@ -156,82 +156,82 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
     }
 
     function testSupplyCErc20_supply_cerc20() public {
-        usdcToken.mint(address(this), 1);
+        daiToken.mint(address(this), 1);
 
-        cUSDCToken.mint(1);
-        cUSDCToken.approve(address(liquidityProviders), 1);
+        cDAIToken.mint(1);
+        cDAIToken.approve(address(liquidityProviders), 1);
 
-        liquidityProviders.supplyCErc20(address(cUSDCToken), 1);
+        liquidityProviders.supplyCErc20(address(cDAIToken), 1);
 
-        assertEq(liquidityProviders.getCAssetBalance(address(this), address(cUSDCToken)), 1);
+        assertEq(liquidityProviders.getCAssetBalance(address(this), address(cDAIToken)), 1);
 
-        assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
-        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 1);
+        assertEq(daiToken.balanceOf(address(liquidityProviders)), 0);
+        assertEq(cDAIToken.balanceOf(address(liquidityProviders)), 1);
     }
 
     function testSupplyCErc20_supply_cerc20_with_event() public {
-        usdcToken.mint(address(this), 1);
+        daiToken.mint(address(this), 1);
 
-        cUSDCToken.mint(1);
-        cUSDCToken.approve(address(liquidityProviders), 1);
+        cDAIToken.mint(1);
+        cDAIToken.approve(address(liquidityProviders), 1);
 
         hevm.expectEmit(true, false, false, true);
 
-        emit CErc20Supplied(address(this), address(cUSDCToken), 1);
+        emit CErc20Supplied(address(this), address(cDAIToken), 1);
 
-        liquidityProviders.supplyCErc20(address(cUSDCToken), 1);
+        liquidityProviders.supplyCErc20(address(cDAIToken), 1);
     }
 
     function testCannotSupplyCErc20_amount_must_be_greater_than_0() public {
-        usdcToken.mint(address(this), 2);
+        daiToken.mint(address(this), 2);
 
-        cUSDCToken.mint(2);
-        cUSDCToken.approve(address(liquidityProviders), 2 ether);
+        cDAIToken.mint(2);
+        cDAIToken.approve(address(liquidityProviders), 2 ether);
 
         hevm.expectRevert("00045");
 
-        liquidityProviders.supplyCErc20(address(cUSDCToken), 0 ether);
+        liquidityProviders.supplyCErc20(address(cDAIToken), 0 ether);
     }
 
     function testCannotSupplyCErc20_maxCAsset_hit() public {
-        usdcToken.mint(address(this), 2);
+        daiToken.mint(address(this), 2);
 
-        cUSDCToken.mint(2);
-        cUSDCToken.approve(address(liquidityProviders), 2 ether);
+        cDAIToken.mint(2);
+        cDAIToken.approve(address(liquidityProviders), 2 ether);
 
-        liquidityProviders.setMaxCAssetBalance(address(cUSDCToken), 1 ether);
+        liquidityProviders.setMaxCAssetBalance(address(cDAIToken), 1 ether);
 
-        liquidityProviders.supplyCErc20(address(cUSDCToken), 1 ether);
+        liquidityProviders.supplyCErc20(address(cDAIToken), 1 ether);
 
         hevm.expectRevert("00044");
 
-        liquidityProviders.supplyCErc20(address(cUSDCToken), 1 ether);
+        liquidityProviders.supplyCErc20(address(cDAIToken), 1 ether);
     }
 
     function testCannotSupplyCErc20_transfer_from_fails() public {
-        usdcToken.mint(address(this), 1);
+        daiToken.mint(address(this), 1);
 
-        cUSDCToken.mint(1);
-        cUSDCToken.approve(address(liquidityProviders), 1);
+        cDAIToken.mint(1);
+        cDAIToken.approve(address(liquidityProviders), 1);
 
-        cUSDCToken.setTransferFromFail(true);
+        cDAIToken.setTransferFromFail(true);
 
         hevm.expectRevert("SafeERC20: ERC20 operation did not succeed");
 
-        liquidityProviders.supplyCErc20(address(cUSDCToken), 1);
+        liquidityProviders.supplyCErc20(address(cDAIToken), 1);
     }
 
     function testCannotSupplyCErc20_if_sanctioned() public {
-        usdcToken.mint(address(this), 1);
+        daiToken.mint(address(this), 1);
 
-        cUSDCToken.mint(1);
-        cUSDCToken.approve(address(liquidityProviders), 1);
+        cDAIToken.mint(1);
+        cDAIToken.approve(address(liquidityProviders), 1);
 
         hevm.expectRevert("00017");
 
         hevm.startPrank(SANCTIONED_ADDRESS);
 
-        liquidityProviders.supplyCErc20(address(cUSDCToken), 1);
+        liquidityProviders.supplyCErc20(address(cDAIToken), 1);
     }
 
     function testCannotWithdrawErc20_asset_not_whitelisted() public {
@@ -241,69 +241,69 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
 
     function testWithdrawErc20_works() public {
         hevm.startPrank(NOT_ADMIN);
-        usdcToken.mint(NOT_ADMIN, 1);
-        usdcToken.approve(address(liquidityProviders), 1);
-        liquidityProviders.supplyErc20(address(usdcToken), 1);
+        daiToken.mint(NOT_ADMIN, 1);
+        daiToken.approve(address(liquidityProviders), 1);
+        liquidityProviders.supplyErc20(address(daiToken), 1);
 
-        uint256 cTokensBurnt = liquidityProviders.withdrawErc20(address(usdcToken), 1);
+        uint256 cTokensBurnt = liquidityProviders.withdrawErc20(address(daiToken), 1);
         assertEq(cTokensBurnt, 1 ether);
 
-        assertEq(liquidityProviders.getCAssetBalance(NOT_ADMIN, address(cUSDCToken)), 0);
+        assertEq(liquidityProviders.getCAssetBalance(NOT_ADMIN, address(cDAIToken)), 0);
 
-        assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
-        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 0);
+        assertEq(daiToken.balanceOf(address(liquidityProviders)), 0);
+        assertEq(cDAIToken.balanceOf(address(liquidityProviders)), 0);
 
-        assertEq(usdcToken.balanceOf(NOT_ADMIN), 1);
+        assertEq(daiToken.balanceOf(NOT_ADMIN), 1);
     }
 
     function testWithdrawErc20_works_owner() public {
-        usdcToken.mint(address(this), 100);
-        usdcToken.approve(address(liquidityProviders), 100);
-        liquidityProviders.supplyErc20(address(usdcToken), 100);
+        daiToken.mint(address(this), 100);
+        daiToken.approve(address(liquidityProviders), 100);
+        liquidityProviders.supplyErc20(address(daiToken), 100);
 
-        uint256 cTokensBurnt = liquidityProviders.withdrawErc20(address(usdcToken), 99);
+        uint256 cTokensBurnt = liquidityProviders.withdrawErc20(address(daiToken), 99);
         assertEq(cTokensBurnt, 100 ether);
 
-        assertEq(liquidityProviders.getCAssetBalance(address(this), address(cUSDCToken)), 0);
+        assertEq(liquidityProviders.getCAssetBalance(address(this), address(cDAIToken)), 0);
 
-        assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
-        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 0);
+        assertEq(daiToken.balanceOf(address(liquidityProviders)), 0);
+        assertEq(cDAIToken.balanceOf(address(liquidityProviders)), 0);
 
-        assertEq(usdcToken.balanceOf(address(this)), 99);
-        assertEq(usdcToken.balanceOf(address(0x252de94Ae0F07fb19112297F299f8c9Cc10E28a6)), 1);
+        assertEq(daiToken.balanceOf(address(this)), 99);
+        assertEq(daiToken.balanceOf(address(0x252de94Ae0F07fb19112297F299f8c9Cc10E28a6)), 1);
     }
 
     function testWithdrawErc20_works_event() public {
         hevm.startPrank(NOT_ADMIN);
-        usdcToken.mint(NOT_ADMIN, 1);
-        usdcToken.approve(address(liquidityProviders), 1);
-        liquidityProviders.supplyErc20(address(usdcToken), 1);
+        daiToken.mint(NOT_ADMIN, 1);
+        daiToken.approve(address(liquidityProviders), 1);
+        liquidityProviders.supplyErc20(address(daiToken), 1);
 
         hevm.expectEmit(true, false, false, true);
 
-        emit Erc20Withdrawn(NOT_ADMIN, address(usdcToken), 1, 1 ether);
+        emit Erc20Withdrawn(NOT_ADMIN, address(daiToken), 1, 1 ether);
 
-        liquidityProviders.withdrawErc20(address(usdcToken), 1);
+        liquidityProviders.withdrawErc20(address(daiToken), 1);
     }
 
     function testCannotWithdrawErc20_redeemUnderlyingFails() public {
         hevm.startPrank(NOT_ADMIN);
-        usdcToken.mint(NOT_ADMIN, 1);
-        usdcToken.approve(address(liquidityProviders), 1);
-        liquidityProviders.supplyErc20(address(usdcToken), 1);
+        daiToken.mint(NOT_ADMIN, 1);
+        daiToken.approve(address(liquidityProviders), 1);
+        liquidityProviders.supplyErc20(address(daiToken), 1);
 
-        cUSDCToken.setRedeemUnderlyingFail(true);
+        cDAIToken.setRedeemUnderlyingFail(true);
 
         hevm.expectRevert("00038");
 
-        liquidityProviders.withdrawErc20(address(usdcToken), 1);
+        liquidityProviders.withdrawErc20(address(daiToken), 1);
     }
 
     function testCannotWithdrawErc20_withdraw_more_than_account_has() public {
         hevm.startPrank(NOT_ADMIN);
-        usdcToken.mint(NOT_ADMIN, 1);
-        usdcToken.approve(address(liquidityProviders), 1);
-        liquidityProviders.supplyErc20(address(usdcToken), 1);
+        daiToken.mint(NOT_ADMIN, 1);
+        daiToken.approve(address(liquidityProviders), 1);
+        liquidityProviders.supplyErc20(address(daiToken), 1);
         hevm.stopPrank();
 
         // deposit some funds from a different address
@@ -312,55 +312,55 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
             address(0x0000000000000000000000000000000000000001)
         );
 
-        usdcToken.mint(address(0x0000000000000000000000000000000000000001), 1);
-        usdcToken.approve(address(liquidityProviders), 1);
-        liquidityProviders.supplyErc20(address(usdcToken), 1);
+        daiToken.mint(address(0x0000000000000000000000000000000000000001), 1);
+        daiToken.approve(address(liquidityProviders), 1);
+        liquidityProviders.supplyErc20(address(daiToken), 1);
 
         hevm.stopPrank();
 
         hevm.startPrank(NOT_ADMIN);
         hevm.expectRevert("00034");
 
-        liquidityProviders.withdrawErc20(address(usdcToken), 2);
+        liquidityProviders.withdrawErc20(address(daiToken), 2);
         hevm.stopPrank();
     }
 
     function testCannotWithdrawErc20_underlying_transfer_fails() public {
         hevm.startPrank(NOT_ADMIN);
-        usdcToken.mint(NOT_ADMIN, 1);
-        usdcToken.approve(address(liquidityProviders), 1);
-        liquidityProviders.supplyErc20(address(usdcToken), 1);
+        daiToken.mint(NOT_ADMIN, 1);
+        daiToken.approve(address(liquidityProviders), 1);
+        liquidityProviders.supplyErc20(address(daiToken), 1);
 
-        usdcToken.setTransferFail(true);
+        daiToken.setTransferFail(true);
 
         hevm.expectRevert("SafeERC20: ERC20 operation did not succeed");
 
-        liquidityProviders.withdrawErc20(address(usdcToken), 1);
+        liquidityProviders.withdrawErc20(address(daiToken), 1);
     }
 
     function testCannotWithdrawErc20_if_sanctioned() public {
-        usdcToken.mint(SANCTIONED_ADDRESS, 1);
+        daiToken.mint(SANCTIONED_ADDRESS, 1);
 
         hevm.prank(SANCTIONED_ADDRESS);
-        usdcToken.approve(address(liquidityProviders), 1);
+        daiToken.approve(address(liquidityProviders), 1);
 
         liquidityProviders.pauseSanctions();
 
         hevm.prank(SANCTIONED_ADDRESS);
-        liquidityProviders.supplyErc20(address(usdcToken), 1);
+        liquidityProviders.supplyErc20(address(daiToken), 1);
 
         liquidityProviders.unpauseSanctions();
 
         hevm.expectRevert("00017");
         hevm.prank(SANCTIONED_ADDRESS);
-        liquidityProviders.withdrawErc20(address(usdcToken), 1 ether);
+        liquidityProviders.withdrawErc20(address(daiToken), 1 ether);
     }
 
     function testWithdrawErc20_regen_collective_event_emits_when_owner() public {
         hevm.startPrank(liquidityProviders.owner());
-        usdcToken.mint(liquidityProviders.owner(), 100);
-        usdcToken.approve(address(liquidityProviders), 100);
-        liquidityProviders.supplyErc20(address(usdcToken), 100);
+        daiToken.mint(liquidityProviders.owner(), 100);
+        daiToken.approve(address(liquidityProviders), 100);
+        liquidityProviders.supplyErc20(address(daiToken), 100);
         hevm.stopPrank();
 
         hevm.warp(block.timestamp + 1 weeks);
@@ -369,14 +369,14 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
 
         emit PercentForRegen(
             liquidityProviders.regenCollectiveAddress(),
-            address(usdcToken),
+            address(daiToken),
             1,
             100000000000000000
         );
 
         hevm.startPrank(liquidityProviders.owner());
 
-        liquidityProviders.withdrawErc20(address(usdcToken), 100);
+        liquidityProviders.withdrawErc20(address(daiToken), 100);
     }
 
     function testCannotWithdrawCErc20_no_asset_balance() public {
@@ -385,59 +385,59 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
     }
 
     function testWithdrawCErc20_works_owner() public {
-        usdcToken.mint(address(this), 100);
-        usdcToken.approve(address(liquidityProviders), 100);
-        liquidityProviders.supplyErc20(address(usdcToken), 100);
+        daiToken.mint(address(this), 100);
+        daiToken.approve(address(liquidityProviders), 100);
+        liquidityProviders.supplyErc20(address(daiToken), 100);
 
-        uint256 cTokensBurnt = liquidityProviders.withdrawCErc20(address(cUSDCToken), 99);
+        uint256 cTokensBurnt = liquidityProviders.withdrawCErc20(address(cDAIToken), 99);
         assertEq(cTokensBurnt, 100 ether);
 
-        assertEq(liquidityProviders.getCAssetBalance(address(this), address(cUSDCToken)), 0);
+        assertEq(liquidityProviders.getCAssetBalance(address(this), address(cDAIToken)), 0);
 
-        assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
-        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 0);
+        assertEq(daiToken.balanceOf(address(liquidityProviders)), 0);
+        assertEq(cDAIToken.balanceOf(address(liquidityProviders)), 0);
 
-        assertEq(cUSDCToken.balanceOf(address(this)), 99 ether);
+        assertEq(cDAIToken.balanceOf(address(this)), 99 ether);
         assertEq(
-            cUSDCToken.balanceOf(address(0x252de94Ae0F07fb19112297F299f8c9Cc10E28a6)),
+            cDAIToken.balanceOf(address(0x252de94Ae0F07fb19112297F299f8c9Cc10E28a6)),
             1 ether
         );
     }
 
     function testWithdrawCErc20_works() public {
         hevm.startPrank(NOT_ADMIN);
-        usdcToken.mint(NOT_ADMIN, 1);
-        usdcToken.approve(address(liquidityProviders), 1);
-        liquidityProviders.supplyErc20(address(usdcToken), 1);
+        daiToken.mint(NOT_ADMIN, 1);
+        daiToken.approve(address(liquidityProviders), 1);
+        liquidityProviders.supplyErc20(address(daiToken), 1);
 
-        liquidityProviders.withdrawCErc20(address(cUSDCToken), 1 ether);
+        liquidityProviders.withdrawCErc20(address(cDAIToken), 1 ether);
 
-        assertEq(liquidityProviders.getCAssetBalance(NOT_ADMIN, address(cUSDCToken)), 0);
+        assertEq(liquidityProviders.getCAssetBalance(NOT_ADMIN, address(cDAIToken)), 0);
 
-        assertEq(usdcToken.balanceOf(address(liquidityProviders)), 0);
-        assertEq(cUSDCToken.balanceOf(address(liquidityProviders)), 0);
+        assertEq(daiToken.balanceOf(address(liquidityProviders)), 0);
+        assertEq(cDAIToken.balanceOf(address(liquidityProviders)), 0);
 
-        assertEq(cUSDCToken.balanceOf(NOT_ADMIN), 1 ether);
+        assertEq(cDAIToken.balanceOf(NOT_ADMIN), 1 ether);
     }
 
     function testWithdrawCErc20_works_event() public {
         hevm.startPrank(NOT_ADMIN);
-        usdcToken.mint(NOT_ADMIN, 1);
-        usdcToken.approve(address(liquidityProviders), 1);
-        liquidityProviders.supplyErc20(address(usdcToken), 1);
+        daiToken.mint(NOT_ADMIN, 1);
+        daiToken.approve(address(liquidityProviders), 1);
+        liquidityProviders.supplyErc20(address(daiToken), 1);
 
         hevm.expectEmit(true, false, false, true);
 
-        emit CErc20Withdrawn(NOT_ADMIN, address(cUSDCToken), 1 ether);
+        emit CErc20Withdrawn(NOT_ADMIN, address(cDAIToken), 1 ether);
 
-        liquidityProviders.withdrawCErc20(address(cUSDCToken), 1 ether);
+        liquidityProviders.withdrawCErc20(address(cDAIToken), 1 ether);
     }
 
     function testCannotWithdrawCErc20_withdraw_more_than_account_has() public {
         hevm.startPrank(NOT_ADMIN);
-        usdcToken.mint(NOT_ADMIN, 1);
-        usdcToken.approve(address(liquidityProviders), 1);
-        liquidityProviders.supplyErc20(address(usdcToken), 1);
+        daiToken.mint(NOT_ADMIN, 1);
+        daiToken.approve(address(liquidityProviders), 1);
+        liquidityProviders.supplyErc20(address(daiToken), 1);
         hevm.stopPrank();
 
         // deposit some funds from a different address
@@ -446,51 +446,51 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
             address(0x0000000000000000000000000000000000000001)
         );
 
-        usdcToken.mint(address(0x0000000000000000000000000000000000000001), 1);
-        usdcToken.approve(address(liquidityProviders), 1);
-        liquidityProviders.supplyErc20(address(usdcToken), 1);
+        daiToken.mint(address(0x0000000000000000000000000000000000000001), 1);
+        daiToken.approve(address(liquidityProviders), 1);
+        liquidityProviders.supplyErc20(address(daiToken), 1);
 
         hevm.expectRevert("00034");
 
-        liquidityProviders.withdrawCErc20(address(cUSDCToken), 2 ether);
+        liquidityProviders.withdrawCErc20(address(cDAIToken), 2 ether);
     }
 
     function testCannotWithdrawCErc20_transfer_fails() public {
         hevm.startPrank(NOT_ADMIN);
-        usdcToken.mint(NOT_ADMIN, 1);
-        usdcToken.approve(address(liquidityProviders), 1);
-        liquidityProviders.supplyErc20(address(usdcToken), 1);
+        daiToken.mint(NOT_ADMIN, 1);
+        daiToken.approve(address(liquidityProviders), 1);
+        liquidityProviders.supplyErc20(address(daiToken), 1);
 
-        cUSDCToken.setTransferFail(true);
+        cDAIToken.setTransferFail(true);
 
         hevm.expectRevert("SafeERC20: ERC20 operation did not succeed");
 
-        liquidityProviders.withdrawCErc20(address(cUSDCToken), 1 ether);
+        liquidityProviders.withdrawCErc20(address(cDAIToken), 1 ether);
     }
 
     function testCannotWithdrawCErc20_if_sanctioned() public {
-        usdcToken.mint(SANCTIONED_ADDRESS, 1);
+        daiToken.mint(SANCTIONED_ADDRESS, 1);
 
         hevm.prank(SANCTIONED_ADDRESS);
-        usdcToken.approve(address(liquidityProviders), 1);
+        daiToken.approve(address(liquidityProviders), 1);
 
         liquidityProviders.pauseSanctions();
 
         hevm.prank(SANCTIONED_ADDRESS);
-        liquidityProviders.supplyErc20(address(usdcToken), 1);
+        liquidityProviders.supplyErc20(address(daiToken), 1);
 
         liquidityProviders.unpauseSanctions();
 
         hevm.expectRevert("00017");
         hevm.prank(SANCTIONED_ADDRESS);
-        liquidityProviders.withdrawCErc20(address(cUSDCToken), 1 ether);
+        liquidityProviders.withdrawCErc20(address(cDAIToken), 1 ether);
     }
 
     function testWithdrawCErc20_regen_collective_event_emits_when_owner() public {
         hevm.startPrank(liquidityProviders.owner());
-        usdcToken.mint(liquidityProviders.owner(), 100);
-        usdcToken.approve(address(liquidityProviders), 100);
-        liquidityProviders.supplyErc20(address(usdcToken), 100);
+        daiToken.mint(liquidityProviders.owner(), 100);
+        daiToken.approve(address(liquidityProviders), 100);
+        liquidityProviders.supplyErc20(address(daiToken), 100);
         hevm.stopPrank();
 
         hevm.warp(block.timestamp + 1 weeks);
@@ -499,14 +499,14 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
 
         emit PercentForRegen(
             liquidityProviders.regenCollectiveAddress(),
-            address(cUSDCToken),
+            address(cDAIToken),
             1,
             100000000000000000
         );
 
         hevm.startPrank(liquidityProviders.owner());
 
-        liquidityProviders.withdrawCErc20(address(cUSDCToken), 100);
+        liquidityProviders.withdrawCErc20(address(cDAIToken), 100);
     }
 
     function testCannotSupplyEth_asset_not_whitelisted() public {

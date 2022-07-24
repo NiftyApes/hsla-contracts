@@ -64,21 +64,21 @@ contract TestUpdateDefaultRefinancePremiumBps is Test, OffersLoansRefinancesFixt
             "defaultPremiumToProtocol",
             defaultPremiumToProtocol + gasGriefingToProtocol + termGriefingToProtocol
         );
-        console.log("lower", assetBalance(owner, address(usdcToken)));
-        console.log("upper", assetBalancePlusOneCToken(owner, address(usdcToken)));
+        console.log("lower", assetBalance(owner, address(daiToken)));
+        console.log("upper", assetBalancePlusOneCToken(owner, address(daiToken)));
 
-        if (offer.asset == address(usdcToken)) {
+        if (offer.asset == address(daiToken)) {
             if (interest < threshold) {
                 assertBetween(
                     defaultPremiumToProtocol + gasGriefingToProtocol + termGriefingToProtocol,
-                    assetBalance(owner, address(usdcToken)),
-                    assetBalancePlusOneCToken(owner, address(usdcToken))
+                    assetBalance(owner, address(daiToken)),
+                    assetBalancePlusOneCToken(owner, address(daiToken))
                 );
             } else {
                 assertBetween(
                     defaultPremiumToProtocol + termGriefingToProtocol,
-                    assetBalance(owner, address(usdcToken)),
-                    assetBalancePlusOneCToken(owner, address(usdcToken))
+                    assetBalance(owner, address(daiToken)),
+                    assetBalancePlusOneCToken(owner, address(daiToken))
                 );
             }
         } else {

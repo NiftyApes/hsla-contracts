@@ -14,9 +14,9 @@ contract TestGetCAsset is Test, ILiquidityEvents, OffersLoansRefinancesFixtures 
 
     function test_unit_getCAsset_works() public {
         if (!integration) {
-            assertEq(liquidity.getCAsset(address(usdcToken)), address(cUSDCToken));
+            assertEq(liquidity.getCAsset(address(daiToken)), address(cDAIToken));
         } else {
-            assertEq(liquidity.getCAsset(address(usdcToken)), address(cUSDCToken));
+            assertEq(liquidity.getCAsset(address(daiToken)), address(cDAIToken));
         }
     }
 }

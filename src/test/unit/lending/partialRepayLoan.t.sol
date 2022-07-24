@@ -12,8 +12,8 @@ contract TestPartialRepayLoan is Test, OffersLoansRefinancesFixtures {
 
     function assertionsForExecutedLoan(Offer memory offer) private {
         // borrower has money
-        if (offer.asset == address(usdcToken)) {
-            assertEq(usdcToken.balanceOf(borrower1), offer.amount);
+        if (offer.asset == address(daiToken)) {
+            assertEq(daiToken.balanceOf(borrower1), offer.amount);
         } else {
             assertEq(borrower1.balance, defaultInitialEthBalance + offer.amount);
         }
@@ -47,11 +47,11 @@ contract TestPartialRepayLoan is Test, OffersLoansRefinancesFixtures {
             offer.nftId
         );
 
-        if (offer.asset == address(usdcToken)) {
+        if (offer.asset == address(daiToken)) {
             mintUsdc(borrower1, 1);
 
             vm.startPrank(borrower1);
-            usdcToken.increaseAllowance(address(liquidity), ~uint256(0));
+            daiToken.increaseAllowance(address(liquidity), ~uint256(0));
             lending.partialRepayLoan(
                 defaultFixedOfferFields.nftContractAddress,
                 defaultFixedOfferFields.nftId,

@@ -24,6 +24,7 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
         // values for unit test
         // offer.amount = 8640000;
         // offer.duration = 1 days;
+        // offer.interestRatePerSecond = 1;
 
         createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
 
@@ -32,6 +33,15 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
         LoanAuction memory loanAuction = lending.getLoanAuction(
             offer.nftContractAddress,
             offer.nftId
+        );
+
+        console.log("loanAuction.amount", loanAuction.amount);
+        console.log("loanAuction.amountDrawn", loanAuction.amountDrawn);
+
+        console.log("loanAuction.interestRatePerSecond", loanAuction.interestRatePerSecond);
+        console.log(
+            "loanAuction.protocolInterestRatePerSecond",
+            loanAuction.protocolInterestRatePerSecond
         );
 
         vm.warp(block.timestamp + secondsBeforeRefinance);
@@ -60,12 +70,20 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
 
         Offer memory newOffer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
 
+        // newOffer.amount = uint128(
+        //     offer.amount +
+        //         (offer.interestRatePerSecond * secondsBeforeRefinance) +
+        //         interestShortfall +
+        //         protocolInterest +
+        //         amountExtraOnRefinance
+        // );
         // newOffer.duration = 1 days;
+        // newOffer.interestRatePerSecond = 1;
 
-        uint256 beforeRefinanceLenderBalance = assetBalance(lender1, address(usdcToken));
+        uint256 beforeRefinanceLenderBalance = assetBalance(lender1, address(daiToken));
 
-        if (offer.asset == address(usdcToken)) {
-            beforeRefinanceLenderBalance = assetBalance(lender1, address(usdcToken));
+        if (offer.asset == address(daiToken)) {
+            beforeRefinanceLenderBalance = assetBalance(lender1, address(daiToken));
         } else {
             beforeRefinanceLenderBalance = assetBalance(lender1, ETH_ADDRESS);
         }
@@ -75,6 +93,15 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
         LoanAuction memory loanAuction2 = lending.getLoanAuction(
             offer.nftContractAddress,
             offer.nftId
+        );
+
+        console.log("loanAuction2.amount", loanAuction2.amount);
+        console.log("loanAuction2.amountDrawn", loanAuction2.amountDrawn);
+
+        console.log("loanAuction2.interestRatePerSecond", loanAuction2.interestRatePerSecond);
+        console.log(
+            "loanAuction2.protocolInterestRatePerSecond",
+            loanAuction2.protocolInterestRatePerSecond
         );
 
         assertionsForExecutedRefinance(
@@ -88,8 +115,8 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
 
     function assertionsForExecutedLoan(Offer memory offer) private {
         // borrower has money
-        if (offer.asset == address(usdcToken)) {
-            assertEq(usdcToken.balanceOf(borrower1), offer.amount);
+        if (offer.asset == address(daiToken)) {
+            assertEq(daiToken.balanceOf(borrower1), offer.amount);
         } else {
             assertEq(borrower1.balance, defaultInitialEthBalance + offer.amount);
         }
@@ -107,14 +134,14 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
         uint256 beforeRefinanceLenderBalance
     ) private {
         // lender1 has money
-        if (offer.asset == address(usdcToken)) {
+        if (offer.asset == address(daiToken)) {
             assertBetween(
                 beforeRefinanceLenderBalance +
                     amountDrawn +
                     (offer.interestRatePerSecond * secondsBeforeRefinance) +
                     interestShortfall,
-                assetBalance(lender1, address(usdcToken)),
-                assetBalancePlusOneCToken(lender1, address(usdcToken))
+                assetBalance(lender1, address(daiToken)),
+                assetBalancePlusOneCToken(lender1, address(daiToken))
             );
         } else {
             assertBetween(
@@ -147,7 +174,7 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
         bool isRefinanceExtraEnough; // to avoid "redeemTokens zero" when borrower draws more
         if (fuzzedOffer.randomAsset % 2 == 0) {
             isRefinanceExtraEnough =
-                amountExtraOnRefinance >= 10 * uint128(10**usdcToken.decimals());
+                amountExtraOnRefinance >= 10 * uint128(10**daiToken.decimals());
         } else {
             isRefinanceExtraEnough = amountExtraOnRefinance >= 250000000;
         }
@@ -155,9 +182,7 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
         amountExtraOnRefinance = isRefinanceExtraEnough
             ? amountExtraOnRefinance
             : uint64(
-                fuzzedOffer.randomAsset % 2 == 0
-                    ? 10 * uint128(10**usdcToken.decimals())
-                    : 250000000
+                fuzzedOffer.randomAsset % 2 == 0 ? 10 * uint128(10**daiToken.decimals()) : 250000000
             );
 
         refinanceSetup(fuzzedOffer, secondsBeforeRefinance, amountExtraOnRefinance);
@@ -197,7 +222,7 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
         bool isRefinanceExtraEnough; // to avoid "redeemTokens zero" when borrower draws more
         if (fuzzedOffer.randomAsset % 2 == 0) {
             isRefinanceExtraEnough =
-                amountExtraOnRefinance >= 10 * uint128(10**usdcToken.decimals());
+                amountExtraOnRefinance >= 10 * uint128(10**daiToken.decimals());
         } else {
             isRefinanceExtraEnough = amountExtraOnRefinance >= 250000000;
         }
@@ -205,9 +230,7 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
         amountExtraOnRefinance = isRefinanceExtraEnough
             ? amountExtraOnRefinance
             : uint64(
-                fuzzedOffer.randomAsset % 2 == 0
-                    ? 10 * uint128(10**usdcToken.decimals())
-                    : 250000000
+                fuzzedOffer.randomAsset % 2 == 0 ? 10 * uint128(10**daiToken.decimals()) : 250000000
             );
 
         refinanceSetup(fuzzedOffer, secondsBeforeRefinance, amountExtraOnRefinance);
@@ -262,28 +285,28 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
 
     function test_unit_drawLoanAmount_math_works() public {
         uint16 secondsBeforeRefinance = 100;
-        uint64 amountExtraOnRefinance = 100;
+        uint256 amountExtraOnRefinance = 864000000;
 
         // specify particular amount and duration in refinanceSetup below offer creation.
         // values are reset upon initial offer creation.
 
         vm.startPrank(owner);
-        lending.updateProtocolInterestBps(1000);
+        lending.updateProtocolInterestBps(1);
         vm.stopPrank();
 
         bool isRefinanceExtraEnough; // to avoid "redeemTokens zero" when borrower draws more
         if (defaultFixedFuzzedFieldsForFastUnitTesting.randomAsset % 2 == 0) {
             isRefinanceExtraEnough =
-                amountExtraOnRefinance >= 10 * uint128(10**usdcToken.decimals());
+                amountExtraOnRefinance >= 10 * uint128(10**daiToken.decimals());
         } else {
             isRefinanceExtraEnough = amountExtraOnRefinance >= 250000000;
         }
 
         amountExtraOnRefinance = isRefinanceExtraEnough
             ? amountExtraOnRefinance
-            : uint64(
+            : uint256(
                 defaultFixedFuzzedFieldsForFastUnitTesting.randomAsset % 2 == 0
-                    ? 10 * uint128(10**usdcToken.decimals())
+                    ? 10 * uint128(10**daiToken.decimals())
                     : 250000000
             );
 

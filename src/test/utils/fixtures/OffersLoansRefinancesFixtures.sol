@@ -25,7 +25,7 @@ contract OffersLoansRefinancesFixtures is
         uint96 interestRatePerSecond;
         uint32 duration;
         uint32 expiration;
-        uint8 randomAsset; // asset = randomAsset % 2 == 0 ? USDC : ETH
+        uint8 randomAsset; // asset = randomAsset % 2 == 0 ? DAI : ETH
     }
 
     struct FixedOfferFields {
@@ -62,15 +62,15 @@ contract OffersLoansRefinancesFixtures is
             nftId: 1
         });
 
-        uint8 randomAsset = 0; // 0 == USDC, 1 == ETH
+        uint8 randomAsset = 0; // 0 == DAI, 1 == ETH
 
         // in addition to fuzz tests, we have fast unit tests
         // using these default values instead of fuzzing
         defaultFixedFuzzedFieldsForFastUnitTesting = FuzzedOfferFields({
             floorTerm: false,
-            amount: randomAsset % 2 == 0 ? 10 * uint128(10**usdcToken.decimals()) : 1 ether,
+            amount: randomAsset % 2 == 0 ? 10 * uint128(10**daiToken.decimals()) : 1 ether,
             interestRatePerSecond: randomAsset % 2 == 0
-                ? uint96(10**usdcToken.decimals() / 10000)
+                ? uint96(10**daiToken.decimals() / 10000)
                 : 10**6,
             duration: 1 weeks,
             expiration: uint32(block.timestamp) + 1 days,
@@ -103,12 +103,12 @@ contract OffersLoansRefinancesFixtures is
         FuzzedOfferFields memory fuzzed,
         FixedOfferFields memory fixedFields
     ) internal view returns (Offer memory) {
-        address asset = fuzzed.randomAsset % 2 == 0 ? address(usdcToken) : address(ETH_ADDRESS);
+        address asset = fuzzed.randomAsset % 2 == 0 ? address(daiToken) : address(ETH_ADDRESS);
 
         bool isAmountEnough;
 
         if (fuzzed.randomAsset % 2 == 0) {
-            isAmountEnough = fuzzed.amount >= 10 * uint128(10**usdcToken.decimals());
+            isAmountEnough = fuzzed.amount >= 10 * uint128(10**daiToken.decimals());
         } else {
             isAmountEnough = fuzzed.amount >= 250000000;
         }
@@ -127,7 +127,7 @@ contract OffersLoansRefinancesFixtures is
                     ? fuzzed.amount
                     : (
                         fuzzed.randomAsset % 2 == 0
-                            ? 10 * uint128(10**usdcToken.decimals())
+                            ? 10 * uint128(10**daiToken.decimals())
                             : 250000000
                     ),
                 duration: fuzzed.duration,

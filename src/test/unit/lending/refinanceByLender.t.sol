@@ -44,10 +44,10 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
 
         Offer memory newOffer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
 
-        uint256 beforeRefinanceLenderBalance = assetBalance(lender1, address(usdcToken));
+        uint256 beforeRefinanceLenderBalance = assetBalance(lender1, address(daiToken));
 
-        if (offer.asset == address(usdcToken)) {
-            beforeRefinanceLenderBalance = assetBalance(lender1, address(usdcToken));
+        if (offer.asset == address(daiToken)) {
+            beforeRefinanceLenderBalance = assetBalance(lender1, address(daiToken));
         } else {
             beforeRefinanceLenderBalance = assetBalance(lender1, ETH_ADDRESS);
         }
@@ -74,8 +74,8 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
 
     function assertionsForExecutedLoan(Offer memory offer) private {
         // borrower has money
-        if (offer.asset == address(usdcToken)) {
-            assertEq(usdcToken.balanceOf(borrower1), offer.amount);
+        if (offer.asset == address(daiToken)) {
+            assertEq(daiToken.balanceOf(borrower1), offer.amount);
         } else {
             assertEq(borrower1.balance, defaultInitialEthBalance + offer.amount);
         }
@@ -94,15 +94,15 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         uint256 beforeRefinanceLenderBalance
     ) private {
         // lender1 has money
-        if (offer2.asset == address(usdcToken)) {
+        if (offer2.asset == address(daiToken)) {
             assertCloseEnough(
                 beforeRefinanceLenderBalance +
                     loanAuction.amountDrawn +
                     (offer1.interestRatePerSecond * secondsBeforeRefinance) +
                     interestShortfall +
                     ((loanAuction.amountDrawn * lending.originationPremiumBps()) / 10_000),
-                assetBalance(lender1, address(usdcToken)),
-                assetBalancePlusOneCToken(lender1, address(usdcToken))
+                assetBalance(lender1, address(daiToken)),
+                assetBalancePlusOneCToken(lender1, address(daiToken))
             );
         } else {
             assertCloseEnough(
@@ -159,23 +159,23 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         _test_refinanceByLender_simplest_case(fuzzed, secondsBeforeRefinance);
     }
 
-    function test_unit_refinanceByLender_simplest_case_usdc() public {
+    function test_unit_refinanceByLender_simplest_case_dai() public {
         FuzzedOfferFields memory fixedForSpeed1 = defaultFixedFuzzedFieldsForFastUnitTesting;
         FuzzedOfferFields memory fixedForSpeed2 = defaultFixedFuzzedFieldsForFastUnitTesting;
 
         fixedForSpeed2.duration += 1 days;
         uint16 secondsBeforeRefinance = 12 hours;
 
-        fixedForSpeed1.randomAsset = 0; // USDC
-        fixedForSpeed2.randomAsset = 0; // USDC
+        fixedForSpeed1.randomAsset = 0; // DAI
+        fixedForSpeed2.randomAsset = 0; // DAI
         _test_refinanceByLender_simplest_case(fixedForSpeed1, secondsBeforeRefinance);
     }
 
     function test_unit_refinanceByLender_simplest_slashed() public {
         // Borrower1/Lender1 originate loan
         FuzzedOfferFields memory fuzzed = defaultFixedFuzzedFieldsForFastUnitTesting;
-        fuzzed.randomAsset = 0; // USDC
-        fuzzed.amount = uint128(1000 * 10**usdcToken.decimals()); // $1000
+        fuzzed.randomAsset = 0; // DAI
+        fuzzed.amount = uint128(1000 * 10**daiToken.decimals()); // $1000
 
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
 
@@ -205,7 +205,7 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         // set up refinance
         defaultFixedOfferFields.creator = lender2;
         fuzzed.expiration = uint32(block.timestamp) + 1 hours + 1;
-        fuzzed.amount = uint128(1000 * 10**usdcToken.decimals() + 1000 * 10**usdcToken.decimals());
+        fuzzed.amount = uint128(1000 * 10**daiToken.decimals() + 1000 * 10**daiToken.decimals());
 
         Offer memory newOffer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
 
@@ -251,17 +251,17 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         // lenderRefi still true
         assertEq(loanAuctionBeforeDraw.lenderRefi, true);
 
-        // ensure attempt to draw 1000 USDC overdraws
+        // ensure attempt to draw 1000 DAI overdraws
         vm.startPrank(lender2);
-        liquidity.withdrawErc20(address(usdcToken), 500 * 10**usdcToken.decimals());
+        liquidity.withdrawErc20(address(daiToken), 500 * 10**daiToken.decimals());
         vm.stopPrank();
 
-        // borrower attempts to draw 1000 USDC
+        // borrower attempts to draw 1000 DAI
         vm.startPrank(borrower1);
         lending.drawLoanAmount(
             offer.nftContractAddress,
             offer.nftId,
-            1000 * 10**usdcToken.decimals()
+            1000 * 10**daiToken.decimals()
         );
         vm.stopPrank();
 
@@ -310,11 +310,11 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         // set up borrower repay full amount
         vm.startPrank(borrower1);
         mintUsdc(borrower1, ~uint128(0));
-        usdcToken.increaseAllowance(address(liquidity), ~uint256(0));
+        daiToken.increaseAllowance(address(liquidity), ~uint256(0));
 
         // most important part here is the amount repaid, the last argument to the event
         // the amount drawn + 1 hour at initial interest rate + 1 hour at "after draw" interest rate
-        // even though the borrower couldn't draw 1000 USDC, they could draw some, so the rate changes
+        // even though the borrower couldn't draw 1000 DAI, they could draw some, so the rate changes
         vm.expectEmit(true, true, true, true);
         emit LoanRepaid(
             loanAuctionAfterDraw.lender,
@@ -333,11 +333,11 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         vm.stopPrank();
 
         // check borrower balance
-        assertEq(assetBalance(borrower1, address(usdcToken)), 0);
+        assertEq(assetBalance(borrower1, address(daiToken)), 0);
 
         // check lender balance
         assertEq(
-            assetBalance(lender2, address(usdcToken)),
+            assetBalance(lender2, address(daiToken)),
             loanAuctionAfterDraw.amountDrawn +
                 1 hours *
                 loanAuctionBeforeDraw.interestRatePerSecond +
@@ -471,8 +471,8 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
     //     approveLending(offer);
 
     //     vm.startPrank(lender1);
-    //     if (offer.asset == address(usdcToken)) {
-    //         liquidity.withdrawErc20(address(usdcToken), defaultUsdcLiquiditySupplied);
+    //     if (offer.asset == address(daiToken)) {
+    //         liquidity.withdrawErc20(address(daiToken), defaultUsdcLiquiditySupplied);
     //     } else {
     //         liquidity.withdrawEth(defaultEthLiquiditySupplied);
     //     }
@@ -505,9 +505,9 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
     //     }
 
     //     if (!integration) {
-    //         fuzzed.randomAsset = 0; // USDC
+    //         fuzzed.randomAsset = 0; // DAI
     //         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
-    //         usdcToken.setTransferFail(true);
+    //         daiToken.setTransferFail(true);
     //         createOfferAndTryToExecuteLoanByBorrower(
     //             offer,
     //             "SafeERC20: ERC20 operation did not succeed"

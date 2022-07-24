@@ -55,18 +55,18 @@ contract TestUpdateGasGriefingProtocolPremiumBps is Test, OffersLoansRefinancesF
         uint256 termGriefingToProtocol = (lending.termGriefingPremiumBps() *
             firstLoan.amountDrawn) / MAX_BPS;
 
-        if (offer.asset == address(usdcToken)) {
+        if (offer.asset == address(daiToken)) {
             if (interest < threshold) {
                 assertBetween(
                     gasGriefingToProtocol + termGriefingToProtocol,
-                    assetBalance(owner, address(usdcToken)),
-                    assetBalancePlusOneCToken(owner, address(usdcToken))
+                    assetBalance(owner, address(daiToken)),
+                    assetBalancePlusOneCToken(owner, address(daiToken))
                 );
             } else {
                 assertBetween(
                     termGriefingToProtocol,
-                    assetBalance(owner, address(usdcToken)),
-                    assetBalancePlusOneCToken(owner, address(usdcToken))
+                    assetBalance(owner, address(daiToken)),
+                    assetBalancePlusOneCToken(owner, address(daiToken))
                 );
             }
         } else {

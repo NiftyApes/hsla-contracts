@@ -15,24 +15,24 @@ contract LenderLiquidityFixtures is Test, NiftyApesDeployment {
         defaultEthLiquiditySupplied = address(lender1).balance;
 
         if (integration) {
-            defaultUsdcLiquiditySupplied = usdcToken.balanceOf(lender1);
+            defaultUsdcLiquiditySupplied = daiToken.balanceOf(lender1);
         } else {
-            defaultUsdcLiquiditySupplied = 3672711471 * uint128(10**usdcToken.decimals());
+            defaultUsdcLiquiditySupplied = 3672711471 * uint128(10**daiToken.decimals());
         }
 
         vm.startPrank(lender1);
         liquidity.supplyEth{ value: defaultEthLiquiditySupplied }();
 
-        usdcToken.approve(address(liquidity), usdcToken.balanceOf(lender1));
+        daiToken.approve(address(liquidity), daiToken.balanceOf(lender1));
 
-        liquidity.supplyErc20(address(usdcToken), usdcToken.balanceOf(lender1));
+        liquidity.supplyErc20(address(daiToken), daiToken.balanceOf(lender1));
 
         vm.stopPrank();
 
         vm.startPrank(lender2);
         liquidity.supplyEth{ value: defaultEthLiquiditySupplied }();
-        usdcToken.approve(address(liquidity), usdcToken.balanceOf(lender2));
-        liquidity.supplyErc20(address(usdcToken), usdcToken.balanceOf(lender2));
+        daiToken.approve(address(liquidity), daiToken.balanceOf(lender2));
+        liquidity.supplyErc20(address(daiToken), daiToken.balanceOf(lender2));
         vm.stopPrank();
     }
 }

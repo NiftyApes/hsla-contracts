@@ -20,11 +20,11 @@ contract TestOffersUpdateSigLendingContractAddress is
 
         vm.expectEmit(true, true, false, false);
 
-        emit OffersXSigLendingContractAddressUpdated(address(lending), address(usdcToken));
+        emit OffersXSigLendingContractAddressUpdated(address(lending), address(daiToken));
 
-        offers.updateSigLendingContractAddress(address(usdcToken));
+        offers.updateSigLendingContractAddress(address(daiToken));
 
-        assertEq(offers.sigLendingContractAddress(), address(usdcToken));
+        assertEq(offers.sigLendingContractAddress(), address(daiToken));
     }
 
     function test_unit_offers_cannot_updateSigLendingContractAddress_address_is_0() public {

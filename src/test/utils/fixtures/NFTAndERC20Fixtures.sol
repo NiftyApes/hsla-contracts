@@ -13,19 +13,20 @@ import "../../mock/CEtherMock.sol";
 import "forge-std/Test.sol";
 
 // mints NFTs to borrowers
-// supplies USDC to lenders
+// supplies DAI to lenders
 contract NFTAndERC20Fixtures is Test, UsersFixtures {
-    ERC20Mock internal usdcToken;
+    ERC20Mock internal daiToken;
     ERC20Mock internal compToken;
-    CERC20Mock internal cUSDCToken;
+    CERC20Mock internal cDAIToken;
     CEtherMock internal cEtherToken;
     ERC721Mock internal mockNft;
 
     bool internal integration = false;
 
-    address constant usdcWhale1 = 0x0A59649758aa4d66E25f08Dd01271e891fe52199;
-    address constant usdcWhale2 = 0x47ac0Fb4F2D84898e4D9E7b4DaB3C24507a6D503;
-    address constant usdcWhale = 0x40ec5B33f54e0E8A33A975908C5BA1c14e5BbbDf;
+    // need to replace dai whales with DAI whales
+    address constant daiWhale1 = 0x0A59649758aa4d66E25f08Dd01271e891fe52199;
+    address constant daiWhale2 = 0x47ac0Fb4F2D84898e4D9E7b4DaB3C24507a6D503;
+    address constant daiWhale = 0x40ec5B33f54e0E8A33A975908C5BA1c14e5BbbDf;
 
     address constant compWhale = 0x2775b1c75658Be0F640272CCb8c72ac986009e38;
 
@@ -38,40 +39,41 @@ contract NFTAndERC20Fixtures is Test, UsersFixtures {
             // This catches revert that occurs if env variable not supplied
         }
 
+        // need to replace DAI contracts with DAI
         if (integration) {
-            usdcToken = ERC20Mock(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
+            daiToken = ERC20Mock(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
 
             compToken = ERC20Mock(0xc00e94Cb662C3520282E6f5717214004A7f26888);
 
-            cUSDCToken = CERC20Mock(0x39AA39c021dfbaE8faC545936693aC917d5E7563);
+            cDAIToken = CERC20Mock(0x39AA39c021dfbaE8faC545936693aC917d5E7563);
 
             cEtherToken = CEtherMock(0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5);
 
-            uint256 usdcWhale1Balance = usdcToken.balanceOf(usdcWhale1);
-            uint256 usdcWhale2Balance = usdcToken.balanceOf(usdcWhale2);
+            uint256 daiWhale1Balance = daiToken.balanceOf(daiWhale1);
+            uint256 daiWhale2Balance = daiToken.balanceOf(daiWhale2);
 
-            vm.startPrank(usdcWhale1);
-            usdcToken.transfer(lender1, usdcWhale1Balance);
+            vm.startPrank(daiWhale1);
+            daiToken.transfer(lender1, daiWhale1Balance);
             vm.stopPrank();
-            vm.startPrank(usdcWhale2);
-            usdcToken.transfer(lender2, usdcWhale2Balance);
+            vm.startPrank(daiWhale2);
+            daiToken.transfer(lender2, daiWhale2Balance);
             vm.stopPrank();
         } else {
-            usdcToken = new ERC20Mock();
-            usdcToken.initialize("USD Coin", "USDC");
+            daiToken = new ERC20Mock();
+            daiToken.initialize("USD Coin", "DAI");
 
             compToken = new ERC20Mock();
             compToken.initialize("Compound", "COMP");
 
-            cUSDCToken = new CERC20Mock();
-            cUSDCToken.initialize(usdcToken);
+            cDAIToken = new CERC20Mock();
+            cDAIToken.initialize(daiToken);
 
             cEtherToken = new CEtherMock();
             cEtherToken.initialize();
 
-            usdcToken.mint(lender1, 3672711471 ether);
-            usdcToken.mint(lender2, 3672711471 ether);
-            usdcToken.mint(SANCTIONED_ADDRESS, 3672711471 ether);
+            daiToken.mint(lender1, 3672711471 ether);
+            daiToken.mint(lender2, 3672711471 ether);
+            daiToken.mint(SANCTIONED_ADDRESS, 3672711471 ether);
         }
 
         mockNft = new ERC721Mock();
@@ -84,11 +86,11 @@ contract NFTAndERC20Fixtures is Test, UsersFixtures {
 
     function mintUsdc(address recipient, uint256 amount) internal {
         if (integration) {
-            vm.startPrank(usdcWhale);
-            usdcToken.transfer(recipient, amount);
+            vm.startPrank(daiWhale);
+            daiToken.transfer(recipient, amount);
             vm.stopPrank();
         } else {
-            usdcToken.mint(recipient, amount);
+            daiToken.mint(recipient, amount);
         }
     }
 

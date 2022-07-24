@@ -26,8 +26,8 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
 
     function assertionsForExecutedLoan(Offer memory offer) private {
         // borrower has money
-        if (offer.asset == address(usdcToken)) {
-            assertEq(usdcToken.balanceOf(borrower1), offer.amount);
+        if (offer.asset == address(daiToken)) {
+            assertEq(daiToken.balanceOf(borrower1), offer.amount);
         } else {
             assertEq(borrower1.balance, defaultInitialEthBalance + offer.amount);
         }
@@ -50,9 +50,9 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         _test_executeLoanByBorrower_simplest_case(fuzzed);
     }
 
-    function test_unit_executeLoanByBorrower_simplest_case_usdc() public {
+    function test_unit_executeLoanByBorrower_simplest_case_dai() public {
         FuzzedOfferFields memory fixedForSpeed = defaultFixedFuzzedFieldsForFastUnitTesting;
-        fixedForSpeed.randomAsset = 0; // USDC
+        fixedForSpeed.randomAsset = 0; // DAI
         _test_executeLoanByBorrower_simplest_case(fixedForSpeed);
     }
 
@@ -180,12 +180,12 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         createOffer(offer, lender1);
         approveLending(offer);
 
-        console.log("balance", usdcToken.balanceOf(lender1));
+        console.log("balance", daiToken.balanceOf(lender1));
         console.log("liquidity", defaultUsdcLiquiditySupplied);
 
         vm.startPrank(lender1);
-        if (offer.asset == address(usdcToken)) {
-            liquidity.withdrawErc20(address(usdcToken), defaultUsdcLiquiditySupplied);
+        if (offer.asset == address(daiToken)) {
+            liquidity.withdrawErc20(address(daiToken), defaultUsdcLiquiditySupplied);
         } else {
             liquidity.withdrawEth(defaultEthLiquiditySupplied);
         }
@@ -218,9 +218,9 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         }
 
         if (!integration) {
-            fuzzed.randomAsset = 0; // USDC
+            fuzzed.randomAsset = 0; // DAI
             Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
-            usdcToken.setTransferFail(true);
+            daiToken.setTransferFail(true);
             createOfferAndTryToExecuteLoanByBorrower(
                 offer,
                 "SafeERC20: ERC20 operation did not succeed"
@@ -425,13 +425,13 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         fuzzed.randomAsset = 0;
 
         if (integration) {
-            vm.startPrank(usdcWhale);
+            vm.startPrank(daiWhale);
             vm.expectRevert("Blacklistable: account is blacklisted");
-            usdcToken.transfer(SANCTIONED_ADDRESS, 1001);
+            daiToken.transfer(SANCTIONED_ADDRESS, 1001);
             vm.stopPrank();
         } else {
             vm.startPrank(SANCTIONED_ADDRESS);
-            usdcToken.mint(SANCTIONED_ADDRESS, 1001);
+            daiToken.mint(SANCTIONED_ADDRESS, 1001);
             vm.stopPrank();
         }
 
@@ -439,12 +439,12 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         if (integration) {
             vm.expectRevert("Blacklistable: account is blacklisted");
         }
-        usdcToken.approve(address(liquidity), defaultUsdcLiquiditySupplied);
+        daiToken.approve(address(liquidity), defaultUsdcLiquiditySupplied);
 
         if (integration) {
             vm.expectRevert("Blacklistable: account is blacklisted");
         }
-        liquidity.supplyErc20(address(usdcToken), defaultUsdcLiquiditySupplied);
+        liquidity.supplyErc20(address(daiToken), defaultUsdcLiquiditySupplied);
         vm.stopPrank();
 
         defaultFixedOfferFields.lenderOffer = true;

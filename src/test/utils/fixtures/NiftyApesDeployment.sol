@@ -11,7 +11,7 @@ import "forge-std/Test.sol";
 
 // deploy & initializes NiftyApes contracts
 // connects them to one another
-// adds cAssets for both ETH and USDC
+// adds cAssets for both ETH and DAI
 // sets max cAsset balance for both to unint256 max
 contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
     NiftyApesLending lending;
@@ -48,8 +48,8 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         liquidity.setCAssetAddress(ETH_ADDRESS, address(cEtherToken));
         liquidity.setMaxCAssetBalance(address(cEtherToken), ~uint256(0));
 
-        liquidity.setCAssetAddress(address(usdcToken), address(cUSDCToken));
-        liquidity.setMaxCAssetBalance(address(cUSDCToken), ~uint256(0));
+        liquidity.setCAssetAddress(address(daiToken), address(cDAIToken));
+        liquidity.setMaxCAssetBalance(address(cDAIToken), ~uint256(0));
 
         if (!integration) {
             liquidity.pauseSanctions();
@@ -63,9 +63,9 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
 
     function logBalances(address account) public {
         console.log(account, "ETH", account.balance);
-        console.log(account, "USDC", usdcToken.balanceOf(account));
+        console.log(account, "DAI", daiToken.balanceOf(account));
         console.log(account, "cETH", liquidity.getCAssetBalance(account, address(cEtherToken)));
-        console.log(account, "cUSDC", liquidity.getCAssetBalance(account, address(cUSDCToken)));
+        console.log(account, "cDAI", liquidity.getCAssetBalance(account, address(cDAIToken)));
         console.log(
             account,
             "cETH -> ETH",
@@ -76,10 +76,10 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         );
         console.log(
             account,
-            "cUSDC -> USDC",
+            "cDAI -> DAI",
             liquidity.cAssetAmountToAssetAmount(
-                address(cUSDCToken),
-                liquidity.getCAssetBalance(account, address(cUSDCToken))
+                address(cDAIToken),
+                liquidity.getCAssetBalance(account, address(cDAIToken))
             )
         );
     }

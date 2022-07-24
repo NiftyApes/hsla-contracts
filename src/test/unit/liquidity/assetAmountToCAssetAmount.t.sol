@@ -16,29 +16,29 @@ contract TestAssetAmountToCAssetAmount is Test, ILiquidityEvents, OffersLoansRef
 
     function testAssetAmountToCAssetAmount() public {
         if (!integration) {
-            cUSDCToken.setExchangeRateCurrent(220154645140434444389595003); // recent exchange rate of DAI
+            cDAIToken.setExchangeRateCurrent(220154645140434444389595003); // recent exchange rate of DAI
 
-            uint256 result = liquidity.assetAmountToCAssetAmount(address(usdcToken), 1e18); // supply 1 mockCUSDC, would be better to call this mock DAI as USDC has 6 decimals
+            uint256 result = liquidity.assetAmountToCAssetAmount(address(daiToken), 1e18); // supply 1 mockCDAI, would be better to call this mock DAI as DAI has 6 decimals
 
             assertEq(result, 4542261642);
         } else {
-            uint256 amtUsdc = usdcToken.balanceOf(lender1);
+            uint256 amtUsdc = daiToken.balanceOf(lender1);
 
-            uint256 result = liquidity.assetAmountToCAssetAmount(address(usdcToken), amtUsdc);
+            uint256 result = liquidity.assetAmountToCAssetAmount(address(daiToken), amtUsdc);
 
-            uint256 exchangeRateCurrent = ICERC20(address(cUSDCToken)).exchangeRateCurrent();
+            uint256 exchangeRateCurrent = ICERC20(address(cDAIToken)).exchangeRateCurrent();
 
             uint256 cTokenAmount = (amtUsdc * (10**18)) / exchangeRateCurrent;
 
             assertEq(result, cTokenAmount);
 
-            // This mints the same amount of cUSDC directly
+            // This mints the same amount of cDAI directly
             // i.e., just interacting with Compound and not via NiftyApes
             // to double check the above math
             vm.startPrank(lender1);
-            ICERC20(address(usdcToken)).approve(address(cUSDCToken), amtUsdc);
-            ICERC20(address(cUSDCToken)).mint(amtUsdc);
-            assertEq(cUSDCToken.balanceOf(lender1), result);
+            ICERC20(address(daiToken)).approve(address(cDAIToken), amtUsdc);
+            ICERC20(address(cDAIToken)).mint(amtUsdc);
+            assertEq(cDAIToken.balanceOf(lender1), result);
             vm.stopPrank();
         }
     }

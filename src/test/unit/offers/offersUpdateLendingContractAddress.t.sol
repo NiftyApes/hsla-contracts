@@ -20,11 +20,11 @@ contract TestOffersUpdateLendingContractAddress is
 
         vm.expectEmit(true, true, false, false);
 
-        emit OffersXLendingContractAddressUpdated(address(lending), address(usdcToken));
+        emit OffersXLendingContractAddressUpdated(address(lending), address(daiToken));
 
-        offers.updateLendingContractAddress(address(usdcToken));
+        offers.updateLendingContractAddress(address(daiToken));
 
-        assertEq(offers.lendingContractAddress(), address(usdcToken));
+        assertEq(offers.lendingContractAddress(), address(daiToken));
     }
 
     function test_unit_offers_cannot_updateLendingContractAddress_address_is_0() public {
