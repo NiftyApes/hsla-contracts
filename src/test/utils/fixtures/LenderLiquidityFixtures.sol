@@ -6,11 +6,13 @@ import "forge-std/Test.sol";
 import "./NiftyApesDeployment.sol";
 
 contract LenderLiquidityFixtures is Test, NiftyApesDeployment {
-    uint256 internal defaultEthLiquiditySupplied = address(lender1).balance;
+    uint256 internal defaultEthLiquiditySupplied;
     uint256 internal defaultUsdcLiquiditySupplied;
 
     function setUp() public virtual override {
         super.setUp();
+
+        defaultEthLiquiditySupplied = address(lender1).balance;
 
         if (integration) {
             defaultUsdcLiquiditySupplied = usdcToken.balanceOf(lender1);
@@ -20,8 +22,11 @@ contract LenderLiquidityFixtures is Test, NiftyApesDeployment {
 
         vm.startPrank(lender1);
         liquidity.supplyEth{ value: defaultEthLiquiditySupplied }();
+
         usdcToken.approve(address(liquidity), usdcToken.balanceOf(lender1));
+
         liquidity.supplyErc20(address(usdcToken), usdcToken.balanceOf(lender1));
+
         vm.stopPrank();
 
         vm.startPrank(lender2);

@@ -894,18 +894,16 @@ contract NiftyApesLending is
         uint256 amount,
         uint256 interestBps,
         uint256 duration
-    ) public view returns (uint96) {
-        console.log("amount", amount);
-        console.log("interestBps", interestBps);
-        console.log("duration", duration);
+    ) public pure returns (uint96) {
+        // account for 0 protocolInterestBps
+        if (interestBps == 0) {
+            return 0;
+        }
 
-        console.log("(amount * MAX_BPS)", (amount * MAX_BPS));
-        console.log("(amount * MAX_BPS) / interestBps ", (amount * MAX_BPS) / interestBps);
-        console.log(
-            "(amount * MAX_BPS) / interestBps / duration",
-            (amount * MAX_BPS) / interestBps / duration
-        );
-        return SafeCastUpgradeable.toUint96((amount * MAX_BPS) / interestBps / duration);
+        uint96 result = SafeCastUpgradeable.toUint96((amount * interestBps) / MAX_BPS / duration);
+
+        // return 1 for cases where (amount * interestBps) / MAX_BPS < duration;
+        return result == 0 ? 1 : result;
     }
 
     function _calculateInterestBps(
@@ -1119,7 +1117,6 @@ contract NiftyApesLending is
         loanAuction.accumulatedLenderInterest = 0;
         loanAuction.accumulatedProtocolInterest = 0;
         loanAuction.interestRatePerSecond = offer.interestRatePerSecond;
-        console.log("createLoan", protocolInterestBps);
         loanAuction.protocolInterestRatePerSecond = calculateInterestPerSecond(
             offer.amount,
             protocolInterestBps,

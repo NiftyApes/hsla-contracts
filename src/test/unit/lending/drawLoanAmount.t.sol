@@ -21,6 +21,10 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
     ) private {
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
 
+        // values for unit test
+        // offer.amount = 8640000;
+        // offer.duration = 1 days;
+
         createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
 
         assertionsForExecutedLoan(offer);
@@ -55,6 +59,8 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
         );
 
         Offer memory newOffer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+
+        // newOffer.duration = 1 days;
 
         uint256 beforeRefinanceLenderBalance = assetBalance(lender1, address(usdcToken));
 
@@ -175,7 +181,7 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
         uint64 amountExtraOnRefinance
     ) public validateFuzzedOfferFields(fuzzedOffer) {
         vm.startPrank(owner);
-        lending.updateProtocolInterestBps(1);
+        lending.updateProtocolInterestBps(100);
         vm.stopPrank();
 
         vm.assume(amountExtraOnRefinance > 0);
@@ -205,6 +211,87 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
             );
 
         refinanceSetup(fuzzedOffer, secondsBeforeRefinance, amountExtraOnRefinance);
+
+        LoanAuction memory loanAuctionBefore = lending.getLoanAuction(
+            defaultFixedOfferFields.nftContractAddress,
+            defaultFixedOfferFields.nftId
+        );
+
+        uint256 amountDrawnBefore = loanAuctionBefore.amountDrawn;
+
+        uint256 interestRatePerSecondBefore = loanAuctionBefore.interestRatePerSecond;
+        uint256 protocolInterestRatePerSecondBefore = loanAuctionBefore
+            .protocolInterestRatePerSecond;
+
+        vm.startPrank(borrower1);
+        lending.drawLoanAmount(
+            defaultFixedOfferFields.nftContractAddress,
+            defaultFixedOfferFields.nftId,
+            amountExtraOnRefinance
+        );
+        vm.stopPrank();
+
+        LoanAuction memory loanAuctionAfter = lending.getLoanAuction(
+            defaultFixedOfferFields.nftContractAddress,
+            defaultFixedOfferFields.nftId
+        );
+
+        uint256 interestRatePerSecondAfter = loanAuctionAfter.interestRatePerSecond;
+        uint256 protocolInterestRatePerSecondAfter = loanAuctionAfter.protocolInterestRatePerSecond;
+
+        uint256 interestBps = (((interestRatePerSecondBefore *
+            (loanAuctionAfter.loanEndTimestamp - loanAuctionAfter.loanBeginTimestamp)) * MAX_BPS) /
+            loanAuctionBefore.amountDrawn) + 1;
+
+        uint256 calculatedInterestRatePerSecond = ((loanAuctionAfter.amountDrawn * interestBps) /
+            MAX_BPS /
+            (loanAuctionAfter.loanEndTimestamp - loanAuctionAfter.loanBeginTimestamp));
+        if (calculatedInterestRatePerSecond == 0 && interestBps != 0) {
+            calculatedInterestRatePerSecond = 1;
+        }
+        uint96 calculatedProtocolInterestRatePerSecond = lending.calculateInterestPerSecond(
+            loanAuctionAfter.amountDrawn,
+            lending.protocolInterestBps(),
+            (loanAuctionAfter.loanEndTimestamp - loanAuctionAfter.loanBeginTimestamp)
+        );
+
+        assertEq(calculatedInterestRatePerSecond, interestRatePerSecondAfter);
+        assertEq(calculatedProtocolInterestRatePerSecond, protocolInterestRatePerSecondAfter);
+        assertEq(loanAuctionAfter.amountDrawn, amountDrawnBefore + amountExtraOnRefinance);
+    }
+
+    function test_unit_drawLoanAmount_math_works() public {
+        uint16 secondsBeforeRefinance = 100;
+        uint64 amountExtraOnRefinance = 100;
+
+        // specify particular amount and duration in refinanceSetup below offer creation.
+        // values are reset upon initial offer creation.
+
+        vm.startPrank(owner);
+        lending.updateProtocolInterestBps(1000);
+        vm.stopPrank();
+
+        bool isRefinanceExtraEnough; // to avoid "redeemTokens zero" when borrower draws more
+        if (defaultFixedFuzzedFieldsForFastUnitTesting.randomAsset % 2 == 0) {
+            isRefinanceExtraEnough =
+                amountExtraOnRefinance >= 10 * uint128(10**usdcToken.decimals());
+        } else {
+            isRefinanceExtraEnough = amountExtraOnRefinance >= 250000000;
+        }
+
+        amountExtraOnRefinance = isRefinanceExtraEnough
+            ? amountExtraOnRefinance
+            : uint64(
+                defaultFixedFuzzedFieldsForFastUnitTesting.randomAsset % 2 == 0
+                    ? 10 * uint128(10**usdcToken.decimals())
+                    : 250000000
+            );
+
+        refinanceSetup(
+            defaultFixedFuzzedFieldsForFastUnitTesting,
+            secondsBeforeRefinance,
+            amountExtraOnRefinance
+        );
 
         LoanAuction memory loanAuctionBefore = lending.getLoanAuction(
             defaultFixedOfferFields.nftContractAddress,
@@ -247,9 +334,12 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
 
         console.log("interestBps", interestBps);
 
-        uint256 calculatedInterestRatePerSecond = ((loanAuctionAfter.amountDrawn * MAX_BPS) /
-            interestBps /
+        uint256 calculatedInterestRatePerSecond = ((loanAuctionAfter.amountDrawn * interestBps) /
+            MAX_BPS /
             (loanAuctionAfter.loanEndTimestamp - loanAuctionAfter.loanBeginTimestamp));
+        if (calculatedInterestRatePerSecond == 0 && interestBps != 0) {
+            calculatedInterestRatePerSecond = 1;
+        }
         uint96 calculatedProtocolInterestRatePerSecond = lending.calculateInterestPerSecond(
             loanAuctionAfter.amountDrawn,
             lending.protocolInterestBps(),

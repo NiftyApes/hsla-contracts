@@ -92,7 +92,7 @@ contract OffersLoansRefinancesFixtures is
         // to avoid overflow when loanAuction.loanEndTimestamp = _currentTimestamp32() + offer.duration;
         vm.assume(fuzzed.duration < (~uint32(0) - block.timestamp));
         vm.assume(fuzzed.expiration > block.timestamp);
-        // to avoid "Division or modulo by 0"
+        // to avoid "Division or m  odulo by 0"
         vm.assume(fuzzed.interestRatePerSecond > 0);
         // don't want interest to be too much for refinancing lender
         vm.assume(fuzzed.interestRatePerSecond < (fuzzed.randomAsset % 2 == 0 ? 100 : 10**13));
@@ -206,6 +206,7 @@ contract OffersLoansRefinancesFixtures is
         returns (Offer memory, LoanAuction memory)
     {
         Offer memory offerCreated = createOffer(offer, lender1);
+
         approveLending(offer);
         LoanAuction memory loan = tryToExecuteLoanByBorrower(offer, errorCode);
         return (offerCreated, loan);
