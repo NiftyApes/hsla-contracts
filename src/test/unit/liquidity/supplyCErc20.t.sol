@@ -25,7 +25,7 @@ contract TestSupplyCErc20 is Test, OffersLoansRefinancesFixtures {
 
         vm.startPrank(borrower1);
 
-        cDAIToken.approve(address(cDAIToken), daiToken.balanceOf(borrower1));
+        daiToken.approve(address(cDAIToken), daiToken.balanceOf(borrower1));
 
         cDAIToken.mint(daiToken.balanceOf(borrower1));
         uint256 cTokenBalanceAfter = cDAIToken.balanceOf(borrower1);
