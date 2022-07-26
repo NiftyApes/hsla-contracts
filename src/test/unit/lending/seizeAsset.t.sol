@@ -15,8 +15,8 @@ contract TestSeizeAsset is Test, OffersLoansRefinancesFixtures {
         uint256 initialTimestamp = block.timestamp;
 
         vm.assume(fuzzed.floorTerm == false);
-        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedBorrowerOfferFields);
-        createOfferAndTryToExecuteLoanByLender(offer, "should work");
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
 
         // attempts to seize something lending doesn't know about should fail
         vm.startPrank(lender1);
@@ -66,8 +66,8 @@ contract TestSeizeAsset is Test, OffersLoansRefinancesFixtures {
         uint256 initialTimestamp = block.timestamp;
 
         // create loan
-        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedBorrowerOfferFields);
-        createOfferAndTryToExecuteLoanByLender(offer, "should work");
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
 
         // warp ahead 1 second *before* loan end
         vm.warp(initialTimestamp + offer.duration - 1);
@@ -122,8 +122,8 @@ contract TestSeizeAsset is Test, OffersLoansRefinancesFixtures {
         uint256 initialTimestamp = block.timestamp;
 
         // create loan
-        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedBorrowerOfferFields);
-        createOfferAndTryToExecuteLoanByLender(offer, "should work");
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
 
         // warp ahead to end of loan
         vm.warp(initialTimestamp + offer.duration);
