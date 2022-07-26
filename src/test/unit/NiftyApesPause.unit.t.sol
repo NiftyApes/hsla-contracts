@@ -28,8 +28,8 @@ contract NiftyApesPauseUnitTest is
     NiftyApesOffers offersContract;
     NiftyApesLiquidity liquidityProviders;
     NiftyApesSigLending sigLendingAuction;
-    ERC20Mock usdcToken;
-    CERC20Mock cUSDCToken;
+    ERC20Mock daiToken;
+    CERC20Mock cDAIToken;
     CEtherMock cEtherToken;
     address compContractAddress = 0xbbEB7c67fa3cfb40069D19E598713239497A3CA5;
 
@@ -67,11 +67,11 @@ contract NiftyApesPauseUnitTest is
 
         offersContract.updateLendingContractAddress(address(lendingAuction));
 
-        usdcToken = new ERC20Mock();
-        usdcToken.initialize("USD Coin", "USDC");
-        cUSDCToken = new CERC20Mock();
-        cUSDCToken.initialize(usdcToken);
-        liquidityProviders.setCAssetAddress(address(usdcToken), address(cUSDCToken));
+        daiToken = new ERC20Mock();
+        daiToken.initialize("USD Coin", "DAI");
+        cDAIToken = new CERC20Mock();
+        cDAIToken.initialize(daiToken);
+        liquidityProviders.setCAssetAddress(address(daiToken), address(cDAIToken));
 
         cEtherToken = new CEtherMock();
         cEtherToken.initialize();
@@ -107,7 +107,7 @@ contract NiftyApesPauseUnitTest is
                 floorTerm: false,
                 lenderOffer: true,
                 nftId: 4,
-                asset: address(usdcToken),
+                asset: address(daiToken),
                 amount: 6,
                 duration: 7,
                 expiration: 8
@@ -181,25 +181,25 @@ contract NiftyApesPauseUnitTest is
     function testCannotSupplyErc20_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        liquidityProviders.supplyErc20(address(usdcToken), 1);
+        liquidityProviders.supplyErc20(address(daiToken), 1);
     }
 
     function testCannotSupplyCErc20_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        liquidityProviders.supplyCErc20(address(cUSDCToken), 1);
+        liquidityProviders.supplyCErc20(address(cDAIToken), 1);
     }
 
     function testCannotWithdrawErc20_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        liquidityProviders.withdrawErc20(address(usdcToken), 1);
+        liquidityProviders.withdrawErc20(address(daiToken), 1);
     }
 
     function testCannotwithdrawCErc20_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        liquidityProviders.withdrawCErc20(address(cUSDCToken), 1);
+        liquidityProviders.withdrawCErc20(address(cDAIToken), 1);
     }
 
     function testCannotSupplyEth_paused() public {

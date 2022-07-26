@@ -215,14 +215,15 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         view
         returns (uint256, uint256);
 
-    /// @notice Returns the protocolInterestRatePerSecond for a given set of terms
-    ///         There is a set protocolInterestRateBps so no interestBps value is provided
+    /// @notice Returns the pinterestRatePerSecond for a given set of terms
     /// @param amount The amount of the loan
+    /// @param interestBps in basis points
     /// @param duration The duration of the loan
-    function calculateProtocolInterestPerSecond(uint256 amount, uint256 duration)
-        external
-        view
-        returns (uint96);
+    function calculateInterestPerSecond(
+        uint256 amount,
+        uint256 interestBps,
+        uint256 duration
+    ) external view returns (uint96);
 
     /// @notice Returns the delta between the required accumulated interest and the current accumulated interest
     /// @param nftContractAddress The address of the NFT collection
@@ -233,8 +234,13 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         returns (uint256);
 
     /// @notice Returns whether the lender has provided sufficient terms to not be charged a term griefing premium
+    ///         Amount and duration must be equal to or greater than, and interestRatePerSecond must be less than
+    ///         or equal to the current terms or function will fail
     /// @param nftContractAddress The address of the NFT collection
     /// @param nftId The id of the specified NFT
+    /// @param amount The amount of asset offered
+    /// @param interestRatePerSecond The interest rate per second offered
+    /// @param duration The duration of the loan offered
     function checkSufficientTerms(
         address nftContractAddress,
         uint256 nftId,

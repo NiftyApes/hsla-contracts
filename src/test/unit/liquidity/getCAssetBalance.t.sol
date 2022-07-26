@@ -25,8 +25,8 @@ contract TestGetCAssetBalance is Test, ILiquidityEvents, OffersLoansRefinancesFi
     function test_unit_getCAssetBalance_works() public {
         if (!integration) {
             assertEq(
-                liquidity.getCAssetBalance(address(lender1), address(cUSDCToken)),
-                1000000000000000000000000000000000000000
+                liquidity.getCAssetBalance(address(lender1), address(cDAIToken)),
+                2000000000000000000000000000000000000000
             );
         }
     }

@@ -7,16 +7,15 @@ import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 import "../../utils/fixtures/OffersLoansRefinancesFixtures.sol";
 import "../../../interfaces/niftyapes/liquidity/ILiquidityEvents.sol";
 
-contract TestGetCAsset is Test, ILiquidityEvents, OffersLoansRefinancesFixtures {
+contract TestLiquidityRenounceOwnership is Test, ILiquidityEvents, OffersLoansRefinancesFixtures {
     function setUp() public override {
         super.setUp();
     }
 
-    function test_unit_getCAsset_works() public {
-        if (!integration) {
-            assertEq(liquidity.getCAsset(address(daiToken)), address(cDAIToken));
-        } else {
-            assertEq(liquidity.getCAsset(address(daiToken)), address(cDAIToken));
-        }
+    function test_unit_liquidity_renounceOwnership_does_nothing() public {
+        vm.prank(owner);
+        liquidity.renounceOwnership();
+
+        assertEq(liquidity.owner(), owner);
     }
 }

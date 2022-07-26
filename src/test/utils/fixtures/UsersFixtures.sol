@@ -16,12 +16,14 @@ contract UsersFixtures is Test {
     address payable internal borrower2;
     address payable internal lender1;
     address payable internal lender2;
+    address payable internal lender3;
     address payable internal owner;
     address constant SANCTIONED_ADDRESS = address(0x7FF9cFad3877F21d41Da833E2F775dB0569eE3D9);
 
     address payable[10] internal users;
 
-    uint256 internal defaultInitialEthBalance = 1000 ether;
+    // current total supply of ether
+    uint256 internal defaultInitialEthBalance = 121520307 ether;
 
     function setUp() public virtual {
         borrower1 = getNextUserAddress();
@@ -39,6 +41,10 @@ contract UsersFixtures is Test {
         lender2 = getNextUserAddress();
         vm.deal(lender2, defaultInitialEthBalance);
         vm.label(lender2, "lender2");
+
+        lender3 = getNextUserAddress();
+        vm.deal(lender3, defaultInitialEthBalance);
+        vm.label(lender3, "lender3");
 
         owner = getNextUserAddress();
         vm.deal(owner, defaultInitialEthBalance);

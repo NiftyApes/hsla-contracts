@@ -19,25 +19,25 @@ contract TestLiquidityPauseSanctions is Test, OffersLoansRefinancesFixtures {
         liquidity.pauseSanctions();
 
         if (integration) {
-            vm.startPrank(usdcWhale);
+            vm.startPrank(daiWhale);
             vm.expectRevert("Blacklistable: account is blacklisted");
-            usdcToken.transfer(SANCTIONED_ADDRESS, 1);
+            daiToken.transfer(SANCTIONED_ADDRESS, 1);
             vm.stopPrank();
         } else {
             vm.prank(SANCTIONED_ADDRESS);
-            usdcToken.mint(SANCTIONED_ADDRESS, 1);
+            daiToken.mint(SANCTIONED_ADDRESS, 1);
         }
 
         vm.startPrank(SANCTIONED_ADDRESS);
         if (integration) {
             vm.expectRevert("Blacklistable: account is blacklisted");
         }
-        usdcToken.approve(address(liquidity), 1);
+        daiToken.approve(address(liquidity), 1);
 
         if (integration) {
             vm.expectRevert("Blacklistable: account is blacklisted");
         }
-        liquidity.supplyErc20(address(usdcToken), 1);
+        liquidity.supplyErc20(address(daiToken), 1);
         vm.stopPrank();
     }
 
@@ -51,25 +51,25 @@ contract TestLiquidityPauseSanctions is Test, OffersLoansRefinancesFixtures {
         liquidity.pauseSanctions();
 
         if (integration) {
-            vm.startPrank(usdcWhale);
+            vm.startPrank(daiWhale);
             vm.expectRevert("Blacklistable: account is blacklisted");
-            usdcToken.transfer(SANCTIONED_ADDRESS, 1);
+            daiToken.transfer(SANCTIONED_ADDRESS, 1);
             vm.stopPrank();
         } else {
             vm.prank(SANCTIONED_ADDRESS);
-            usdcToken.mint(SANCTIONED_ADDRESS, 1);
+            daiToken.mint(SANCTIONED_ADDRESS, 1);
         }
 
         vm.startPrank(SANCTIONED_ADDRESS);
         if (integration) {
             vm.expectRevert("Blacklistable: account is blacklisted");
         }
-        usdcToken.approve(address(liquidity), 1);
+        daiToken.approve(address(liquidity), 1);
 
         if (integration) {
             vm.expectRevert("Blacklistable: account is blacklisted");
         }
-        liquidity.supplyErc20(address(usdcToken), 1);
+        liquidity.supplyErc20(address(daiToken), 1);
         vm.stopPrank();
 
         vm.prank(owner);
@@ -77,7 +77,7 @@ contract TestLiquidityPauseSanctions is Test, OffersLoansRefinancesFixtures {
 
         vm.startPrank(SANCTIONED_ADDRESS);
         vm.expectRevert("00017");
-        liquidity.withdrawErc20(address(usdcToken), 1);
+        liquidity.withdrawErc20(address(daiToken), 1);
     }
 
     function test_unit_liquidity_cannot_unpauseSanctions_notOwner() public {

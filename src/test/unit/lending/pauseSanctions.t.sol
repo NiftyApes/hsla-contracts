@@ -30,7 +30,7 @@ contract TestLendingPauseSanctions is Test, OffersLoansRefinancesFixtures {
         vm.startPrank(SANCTIONED_ADDRESS);
         mockNft.approve(address(lending), offer.nftId);
         offers.getOfferHash(offer);
-        if (integration && offer.asset == address(usdcToken)) {
+        if (integration && offer.asset == address(daiToken)) {
             vm.expectRevert("Blacklistable: account is blacklisted");
         }
         lending.executeLoanByBorrower(
@@ -62,7 +62,7 @@ contract TestLendingPauseSanctions is Test, OffersLoansRefinancesFixtures {
         vm.startPrank(SANCTIONED_ADDRESS);
         mockNft.approve(address(lending), offer.nftId);
         offers.getOfferHash(offer);
-        if (integration && offer.asset == address(usdcToken)) {
+        if (integration && offer.asset == address(daiToken)) {
             vm.expectRevert("Blacklistable: account is blacklisted");
         }
         lending.executeLoanByBorrower(

@@ -15,13 +15,13 @@ contract TestSetMaxCAssetBalance is Test, ILiquidityEvents, OffersLoansRefinance
     function test_unit_setMaxCAssetBalance() public {
         vm.startPrank(owner);
 
-        liquidity.setMaxCAssetBalance(address(cUSDCToken), 100_000);
+        liquidity.setMaxCAssetBalance(address(cDAIToken), 100_000);
 
-        assertEq(liquidity.maxBalanceByCAsset(address(cUSDCToken)), 100_000);
+        assertEq(liquidity.maxBalanceByCAsset(address(cDAIToken)), 100_000);
     }
 
     function test_unit_cannot_setMaxCAssetBalance_notOwner() public {
         vm.expectRevert("Ownable: caller is not the owner");
-        liquidity.setMaxCAssetBalance(address(cUSDCToken), 100_000);
+        liquidity.setMaxCAssetBalance(address(cDAIToken), 100_000);
     }
 }

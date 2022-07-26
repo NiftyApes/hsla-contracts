@@ -20,8 +20,8 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
     NiftyApesOffers offersContract;
     NiftyApesLiquidity liquidityProviders;
     NiftyApesSigLending sigLendingAuction;
-    ERC20Mock usdcToken;
-    CERC20Mock cUSDCToken;
+    ERC20Mock daiToken;
+    CERC20Mock cDAIToken;
     CEtherMock cEtherToken;
     address compContractAddress = 0xbbEB7c67fa3cfb40069D19E598713239497A3CA5;
 
@@ -50,11 +50,11 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
             address(sigLendingAuction)
         );
 
-        usdcToken = new ERC20Mock();
-        usdcToken.initialize("USD Coin", "USDC");
-        cUSDCToken = new CERC20Mock();
-        cUSDCToken.initialize(usdcToken);
-        liquidityProviders.setCAssetAddress(address(usdcToken), address(cUSDCToken));
+        daiToken = new ERC20Mock();
+        daiToken.initialize("USD Coin", "DAI");
+        cDAIToken = new CERC20Mock();
+        cDAIToken.initialize(daiToken);
+        liquidityProviders.setCAssetAddress(address(daiToken), address(cDAIToken));
 
         cEtherToken = new CEtherMock();
         cEtherToken.initialize();
@@ -102,6 +102,11 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
         hevm.startPrank(NOT_ADMIN);
         hevm.expectRevert("Ownable: caller is not the owner");
         niftyApes.updateProtocolInterestBps(1);
+    }
+
+    function testCannotUpdateProtocolInterestBps_max_fee() public {
+        hevm.expectRevert("00002");
+        niftyApes.updateProtocolInterestBps(1001);
     }
 
     function testUpdateProtocolInterestBps_owner() public {

@@ -25,7 +25,7 @@ contract OffersLoansRefinancesFixtures is
         uint96 interestRatePerSecond;
         uint32 duration;
         uint32 expiration;
-        uint8 randomAsset; // asset = randomAsset % 2 == 0 ? USDC : ETH
+        uint8 randomAsset; // asset = randomAsset % 2 == 0 ? DAI : ETH
     }
 
     struct FixedOfferFields {
@@ -62,14 +62,16 @@ contract OffersLoansRefinancesFixtures is
             nftId: 1
         });
 
-        uint8 randomAsset = 0; // 0 == USDC, 1 == ETH
+        uint8 randomAsset = 0; // 0 == DAI, 1 == ETH
 
         // in addition to fuzz tests, we have fast unit tests
         // using these default values instead of fuzzing
         defaultFixedFuzzedFieldsForFastUnitTesting = FuzzedOfferFields({
             floorTerm: false,
-            amount: randomAsset % 2 == 0 ? 10 * uint128(10**usdcToken.decimals()) : 1 ether,
-            interestRatePerSecond: randomAsset % 2 == 0 ? 100 : 10**6,
+            amount: randomAsset % 2 == 0 ? 10 * uint128(10**daiToken.decimals()) : 1 ether,
+            interestRatePerSecond: randomAsset % 2 == 0
+                ? uint96(10**daiToken.decimals() / 10000)
+                : 10**6,
             duration: 1 weeks,
             expiration: uint32(block.timestamp) + 1 days,
             randomAsset: randomAsset
@@ -79,18 +81,18 @@ contract OffersLoansRefinancesFixtures is
     modifier validateFuzzedOfferFields(FuzzedOfferFields memory fuzzed) {
         // -10 ether to give refinancing lender some wiggle room for fees
         if (fuzzed.randomAsset % 2 == 0) {
-            vm.assume(fuzzed.amount > 0);
+            vm.assume(fuzzed.amount > ~uint32(0));
             vm.assume(fuzzed.amount < (defaultUsdcLiquiditySupplied * 90) / 100);
         } else {
-            vm.assume(fuzzed.amount > 0);
+            vm.assume(fuzzed.amount > ~uint32(0));
             vm.assume(fuzzed.amount < (defaultEthLiquiditySupplied * 90) / 100);
         }
 
         vm.assume(fuzzed.duration > 1 days);
         // to avoid overflow when loanAuction.loanEndTimestamp = _currentTimestamp32() + offer.duration;
-        vm.assume(fuzzed.duration < ~uint32(0) - block.timestamp);
+        vm.assume(fuzzed.duration < (~uint32(0) - block.timestamp));
         vm.assume(fuzzed.expiration > block.timestamp);
-        // to avoid "Division or modulo by 0"
+        // to avoid "Division or m  odulo by 0"
         vm.assume(fuzzed.interestRatePerSecond > 0);
         // don't want interest to be too much for refinancing lender
         vm.assume(fuzzed.interestRatePerSecond < (fuzzed.randomAsset % 2 == 0 ? 100 : 10**13));
@@ -101,12 +103,12 @@ contract OffersLoansRefinancesFixtures is
         FuzzedOfferFields memory fuzzed,
         FixedOfferFields memory fixedFields
     ) internal view returns (Offer memory) {
-        address asset = fuzzed.randomAsset % 2 == 0 ? address(usdcToken) : address(ETH_ADDRESS);
+        address asset = fuzzed.randomAsset % 2 == 0 ? address(daiToken) : address(ETH_ADDRESS);
 
         bool isAmountEnough;
 
         if (fuzzed.randomAsset % 2 == 0) {
-            isAmountEnough = fuzzed.amount >= 10 * uint128(10**usdcToken.decimals());
+            isAmountEnough = fuzzed.amount >= 10 * uint128(10**daiToken.decimals());
         } else {
             isAmountEnough = fuzzed.amount >= 250000000;
         }
@@ -125,7 +127,7 @@ contract OffersLoansRefinancesFixtures is
                     ? fuzzed.amount
                     : (
                         fuzzed.randomAsset % 2 == 0
-                            ? 10 * uint128(10**usdcToken.decimals())
+                            ? 10 * uint128(10**daiToken.decimals())
                             : 250000000
                     ),
                 duration: fuzzed.duration,
@@ -133,8 +135,9 @@ contract OffersLoansRefinancesFixtures is
             });
     }
 
-    function createOffer(Offer memory offer) internal returns (Offer memory) {
-        vm.startPrank(lender1);
+    function createOffer(Offer memory offer, address lender) internal returns (Offer memory) {
+        vm.startPrank(lender);
+        offer.creator = lender;
         bytes32 offerHash = offers.createOffer(offer);
         vm.stopPrank();
         return offers.getOffer(offer.nftContractAddress, offer.nftId, offerHash, offer.floorTerm);
@@ -202,7 +205,8 @@ contract OffersLoansRefinancesFixtures is
         internal
         returns (Offer memory, LoanAuction memory)
     {
-        Offer memory offerCreated = createOffer(offer);
+        Offer memory offerCreated = createOffer(offer, lender1);
+
         approveLending(offer);
         LoanAuction memory loan = tryToExecuteLoanByBorrower(offer, errorCode);
         return (offerCreated, loan);
@@ -216,19 +220,6 @@ contract OffersLoansRefinancesFixtures is
         approveLending(offer);
         LoanAuction memory loan = tryToExecuteLoanByLender(offer, errorCode);
         return (offerCreated, loan);
-    }
-
-    function tryToRefinanceLoan(Offer memory newOffer, bytes memory errorCode) internal {
-        vm.startPrank(lender2);
-
-        if (bytes16(errorCode) != bytes16("should work")) {
-            vm.expectRevert(errorCode);
-        }
-        lending.refinanceByLender(
-            newOffer,
-            lending.getLoanAuction(address(mockNft), 1).lastUpdatedTimestamp
-        );
-        vm.stopPrank();
     }
 
     function tryToRefinanceLoanByBorrower(Offer memory newOffer, bytes memory errorCode) internal {
@@ -249,6 +240,23 @@ contract OffersLoansRefinancesFixtures is
             lending.getLoanAuction(address(mockNft), 1).lastUpdatedTimestamp
         );
         vm.stopPrank();
+    }
+
+    function tryToRefinanceByLender(Offer memory newOffer, bytes memory errorCode)
+        internal
+        returns (LoanAuction memory)
+    {
+        vm.startPrank(lender2);
+
+        if (bytes16(errorCode) != bytes16("should work")) {
+            vm.expectRevert(errorCode);
+        }
+        lending.refinanceByLender(
+            newOffer,
+            lending.getLoanAuction(address(mockNft), 1).lastUpdatedTimestamp
+        );
+        vm.stopPrank();
+        return lending.getLoanAuction(newOffer.nftContractAddress, newOffer.nftId);
     }
 
     function assetBalance(address account, address asset) internal returns (uint256) {

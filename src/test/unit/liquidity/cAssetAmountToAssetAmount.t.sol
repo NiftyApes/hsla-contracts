@@ -16,25 +16,25 @@ contract TestCAssetAmountToAssetAmount is Test, ILiquidityEvents, OffersLoansRef
 
     function testCAssetAmountToAssetAmount() public {
         if (!integration) {
-            cUSDCToken.setExchangeRateCurrent(220154645140434444389595003); // exchange rate of DAI at time of edit
+            cDAIToken.setExchangeRateCurrent(220154645140434444389595003); // exchange rate of DAI at time of edit
 
-            uint256 result = liquidity.cAssetAmountToAssetAmount(address(cUSDCToken), 1e8); // supply 1 mockCUSDC, would be better to call this mock DAI as USDC has 6 decimals
+            uint256 result = liquidity.cAssetAmountToAssetAmount(address(cDAIToken), 1e8); // supply 1 mockCDAI, would be better to call this mock DAI as DAI has 6 decimals
 
             assertEq(result, 22015464514043444); // ~ 0.02 DAI
         } else {
-            uint256 amtUsdc = usdcToken.balanceOf(lender1);
+            uint256 amtUsdc = daiToken.balanceOf(lender1);
 
             vm.startPrank(lender1);
-            ICERC20(address(usdcToken)).approve(address(cUSDCToken), amtUsdc);
-            ICERC20(address(cUSDCToken)).mint(amtUsdc);
+            ICERC20(address(daiToken)).approve(address(cDAIToken), amtUsdc);
+            ICERC20(address(cDAIToken)).mint(amtUsdc);
 
-            uint256 amtCUsdc = cUSDCToken.balanceOf(lender1);
+            uint256 amtCUsdc = cDAIToken.balanceOf(lender1);
 
-            uint256 result = liquidity.cAssetAmountToAssetAmount(address(cUSDCToken), amtCUsdc);
+            uint256 result = liquidity.cAssetAmountToAssetAmount(address(cDAIToken), amtCUsdc);
 
-            ICERC20(address(cUSDCToken)).redeem(amtCUsdc);
+            ICERC20(address(cDAIToken)).redeem(amtCUsdc);
 
-            assertEq(usdcToken.balanceOf(lender1), result);
+            assertEq(daiToken.balanceOf(lender1), result);
         }
     }
 }
