@@ -451,10 +451,10 @@ contract LendingAuctionUnitTest is
         );
 
         hevm.startPrank(LENDER_2);
-        daiToken.mint(address(LENDER_2), 7 ether);
-        daiToken.approve(address(liquidityProviders), 7 ether);
+        daiToken.mint(address(LENDER_2), 8 ether);
+        daiToken.approve(address(liquidityProviders), 8 ether);
 
-        liquidityProviders.supplyErc20(address(daiToken), 7 ether);
+        liquidityProviders.supplyErc20(address(daiToken), 8 ether);
 
         hevm.warp(block.timestamp + 12 hours);
 
@@ -6167,10 +6167,10 @@ contract LendingAuctionUnitTest is
         );
 
         hevm.startPrank(LENDER_2);
-        daiToken.mint(address(LENDER_2), 7 ether);
-        daiToken.approve(address(liquidityProviders), 7 ether);
+        daiToken.mint(address(LENDER_2), 8 ether);
+        daiToken.approve(address(liquidityProviders), 8 ether);
 
-        liquidityProviders.supplyErc20(address(daiToken), 7 ether);
+        liquidityProviders.supplyErc20(address(daiToken), 8 ether);
 
         hevm.warp(block.timestamp + 12 hours);
 

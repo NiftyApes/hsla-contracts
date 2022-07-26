@@ -50,11 +50,20 @@ contract NFTAndERC20Fixtures is Test, UsersFixtures {
             uint256 daiWhale1Balance = daiToken.balanceOf(daiWhale1);
             uint256 daiWhale2Balance = daiToken.balanceOf(daiWhale2);
 
+            address whaleCombiner = address(0xabcd);
             vm.startPrank(daiWhale1);
-            daiToken.transfer(lender1, daiWhale1Balance);
+            daiToken.transfer(whaleCombiner, daiWhale1Balance);
             vm.stopPrank();
             vm.startPrank(daiWhale2);
-            daiToken.transfer(lender2, daiWhale2Balance);
+            daiToken.transfer(whaleCombiner, daiWhale2Balance);
+            vm.stopPrank();
+
+            uint256 amtToEachLender = daiToken.balanceOf(whaleCombiner) / 3;
+
+            vm.startPrank(whaleCombiner);
+            daiToken.transfer(lender1, amtToEachLender);
+            daiToken.transfer(lender2, amtToEachLender);
+            daiToken.transfer(lender3, amtToEachLender);
             vm.stopPrank();
         } else {
             daiToken = new ERC20Mock();
@@ -71,7 +80,7 @@ contract NFTAndERC20Fixtures is Test, UsersFixtures {
 
             daiToken.mint(lender1, 3672711471 ether);
             daiToken.mint(lender2, 3672711471 ether);
-            console.log("daiToken.balanceOf(lender2)", daiToken.balanceOf(lender2));
+            daiToken.mint(lender3, 3672711471 ether);
             daiToken.mint(SANCTIONED_ADDRESS, 3672711471 ether);
         }
 

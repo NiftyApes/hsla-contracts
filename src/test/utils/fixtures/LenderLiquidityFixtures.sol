@@ -31,5 +31,37 @@ contract LenderLiquidityFixtures is Test, NiftyApesDeployment {
         daiToken.approve(address(liquidity), daiToken.balanceOf(lender2));
         liquidity.supplyErc20(address(daiToken), daiToken.balanceOf(lender2));
         vm.stopPrank();
+
+        vm.startPrank(lender3);
+        liquidity.supplyEth{ value: defaultEthLiquiditySupplied }();
+        daiToken.approve(address(liquidity), daiToken.balanceOf(lender3));
+        liquidity.supplyErc20(address(daiToken), daiToken.balanceOf(lender3));
+        vm.stopPrank();
+    }
+
+    function resetSuppliedDaiLiquidity(address lender, uint256 amount) internal {
+        vm.startPrank(lender);
+        liquidity.withdrawErc20(
+            address(daiToken),
+            liquidity.cAssetAmountToAssetAmount(
+                address(cDAIToken),
+                liquidity.getCAssetBalance(lender, address(cDAIToken))
+            )
+        );
+        daiToken.approve(address(liquidity), amount);
+        liquidity.supplyErc20(address(daiToken), amount);
+        vm.stopPrank();
+    }
+
+    function resetSuppliedEthLiquidity(address lender, uint256 amount) internal {
+        vm.startPrank(lender);
+        liquidity.withdrawEth(
+            liquidity.cAssetAmountToAssetAmount(
+                address(cEtherToken),
+                liquidity.getCAssetBalance(lender, address(cEtherToken))
+            )
+        );
+        liquidity.supplyEth{ value: amount }();
+        vm.stopPrank();
     }
 }
