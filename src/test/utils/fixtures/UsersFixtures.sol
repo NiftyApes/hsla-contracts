@@ -13,8 +13,10 @@ contract UsersFixtures is Test {
     bytes32 internal nextUser = keccak256(abi.encodePacked("user address"));
 
     address payable internal borrower1;
+    uint256 internal borrower1_private_key;
     address payable internal borrower2;
     address payable internal lender1;
+    uint256 internal lender1_private_key;
     address payable internal lender2;
     address payable internal lender3;
     address payable internal owner;
@@ -26,7 +28,8 @@ contract UsersFixtures is Test {
     uint256 internal defaultInitialEthBalance = 121520307 ether;
 
     function setUp() public virtual {
-        borrower1 = getNextUserAddress();
+        borrower1 = payable(0x287841894D6FF7b033C810Dc658F5f295cEb356f);
+        borrower1_private_key = 0xe03653b0b5b4758d674f62d5cb4f01fda33b2e6c3d5b7d56942ca34d1564c376;
         vm.deal(borrower1, defaultInitialEthBalance);
         vm.label(borrower1, "borrower1");
 
@@ -34,7 +37,8 @@ contract UsersFixtures is Test {
         vm.deal(borrower2, defaultInitialEthBalance);
         vm.label(borrower2, "borrower2");
 
-        lender1 = getNextUserAddress();
+        lender1 = payable(0x7DE84B1343651f5Fd09A0C953C20b09D3F4E9872);
+        lender1_private_key = 0x8294f76232c16ff75384e1e116f072473efebd6bc3b80f4f1039a8013a9435bc;
         vm.deal(lender1, defaultInitialEthBalance);
         vm.label(lender1, "lender1");
 
