@@ -16,6 +16,8 @@ import "./interfaces/niftyapes/offers/IOffers.sol";
 import "./interfaces/sanctions/SanctionsList.sol";
 import "./lib/Math.sol";
 
+import "forge-std/Test.sol";
+
 /// @title Implementation of the ILiquidity interface
 contract NiftyApesLiquidity is
     OwnableUpgradeable,
@@ -318,6 +320,10 @@ contract NiftyApesLiquidity is
         uint256 bpsForRegen = (ownerBalance * regenCollectiveBpsOfRevenue) / 10_000;
 
         uint256 ownerBalanceMinusRegen = ownerBalance - bpsForRegen;
+
+        console.log("ownerBalance", ownerBalance);
+        console.log("bpsForRegen", bpsForRegen);
+        console.log("ownerBalanceMinusRegen", ownerBalanceMinusRegen);
 
         _sendValue(compContractAddress, ownerBalanceMinusRegen, owner());
 
