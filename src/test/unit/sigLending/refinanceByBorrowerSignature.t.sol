@@ -51,7 +51,11 @@ contract TestRefinanceLoanByBorrowerSignature is
         );
 
         Offer memory newOffer = offer;
-        newOffer.amount += newOffer.amount;
+        newOffer.amount +=
+            uint128(initialAmount) +
+            uint128(offer.interestRatePerSecond * 0) +
+            uint128(interestShortfall) +
+            1;
         bytes memory signature = signOffer(lender1_private_key, offer);
 
         vm.startPrank(borrower1);
@@ -103,7 +107,11 @@ contract TestRefinanceLoanByBorrowerSignature is
         );
 
         Offer memory newOffer = offer;
-        newOffer.amount += newOffer.amount;
+        newOffer.amount +=
+            uint128(initialAmount) +
+            uint128(offer.interestRatePerSecond * 0) +
+            uint128(interestShortfall) +
+            1;
         bytes memory signature = signOffer(lender1_private_key, offer);
 
         vm.expectEmit(true, true, false, true); // Refinance has 2 indexes
@@ -158,7 +166,11 @@ contract TestRefinanceLoanByBorrowerSignature is
         );
 
         Offer memory newOffer = offer;
-        newOffer.amount += newOffer.amount;
+        newOffer.amount +=
+            uint128(initialAmount) +
+            uint128(offer.interestRatePerSecond * 0) +
+            uint128(interestShortfall) +
+            1;
         bytes memory signature = signOffer(lender1_private_key, offer);
 
         vm.expectEmit(true, true, false, true); // Refinance has 2 indexes
@@ -218,7 +230,11 @@ contract TestRefinanceLoanByBorrowerSignature is
         );
 
         Offer memory newOffer = offer;
-        newOffer.amount += newOffer.amount;
+        newOffer.amount +=
+            uint128(initialAmount) +
+            uint128(offer.interestRatePerSecond * 0) +
+            uint128(interestShortfall) +
+            1;
         bytes memory signature = signOffer(lender1_private_key, offer);
 
         vm.expectEmit(true, true, false, true); // OfferSignatureUsed has two indexes
