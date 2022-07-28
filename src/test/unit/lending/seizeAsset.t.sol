@@ -134,9 +134,10 @@ contract TestSeizeAsset is Test, OffersLoansRefinancesFixtures {
 
         // borrower repays loan
         mintDai(borrower1, offer.interestRatePerSecond * offer.duration);
+
         vm.startPrank(borrower1);
         if (offer.asset == address(daiToken)) {
-            daiToken.increaseAllowance(address(liquidity), ~uint256(0));
+            daiToken.approve(address(liquidity), ~uint256(0));
             lending.repayLoan(offer.nftContractAddress, offer.nftId);
         } else {
             vm.deal(borrower1, offer.amount + offer.interestRatePerSecond * offer.duration);
@@ -145,7 +146,6 @@ contract TestSeizeAsset is Test, OffersLoansRefinancesFixtures {
             }(offer.nftContractAddress, offer.nftId);
         }
         vm.stopPrank();
-
         // attempt to seize results in revert
         vm.startPrank(lender1);
         vm.expectRevert("00040");
