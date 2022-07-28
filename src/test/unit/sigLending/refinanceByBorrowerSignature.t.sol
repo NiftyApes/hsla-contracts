@@ -15,36 +15,6 @@ contract TestRefinanceLoanByBorrowerSignature is
         super.setUp();
     }
 
-    function sign(uint256 signerPrivateKey, bytes32 digest) internal returns (bytes memory) {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-        (v, r, s) = vm.sign(signerPrivateKey, digest);
-
-        bytes memory signature = "";
-
-        // case 65: r,s,v signature (standard)
-        assembly {
-            // Logical shift left of the value
-            mstore(add(signature, 0x20), r)
-            mstore(add(signature, 0x40), s)
-            mstore(add(signature, 0x60), shl(248, v))
-            // 65 bytes long
-            mstore(signature, 0x41)
-            // Update free memory pointer
-            mstore(0x40, add(signature, 0x80))
-        }
-
-        return signature;
-    }
-
-    function signOffer(uint256 signerPrivateKey, Offer memory offer) public returns (bytes memory) {
-        // This is the EIP712 signed hash
-        bytes32 offerHash = offers.getOfferHash(offer);
-
-        return sign(signerPrivateKey, offerHash);
-    }
-
     function assertionsForExecutedLoan(Offer memory offer) private {
         // borrower has money
         if (offer.asset == address(daiToken)) {

@@ -9,11 +9,15 @@ import "../../../interfaces/niftyapes/offers/IOffersStructs.sol";
 import "../../../interfaces/niftyapes/lending/ILendingStructs.sol";
 import "../../../interfaces/niftyapes/lending/ILendingEvents.sol";
 
+import "../../common/BaseTest.sol";
+
 uint256 constant MAX_BPS = 10_000;
 uint256 constant MAX_FEE = 1_000;
 
+// Note: need "sign" function from BaseTest for signOffer below
 contract OffersLoansRefinancesFixtures is
     Test,
+    BaseTest,
     IOffersStructs,
     ILendingEvents,
     ILendingStructs,
@@ -273,5 +277,12 @@ contract OffersLoansRefinancesFixtures is
         uint256 cTokens = liquidity.getCAssetBalance(account, address(cAsset)) + 1;
 
         return liquidity.cAssetAmountToAssetAmount(address(cAsset), cTokens);
+    }
+
+    function signOffer(uint256 signerPrivateKey, Offer memory offer) public returns (bytes memory) {
+        // This is the EIP712 signed hash
+        bytes32 offerHash = offers.getOfferHash(offer);
+
+        return sign(signerPrivateKey, offerHash);
     }
 }
