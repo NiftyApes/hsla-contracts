@@ -14,16 +14,61 @@ contract TestWithdrawComp is Test, OffersLoansRefinancesFixtures {
         super.setUp();
     }
 
-    function test_unit_withdrawComp_works() public {
+    function _test_withdrawComp_owner_works(uint128 amount) private {
         if (integration) {
-            vm.prank(compWhale);
-            compToken.transfer(address(liquidity), 1 ether);
+            vm.startPrank(compWhale);
+            compToken.transfer(address(liquidity), compToken.balanceOf(compWhale));
+            vm.stopPrank();
         } else {
-            compToken.mint(address(liquidity), 1 ether);
+            compToken.mint(address(liquidity), 3672711471 ether);
         }
+        // avoid `redeemTokens zero` error by providing at least 1 COMP
+        vm.assume(amount > 0);
+        vm.assume(amount <= compToken.balanceOf(address(liquidity)));
 
-        vm.prank(owner);
-        liquidity.withdrawComp();
+        console.log("amount", amount);
+        uint256 compBalanceBefore = compToken.balanceOf(address(liquidity));
+        uint256 regenBalanceBefore = compToken.balanceOf(liquidity.regenCollectiveAddress());
+
+        console.log("contractCompBalanceBefore", compToken.balanceOf(address(liquidity)));
+
+        console.log("compBalanceBefore", compBalanceBefore);
+        console.log("regenBalanceBefore", regenBalanceBefore);
+
+        assertEq(regenBalanceBefore, 0);
+
+        vm.startPrank(owner);
+
+        uint256 compWithdrawn = liquidity.withdrawComp();
+        console.log("compWithdrawn", compWithdrawn);
+
+        vm.stopPrank();
+
+        console.log("amount", amount);
+
+        uint256 compBalanceAfter = compToken.balanceOf(owner);
+        uint256 regenBalanceAfter = compToken.balanceOf(liquidity.regenCollectiveAddress());
+
+        console.log("compBalanceAfter", compBalanceAfter);
+        console.log("regenBalanceAfter", regenBalanceAfter);
+
+        uint256 expectedRegenAmount = (amount * liquidity.regenCollectiveBpsOfRevenue()) / 10_000;
+
+        console.log("expectedRegenAmount", expectedRegenAmount);
+
+        isApproxEqual(amount, compWithdrawn, 1);
+        isApproxEqual((expectedRegenAmount), (compBalanceBefore - compBalanceAfter), 1);
+        isApproxEqual(expectedRegenAmount, regenBalanceAfter, 1);
+    }
+
+    function test_fuzz_withdrawComp_owner_works(uint128 amount) public {
+        _test_withdrawComp_owner_works(amount);
+    }
+
+    function test_unit_withdrawComp_owner_works() public {
+        uint128 amount = 1 ether;
+
+        _test_withdrawComp_owner_works(amount);
     }
 
     function test_unit_cannot_withdrawComp_notOwner() public {
