@@ -51,7 +51,7 @@ contract TestPartialRepayLoan is Test, OffersLoansRefinancesFixtures {
             mintDai(borrower1, 1);
 
             vm.startPrank(borrower1);
-            daiToken.increaseAllowance(address(liquidity), ~uint256(0));
+            daiToken.approve(address(liquidity), ~uint256(0));
             lending.partialRepayLoan(
                 defaultFixedOfferFields.nftContractAddress,
                 defaultFixedOfferFields.nftId,

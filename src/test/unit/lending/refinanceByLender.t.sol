@@ -312,7 +312,7 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         // set up borrower repay full amount
         mintDai(borrower1, 10_000 * 10**daiToken.decimals());
         vm.startPrank(borrower1);
-        daiToken.increaseAllowance(address(liquidity), 10_000 * 10**daiToken.decimals());
+        daiToken.approve(address(liquidity), 10_000 * 10**daiToken.decimals());
 
         // most important part here is the amount repaid, the last argument to the event
         // the amount drawn + 1 hour at initial interest rate + 1 hour at "after draw" interest rate
@@ -525,7 +525,7 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         // set up borrower repay full amount
         vm.startPrank(borrower1);
         mintDai(borrower1, ~uint128(0));
-        daiToken.increaseAllowance(address(liquidity), ~uint256(0));
+        daiToken.approve(address(liquidity), ~uint256(0));
 
         // most important part here is the amount repaid, the last argument to the event
         // the amount drawn + 1 hour at initial interest rate + 1 hour at "after draw" interest rate

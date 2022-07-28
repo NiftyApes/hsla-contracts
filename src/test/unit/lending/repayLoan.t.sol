@@ -47,7 +47,7 @@ contract TestRepayLoan is Test, OffersLoansRefinancesFixtures {
             uint256 liquidityBalanceBeforeRepay = cDAIToken.balanceOf(address(liquidity));
 
             vm.startPrank(borrower1);
-            daiToken.increaseAllowance(address(liquidity), ~uint256(0));
+            daiToken.approve(address(liquidity), ~uint256(0));
             lending.repayLoan(
                 defaultFixedOfferFields.nftContractAddress,
                 defaultFixedOfferFields.nftId
