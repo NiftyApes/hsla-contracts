@@ -334,8 +334,37 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         lending.repayLoan(offer.nftContractAddress, offer.nftId);
         vm.stopPrank();
 
+        console.log(
+            "assetBalance(lender2, address(daiToken))",
+            assetBalance(lender2, address(daiToken))
+        );
+        console.log(
+            "assetBalancePlusOneCToken(lender2, address(daiToken))",
+            assetBalancePlusOneCToken(lender2, address(daiToken))
+        );
+        console.log("loanAuctionAfterDraw.amountDrawn", loanAuctionAfterDraw.amountDrawn);
+        console.log(
+            "1 hours * loanAuctionBeforeDraw.interestRatePerSecond",
+            1 hours * loanAuctionBeforeDraw.interestRatePerSecond
+        );
+
+        console.log(
+            "1 hours * loanAuctionAfterDraw.interestRatePerSecond",
+            1 hours * loanAuctionAfterDraw.interestRatePerSecond
+        );
+
+        console.log(
+            "+",
+            1 hours *
+                loanAuctionBeforeDraw.interestRatePerSecond +
+                1 hours *
+                loanAuctionAfterDraw.interestRatePerSecond
+        );
+
         // check borrower balance
         assertEq(assetBalance(borrower1, address(daiToken)), 0);
+
+        console.log("here 1");
 
         // check lender balance
         assertEq(
@@ -346,6 +375,7 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
                 1 hours *
                 loanAuctionAfterDraw.interestRatePerSecond
         );
+        console.log("here 2");
     }
 
     function test_unit_refinanceByLender_same_lender_refinances_twice_slashed() public {
