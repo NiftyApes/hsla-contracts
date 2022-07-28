@@ -83,7 +83,7 @@ contract TestExecuteLoanByBorrowerSignature is Test, OffersLoansRefinancesFixtur
         _test_executeLoanByBorrowerSignature_simplest_case(fixedForSpeed);
     }
 
-    function _test_executeLoanByBorrowerSignature_emit_loan_executed(
+    function _test_executeLoanByBorrowerSignature_emits_loan_executed(
         FuzzedOfferFields memory fuzzed
     ) private {
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
@@ -101,13 +101,13 @@ contract TestExecuteLoanByBorrowerSignature is Test, OffersLoansRefinancesFixtur
         assertionsForExecutedLoan(offer);
     }
 
-    function test_fuzz_executeLoanByBorrowerSignature_emit_loan_executed(
+    function test_fuzz_executeLoanByBorrowerSignature_emits_loan_executed(
         FuzzedOfferFields memory fuzzed
     ) public validateFuzzedOfferFields(fuzzed) {
-        _test_executeLoanByBorrowerSignature_emit_loan_executed(fuzzed);
+        _test_executeLoanByBorrowerSignature_emits_loan_executed(fuzzed);
     }
 
-    function test_unit_executeLoanByBorrowerSignature_emit_loan_executed() public {
+    function test_unit_executeLoanByBorrowerSignature_emits_loan_executed() public {
         FuzzedOfferFields memory fixedForSpeed = defaultFixedFuzzedFieldsForFastUnitTesting;
         _test_executeLoanByBorrowerSignature_simplest_case(fixedForSpeed);
     }
@@ -115,7 +115,7 @@ contract TestExecuteLoanByBorrowerSignature is Test, OffersLoansRefinancesFixtur
     // FYI old tests were looking for AmountDrawn event
     // but this no longer appears to be emitted during executeLoanByBorrowerSignature
 
-    function _test_executeLoanByBorrowerSignature_emit_offer_signature_used(
+    function _test_executeLoanByBorrowerSignature_emits_offer_signature_used(
         FuzzedOfferFields memory fuzzed
     ) private {
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
@@ -133,15 +133,15 @@ contract TestExecuteLoanByBorrowerSignature is Test, OffersLoansRefinancesFixtur
         assertionsForExecutedLoan(offer);
     }
 
-    function test_fuzz_executeLoanByBorrowerSignature_emit_offer_signature_used(
+    function test_fuzz_executeLoanByBorrowerSignature_emits_offer_signature_used(
         FuzzedOfferFields memory fuzzed
     ) public validateFuzzedOfferFields(fuzzed) {
         fuzzed.floorTerm = false;
-        _test_executeLoanByBorrowerSignature_emit_offer_signature_used(fuzzed);
+        _test_executeLoanByBorrowerSignature_emits_offer_signature_used(fuzzed);
     }
 
-    function test_unit_executeLoanByBorrowerSignature_emit_offer_signature_used() public {
+    function test_unit_executeLoanByBorrowerSignature_emits_offer_signature_used() public {
         FuzzedOfferFields memory fixedForSpeed = defaultFixedFuzzedFieldsForFastUnitTesting;
-        _test_executeLoanByBorrowerSignature_emit_offer_signature_used(fixedForSpeed);
+        _test_executeLoanByBorrowerSignature_emits_offer_signature_used(fixedForSpeed);
     }
 }

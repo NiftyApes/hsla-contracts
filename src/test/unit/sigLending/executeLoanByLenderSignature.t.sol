@@ -87,7 +87,7 @@ contract TestExecuteLoanByLenderSignature is Test, OffersLoansRefinancesFixtures
         _test_executeLoanByLenderSignature_simplest_case(fixedForSpeed);
     }
 
-    function _test_executeLoanByLenderSignature_emit_loan_executed(FuzzedOfferFields memory fuzzed)
+    function _test_executeLoanByLenderSignature_emits_loan_executed(FuzzedOfferFields memory fuzzed)
         private
     {
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedBorrowerOfferFields);
@@ -107,14 +107,14 @@ contract TestExecuteLoanByLenderSignature is Test, OffersLoansRefinancesFixtures
         assertionsForExecutedLoan(offer);
     }
 
-    function test_fuzz_executeLoanByLenderSignature_emit_loan_executed(
+    function test_fuzz_executeLoanByLenderSignature_emits_loan_executed(
         FuzzedOfferFields memory fuzzed
     ) public validateFuzzedOfferFields(fuzzed) {
         fuzzed.floorTerm = false;
-        _test_executeLoanByLenderSignature_emit_loan_executed(fuzzed);
+        _test_executeLoanByLenderSignature_emits_loan_executed(fuzzed);
     }
 
-    function test_unit_executeLoanByLenderSignature_emit_loan_executed() public {
+    function test_unit_executeLoanByLenderSignature_emits_loan_executed() public {
         FuzzedOfferFields memory fixedForSpeed = defaultFixedFuzzedFieldsForFastUnitTesting;
         _test_executeLoanByLenderSignature_simplest_case(fixedForSpeed);
     }
@@ -122,7 +122,7 @@ contract TestExecuteLoanByLenderSignature is Test, OffersLoansRefinancesFixtures
     // FYI old tests were looking for AmountDrawn event
     // but this no longer appears to be emitted during executeLoanByLenderSignature
 
-    function _test_executeLoanByLenderSignature_emit_offer_signature_used(
+    function _test_executeLoanByLenderSignature_emits_offer_signature_used(
         FuzzedOfferFields memory fuzzed
     ) private {
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedBorrowerOfferFields);
@@ -142,15 +142,15 @@ contract TestExecuteLoanByLenderSignature is Test, OffersLoansRefinancesFixtures
         assertionsForExecutedLoan(offer);
     }
 
-    function test_fuzz_executeLoanByLenderSignature_emit_offer_signature_used(
+    function test_fuzz_executeLoanByLenderSignature_emits_offer_signature_used(
         FuzzedOfferFields memory fuzzed
     ) public validateFuzzedOfferFields(fuzzed) {
         fuzzed.floorTerm = false;
-        _test_executeLoanByLenderSignature_emit_offer_signature_used(fuzzed);
+        _test_executeLoanByLenderSignature_emits_offer_signature_used(fuzzed);
     }
 
-    function test_unit_executeLoanByLenderSignature_emit_offer_signature_used() public {
+    function test_unit_executeLoanByLenderSignature_emits_offer_signature_used() public {
         FuzzedOfferFields memory fixedForSpeed = defaultFixedFuzzedFieldsForFastUnitTesting;
-        _test_executeLoanByLenderSignature_emit_offer_signature_used(fixedForSpeed);
+        _test_executeLoanByLenderSignature_emits_offer_signature_used(fixedForSpeed);
     }
 }
