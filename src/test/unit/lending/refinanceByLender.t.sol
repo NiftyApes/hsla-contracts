@@ -171,6 +171,51 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         _test_refinanceByLender_simplest_case(fixedForSpeed1, secondsBeforeRefinance);
     }
 
+    function test_unit_CANNOT_refinanceByLender_lenderNotOfferCreator() public {
+        FuzzedOfferFields memory fixedForSpeed1 = defaultFixedFuzzedFieldsForFastUnitTesting;
+        FuzzedOfferFields memory fixedForSpeed2 = defaultFixedFuzzedFieldsForFastUnitTesting;
+
+        fixedForSpeed2.duration += 1 days;
+        uint16 secondsBeforeRefinance = 12 hours;
+
+        Offer memory offer = offerStructFromFields(fixedForSpeed1, defaultFixedOfferFields);
+
+        createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
+
+        assertionsForExecutedLoan(offer);
+
+        uint256 amountDrawn = lending
+            .getLoanAuction(offer.nftContractAddress, offer.nftId)
+            .amountDrawn;
+
+        vm.warp(block.timestamp + secondsBeforeRefinance);
+
+        uint256 interestShortfall = lending.checkSufficientInterestAccumulated(
+            offer.nftContractAddress,
+            offer.nftId
+        );
+
+        defaultFixedOfferFields.creator = borrower2;
+        fixedForSpeed2.duration = fixedForSpeed2.duration + 1; // make sure offer is better
+        fixedForSpeed2.floorTerm = false; // refinance can't be floor term
+        fixedForSpeed2.expiration = uint32(block.timestamp) + secondsBeforeRefinance + 1;
+        fixedForSpeed2.amount = uint128(
+            offer.amount +
+                (offer.interestRatePerSecond * secondsBeforeRefinance) +
+                interestShortfall +
+                ((amountDrawn * lending.protocolInterestBps()) / 10_000)
+        );
+
+        LoanAuction memory loanAuction = lending.getLoanAuction(address(mockNft), 1);
+
+        Offer memory newOffer = offerStructFromFields(fixedForSpeed2, defaultFixedOfferFields);
+
+        vm.startPrank(lender2);
+        vm.expectRevert("00024");
+        lending.refinanceByLender(newOffer, loanAuction.lastUpdatedTimestamp);
+        vm.stopPrank();
+    }
+
     function test_unit_refinanceByLender_simplest_slashed() public {
         resetSuppliedDaiLiquidity(lender2, 2000 * 10**daiToken.decimals());
 
