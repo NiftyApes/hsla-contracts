@@ -128,4 +128,51 @@ contract TestPartialRepayLoan is Test, OffersLoansRefinancesFixtures {
             vm.stopPrank();
         }
     }
+
+    function test_unit_CANNOT_partialRepayLoan_loanAlreadyExpired() public {
+        uint16 secondsBeforeRepayment = 12 hours;
+
+        Offer memory offerToCreate = offerStructFromFields(
+            defaultFixedFuzzedFieldsForFastUnitTesting,
+            defaultFixedOfferFields
+        );
+
+        (Offer memory offer, ) = createOfferAndTryToExecuteLoanByBorrower(
+            offerToCreate,
+            "should work"
+        );
+
+        assertionsForExecutedLoan(offer);
+
+        vm.warp(block.timestamp + secondsBeforeRepayment);
+
+        uint256 interest = offer.interestRatePerSecond * secondsBeforeRepayment;
+
+        LoanAuction memory loanAuction = lending.getLoanAuction(address(mockNft), 1);
+
+        vm.warp(loanAuction.loanEndTimestamp + 1);
+
+        if (offer.asset == address(daiToken)) {
+            mintDai(borrower1, 1);
+
+            vm.startPrank(borrower1);
+            daiToken.approve(address(liquidity), ~uint256(0));
+            vm.expectRevert("00009");
+            lending.partialRepayLoan(
+                defaultFixedOfferFields.nftContractAddress,
+                defaultFixedOfferFields.nftId,
+                1
+            );
+            vm.stopPrank();
+        } else {
+            vm.startPrank(borrower1);
+            vm.expectRevert("00009");
+            lending.partialRepayLoan{ value: offer.amount + interest }(
+                defaultFixedOfferFields.nftContractAddress,
+                defaultFixedOfferFields.nftId,
+                1
+            );
+            vm.stopPrank();
+        }
+    }
 }
