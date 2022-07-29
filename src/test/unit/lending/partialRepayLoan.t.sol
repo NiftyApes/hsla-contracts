@@ -23,6 +23,97 @@ contract TestPartialRepayLoan is Test, OffersLoansRefinancesFixtures {
         assertEq(lending.getLoanAuction(address(mockNft), 1).lastUpdatedTimestamp, block.timestamp);
     }
 
+    function test_fuzz_partialRepayLoan_simplest_case(
+        FuzzedOfferFields memory fuzzedOffer,
+        uint16 secondsBeforeRepayment,
+        uint8 repaymentPercentageFuzzed
+    ) public validateFuzzedOfferFields(fuzzedOffer) {
+        uint8 repaymentPercentage = repaymentPercentageFuzzed % 100;
+
+        // repaymentPercentage >= 1
+        repaymentPercentage = repaymentPercentage == 0 ? 1 : repaymentPercentage;
+
+        Offer memory offerToCreate = offerStructFromFields(fuzzedOffer, defaultFixedOfferFields);
+
+        (Offer memory offer, ) = createOfferAndTryToExecuteLoanByBorrower(
+            offerToCreate,
+            "should work"
+        );
+
+        uint256 repaymentAmount = (offer.amount * repaymentPercentage) / 100;
+
+        assertionsForExecutedLoan(offer);
+
+        vm.warp(block.timestamp + secondsBeforeRepayment);
+
+        if (offer.asset == address(daiToken)) {
+            uint256 liquidityBalanceBeforeRepay = cDAIToken.balanceOf(address(liquidity));
+
+            vm.startPrank(borrower1);
+            daiToken.approve(address(liquidity), repaymentAmount);
+            lending.partialRepayLoan(
+                defaultFixedOfferFields.nftContractAddress,
+                defaultFixedOfferFields.nftId,
+                repaymentAmount
+            );
+            vm.stopPrank();
+
+            // Liquidity contract cToken balance
+            isApproxEqual(
+                cDAIToken.balanceOf(address(liquidity)),
+                liquidityBalanceBeforeRepay +
+                    liquidity.assetAmountToCAssetAmount(address(daiToken), repaymentAmount),
+                1
+            );
+
+            // Borrower has repaymentAmount deducted
+            isApproxEqual(
+                daiToken.balanceOf(address(borrower1)),
+                offer.amount - repaymentAmount,
+                1
+            );
+
+            // Lender has repaymentAmount added
+            assertCloseEnough(
+                defaultUsdcLiquiditySupplied - offer.amount + repaymentAmount,
+                assetBalance(lender1, address(daiToken)),
+                assetBalancePlusOneCToken(lender1, address(daiToken))
+            );
+        } else {
+            uint256 liquidityBalanceBeforeRepay = cEtherToken.balanceOf(address(liquidity));
+
+            vm.startPrank(borrower1);
+            lending.partialRepayLoan{ value: repaymentAmount }(
+                defaultFixedOfferFields.nftContractAddress,
+                defaultFixedOfferFields.nftId,
+                repaymentAmount
+            );
+            vm.stopPrank();
+
+            // Liquidity contract cToken balance
+            isApproxEqual(
+                cEtherToken.balanceOf(address(liquidity)),
+                liquidityBalanceBeforeRepay +
+                    liquidity.assetAmountToCAssetAmount(address(ETH_ADDRESS), repaymentAmount),
+                1
+            );
+
+            // Borrower has repaymentAmount deducted
+            isApproxEqual(
+                address(borrower1).balance,
+                defaultInitialEthBalance + offer.amount - repaymentAmount,
+                1
+            );
+
+            // Lender has repaymentAmount added
+            assertCloseEnough(
+                defaultEthLiquiditySupplied - offer.amount + repaymentAmount,
+                assetBalance(lender1, address(ETH_ADDRESS)),
+                assetBalancePlusOneCToken(lender1, address(ETH_ADDRESS))
+            );
+        }
+    }
+
     function test_unit_partialRepayLoan_does_not_reset_gas_griefing() public {
         uint16 secondsBeforeRepayment = 12 hours;
 
