@@ -606,9 +606,6 @@ contract NiftyApesLending is
         _requireOpenLoan(loanAuction);
         _requireNftOwner(loanAuction, msg.sender);
         // requireDrawableAmount
-        console.log("drawAmount", drawAmount);
-        console.log("loanAuction.amountDrawn", loanAuction.amountDrawn);
-        console.log("loanAuction.amount", loanAuction.amount);
         require((drawAmount + loanAuction.amountDrawn) <= loanAuction.amount, "00020");
         _requireLoanNotExpired(loanAuction);
 
@@ -617,8 +614,6 @@ contract NiftyApesLending is
         _updateInterest(loanAuction);
 
         uint256 slashedDrawAmount = _slashUnsupportedAmount(loanAuction, drawAmount, cAsset);
-
-        console.log("slashedDrawAmount", slashedDrawAmount);
 
         if (slashedDrawAmount != 0) {
             uint256 currentAmountDrawn = loanAuction.amountDrawn;
@@ -836,7 +831,6 @@ contract NiftyApesLending is
         address cAsset
     ) internal returns (uint256) {
         if (loanAuction.lenderRefi) {
-            console.log("loanAuction.lenderRefi = false;");
             loanAuction.lenderRefi = false;
 
             uint256 lenderBalance = ILiquidity(liquidityContractAddress).getCAssetBalance(
@@ -883,23 +877,14 @@ contract NiftyApesLending is
     {
         (lenderInterest, protocolInterest) = _calculateInterestAccrued(loanAuction);
 
-        console.log("lenderInterest", lenderInterest);
-
         if (loanAuction.lenderRefi == true) {
             loanAuction.slashableLenderInterest += SafeCastUpgradeable.toUint128(lenderInterest);
-            console.log("loanAuction.slashableLenderInterest", loanAuction.slashableLenderInterest);
         } else {
             loanAuction.accumulatedLenderInterest += SafeCastUpgradeable.toUint128(lenderInterest);
-            console.log(
-                "loanAuction.accumulatedLenderInterest",
-                loanAuction.accumulatedLenderInterest
-            );
         }
 
         loanAuction.accumulatedProtocolInterest += SafeCastUpgradeable.toUint128(protocolInterest);
         loanAuction.lastUpdatedTimestamp = _currentTimestamp32();
-
-        console.log("leaving update interest");
     }
 
     /// @inheritdoc ILending
@@ -928,10 +913,6 @@ contract NiftyApesLending is
         uint256 interestBps,
         uint256 duration
     ) public view returns (uint96) {
-        console.log("amount", amount);
-        console.log("interestBps", interestBps);
-        console.log("duration", duration);
-
         // account for 0 protocolInterestBps
         if (interestBps == 0) {
             return 0;
@@ -948,9 +929,6 @@ contract NiftyApesLending is
         uint96 interestRatePerSecond,
         uint256 duration
     ) private view returns (uint256) {
-        console.log("amount", amount);
-        console.log("interestRatePerSecond", interestRatePerSecond);
-        console.log("duration", duration);
         return (((uint256(interestRatePerSecond) * duration) * MAX_BPS) / amount) + 1;
     }
 
