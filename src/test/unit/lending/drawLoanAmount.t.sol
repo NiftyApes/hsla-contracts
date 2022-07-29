@@ -166,7 +166,7 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
         // we want to make sure adding 1 doesn't overflow
         vm.assume(amountExtraOnRefinance < ~uint64(0));
         if (fuzzedOffer.randomAsset % 2 == 0) {
-            vm.assume(amountExtraOnRefinance < (defaultUsdcLiquiditySupplied * 2) / 100);
+            vm.assume(amountExtraOnRefinance < (defaultDaiLiquiditySupplied * 2) / 100);
         } else {
             vm.assume(amountExtraOnRefinance < (defaultEthLiquiditySupplied * 2) / 100);
         }
@@ -214,7 +214,7 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
         // we want to make sure adding 1 doesn't overflow
         vm.assume(amountExtraOnRefinance < ~uint64(0));
         if (fuzzedOffer.randomAsset % 2 == 0) {
-            vm.assume(amountExtraOnRefinance < (defaultUsdcLiquiditySupplied * 2) / 100);
+            vm.assume(amountExtraOnRefinance < (defaultDaiLiquiditySupplied * 2) / 100);
         } else {
             vm.assume(amountExtraOnRefinance < (defaultEthLiquiditySupplied * 2) / 100);
         }

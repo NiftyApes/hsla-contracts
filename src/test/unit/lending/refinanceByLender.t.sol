@@ -334,48 +334,19 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         lending.repayLoan(offer.nftContractAddress, offer.nftId);
         vm.stopPrank();
 
-        console.log(
-            "assetBalance(lender2, address(daiToken))",
-            assetBalance(lender2, address(daiToken))
-        );
-        console.log(
-            "assetBalancePlusOneCToken(lender2, address(daiToken))",
-            assetBalancePlusOneCToken(lender2, address(daiToken))
-        );
-        console.log("loanAuctionAfterDraw.amountDrawn", loanAuctionAfterDraw.amountDrawn);
-        console.log(
-            "1 hours * loanAuctionBeforeDraw.interestRatePerSecond",
-            1 hours * loanAuctionBeforeDraw.interestRatePerSecond
-        );
-
-        console.log(
-            "1 hours * loanAuctionAfterDraw.interestRatePerSecond",
-            1 hours * loanAuctionAfterDraw.interestRatePerSecond
-        );
-
-        console.log(
-            "+",
-            1 hours *
-                loanAuctionBeforeDraw.interestRatePerSecond +
-                1 hours *
-                loanAuctionAfterDraw.interestRatePerSecond
-        );
-
         // check borrower balance
         assertEq(assetBalance(borrower1, address(daiToken)), 0);
 
-        console.log("here 1");
-
         // check lender balance
-        assertEq(
-            assetBalance(lender2, address(daiToken)),
+        assertCloseEnough(
             loanAuctionAfterDraw.amountDrawn +
                 1 hours *
                 loanAuctionBeforeDraw.interestRatePerSecond +
                 1 hours *
-                loanAuctionAfterDraw.interestRatePerSecond
+                loanAuctionAfterDraw.interestRatePerSecond,
+            assetBalance(lender2, address(daiToken)),
+            assetBalancePlusOneCToken(lender2, address(daiToken))
         );
-        console.log("here 2");
     }
 
     function test_unit_refinanceByLender_same_lender_refinances_twice_slashed() public {
@@ -552,9 +523,22 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         );
         assertEq(lenderAccruedInterest, 1 hours * loanAuctionAfterDraw.interestRatePerSecond);
 
+        console.log("here");
+
         // set up borrower repay full amount
+        mintDai(
+            borrower1,
+            loanAuctionAfterDraw.amountDrawn +
+                1 hours *
+                loanAuctionBeforeDraw.interestRatePerSecond +
+                1 hours *
+                loanAuctionAfterDraw.interestRatePerSecond
+        );
+
+        console.log("loanAuctionAfterDraw.amountDrawn", loanAuctionAfterDraw.amountDrawn);
+        console.log("daiToken.balanceOf(borrower1)", daiToken.balanceOf(borrower1));
+
         vm.startPrank(borrower1);
-        mintDai(borrower1, ~uint128(0));
         daiToken.approve(address(liquidity), ~uint256(0));
 
         // most important part here is the amount repaid, the last argument to the event
@@ -581,13 +565,14 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         assertEq(assetBalance(borrower1, address(daiToken)), 0);
 
         // check lender balance
-        assertEq(
-            assetBalance(lender2, address(daiToken)),
+        assertCloseEnough(
             loanAuctionAfterDraw.amountDrawn +
                 1 hours *
                 loanAuctionBeforeDraw.interestRatePerSecond +
                 1 hours *
-                loanAuctionAfterDraw.interestRatePerSecond
+                loanAuctionAfterDraw.interestRatePerSecond,
+            assetBalance(lender2, address(daiToken)),
+            assetBalancePlusOneCToken(lender2, address(daiToken))
         );
     }
 
