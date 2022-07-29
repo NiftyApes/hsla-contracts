@@ -76,4 +76,13 @@ contract TestPartialRepayLoan is Test, OffersLoansRefinancesFixtures {
         assertEq(interestShortfallBeforePartialPayment, 0);
         assertEq(interestShortfallAfter, 24999999999999999);
     }
+
+    function test_unit_CANNOT_partialRepayLoan_noLoan() public {
+        vm.expectRevert("00007");
+        lending.partialRepayLoan(
+            defaultFixedOfferFields.nftContractAddress,
+            defaultFixedOfferFields.nftId,
+            1
+        );
+    }
 }

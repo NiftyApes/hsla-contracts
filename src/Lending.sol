@@ -705,8 +705,6 @@ contract NiftyApesLending is
         uint256 paymentAmount,
         bool checkMsgSender
     ) internal {
-        console.log("here in _repayLoanAmount?");
-
         LoanAuction storage loanAuction = _getLoanAuctionInternal(nftContractAddress, nftId);
 
         _requireIsNotSanctioned(msg.sender);
@@ -745,7 +743,6 @@ contract NiftyApesLending is
         _payoutCTokenBalances(loanAuction, cAsset, cTokensMinted, paymentAmount, repayFull);
 
         if (repayFull) {
-            console.log("here in repayFull?");
             _transferNft(nftContractAddress, nftId, address(this), loanAuction.nftOwner);
 
             emit LoanRepaid(
@@ -759,7 +756,6 @@ contract NiftyApesLending is
 
             delete _loanAuctions[nftContractAddress][nftId];
         } else {
-            console.log("here in !repayFull conditional?");
             if (loanAuction.lenderRefi) {
                 loanAuction.lenderRefi = false;
                 if (loanAuction.slashableLenderInterest > 0) {
