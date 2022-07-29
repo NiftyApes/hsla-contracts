@@ -912,7 +912,7 @@ contract NiftyApesLending is
         uint256 amount,
         uint256 interestBps,
         uint256 duration
-    ) public view returns (uint96) {
+    ) public pure returns (uint96) {
         // account for 0 protocolInterestBps
         if (interestBps == 0) {
             return 0;
@@ -928,7 +928,7 @@ contract NiftyApesLending is
         uint256 amount,
         uint96 interestRatePerSecond,
         uint256 duration
-    ) private view returns (uint256) {
+    ) private pure returns (uint256) {
         return (((uint256(interestRatePerSecond) * duration) * MAX_BPS) / amount) + 1;
     }
 
@@ -1136,11 +1136,6 @@ contract NiftyApesLending is
             offer.amount,
             protocolInterestBps,
             offer.duration
-        );
-
-        console.log(
-            "createLoan loanAuction.protocolInterestRatePerSecond",
-            loanAuction.protocolInterestRatePerSecond
         );
         loanAuction.slashableLenderInterest = 0;
     }

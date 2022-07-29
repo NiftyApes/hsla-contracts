@@ -243,8 +243,6 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
         uint256 amountDrawnBefore = loanAuctionBefore.amountDrawn;
 
         uint256 interestRatePerSecondBefore = loanAuctionBefore.interestRatePerSecond;
-        uint256 protocolInterestRatePerSecondBefore = loanAuctionBefore
-            .protocolInterestRatePerSecond;
 
         vm.startPrank(borrower1);
         lending.drawLoanAmount(

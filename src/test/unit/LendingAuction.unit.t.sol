@@ -6202,7 +6202,7 @@ contract LendingAuctionUnitTest is
         assertEq(cDAIToken.balanceOf(address(LENDER_2)), 0);
 
         assertEq(daiToken.balanceOf(address(liquidityProviders)), 0);
-        assertEq(cDAIToken.balanceOf(address(liquidityProviders)), 7 ether * 10**18);
+        assertEq(cDAIToken.balanceOf(address(liquidityProviders)), 8 ether * 10**18);
 
         assertEq(mockNft.ownerOf(1), address(lendingAuction));
         assertEq(lendingAuction.ownerOf(address(mockNft), 1), address(this));
@@ -6214,7 +6214,7 @@ contract LendingAuctionUnitTest is
         );
         assertEq(
             liquidityProviders.getCAssetBalance(LENDER_2, address(cDAIToken)),
-            674320001920000000 ether
+            1674320001920000000 ether
         );
 
         assertEq(liquidityProviders.getCAssetBalance(OWNER, address(cDAIToken)), 0 ether);
@@ -6673,12 +6673,12 @@ contract LendingAuctionUnitTest is
         );
         assertEq(
             liquidityProviders.getCAssetBalance(LENDER_2, address(cDAIToken)),
-            10015416666666612400 ether
+            10000000000000000000 ether
         );
 
         assertEq(
             liquidityProviders.getCAssetBalance(LENDER_3, address(cDAIToken)),
-            3939166666666730800 ether
+            3954583333333343200 ether
         );
 
         assertEq(
@@ -6697,7 +6697,7 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.amount, 8 ether);
         assertEq(loanAuction.loanEndTimestamp, loanAuction.loanBeginTimestamp + 3 days);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
-        assertEq(loanAuction.accumulatedLenderInterest, 30833333333269200);
+        assertEq(loanAuction.accumulatedLenderInterest, 15416666666656800);
         assertEq(loanAuction.accumulatedProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 6000000000000000000);
     }
@@ -8209,7 +8209,7 @@ contract LendingAuctionUnitTest is
         assertEq(lenderInterest, 29999999999980800);
         assertEq(loanAuction.amountDrawn, 6 ether);
         assertTrue(loanAuction.lenderRefi);
-        assertEq(lenderBalanceBefore, 40000000000019200000000000000000000);
+        assertEq(lenderBalanceBefore, 1040000000000019200000000000000000000);
 
         lendingAuction.drawLoanAmount(address(mockNft), 1, 1 ether);
 
@@ -8224,11 +8224,11 @@ contract LendingAuctionUnitTest is
         );
 
         assertEq(lenderInterestAfter, 0);
-        assertEq(lenderBalanceAfter, 0);
+        assertEq(lenderBalanceAfter, 40000000000019200000000000000000000);
         // balance of the borrower
-        assertEq(daiToken.balanceOf(address(this)), 6040000000000019200);
+        assertEq(daiToken.balanceOf(address(this)), 7000000000000000000);
         // we expect the amountDrawn to be 6.04x ether. This is the remaining balance of the lender plus the current amountdrawn
-        assertEq(loanAuctionAfter.amountDrawn, 6040000000000019200);
+        assertEq(loanAuctionAfter.amountDrawn, 7000000000000000000);
         assertTrue(!loanAuctionAfter.lenderRefi);
     }
 

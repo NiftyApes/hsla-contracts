@@ -223,7 +223,7 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         uint256 amount,
         uint256 interestBps,
         uint256 duration
-    ) external view returns (uint96);
+    ) external pure returns (uint96);
 
     /// @notice Returns the delta between the required accumulated interest and the current accumulated interest
     /// @param nftContractAddress The address of the NFT collection

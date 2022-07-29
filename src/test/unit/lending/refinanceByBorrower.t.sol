@@ -73,16 +73,7 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
 
         assertionsForExecutedLoan(offer);
 
-        uint256 amountDrawn = lending
-            .getLoanAuction(offer.nftContractAddress, offer.nftId)
-            .amountDrawn;
-
         vm.warp(block.timestamp + secondsBeforeRefinance);
-
-        uint256 interestShortfall = lending.checkSufficientInterestAccumulated(
-            offer.nftContractAddress,
-            offer.nftId
-        );
 
         defaultFixedOfferFields.creator = lender2;
         fuzzed.duration = fuzzed.duration + 1; // make sure offer is better

@@ -74,6 +74,6 @@ contract TestPartialRepayLoan is Test, OffersLoansRefinancesFixtures {
         );
 
         assertEq(interestShortfallBeforePartialPayment, 0);
-        assertEq(interestShortfallAfter, 24999);
+        assertEq(interestShortfallAfter, 24999999999999999);
     }
 }
