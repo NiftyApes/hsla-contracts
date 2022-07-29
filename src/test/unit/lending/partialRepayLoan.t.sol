@@ -85,4 +85,47 @@ contract TestPartialRepayLoan is Test, OffersLoansRefinancesFixtures {
             1
         );
     }
+
+    function test_unit_CANNOT_partialRepayLoan_someoneElsesLoan() public {
+        uint16 secondsBeforeRepayment = 12 hours;
+
+        Offer memory offerToCreate = offerStructFromFields(
+            defaultFixedFuzzedFieldsForFastUnitTesting,
+            defaultFixedOfferFields
+        );
+
+        (Offer memory offer, ) = createOfferAndTryToExecuteLoanByBorrower(
+            offerToCreate,
+            "should work"
+        );
+
+        assertionsForExecutedLoan(offer);
+
+        vm.warp(block.timestamp + secondsBeforeRepayment);
+
+        uint256 interest = offer.interestRatePerSecond * secondsBeforeRepayment;
+
+        if (offer.asset == address(daiToken)) {
+            mintDai(borrower1, 1);
+
+            vm.startPrank(borrower2);
+            daiToken.approve(address(liquidity), ~uint256(0));
+            vm.expectRevert("00028");
+            lending.partialRepayLoan(
+                defaultFixedOfferFields.nftContractAddress,
+                defaultFixedOfferFields.nftId,
+                1
+            );
+            vm.stopPrank();
+        } else {
+            vm.startPrank(borrower2);
+            vm.expectRevert("00028");
+            lending.partialRepayLoan{ value: offer.amount + interest }(
+                defaultFixedOfferFields.nftContractAddress,
+                defaultFixedOfferFields.nftId,
+                1
+            );
+            vm.stopPrank();
+        }
+    }
 }
