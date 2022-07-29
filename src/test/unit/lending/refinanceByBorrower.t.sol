@@ -259,4 +259,46 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
             assetBalancePlusOneCToken(lender2, address(daiToken))
         );
     }
+
+    function test_unit_CANNOT_refinanceByBorrower_unexpected_terms() public {
+        // refinance by lender2
+        refinanceByLenderSetup(defaultFixedFuzzedFieldsForFastUnitTesting, 12 hours);
+
+        // 12 hours
+        vm.warp(block.timestamp + 12 hours);
+
+        // set up refinance by borrower
+        FuzzedOfferFields memory fuzzed = defaultFixedFuzzedFieldsForFastUnitTesting;
+
+        defaultFixedOfferFields.creator = lender3;
+        fuzzed.duration = fuzzed.duration;
+        fuzzed.floorTerm = false; // refinance can't be floor term
+        fuzzed.expiration = uint32(block.timestamp) + 12 hours + 1;
+        fuzzed.amount = uint128(
+            10 * uint128(10**daiToken.decimals()) + 10 * uint128(10**daiToken.decimals())
+        );
+
+        Offer memory newOffer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+
+        vm.startPrank(lender3);
+        bytes32 offerHash = offers.createOffer(newOffer);
+        vm.stopPrank();
+
+        LoanAuction memory loanAuction = lending.getLoanAuction(
+            newOffer.nftContractAddress,
+            newOffer.nftId
+        );
+
+        // refinance by borrower
+        vm.startPrank(borrower1);
+        vm.expectRevert("00026");
+        lending.refinanceByBorrower(
+            newOffer.nftContractAddress,
+            newOffer.nftId,
+            newOffer.floorTerm,
+            offerHash,
+            (loanAuction.lastUpdatedTimestamp - 100)
+        );
+        vm.stopPrank();
+    }
 }

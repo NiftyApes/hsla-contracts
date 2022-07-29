@@ -321,6 +321,8 @@ contract NiftyApesLending is
         }
 
         _doRefinanceByBorrower(offer, nftId, msg.sender, expectedLastUpdatedTimestamp);
+
+        console.log("after in refiByBorrower");
     }
 
     function doRefinanceByBorrower(

@@ -319,19 +319,9 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
             defaultFixedOfferFields.nftId
         );
 
-        console.log("loanAuctionBefore.amount", loanAuctionBefore.amount);
-        console.log("loanAuctionBefore.amountDrawn", loanAuctionBefore.amountDrawn);
-        console.log("loanAuctionBefore.loanEndTimestamp", loanAuctionBefore.loanEndTimestamp);
-        console.log("loanAuctionBefore.loanBeginTimestamp", loanAuctionBefore.loanBeginTimestamp);
-
         uint256 amountDrawnBefore = loanAuctionBefore.amountDrawn;
 
         uint256 interestRatePerSecondBefore = loanAuctionBefore.interestRatePerSecond;
-        uint256 protocolInterestRatePerSecondBefore = loanAuctionBefore
-            .protocolInterestRatePerSecond;
-
-        console.log("interestRatePerSecondBefore", interestRatePerSecondBefore);
-        console.log("protocolInterestRatePerSecondBefore", protocolInterestRatePerSecondBefore);
 
         vm.startPrank(borrower1);
         lending.drawLoanAmount(
@@ -353,8 +343,6 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
             (loanAuctionAfter.loanEndTimestamp - loanAuctionAfter.loanBeginTimestamp)) * MAX_BPS) /
             loanAuctionBefore.amountDrawn) + 1;
 
-        console.log("interestBps", interestBps);
-
         uint256 calculatedInterestRatePerSecond = ((loanAuctionAfter.amountDrawn * interestBps) /
             MAX_BPS /
             (loanAuctionAfter.loanEndTimestamp - loanAuctionAfter.loanBeginTimestamp));
@@ -366,21 +354,6 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
             lending.protocolInterestBps(),
             (loanAuctionAfter.loanEndTimestamp - loanAuctionAfter.loanBeginTimestamp)
         );
-
-        console.log("calculatedInterestRatePerSecond", calculatedInterestRatePerSecond);
-        console.log(
-            "calculatedProtocolInterestRatePerSecond",
-            calculatedProtocolInterestRatePerSecond
-        );
-
-        console.log("loanAuctionAfter.loanEndTimestamp", loanAuctionAfter.loanEndTimestamp);
-        console.log("loanAuctionAfter.loanBeginTimestamp", loanAuctionAfter.loanBeginTimestamp);
-
-        console.log("loanAuctionAfter.amount", loanAuctionAfter.amount);
-        console.log("loanAuctionAfter.amountDrawn", loanAuctionAfter.amountDrawn);
-
-        console.log("interestRatePerSecondAfter", interestRatePerSecondAfter);
-        console.log("protocolInterestRatePerSecondAfter", protocolInterestRatePerSecondAfter);
 
         assertEq(calculatedInterestRatePerSecond, interestRatePerSecondAfter);
         assertEq(calculatedProtocolInterestRatePerSecond, protocolInterestRatePerSecondAfter);
