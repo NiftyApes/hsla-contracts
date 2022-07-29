@@ -168,4 +168,30 @@ contract TestSeizeAsset is Test, OffersLoansRefinancesFixtures {
         FuzzedOfferFields memory fixedForSpeed = defaultFixedFuzzedFieldsForFastUnitTesting;
         _test_seizeAsset_CANNOT_if_loan_repaid(fixedForSpeed);
     }
+
+    function test_unit_seizeAsset_3rdParty_works() public {
+        uint256 initialTimestamp = block.timestamp;
+
+        Offer memory offer = offerStructFromFields(
+            defaultFixedFuzzedFieldsForFastUnitTesting,
+            defaultFixedOfferFields
+        );
+        createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
+
+        // warp to end of loan
+        vm.warp(initialTimestamp + offer.duration);
+
+        // still owned by borrower (in contract escrow)
+        assertEq(mockNft.ownerOf(offer.nftId), address(lending));
+        assertEq(lending.ownerOf(offer.nftContractAddress, offer.nftId), address(borrower1));
+
+        // seize asset by other lendershould work
+        vm.startPrank(lender2);
+        lending.seizeAsset(offer.nftContractAddress, offer.nftId);
+        vm.stopPrank();
+
+        // lender1 owns NFT after seize
+        assertEq(mockNft.ownerOf(offer.nftId), address(lender1));
+        assertEq(lending.ownerOf(offer.nftContractAddress, offer.nftId), address(0));
+    }
 }
