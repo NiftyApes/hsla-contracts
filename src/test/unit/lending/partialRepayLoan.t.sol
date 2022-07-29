@@ -129,8 +129,13 @@ contract TestPartialRepayLoan is Test, OffersLoansRefinancesFixtures {
         }
     }
 
-    function test_unit_CANNOT_partialRepayLoan_loanAlreadyExpired() public {
+    function test_unit_CANNOT_partialRepayLoan_interestMath_works() public {
         uint16 secondsBeforeRepayment = 12 hours;
+        uint256 amountExtraOnRefinance = 864000000;
+
+        vm.startPrank(owner);
+        lending.updateProtocolInterestBps(100);
+        vm.stopPrank();
 
         Offer memory offerToCreate = offerStructFromFields(
             defaultFixedFuzzedFieldsForFastUnitTesting,
@@ -148,31 +153,146 @@ contract TestPartialRepayLoan is Test, OffersLoansRefinancesFixtures {
 
         uint256 interest = offer.interestRatePerSecond * secondsBeforeRepayment;
 
-        LoanAuction memory loanAuction = lending.getLoanAuction(address(mockNft), 1);
+        LoanAuction memory loanAuctionBefore = lending.getLoanAuction(
+            defaultFixedOfferFields.nftContractAddress,
+            defaultFixedOfferFields.nftId
+        );
 
-        vm.warp(loanAuction.loanEndTimestamp + 1);
+        uint256 amountDrawnBefore = loanAuctionBefore.amountDrawn;
+        uint256 interestRatePerSecondBefore = loanAuctionBefore.interestRatePerSecond;
 
         if (offer.asset == address(daiToken)) {
             mintDai(borrower1, 1);
 
             vm.startPrank(borrower1);
             daiToken.approve(address(liquidity), ~uint256(0));
-            vm.expectRevert("00009");
             lending.partialRepayLoan(
                 defaultFixedOfferFields.nftContractAddress,
                 defaultFixedOfferFields.nftId,
-                1
+                amountExtraOnRefinance
             );
             vm.stopPrank();
         } else {
             vm.startPrank(borrower1);
-            vm.expectRevert("00009");
             lending.partialRepayLoan{ value: offer.amount + interest }(
                 defaultFixedOfferFields.nftContractAddress,
                 defaultFixedOfferFields.nftId,
-                1
+                amountExtraOnRefinance
             );
             vm.stopPrank();
         }
+
+        LoanAuction memory loanAuctionAfter = lending.getLoanAuction(
+            defaultFixedOfferFields.nftContractAddress,
+            defaultFixedOfferFields.nftId
+        );
+
+        uint256 interestRatePerSecondAfter = loanAuctionAfter.interestRatePerSecond;
+        uint256 protocolInterestRatePerSecondAfter = loanAuctionAfter.protocolInterestRatePerSecond;
+
+        uint256 interestBps = (((interestRatePerSecondBefore *
+            (loanAuctionAfter.loanEndTimestamp - loanAuctionAfter.loanBeginTimestamp)) * MAX_BPS) /
+            loanAuctionBefore.amountDrawn) + 1;
+
+        uint256 calculatedInterestRatePerSecond = ((loanAuctionAfter.amountDrawn * interestBps) /
+            MAX_BPS /
+            (loanAuctionAfter.loanEndTimestamp - loanAuctionAfter.loanBeginTimestamp));
+        if (calculatedInterestRatePerSecond == 0 && interestBps != 0) {
+            calculatedInterestRatePerSecond = 1;
+        }
+        uint96 calculatedProtocolInterestRatePerSecond = lending.calculateInterestPerSecond(
+            loanAuctionAfter.amountDrawn,
+            lending.protocolInterestBps(),
+            (loanAuctionAfter.loanEndTimestamp - loanAuctionAfter.loanBeginTimestamp)
+        );
+
+        assertEq(calculatedInterestRatePerSecond, interestRatePerSecondAfter);
+        assertEq(calculatedProtocolInterestRatePerSecond, protocolInterestRatePerSecondAfter);
+        assertEq(loanAuctionAfter.amountDrawn, amountDrawnBefore - amountExtraOnRefinance);
+    }
+
+    function test_fuzz_CANNOT_partialRepayLoan_interestMath_works(
+        FuzzedOfferFields memory fuzzedOffer,
+        uint16 secondsBeforeRepayment,
+        uint64 amountToRepay
+    ) public validateFuzzedOfferFields(fuzzedOffer) {
+        vm.startPrank(owner);
+        lending.updateProtocolInterestBps(100);
+        vm.stopPrank();
+
+        Offer memory offerToCreate = offerStructFromFields(fuzzedOffer, defaultFixedOfferFields);
+
+        console.log("here");
+        (Offer memory offer, ) = createOfferAndTryToExecuteLoanByBorrower(
+            offerToCreate,
+            "should work"
+        );
+        console.log("here 1");
+
+        assertionsForExecutedLoan(offer);
+
+        vm.warp(block.timestamp + secondsBeforeRepayment + 1);
+
+        uint256 interest = offer.interestRatePerSecond * secondsBeforeRepayment;
+
+        LoanAuction memory loanAuctionBefore = lending.getLoanAuction(
+            defaultFixedOfferFields.nftContractAddress,
+            defaultFixedOfferFields.nftId
+        );
+
+        vm.assume(amountToRepay > 0);
+        vm.assume(amountToRepay < loanAuctionBefore.amountDrawn);
+
+        uint256 amountDrawnBefore = loanAuctionBefore.amountDrawn;
+        uint256 interestRatePerSecondBefore = loanAuctionBefore.interestRatePerSecond;
+
+        if (offer.asset == address(daiToken)) {
+            mintDai(borrower1, 1);
+
+            vm.startPrank(borrower1);
+            daiToken.approve(address(liquidity), ~uint256(0));
+            lending.partialRepayLoan(
+                defaultFixedOfferFields.nftContractAddress,
+                defaultFixedOfferFields.nftId,
+                amountToRepay
+            );
+            vm.stopPrank();
+        } else {
+            vm.startPrank(borrower1);
+            lending.partialRepayLoan{ value: offer.amount + interest }(
+                defaultFixedOfferFields.nftContractAddress,
+                defaultFixedOfferFields.nftId,
+                amountToRepay
+            );
+            vm.stopPrank();
+        }
+
+        LoanAuction memory loanAuctionAfter = lending.getLoanAuction(
+            defaultFixedOfferFields.nftContractAddress,
+            defaultFixedOfferFields.nftId
+        );
+
+        uint256 interestRatePerSecondAfter = loanAuctionAfter.interestRatePerSecond;
+        uint256 protocolInterestRatePerSecondAfter = loanAuctionAfter.protocolInterestRatePerSecond;
+
+        uint256 interestBps = (((interestRatePerSecondBefore *
+            (loanAuctionAfter.loanEndTimestamp - loanAuctionAfter.loanBeginTimestamp)) * MAX_BPS) /
+            loanAuctionBefore.amountDrawn) + 1;
+
+        uint256 calculatedInterestRatePerSecond = ((loanAuctionAfter.amountDrawn * interestBps) /
+            MAX_BPS /
+            (loanAuctionAfter.loanEndTimestamp - loanAuctionAfter.loanBeginTimestamp));
+        if (calculatedInterestRatePerSecond == 0 && interestBps != 0) {
+            calculatedInterestRatePerSecond = 1;
+        }
+        uint96 calculatedProtocolInterestRatePerSecond = lending.calculateInterestPerSecond(
+            loanAuctionAfter.amountDrawn,
+            lending.protocolInterestBps(),
+            (loanAuctionAfter.loanEndTimestamp - loanAuctionAfter.loanBeginTimestamp)
+        );
+
+        assertEq(calculatedInterestRatePerSecond, interestRatePerSecondAfter);
+        assertEq(calculatedProtocolInterestRatePerSecond, protocolInterestRatePerSecondAfter);
+        assertEq(loanAuctionAfter.amountDrawn, amountDrawnBefore - amountToRepay);
     }
 }

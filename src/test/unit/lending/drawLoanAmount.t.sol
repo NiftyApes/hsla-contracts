@@ -35,15 +35,6 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
             offer.nftId
         );
 
-        console.log("loanAuction.amount", loanAuction.amount);
-        console.log("loanAuction.amountDrawn", loanAuction.amountDrawn);
-
-        console.log("loanAuction.interestRatePerSecond", loanAuction.interestRatePerSecond);
-        console.log(
-            "loanAuction.protocolInterestRatePerSecond",
-            loanAuction.protocolInterestRatePerSecond
-        );
-
         vm.warp(block.timestamp + secondsBeforeRefinance);
 
         uint256 interestShortfall = lending.checkSufficientInterestAccumulated(
@@ -70,6 +61,7 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
 
         Offer memory newOffer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
 
+        // values for unit test
         // newOffer.amount = uint128(
         //     offer.amount +
         //         (offer.interestRatePerSecond * secondsBeforeRefinance) +
@@ -93,15 +85,6 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
         LoanAuction memory loanAuction2 = lending.getLoanAuction(
             offer.nftContractAddress,
             offer.nftId
-        );
-
-        console.log("loanAuction2.amount", loanAuction2.amount);
-        console.log("loanAuction2.amountDrawn", loanAuction2.amountDrawn);
-
-        console.log("loanAuction2.interestRatePerSecond", loanAuction2.interestRatePerSecond);
-        console.log(
-            "loanAuction2.protocolInterestRatePerSecond",
-            loanAuction2.protocolInterestRatePerSecond
         );
 
         assertionsForExecutedRefinance(
