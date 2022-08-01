@@ -34,6 +34,11 @@ contract TestRepayLoan is Test, OffersLoansRefinancesFixtures {
             "should work"
         );
 
+        LoanAuction memory loanAuction = lending.getLoanAuction(
+            defaultFixedOfferFields.nftContractAddress,
+            defaultFixedOfferFields.nftId
+        );
+
         assertionsForExecutedLoan(offer);
 
         vm.warp(block.timestamp + secondsBeforeRepayment);
@@ -75,12 +80,12 @@ contract TestRepayLoan is Test, OffersLoansRefinancesFixtures {
 
             vm.startPrank(borrower1);
             vm.expectRevert("00030");
-            lending.repayLoan{ value: offer.amount }(
+            lending.repayLoan{ value: loanAuction.amountDrawn }(
                 defaultFixedOfferFields.nftContractAddress,
                 defaultFixedOfferFields.nftId
             );
 
-            lending.repayLoan{ value: offer.amount + interest }(
+            lending.repayLoan{ value: loanAuction.amountDrawn + interest }(
                 defaultFixedOfferFields.nftContractAddress,
                 defaultFixedOfferFields.nftId
             );

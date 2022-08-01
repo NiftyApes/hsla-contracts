@@ -487,13 +487,6 @@ contract NiftyApesLending is
         // set lenderRefi to true to signify the last action to occur in the loan was a lenderRefinance
         loanAuction.lenderRefi = true;
 
-        // If the last action to occur on the loan was a refinance, slashableInterest should be > 0
-        // If the refinancing is being called by a new lender then the slashableInterest should be added to accumulatedInterest
-        if (loanAuction.slashableLenderInterest > 0 && loanAuction.lender != offer.creator) {
-            loanAuction.accumulatedLenderInterest += loanAuction.slashableLenderInterest;
-            loanAuction.slashableLenderInterest = 0;
-        }
-
         uint256 protocolInterestAndPremium;
         uint256 protocolPremiumInCtokens;
 
@@ -535,6 +528,11 @@ contract NiftyApesLending is
                 protocolPremiumInCtokens
             );
         } else {
+            // If refinance is done by a new lender and refinacneByLender was the last action to occur, add slashableInterest to accumulated interest
+            if (loanAuction.slashableLenderInterest > 0) {
+                loanAuction.accumulatedLenderInterest += loanAuction.slashableLenderInterest;
+                loanAuction.slashableLenderInterest = 0;
+            }
             // calculate the value to pay out to the current lender, this includes the protocolInterest, which is paid out each refinance,
             // and reimbursed by the borrower at the end of the loan.
             // this value may double count the currentProtocolInterest, it is paid to the current lender here and paid out to the protocol  on ln 548
