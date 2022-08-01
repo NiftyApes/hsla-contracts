@@ -66,7 +66,7 @@ The NiftyApes protocol is made up of four core contracts `Liquidity.sol`, `Offer
 2. To pause Mainnet protocol:
    a. `forge script script/Rinkeby_PauseProtocol.s.sol:PauseScript --rpc-url $MAINNET_RPC_URL --ledger --broadcast`
 
-   ## Unpause
+## Unpause
 
 3. To unpause Rinkeby protocol:
    a. `forge script script/Rinkeby_UnpauseProtocol.s.sol:UnpauseScript --rpc-url $RINKEBY_RPC_URL --ledger --broadcast`
