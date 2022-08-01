@@ -13,8 +13,6 @@ import "./interfaces/niftyapes/liquidity/ILiquidity.sol";
 import "./interfaces/niftyapes/offers/IOffers.sol";
 import "./interfaces/sanctions/SanctionsList.sol";
 
-import "forge-std/Test.sol";
-
 /// @title Implementation of the ILending interface
 contract NiftyApesLending is
     OwnableUpgradeable,
@@ -62,9 +60,6 @@ contract NiftyApesLending is
     uint16 public gasGriefingPremiumBps;
 
     /// @inheritdoc ILending
-    uint16 public gasGriefingProtocolPremiumBps;
-
-    /// @inheritdoc ILending
     uint16 public termGriefingPremiumBps;
 
     /// @inheritdoc ILending
@@ -88,7 +83,6 @@ contract NiftyApesLending is
         protocolInterestBps = 0;
         originationPremiumBps = 50;
         gasGriefingPremiumBps = 25;
-        gasGriefingProtocolPremiumBps = 0;
         termGriefingPremiumBps = 25;
         defaultRefinancePremiumBps = 25;
 
@@ -120,19 +114,6 @@ contract NiftyApesLending is
         _requireMaxFee(newGasGriefingPremiumBps);
         emit GasGriefingPremiumBpsUpdated(gasGriefingPremiumBps, newGasGriefingPremiumBps);
         gasGriefingPremiumBps = newGasGriefingPremiumBps;
-    }
-
-    /// @inheritdoc ILendingAdmin
-    function updateGasGriefingProtocolPremiumBps(uint16 newGasGriefingProtocolPremiumBps)
-        external
-        onlyOwner
-    {
-        require(newGasGriefingProtocolPremiumBps <= MAX_BPS, "00002");
-        emit GasGriefingProtocolPremiumBpsUpdated(
-            gasGriefingProtocolPremiumBps,
-            newGasGriefingProtocolPremiumBps
-        );
-        gasGriefingProtocolPremiumBps = newGasGriefingProtocolPremiumBps;
     }
 
     /// @inheritdoc ILendingAdmin
@@ -372,10 +353,6 @@ contract NiftyApesLending is
             loanAuction.accumulatedLenderInterest +
             loanAuction.slashableLenderInterest;
 
-        console.log("toLenderUnderlying", toLenderUnderlying);
-        console.log("loanAuction.accumulatedLenderInterest", loanAuction.accumulatedLenderInterest);
-        console.log("loanAuction.slashableLenderInterest", loanAuction.slashableLenderInterest);
-
         uint256 toProtocolUnderlying = loanAuction.accumulatedProtocolInterest;
 
         require(offer.amount >= toLenderUnderlying + toProtocolUnderlying, "00005");
@@ -464,8 +441,10 @@ contract NiftyApesLending is
 
         address cAsset = ILiquidity(liquidityContractAddress).getCAsset(offer.asset);
 
+        // check how much, if any, gasGriefing premium should be applied
         uint256 interestThresholdDelta = _checkSufficientInterestAccumulated(loanAuction);
 
+        // check whether a termGriefing premium should apply
         bool sufficientTerms = _checkSufficientTerms(
             loanAuction,
             offer.amount,
@@ -473,15 +452,14 @@ contract NiftyApesLending is
             offer.duration
         );
 
-        // TODO(miller): Unclear if first conjunction of this condition can ever be true
-        // given current contracts
-        if (loanAuction.slashableLenderInterest > 0 && loanAuction.lender != offer.creator) {
-            loanAuction.accumulatedLenderInterest += loanAuction.slashableLenderInterest;
-            loanAuction.slashableLenderInterest = 0;
-        }
+        uint128 currentAccumulatedProtocolInterest = loanAuction.accumulatedProtocolInterest;
 
-        (uint256 lenderInterest, uint256 protocolInterest) = _updateInterest(loanAuction);
+        // add interest to accumulatedInterest and/or slashableInterest values from the current preiod of interest
+        // this allows the incoming lender to have a 0 interest value upon start
+        (, uint256 protocolInterest) = _updateInterest(loanAuction);
+        // (uint256 lenderInterest, uint256 protocolInterest) = _updateInterest(loanAuction);
 
+        // set lenderRefi to true to signify the last action to occur in the loan was a lenderRefinance
         loanAuction.lenderRefi = true;
 
         uint256 protocolInterestAndPremium;
@@ -504,11 +482,9 @@ contract NiftyApesLending is
             uint256 additionalTokens = ILiquidity(liquidityContractAddress)
                 .assetAmountToCAssetAmount(offer.asset, offer.amount - loanAuction.amountDrawn);
 
+            // This value is only a termGriefing if applicable
             protocolPremiumInCtokens = ILiquidity(liquidityContractAddress)
                 .assetAmountToCAssetAmount(offer.asset, protocolInterestAndPremium);
-
-            console.log("fri jul 15 -- additionalTokens", additionalTokens);
-            console.log("fri jul 15 -- protocolPremiumInCtokens", protocolPremiumInCtokens);
 
             _requireSufficientBalance(
                 offer.creator,
@@ -527,20 +503,29 @@ contract NiftyApesLending is
                 protocolPremiumInCtokens
             );
         } else {
-            // calculate interest earned
-            uint256 interestAndPremiumOwedToCurrentLender = loanAuction.accumulatedLenderInterest +
-                loanAuction.accumulatedProtocolInterest +
+            // If refinance is done by a new lender and refinacneByLender was the last action to occur, add slashableInterest to accumulated interest
+            if (loanAuction.slashableLenderInterest > 0) {
+                loanAuction.accumulatedLenderInterest += loanAuction.slashableLenderInterest;
+                loanAuction.slashableLenderInterest = 0;
+            }
+            // calculate the value to pay out to the current lender, this includes the protocolInterest, which is paid out each refinance,
+            // and reimbursed by the borrower at the end of the loan.
+            // this value may double count the currentProtocolInterest, it is paid to the current lender here and paid out to the protocol  on ln 548
+            uint256 interestAndPremiumOwedToCurrentLender = uint256(
+                loanAuction.accumulatedLenderInterest
+            ) +
+                currentAccumulatedProtocolInterest +
                 ((uint256(loanAuction.amountDrawn) * originationPremiumBps) / MAX_BPS);
 
+            // add protocolInterest
             protocolInterestAndPremium += protocolInterest;
 
+            // add gasGriefing premium
             if (interestThresholdDelta > 0) {
                 interestAndPremiumOwedToCurrentLender += interestThresholdDelta;
-                protocolInterestAndPremium +=
-                    (lenderInterest * gasGriefingProtocolPremiumBps) /
-                    MAX_BPS;
             }
 
+            // add default premium
             if (_currentTimestamp32() > loanAuction.loanEndTimestamp - 1 hours) {
                 protocolInterestAndPremium +=
                     (uint256(loanAuction.amountDrawn) * defaultRefinancePremiumBps) /
@@ -579,11 +564,13 @@ contract NiftyApesLending is
                 cAsset,
                 fullCTokenAmountToWithdraw
             );
+
             ILiquidity(liquidityContractAddress).addToCAssetBalance(
                 currentlender,
                 cAsset,
                 (fullCTokenAmountToWithdraw - protocolPremiumInCtokens)
             );
+
             ILiquidity(liquidityContractAddress).addToCAssetBalance(
                 owner(),
                 cAsset,
@@ -606,9 +593,6 @@ contract NiftyApesLending is
         _requireOpenLoan(loanAuction);
         _requireNftOwner(loanAuction, msg.sender);
         // requireDrawableAmount
-        console.log("drawAmount", drawAmount);
-        console.log("loanAuction.amountDrawn", loanAuction.amountDrawn);
-        console.log("loanAuction.amount", loanAuction.amount);
         require((drawAmount + loanAuction.amountDrawn) <= loanAuction.amount, "00020");
         _requireLoanNotExpired(loanAuction);
 
@@ -617,8 +601,6 @@ contract NiftyApesLending is
         _updateInterest(loanAuction);
 
         uint256 slashedDrawAmount = _slashUnsupportedAmount(loanAuction, drawAmount, cAsset);
-
-        console.log("slashedDrawAmount", slashedDrawAmount);
 
         if (slashedDrawAmount != 0) {
             uint256 currentAmountDrawn = loanAuction.amountDrawn;
@@ -708,8 +690,6 @@ contract NiftyApesLending is
         uint256 paymentAmount,
         bool checkMsgSender
     ) internal {
-        console.log("here in _repayLoanAmount?");
-
         LoanAuction storage loanAuction = _getLoanAuctionInternal(nftContractAddress, nftId);
 
         _requireIsNotSanctioned(msg.sender);
@@ -748,7 +728,6 @@ contract NiftyApesLending is
         _payoutCTokenBalances(loanAuction, cAsset, cTokensMinted, paymentAmount, repayFull);
 
         if (repayFull) {
-            console.log("here in repayFull?");
             _transferNft(nftContractAddress, nftId, address(this), loanAuction.nftOwner);
 
             emit LoanRepaid(
@@ -762,7 +741,6 @@ contract NiftyApesLending is
 
             delete _loanAuctions[nftContractAddress][nftId];
         } else {
-            console.log("here in !repayFull conditional?");
             if (loanAuction.lenderRefi) {
                 loanAuction.lenderRefi = false;
                 if (loanAuction.slashableLenderInterest > 0) {
@@ -836,7 +814,6 @@ contract NiftyApesLending is
         address cAsset
     ) internal returns (uint256) {
         if (loanAuction.lenderRefi) {
-            console.log("loanAuction.lenderRefi = false;");
             loanAuction.lenderRefi = false;
 
             uint256 lenderBalance = ILiquidity(liquidityContractAddress).getCAssetBalance(
@@ -883,23 +860,14 @@ contract NiftyApesLending is
     {
         (lenderInterest, protocolInterest) = _calculateInterestAccrued(loanAuction);
 
-        console.log("lenderInterest", lenderInterest);
-
         if (loanAuction.lenderRefi == true) {
             loanAuction.slashableLenderInterest += SafeCastUpgradeable.toUint128(lenderInterest);
-            console.log("loanAuction.slashableLenderInterest", loanAuction.slashableLenderInterest);
         } else {
             loanAuction.accumulatedLenderInterest += SafeCastUpgradeable.toUint128(lenderInterest);
-            console.log(
-                "loanAuction.accumulatedLenderInterest",
-                loanAuction.accumulatedLenderInterest
-            );
         }
 
         loanAuction.accumulatedProtocolInterest += SafeCastUpgradeable.toUint128(protocolInterest);
         loanAuction.lastUpdatedTimestamp = _currentTimestamp32();
-
-        console.log("leaving update interest");
     }
 
     /// @inheritdoc ILending
@@ -927,11 +895,7 @@ contract NiftyApesLending is
         uint256 amount,
         uint256 interestBps,
         uint256 duration
-    ) public view returns (uint96) {
-        console.log("amount", amount);
-        console.log("interestBps", interestBps);
-        console.log("duration", duration);
-
+    ) public pure returns (uint96) {
         // account for 0 protocolInterestBps
         if (interestBps == 0) {
             return 0;
@@ -947,10 +911,7 @@ contract NiftyApesLending is
         uint256 amount,
         uint96 interestRatePerSecond,
         uint256 duration
-    ) private view returns (uint256) {
-        console.log("amount", amount);
-        console.log("interestRatePerSecond", interestRatePerSecond);
-        console.log("duration", duration);
+    ) private pure returns (uint256) {
         return (((uint256(interestRatePerSecond) * duration) * MAX_BPS) / amount) + 1;
     }
 
@@ -1158,11 +1119,6 @@ contract NiftyApesLending is
             offer.amount,
             protocolInterestBps,
             offer.duration
-        );
-
-        console.log(
-            "createLoan loanAuction.protocolInterestRatePerSecond",
-            loanAuction.protocolInterestRatePerSecond
         );
         loanAuction.slashableLenderInterest = 0;
     }

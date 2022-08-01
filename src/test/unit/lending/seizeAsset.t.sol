@@ -134,9 +134,10 @@ contract TestSeizeAsset is Test, OffersLoansRefinancesFixtures {
 
         // borrower repays loan
         mintDai(borrower1, offer.interestRatePerSecond * offer.duration);
+
         vm.startPrank(borrower1);
         if (offer.asset == address(daiToken)) {
-            daiToken.increaseAllowance(address(liquidity), ~uint256(0));
+            daiToken.approve(address(liquidity), ~uint256(0));
             lending.repayLoan(offer.nftContractAddress, offer.nftId);
         } else {
             vm.deal(borrower1, offer.amount + offer.interestRatePerSecond * offer.duration);
@@ -145,7 +146,6 @@ contract TestSeizeAsset is Test, OffersLoansRefinancesFixtures {
             }(offer.nftContractAddress, offer.nftId);
         }
         vm.stopPrank();
-
         // attempt to seize results in revert
         vm.startPrank(lender1);
         vm.expectRevert("00040");
@@ -167,5 +167,31 @@ contract TestSeizeAsset is Test, OffersLoansRefinancesFixtures {
     function test_unit_seizeAsset_CANNOT_if_loan_repaid() public {
         FuzzedOfferFields memory fixedForSpeed = defaultFixedFuzzedFieldsForFastUnitTesting;
         _test_seizeAsset_CANNOT_if_loan_repaid(fixedForSpeed);
+    }
+
+    function test_unit_seizeAsset_3rdParty_works() public {
+        uint256 initialTimestamp = block.timestamp;
+
+        Offer memory offer = offerStructFromFields(
+            defaultFixedFuzzedFieldsForFastUnitTesting,
+            defaultFixedOfferFields
+        );
+        createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
+
+        // warp to end of loan
+        vm.warp(initialTimestamp + offer.duration);
+
+        // still owned by borrower (in contract escrow)
+        assertEq(mockNft.ownerOf(offer.nftId), address(lending));
+        assertEq(lending.ownerOf(offer.nftContractAddress, offer.nftId), address(borrower1));
+
+        // seize asset by other lendershould work
+        vm.startPrank(lender2);
+        lending.seizeAsset(offer.nftContractAddress, offer.nftId);
+        vm.stopPrank();
+
+        // lender1 owns NFT after seize
+        assertEq(mockNft.ownerOf(offer.nftId), address(lender1));
+        assertEq(lending.ownerOf(offer.nftContractAddress, offer.nftId), address(0));
     }
 }

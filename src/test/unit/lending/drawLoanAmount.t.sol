@@ -35,15 +35,6 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
             offer.nftId
         );
 
-        console.log("loanAuction.amount", loanAuction.amount);
-        console.log("loanAuction.amountDrawn", loanAuction.amountDrawn);
-
-        console.log("loanAuction.interestRatePerSecond", loanAuction.interestRatePerSecond);
-        console.log(
-            "loanAuction.protocolInterestRatePerSecond",
-            loanAuction.protocolInterestRatePerSecond
-        );
-
         vm.warp(block.timestamp + secondsBeforeRefinance);
 
         uint256 interestShortfall = lending.checkSufficientInterestAccumulated(
@@ -70,6 +61,7 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
 
         Offer memory newOffer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
 
+        // values for unit test
         // newOffer.amount = uint128(
         //     offer.amount +
         //         (offer.interestRatePerSecond * secondsBeforeRefinance) +
@@ -93,15 +85,6 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
         LoanAuction memory loanAuction2 = lending.getLoanAuction(
             offer.nftContractAddress,
             offer.nftId
-        );
-
-        console.log("loanAuction2.amount", loanAuction2.amount);
-        console.log("loanAuction2.amountDrawn", loanAuction2.amountDrawn);
-
-        console.log("loanAuction2.interestRatePerSecond", loanAuction2.interestRatePerSecond);
-        console.log(
-            "loanAuction2.protocolInterestRatePerSecond",
-            loanAuction2.protocolInterestRatePerSecond
         );
 
         assertionsForExecutedRefinance(
@@ -166,7 +149,7 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
         // we want to make sure adding 1 doesn't overflow
         vm.assume(amountExtraOnRefinance < ~uint64(0));
         if (fuzzedOffer.randomAsset % 2 == 0) {
-            vm.assume(amountExtraOnRefinance < (defaultUsdcLiquiditySupplied * 2) / 100);
+            vm.assume(amountExtraOnRefinance < (defaultDaiLiquiditySupplied * 2) / 100);
         } else {
             vm.assume(amountExtraOnRefinance < (defaultEthLiquiditySupplied * 2) / 100);
         }
@@ -214,7 +197,7 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
         // we want to make sure adding 1 doesn't overflow
         vm.assume(amountExtraOnRefinance < ~uint64(0));
         if (fuzzedOffer.randomAsset % 2 == 0) {
-            vm.assume(amountExtraOnRefinance < (defaultUsdcLiquiditySupplied * 2) / 100);
+            vm.assume(amountExtraOnRefinance < (defaultDaiLiquiditySupplied * 2) / 100);
         } else {
             vm.assume(amountExtraOnRefinance < (defaultEthLiquiditySupplied * 2) / 100);
         }
@@ -243,8 +226,6 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
         uint256 amountDrawnBefore = loanAuctionBefore.amountDrawn;
 
         uint256 interestRatePerSecondBefore = loanAuctionBefore.interestRatePerSecond;
-        uint256 protocolInterestRatePerSecondBefore = loanAuctionBefore
-            .protocolInterestRatePerSecond;
 
         vm.startPrank(borrower1);
         lending.drawLoanAmount(
@@ -321,19 +302,9 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
             defaultFixedOfferFields.nftId
         );
 
-        console.log("loanAuctionBefore.amount", loanAuctionBefore.amount);
-        console.log("loanAuctionBefore.amountDrawn", loanAuctionBefore.amountDrawn);
-        console.log("loanAuctionBefore.loanEndTimestamp", loanAuctionBefore.loanEndTimestamp);
-        console.log("loanAuctionBefore.loanBeginTimestamp", loanAuctionBefore.loanBeginTimestamp);
-
         uint256 amountDrawnBefore = loanAuctionBefore.amountDrawn;
 
         uint256 interestRatePerSecondBefore = loanAuctionBefore.interestRatePerSecond;
-        uint256 protocolInterestRatePerSecondBefore = loanAuctionBefore
-            .protocolInterestRatePerSecond;
-
-        console.log("interestRatePerSecondBefore", interestRatePerSecondBefore);
-        console.log("protocolInterestRatePerSecondBefore", protocolInterestRatePerSecondBefore);
 
         vm.startPrank(borrower1);
         lending.drawLoanAmount(
@@ -355,8 +326,6 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
             (loanAuctionAfter.loanEndTimestamp - loanAuctionAfter.loanBeginTimestamp)) * MAX_BPS) /
             loanAuctionBefore.amountDrawn) + 1;
 
-        console.log("interestBps", interestBps);
-
         uint256 calculatedInterestRatePerSecond = ((loanAuctionAfter.amountDrawn * interestBps) /
             MAX_BPS /
             (loanAuctionAfter.loanEndTimestamp - loanAuctionAfter.loanBeginTimestamp));
@@ -368,21 +337,6 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
             lending.protocolInterestBps(),
             (loanAuctionAfter.loanEndTimestamp - loanAuctionAfter.loanBeginTimestamp)
         );
-
-        console.log("calculatedInterestRatePerSecond", calculatedInterestRatePerSecond);
-        console.log(
-            "calculatedProtocolInterestRatePerSecond",
-            calculatedProtocolInterestRatePerSecond
-        );
-
-        console.log("loanAuctionAfter.loanEndTimestamp", loanAuctionAfter.loanEndTimestamp);
-        console.log("loanAuctionAfter.loanBeginTimestamp", loanAuctionAfter.loanBeginTimestamp);
-
-        console.log("loanAuctionAfter.amount", loanAuctionAfter.amount);
-        console.log("loanAuctionAfter.amountDrawn", loanAuctionAfter.amountDrawn);
-
-        console.log("interestRatePerSecondAfter", interestRatePerSecondAfter);
-        console.log("protocolInterestRatePerSecondAfter", protocolInterestRatePerSecondAfter);
 
         assertEq(calculatedInterestRatePerSecond, interestRatePerSecondAfter);
         assertEq(calculatedProtocolInterestRatePerSecond, protocolInterestRatePerSecondAfter);

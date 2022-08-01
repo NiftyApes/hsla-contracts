@@ -34,6 +34,11 @@ contract TestRepayLoan is Test, OffersLoansRefinancesFixtures {
             "should work"
         );
 
+        LoanAuction memory loanAuction = lending.getLoanAuction(
+            defaultFixedOfferFields.nftContractAddress,
+            defaultFixedOfferFields.nftId
+        );
+
         assertionsForExecutedLoan(offer);
 
         vm.warp(block.timestamp + secondsBeforeRepayment);
@@ -47,7 +52,7 @@ contract TestRepayLoan is Test, OffersLoansRefinancesFixtures {
             uint256 liquidityBalanceBeforeRepay = cDAIToken.balanceOf(address(liquidity));
 
             vm.startPrank(borrower1);
-            daiToken.increaseAllowance(address(liquidity), ~uint256(0));
+            daiToken.approve(address(liquidity), ~uint256(0));
             lending.repayLoan(
                 defaultFixedOfferFields.nftContractAddress,
                 defaultFixedOfferFields.nftId
@@ -66,7 +71,7 @@ contract TestRepayLoan is Test, OffersLoansRefinancesFixtures {
 
             // Lender back with interest
             assertCloseEnough(
-                defaultUsdcLiquiditySupplied + interest,
+                defaultDaiLiquiditySupplied + interest,
                 assetBalance(lender1, address(daiToken)),
                 assetBalancePlusOneCToken(lender1, address(daiToken))
             );
@@ -74,7 +79,14 @@ contract TestRepayLoan is Test, OffersLoansRefinancesFixtures {
             uint256 liquidityBalanceBeforeRepay = cEtherToken.balanceOf(address(liquidity));
 
             vm.startPrank(borrower1);
-            lending.repayLoan{ value: offer.amount + interest }(
+            vm.expectRevert("00030");
+            //  subtract 1 in order to fail when 0 interest
+            lending.repayLoan{ value: loanAuction.amountDrawn - 1 }(
+                defaultFixedOfferFields.nftContractAddress,
+                defaultFixedOfferFields.nftId
+            );
+
+            lending.repayLoan{ value: loanAuction.amountDrawn + interest }(
                 defaultFixedOfferFields.nftContractAddress,
                 defaultFixedOfferFields.nftId
             );

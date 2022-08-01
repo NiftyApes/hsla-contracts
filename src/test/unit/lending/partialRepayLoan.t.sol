@@ -75,7 +75,7 @@ contract TestPartialRepayLoan is Test, OffersLoansRefinancesFixtures {
 
             // Lender has repaymentAmount added
             assertCloseEnough(
-                defaultUsdcLiquiditySupplied - offer.amount + repaymentAmount,
+                defaultDaiLiquiditySupplied - offer.amount + repaymentAmount,
                 assetBalance(lender1, address(daiToken)),
                 assetBalancePlusOneCToken(lender1, address(daiToken))
             );
@@ -142,7 +142,7 @@ contract TestPartialRepayLoan is Test, OffersLoansRefinancesFixtures {
             mintDai(borrower1, 1);
 
             vm.startPrank(borrower1);
-            daiToken.increaseAllowance(address(liquidity), ~uint256(0));
+            daiToken.approve(address(liquidity), ~uint256(0));
             lending.partialRepayLoan(
                 defaultFixedOfferFields.nftContractAddress,
                 defaultFixedOfferFields.nftId,
@@ -165,6 +165,225 @@ contract TestPartialRepayLoan is Test, OffersLoansRefinancesFixtures {
         );
 
         assertEq(interestShortfallBeforePartialPayment, 0);
-        assertEq(interestShortfallAfter, 24999);
+        assertEq(interestShortfallAfter, 24999999999999999);
+    }
+
+    function test_unit_CANNOT_partialRepayLoan_noLoan() public {
+        vm.expectRevert("00007");
+        lending.partialRepayLoan(
+            defaultFixedOfferFields.nftContractAddress,
+            defaultFixedOfferFields.nftId,
+            1
+        );
+    }
+
+    function test_unit_CANNOT_partialRepayLoan_someoneElsesLoan() public {
+        uint16 secondsBeforeRepayment = 12 hours;
+
+        Offer memory offerToCreate = offerStructFromFields(
+            defaultFixedFuzzedFieldsForFastUnitTesting,
+            defaultFixedOfferFields
+        );
+
+        (Offer memory offer, ) = createOfferAndTryToExecuteLoanByBorrower(
+            offerToCreate,
+            "should work"
+        );
+
+        assertionsForExecutedLoan(offer);
+
+        vm.warp(block.timestamp + secondsBeforeRepayment);
+
+        uint256 interest = offer.interestRatePerSecond * secondsBeforeRepayment;
+
+        if (offer.asset == address(daiToken)) {
+            mintDai(borrower1, 1);
+
+            vm.startPrank(borrower2);
+            daiToken.approve(address(liquidity), ~uint256(0));
+            vm.expectRevert("00028");
+            lending.partialRepayLoan(
+                defaultFixedOfferFields.nftContractAddress,
+                defaultFixedOfferFields.nftId,
+                1
+            );
+            vm.stopPrank();
+        } else {
+            vm.startPrank(borrower2);
+            vm.expectRevert("00028");
+            lending.partialRepayLoan{ value: offer.amount + interest }(
+                defaultFixedOfferFields.nftContractAddress,
+                defaultFixedOfferFields.nftId,
+                1
+            );
+            vm.stopPrank();
+        }
+    }
+
+    function test_unit_partialRepayLoan_interestMath_works() public {
+        uint16 secondsBeforeRepayment = 12 hours;
+        uint256 amountExtraOnRefinance = 864000000;
+
+        vm.startPrank(owner);
+        lending.updateProtocolInterestBps(100);
+        vm.stopPrank();
+
+        Offer memory offerToCreate = offerStructFromFields(
+            defaultFixedFuzzedFieldsForFastUnitTesting,
+            defaultFixedOfferFields
+        );
+
+        (Offer memory offer, ) = createOfferAndTryToExecuteLoanByBorrower(
+            offerToCreate,
+            "should work"
+        );
+
+        assertionsForExecutedLoan(offer);
+
+        vm.warp(block.timestamp + secondsBeforeRepayment);
+
+        uint256 interest = offer.interestRatePerSecond * secondsBeforeRepayment;
+
+        LoanAuction memory loanAuctionBefore = lending.getLoanAuction(
+            defaultFixedOfferFields.nftContractAddress,
+            defaultFixedOfferFields.nftId
+        );
+
+        uint256 amountDrawnBefore = loanAuctionBefore.amountDrawn;
+        uint256 interestRatePerSecondBefore = loanAuctionBefore.interestRatePerSecond;
+
+        if (offer.asset == address(daiToken)) {
+            mintDai(borrower1, 1);
+
+            vm.startPrank(borrower1);
+            daiToken.approve(address(liquidity), ~uint256(0));
+            lending.partialRepayLoan(
+                defaultFixedOfferFields.nftContractAddress,
+                defaultFixedOfferFields.nftId,
+                amountExtraOnRefinance
+            );
+            vm.stopPrank();
+        } else {
+            vm.startPrank(borrower1);
+            lending.partialRepayLoan{ value: offer.amount + interest }(
+                defaultFixedOfferFields.nftContractAddress,
+                defaultFixedOfferFields.nftId,
+                amountExtraOnRefinance
+            );
+            vm.stopPrank();
+        }
+
+        LoanAuction memory loanAuctionAfter = lending.getLoanAuction(
+            defaultFixedOfferFields.nftContractAddress,
+            defaultFixedOfferFields.nftId
+        );
+
+        uint256 interestRatePerSecondAfter = loanAuctionAfter.interestRatePerSecond;
+        uint256 protocolInterestRatePerSecondAfter = loanAuctionAfter.protocolInterestRatePerSecond;
+
+        uint256 interestBps = (((interestRatePerSecondBefore *
+            (loanAuctionAfter.loanEndTimestamp - loanAuctionAfter.loanBeginTimestamp)) * MAX_BPS) /
+            loanAuctionBefore.amountDrawn) + 1;
+
+        uint256 calculatedInterestRatePerSecond = ((loanAuctionAfter.amountDrawn * interestBps) /
+            MAX_BPS /
+            (loanAuctionAfter.loanEndTimestamp - loanAuctionAfter.loanBeginTimestamp));
+        if (calculatedInterestRatePerSecond == 0 && interestBps != 0) {
+            calculatedInterestRatePerSecond = 1;
+        }
+        uint96 calculatedProtocolInterestRatePerSecond = lending.calculateInterestPerSecond(
+            loanAuctionAfter.amountDrawn,
+            lending.protocolInterestBps(),
+            (loanAuctionAfter.loanEndTimestamp - loanAuctionAfter.loanBeginTimestamp)
+        );
+
+        assertEq(calculatedInterestRatePerSecond, interestRatePerSecondAfter);
+        assertEq(calculatedProtocolInterestRatePerSecond, protocolInterestRatePerSecondAfter);
+        assertEq(loanAuctionAfter.amountDrawn, amountDrawnBefore - amountExtraOnRefinance);
+    }
+
+    function test_fuzz_partialRepayLoan_interestMath_works(
+        FuzzedOfferFields memory fuzzedOffer,
+        uint16 secondsBeforeRepayment,
+        uint64 amountToRepay
+    ) public validateFuzzedOfferFields(fuzzedOffer) {
+        vm.startPrank(owner);
+        lending.updateProtocolInterestBps(100);
+        vm.stopPrank();
+
+        Offer memory offerToCreate = offerStructFromFields(fuzzedOffer, defaultFixedOfferFields);
+
+        console.log("here");
+        (Offer memory offer, ) = createOfferAndTryToExecuteLoanByBorrower(
+            offerToCreate,
+            "should work"
+        );
+        console.log("here 1");
+
+        assertionsForExecutedLoan(offer);
+
+        vm.warp(block.timestamp + secondsBeforeRepayment + 1);
+
+        uint256 interest = offer.interestRatePerSecond * secondsBeforeRepayment;
+
+        LoanAuction memory loanAuctionBefore = lending.getLoanAuction(
+            defaultFixedOfferFields.nftContractAddress,
+            defaultFixedOfferFields.nftId
+        );
+
+        vm.assume(amountToRepay > 0);
+        vm.assume(amountToRepay < loanAuctionBefore.amountDrawn);
+
+        uint256 amountDrawnBefore = loanAuctionBefore.amountDrawn;
+        uint256 interestRatePerSecondBefore = loanAuctionBefore.interestRatePerSecond;
+
+        if (offer.asset == address(daiToken)) {
+            mintDai(borrower1, 1);
+
+            vm.startPrank(borrower1);
+            daiToken.approve(address(liquidity), ~uint256(0));
+            lending.partialRepayLoan(
+                defaultFixedOfferFields.nftContractAddress,
+                defaultFixedOfferFields.nftId,
+                amountToRepay
+            );
+            vm.stopPrank();
+        } else {
+            vm.startPrank(borrower1);
+            lending.partialRepayLoan{ value: offer.amount + interest }(
+                defaultFixedOfferFields.nftContractAddress,
+                defaultFixedOfferFields.nftId,
+                amountToRepay
+            );
+            vm.stopPrank();
+        }
+
+        LoanAuction memory loanAuctionAfter = lending.getLoanAuction(
+            defaultFixedOfferFields.nftContractAddress,
+            defaultFixedOfferFields.nftId
+        );
+
+        uint256 interestRatePerSecondAfter = loanAuctionAfter.interestRatePerSecond;
+        uint256 protocolInterestRatePerSecondAfter = loanAuctionAfter.protocolInterestRatePerSecond;
+
+        uint256 interestBps = (((interestRatePerSecondBefore *
+            (loanAuctionAfter.loanEndTimestamp - loanAuctionAfter.loanBeginTimestamp)) * MAX_BPS) /
+            loanAuctionBefore.amountDrawn) + 1;
+
+        uint256 calculatedInterestRatePerSecond = ((loanAuctionAfter.amountDrawn * interestBps) /
+            MAX_BPS /
+            (loanAuctionAfter.loanEndTimestamp - loanAuctionAfter.loanBeginTimestamp));
+        if (calculatedInterestRatePerSecond == 0 && interestBps != 0) {
+            calculatedInterestRatePerSecond = 1;
+        }
+        uint96 calculatedProtocolInterestRatePerSecond = lending.calculateInterestPerSecond(
+            loanAuctionAfter.amountDrawn,
+            lending.protocolInterestBps(),
+            (loanAuctionAfter.loanEndTimestamp - loanAuctionAfter.loanBeginTimestamp)
+        );
+
+        assertEq(calculatedInterestRatePerSecond, interestRatePerSecondAfter);
+        assertEq(calculatedProtocolInterestRatePerSecond, protocolInterestRatePerSecondAfter);
+        assertEq(loanAuctionAfter.amountDrawn, amountDrawnBefore - amountToRepay);
     }
 }
