@@ -47,8 +47,8 @@ contract TestRepayLoanForAccount is Test, OffersLoansRefinancesFixtures {
             mintDai(repayer, offer.amount + interest);
 
             uint256 liquidityBalanceBeforeRepay = cDAIToken.balanceOf(address(liquidity));
-
             uint256 borrowerBalanceBeforeRepay = daiToken.balanceOf(borrower1);
+            uint256 repayerBalanceBeforeRepay = daiToken.balanceOf(repayer);
 
             vm.startPrank(repayer);
             daiToken.approve(address(liquidity), offer.amount + interest);
@@ -66,10 +66,16 @@ contract TestRepayLoanForAccount is Test, OffersLoansRefinancesFixtures {
                     liquidity.assetAmountToCAssetAmount(address(daiToken), offer.amount + interest)
             );
 
+            // repayer balance unchanged
+            assertEq(
+                daiToken.balanceOf(repayer),
+                repayerBalanceBeforeRepay - (offer.amount + interest)
+            );
+
             // borrower balance unchanged
             assertEq(borrowerBalanceBeforeRepay, daiToken.balanceOf(borrower1));
 
-            // Lender back with interest
+            // lender back with interest
             assertCloseEnough(
                 defaultUsdcLiquiditySupplied + interest,
                 assetBalance(lender1, address(daiToken)),
@@ -79,8 +85,8 @@ contract TestRepayLoanForAccount is Test, OffersLoansRefinancesFixtures {
             vm.deal(repayer, offer.amount + interest);
 
             uint256 liquidityBalanceBeforeRepay = cEtherToken.balanceOf(address(liquidity));
-
             uint256 borrowerBalanceBeforeRepay = borrower1.balance;
+            uint256 repayerBalanceBeforeRepay = repayer.balance;
 
             vm.startPrank(repayer);
             lending.repayLoanForAccount{ value: offer.amount + interest }(
@@ -90,7 +96,7 @@ contract TestRepayLoanForAccount is Test, OffersLoansRefinancesFixtures {
             );
             vm.stopPrank();
 
-            // Liquidity contract cToken balance
+            // liquidity contract cToken balance
             assertEq(
                 cEtherToken.balanceOf(address(liquidity)),
                 liquidityBalanceBeforeRepay +
@@ -100,10 +106,13 @@ contract TestRepayLoanForAccount is Test, OffersLoansRefinancesFixtures {
                     )
             );
 
+            // repayer balance unchanged
+            assertEq(repayer.balance, repayerBalanceBeforeRepay - (offer.amount + interest));
+
             // borrower balance unchanged
             assertEq(borrowerBalanceBeforeRepay, borrower1.balance);
 
-            // Lender back with interest
+            // lender back with interest
             assertCloseEnough(
                 defaultEthLiquiditySupplied + interest,
                 assetBalance(lender1, address(ETH_ADDRESS)),
