@@ -34,13 +34,6 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     ///         Fees are denominated in basis points, parts of 10_000
     function gasGriefingPremiumBps() external view returns (uint16);
 
-    /// @notice Returns the bps premium paid to the protocol for refinancing a loan before the current lender has earned the equivalent amount of interest
-    ///         This value represents the percentage of the gas griefing premium taken by the protocol.
-    ///         For example, if the value of gasGriefingPremiumBps is 25 and 10 bps of interest has been earned, the premium will be 15 bps paid to the current lender
-    ///         This premium is a percentage of the delta from the gasGriefingPremium. In effect, it is an additional percentage paid equivalent to the interest earned X the gasGriefingProtocol premium
-    ///         Fees are denominated in basis points, parts of 10_000
-    function gasGriefingProtocolPremiumBps() external view returns (uint16);
-
     /// @notice Returns the bps premium paid to the protocol for refinancing a loan with terms that do not improve the cumulative terms of the loan by the equivalent basis points
     ///         For example, if termGriefingPremiumBps is 25 then the cumulative improvement of amount, interestRatePerSecond, and duration must be more than 25 bps
     ///         If the amount is 8 bps better, interestRatePerSecond is 7 bps better, and duration is 10 bps better, then no premium is paid

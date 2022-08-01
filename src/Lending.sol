@@ -60,9 +60,6 @@ contract NiftyApesLending is
     uint16 public gasGriefingPremiumBps;
 
     /// @inheritdoc ILending
-    uint16 public gasGriefingProtocolPremiumBps;
-
-    /// @inheritdoc ILending
     uint16 public termGriefingPremiumBps;
 
     /// @inheritdoc ILending
@@ -86,7 +83,6 @@ contract NiftyApesLending is
         protocolInterestBps = 0;
         originationPremiumBps = 50;
         gasGriefingPremiumBps = 25;
-        gasGriefingProtocolPremiumBps = 0;
         termGriefingPremiumBps = 25;
         defaultRefinancePremiumBps = 25;
 
@@ -118,19 +114,6 @@ contract NiftyApesLending is
         _requireMaxFee(newGasGriefingPremiumBps);
         emit GasGriefingPremiumBpsUpdated(gasGriefingPremiumBps, newGasGriefingPremiumBps);
         gasGriefingPremiumBps = newGasGriefingPremiumBps;
-    }
-
-    /// @inheritdoc ILendingAdmin
-    function updateGasGriefingProtocolPremiumBps(uint16 newGasGriefingProtocolPremiumBps)
-        external
-        onlyOwner
-    {
-        require(newGasGriefingProtocolPremiumBps <= MAX_BPS, "00002");
-        emit GasGriefingProtocolPremiumBpsUpdated(
-            gasGriefingProtocolPremiumBps,
-            newGasGriefingProtocolPremiumBps
-        );
-        gasGriefingProtocolPremiumBps = newGasGriefingProtocolPremiumBps;
     }
 
     /// @inheritdoc ILendingAdmin
@@ -540,11 +523,6 @@ contract NiftyApesLending is
             // add gasGriefing premium
             if (interestThresholdDelta > 0) {
                 interestAndPremiumOwedToCurrentLender += interestThresholdDelta;
-
-                // we can remove this fee, fix stack too deep, simplify premiums, and remove code from the code base.
-                // protocolInterestAndPremium +=
-                //     (lenderInterest * gasGriefingProtocolPremiumBps) /
-                //     MAX_BPS;
             }
 
             // add default premium

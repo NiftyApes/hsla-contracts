@@ -49,8 +49,10 @@ contract TestUpdateTermGriefingPremiumBps is Test, OffersLoansRefinancesFixtures
 
         // uint256 griefingToLender = threshold - interest;
 
-        uint256 gasGriefingToProtocol = (interest * lending.gasGriefingProtocolPremiumBps()) /
-            MAX_BPS;
+        uint256 gasGriefingToProtocol = 0;
+
+        // uint256 gasGriefingToProtocol = (interest * lending.gasGriefingProtocolPremiumBps()) /
+        //     MAX_BPS;
 
         uint256 termGriefingToProtocol = (lending.termGriefingPremiumBps() *
             firstLoan.amountDrawn) / MAX_BPS;
