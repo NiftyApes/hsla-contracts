@@ -80,7 +80,8 @@ contract TestRepayLoan is Test, OffersLoansRefinancesFixtures {
 
             vm.startPrank(borrower1);
             vm.expectRevert("00030");
-            lending.repayLoan{ value: loanAuction.amountDrawn }(
+            //  subtract 1 in order to fail when 0 interest
+            lending.repayLoan{ value: loanAuction.amountDrawn - 1 }(
                 defaultFixedOfferFields.nftContractAddress,
                 defaultFixedOfferFields.nftId
             );

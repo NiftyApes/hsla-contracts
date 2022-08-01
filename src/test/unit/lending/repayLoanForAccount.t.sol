@@ -77,7 +77,7 @@ contract TestRepayLoanForAccount is Test, OffersLoansRefinancesFixtures {
 
             // lender back with interest
             assertCloseEnough(
-                defaultUsdcLiquiditySupplied + interest,
+                defaultDaiLiquiditySupplied + interest,
                 assetBalance(lender1, address(daiToken)),
                 assetBalancePlusOneCToken(lender1, address(daiToken))
             );
