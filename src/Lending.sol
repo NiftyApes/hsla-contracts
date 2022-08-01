@@ -13,8 +13,6 @@ import "./interfaces/niftyapes/liquidity/ILiquidity.sol";
 import "./interfaces/niftyapes/offers/IOffers.sol";
 import "./interfaces/sanctions/SanctionsList.sol";
 
-import "forge-std/Test.sol";
-
 /// @title Implementation of the ILending interface
 contract NiftyApesLending is
     OwnableUpgradeable,
@@ -321,8 +319,6 @@ contract NiftyApesLending is
         }
 
         _doRefinanceByBorrower(offer, nftId, msg.sender, expectedLastUpdatedTimestamp);
-
-        console.log("after in refiByBorrower");
     }
 
     function doRefinanceByBorrower(
@@ -373,10 +369,6 @@ contract NiftyApesLending is
         uint256 toLenderUnderlying = loanAuction.amountDrawn +
             loanAuction.accumulatedLenderInterest +
             loanAuction.slashableLenderInterest;
-
-        console.log("toLenderUnderlying", toLenderUnderlying);
-        console.log("loanAuction.accumulatedLenderInterest", loanAuction.accumulatedLenderInterest);
-        console.log("loanAuction.slashableLenderInterest", loanAuction.slashableLenderInterest);
 
         uint256 toProtocolUnderlying = loanAuction.accumulatedProtocolInterest;
 
