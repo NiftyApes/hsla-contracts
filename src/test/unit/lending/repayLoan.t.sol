@@ -74,6 +74,12 @@ contract TestRepayLoan is Test, OffersLoansRefinancesFixtures {
             uint256 liquidityBalanceBeforeRepay = cEtherToken.balanceOf(address(liquidity));
 
             vm.startPrank(borrower1);
+            vm.expectRevert("00030");
+            lending.repayLoan{ value: offer.amount }(
+                defaultFixedOfferFields.nftContractAddress,
+                defaultFixedOfferFields.nftId
+            );
+
             lending.repayLoan{ value: offer.amount + interest }(
                 defaultFixedOfferFields.nftContractAddress,
                 defaultFixedOfferFields.nftId

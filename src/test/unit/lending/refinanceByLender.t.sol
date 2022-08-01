@@ -614,8 +614,6 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         );
         assertEq(lenderAccruedInterest, 1 hours * loanAuctionAfterDraw.interestRatePerSecond);
 
-        console.log("here");
-
         // set up borrower repay full amount
         mintDai(
             borrower1,
@@ -625,9 +623,6 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
                 1 hours *
                 loanAuctionAfterDraw.interestRatePerSecond
         );
-
-        console.log("loanAuctionAfterDraw.amountDrawn", loanAuctionAfterDraw.amountDrawn);
-        console.log("daiToken.balanceOf(borrower1)", daiToken.balanceOf(borrower1));
 
         vm.startPrank(borrower1);
         daiToken.approve(address(liquidity), ~uint256(0));

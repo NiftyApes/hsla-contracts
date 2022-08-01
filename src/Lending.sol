@@ -466,8 +466,10 @@ contract NiftyApesLending is
 
         address cAsset = ILiquidity(liquidityContractAddress).getCAsset(offer.asset);
 
+        // check how much, if any, gasGriefing premium should be applied
         uint256 interestThresholdDelta = _checkSufficientInterestAccumulated(loanAuction);
 
+        // check whether a termGriefing premium should apply
         bool sufficientTerms = _checkSufficientTerms(
             loanAuction,
             offer.amount,
@@ -475,16 +477,22 @@ contract NiftyApesLending is
             offer.duration
         );
 
-        // TODO(miller): Unclear if first conjunction of this condition can ever be true
-        // given current contracts
+        uint128 currentAccumulatedProtocolInterest = loanAuction.accumulatedProtocolInterest;
+
+        // add interest to accumulatedInterest and/or slashableInterest values from the current preiod of interest
+        // this allows the incoming lender to have a 0 interest value upon start
+        (, uint256 protocolInterest) = _updateInterest(loanAuction);
+        // (uint256 lenderInterest, uint256 protocolInterest) = _updateInterest(loanAuction);
+
+        // set lenderRefi to true to signify the last action to occur in the loan was a lenderRefinance
+        loanAuction.lenderRefi = true;
+
+        // If the last action to occur on the loan was a refinance, slashableInterest should be > 0
+        // If the refinancing is being called by a new lender then the slashableInterest should be added to accumulatedInterest
         if (loanAuction.slashableLenderInterest > 0 && loanAuction.lender != offer.creator) {
             loanAuction.accumulatedLenderInterest += loanAuction.slashableLenderInterest;
             loanAuction.slashableLenderInterest = 0;
         }
-
-        (uint256 lenderInterest, uint256 protocolInterest) = _updateInterest(loanAuction);
-
-        loanAuction.lenderRefi = true;
 
         uint256 protocolInterestAndPremium;
         uint256 protocolPremiumInCtokens;
@@ -506,11 +514,9 @@ contract NiftyApesLending is
             uint256 additionalTokens = ILiquidity(liquidityContractAddress)
                 .assetAmountToCAssetAmount(offer.asset, offer.amount - loanAuction.amountDrawn);
 
+            // This value is only a termGriefing if applicable
             protocolPremiumInCtokens = ILiquidity(liquidityContractAddress)
                 .assetAmountToCAssetAmount(offer.asset, protocolInterestAndPremium);
-
-            console.log("fri jul 15 -- additionalTokens", additionalTokens);
-            console.log("fri jul 15 -- protocolPremiumInCtokens", protocolPremiumInCtokens);
 
             _requireSufficientBalance(
                 offer.creator,
@@ -529,20 +535,29 @@ contract NiftyApesLending is
                 protocolPremiumInCtokens
             );
         } else {
-            // calculate interest earned
-            uint256 interestAndPremiumOwedToCurrentLender = loanAuction.accumulatedLenderInterest +
-                loanAuction.accumulatedProtocolInterest +
+            // calculate the value to pay out to the current lender, this includes the protocolInterest, which is paid out each refinance,
+            // and reimbursed by the borrower at the end of the loan.
+            // this value may double count the currentProtocolInterest, it is paid to the current lender here and paid out to the protocol  on ln 548
+            uint256 interestAndPremiumOwedToCurrentLender = uint256(
+                loanAuction.accumulatedLenderInterest
+            ) +
+                currentAccumulatedProtocolInterest +
                 ((uint256(loanAuction.amountDrawn) * originationPremiumBps) / MAX_BPS);
 
+            // add protocolInterest
             protocolInterestAndPremium += protocolInterest;
 
+            // add gasGriefing premium
             if (interestThresholdDelta > 0) {
                 interestAndPremiumOwedToCurrentLender += interestThresholdDelta;
-                protocolInterestAndPremium +=
-                    (lenderInterest * gasGriefingProtocolPremiumBps) /
-                    MAX_BPS;
+
+                // we can remove this fee, fix stack too deep, simplify premiums, and remove code from the code base.
+                // protocolInterestAndPremium +=
+                //     (lenderInterest * gasGriefingProtocolPremiumBps) /
+                //     MAX_BPS;
             }
 
+            // add default premium
             if (_currentTimestamp32() > loanAuction.loanEndTimestamp - 1 hours) {
                 protocolInterestAndPremium +=
                     (uint256(loanAuction.amountDrawn) * defaultRefinancePremiumBps) /
@@ -581,11 +596,13 @@ contract NiftyApesLending is
                 cAsset,
                 fullCTokenAmountToWithdraw
             );
+
             ILiquidity(liquidityContractAddress).addToCAssetBalance(
                 currentlender,
                 cAsset,
                 (fullCTokenAmountToWithdraw - protocolPremiumInCtokens)
             );
+
             ILiquidity(liquidityContractAddress).addToCAssetBalance(
                 owner(),
                 cAsset,

@@ -75,7 +75,7 @@ contract TestPartialRepayLoan is Test, OffersLoansRefinancesFixtures {
 
             // Lender has repaymentAmount added
             assertCloseEnough(
-                defaultUsdcLiquiditySupplied - offer.amount + repaymentAmount,
+                defaultDaiLiquiditySupplied - offer.amount + repaymentAmount,
                 assetBalance(lender1, address(daiToken)),
                 assetBalancePlusOneCToken(lender1, address(daiToken))
             );
@@ -220,7 +220,7 @@ contract TestPartialRepayLoan is Test, OffersLoansRefinancesFixtures {
         }
     }
 
-    function test_unit_CANNOT_partialRepayLoan_interestMath_works() public {
+    function test_unit_partialRepayLoan_interestMath_works() public {
         uint16 secondsBeforeRepayment = 12 hours;
         uint256 amountExtraOnRefinance = 864000000;
 
@@ -302,7 +302,7 @@ contract TestPartialRepayLoan is Test, OffersLoansRefinancesFixtures {
         assertEq(loanAuctionAfter.amountDrawn, amountDrawnBefore - amountExtraOnRefinance);
     }
 
-    function test_fuzz_CANNOT_partialRepayLoan_interestMath_works(
+    function test_fuzz_partialRepayLoan_interestMath_works(
         FuzzedOfferFields memory fuzzedOffer,
         uint16 secondsBeforeRepayment,
         uint64 amountToRepay

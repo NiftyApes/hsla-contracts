@@ -86,7 +86,7 @@ contract OffersLoansRefinancesFixtures is
         // -10 ether to give refinancing lender some wiggle room for fees
         if (fuzzed.randomAsset % 2 == 0) {
             vm.assume(fuzzed.amount > ~uint32(0));
-            vm.assume(fuzzed.amount < (defaultUsdcLiquiditySupplied * 50) / 100);
+            vm.assume(fuzzed.amount < (defaultDaiLiquiditySupplied * 50) / 100);
         } else {
             vm.assume(fuzzed.amount > ~uint32(0));
             vm.assume(fuzzed.amount < (defaultEthLiquiditySupplied * 50) / 100);
