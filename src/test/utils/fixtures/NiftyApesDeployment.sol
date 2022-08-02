@@ -51,6 +51,8 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         liquidity.setCAssetAddress(address(daiToken), address(cDAIToken));
         liquidity.setMaxCAssetBalance(address(cDAIToken), ~uint256(0));
 
+        lending.updateProtocolInterestBps(100);
+
         if (!integration) {
             liquidity.pauseSanctions();
             lending.pauseSanctions();
