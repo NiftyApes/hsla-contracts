@@ -6673,12 +6673,12 @@ contract LendingAuctionUnitTest is
         );
         assertEq(
             liquidityProviders.getCAssetBalance(LENDER_2, address(cDAIToken)),
-            10000000000000000000 ether
+            10015416666666612400 ether
         );
 
         assertEq(
             liquidityProviders.getCAssetBalance(LENDER_3, address(cDAIToken)),
-            3954583333333343200 ether
+            3939166666666730800 ether
         );
 
         assertEq(
@@ -6697,7 +6697,7 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.amount, 8 ether);
         assertEq(loanAuction.loanEndTimestamp, loanAuction.loanBeginTimestamp + 3 days);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
-        assertEq(loanAuction.accumulatedLenderInterest, 15416666666656800);
+        assertEq(loanAuction.accumulatedLenderInterest, 30833333333269200);
         assertEq(loanAuction.accumulatedPaidProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 6000000000000000000);
     }
@@ -7274,7 +7274,8 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.loanEndTimestamp, block.timestamp + 12 hours);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
         assertEq(loanAuction.accumulatedLenderInterest, 29999999999980800);
-        assertEq(loanAuction.accumulatedPaidProtocolInterest, 4999999999968000);
+        assertEq(loanAuction.accumulatedPaidProtocolInterest, 0);
+        assertEq(loanAuction.unpaidProtocolInterest, 4999999999968000);
         assertEq(loanAuction.amountDrawn, 0.5 ether);
     }
 
