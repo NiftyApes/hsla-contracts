@@ -99,7 +99,7 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         LoanAuction memory loanAuction = tryToRefinanceByLender(newOffer, "should work");
 
         assertEq(loanAuction.accumulatedLenderInterest, lenderInterest);
-        assertEq(loanAuction.accumulatedProtocolInterest, protocolInterest);
+        assertEq(loanAuction.accumulatedPaidProtocolInterest, protocolInterest);
         assertEq(loanAuction.slashableLenderInterest, 0);
     }
 

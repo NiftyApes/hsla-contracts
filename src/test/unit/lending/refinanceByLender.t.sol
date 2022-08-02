@@ -68,7 +68,7 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
             beforeRefinanceLenderBalance
         );
         assertEq(loanAuction.accumulatedLenderInterest, lenderInterest);
-        assertEq(loanAuction.accumulatedProtocolInterest, protocolInterest);
+        assertEq(loanAuction.accumulatedPaidProtocolInterest, protocolInterest);
         assertEq(loanAuction.slashableLenderInterest, 0);
     }
 
