@@ -1142,7 +1142,7 @@ contract NiftyApesLending is
     ) internal {
         uint256 cTokensToLender = totalCTokens;
 
-        if (repayFull && (loanAuction.unpaidProtocolInterest > 0)) {
+        if (repayFull) {
             uint256 cTokensToProtocol = (totalCTokens * loanAuction.unpaidProtocolInterest) /
                 totalPayment;
             cTokensToLender -= cTokensToProtocol;

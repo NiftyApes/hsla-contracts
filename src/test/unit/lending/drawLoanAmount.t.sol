@@ -82,11 +82,6 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
 
         tryToRefinanceLoanByBorrower(newOffer, "should work");
 
-        LoanAuction memory loanAuction2 = lending.getLoanAuction(
-            offer.nftContractAddress,
-            offer.nftId
-        );
-
         assertionsForExecutedRefinance(
             offer,
             loanAuction.amountDrawn,

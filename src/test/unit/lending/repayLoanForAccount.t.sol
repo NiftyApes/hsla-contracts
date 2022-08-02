@@ -41,7 +41,17 @@ contract TestRepayLoanForAccount is Test, OffersLoansRefinancesFixtures {
 
         vm.warp(block.timestamp + secondsBeforeRepayment);
 
-        uint256 interest = offer.interestRatePerSecond * secondsBeforeRepayment;
+        (, uint256 accruedProtocolInterest) = lending.calculateInterestAccrued(
+            defaultFixedOfferFields.nftContractAddress,
+            defaultFixedOfferFields.nftId
+        );
+
+        uint256 protocolInterest = loanAuction.accumulatedPaidProtocolInterest +
+            loanAuction.unpaidProtocolInterest +
+            accruedProtocolInterest;
+
+        uint256 interest = (offer.interestRatePerSecond * secondsBeforeRepayment) +
+            protocolInterest;
 
         if (offer.asset == address(daiToken)) {
             mintDai(repayer, offer.amount + interest);
@@ -58,22 +68,25 @@ contract TestRepayLoanForAccount is Test, OffersLoansRefinancesFixtures {
                 loanAuction.loanBeginTimestamp
             );
             vm.stopPrank();
-
+            console.log("here");
             // Liquidity contract cToken balance
             assertEq(
                 cDAIToken.balanceOf(address(liquidity)),
                 liquidityBalanceBeforeRepay +
                     liquidity.assetAmountToCAssetAmount(address(daiToken), offer.amount + interest)
             );
+            console.log("here 1");
 
             // repayer balance unchanged
             assertEq(
                 daiToken.balanceOf(repayer),
                 repayerBalanceBeforeRepay - (offer.amount + interest)
             );
+            console.log("here 2");
 
             // borrower balance unchanged
             assertEq(borrowerBalanceBeforeRepay, daiToken.balanceOf(borrower1));
+            console.log("here 3");
 
             // lender back with interest
             assertCloseEnough(
@@ -95,6 +108,7 @@ contract TestRepayLoanForAccount is Test, OffersLoansRefinancesFixtures {
                 loanAuction.loanBeginTimestamp
             );
             vm.stopPrank();
+            console.log("here 4");
 
             // liquidity contract cToken balance
             assertEq(
@@ -105,12 +119,15 @@ contract TestRepayLoanForAccount is Test, OffersLoansRefinancesFixtures {
                         offer.amount + interest
                     )
             );
+            console.log("here 5");
 
             // repayer balance unchanged
             assertEq(repayer.balance, repayerBalanceBeforeRepay - (offer.amount + interest));
+            console.log("here 6");
 
             // borrower balance unchanged
             assertEq(borrowerBalanceBeforeRepay, borrower1.balance);
+            console.log("here 7");
 
             // lender back with interest
             assertCloseEnough(
