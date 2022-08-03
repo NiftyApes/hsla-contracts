@@ -409,25 +409,6 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         vm.startPrank(borrower1);
         daiToken.approve(address(liquidity), 10_000 * 10**daiToken.decimals());
 
-        console.log("loanAuctionAfterDraw.lender", loanAuctionAfterDraw.lender);
-        console.log("loanAuctionAfterDraw.nftOwner", loanAuctionAfterDraw.nftOwner);
-        console.log("offer.nftContractAddress", offer.nftContractAddress);
-        console.log("offer.nftId", offer.nftId);
-        console.log("loanAuctionAfterDraw.asset", loanAuctionAfterDraw.asset);
-        console.log("loanAuctionAfterDraw.amountDrawn", loanAuctionAfterDraw.amountDrawn);
-        console.log(
-            "loanAuctionAfterDraw.amountDrawn + 1 hours * loanAuctionBeforeDraw.interestRatePerSecond",
-            loanAuctionAfterDraw.amountDrawn + 1 hours * loanAuctionBeforeDraw.interestRatePerSecond
-        );
-        console.log(
-            "loanAuctionAfterDraw.amountDrawn + 1 hours * loanAuctionBeforeDraw.interestRatePerSecond + 1 hours * loanAuctionAfterDraw.interestRatePerSecond",
-            loanAuctionAfterDraw.amountDrawn +
-                1 hours *
-                loanAuctionBeforeDraw.interestRatePerSecond +
-                1 hours *
-                loanAuctionAfterDraw.interestRatePerSecond
-        );
-        console.log("protocolInterest", protocolInterest);
         // most important part here is the amount repaid, the last argument to the event
         // the amount drawn + 1 hour at initial interest rate + 1 hour at "after draw" interest rate
         // even though the borrower couldn't draw 1000 DAI, they could draw some, so the rate changes
@@ -692,190 +673,189 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         );
     }
 
-    // function test_unit_refinanceByLender_simplest_case_eth() public {
-    //     FuzzedOfferFields memory fixedForSpeed = defaultFixedFuzzedFieldsForFastUnitTesting;
-    //     fixedForSpeed.randomAsset = 1; // ETH
-    //     _test_refinanceByLender_simplest_case(fixedForSpeed);
-    // }
+    function test_unit_refinanceByLender_simplest_case_eth() public {
+        FuzzedOfferFields memory fixedForSpeed = defaultFixedFuzzedFieldsForFastUnitTesting;
+        fixedForSpeed.randomAsset = 1; // ETH
+        uint16 secondsBeforeRefinance = 12 hours;
 
-    // function _test_refinanceByLender_events(FuzzedOfferFields memory fuzzed) private {
-    //     Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        _test_refinanceByLender_simplest_case(fixedForSpeed, secondsBeforeRefinance);
+    }
 
-    //     vm.expectEmit(true, true, true, true);
-    //     emit LoanExecuted(offer.nftContractAddress, offer.nftId, offer);
+    function _test_refinanceByLender_events(FuzzedOfferFields memory fuzzed) private {
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
 
-    //     createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
-    // }
+        vm.expectEmit(true, true, true, true);
+        emit LoanExecuted(offer.nftContractAddress, offer.nftId, offer);
 
-    // function test_unit_refinanceByLender_events() public {
-    //     _test_refinanceByLender_events(defaultFixedFuzzedFieldsForFastUnitTesting);
-    // }
+        createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
+    }
 
-    // function test_fuzz_refinanceByLender_events(FuzzedOfferFields memory fuzzed)
-    //     public
-    //     validateFuzzedOfferFields(fuzzed)
-    // {
-    //     _test_refinanceByLender_events(fuzzed);
-    // }
+    function test_unit_refinanceByLender_events() public {
+        _test_refinanceByLender_events(defaultFixedFuzzedFieldsForFastUnitTesting);
+    }
 
-    // function _test_cannot_refinanceByLender_if_offer_expired(FuzzedOfferFields memory fuzzed)
+    function test_fuzz_refinanceByLender_events(FuzzedOfferFields memory fuzzed)
+        public
+        validateFuzzedOfferFields(fuzzed)
+    {
+        _test_refinanceByLender_events(fuzzed);
+    }
+
+    function _test_cannot_refinanceByLender_if_offer_expired(FuzzedOfferFields memory fuzzed)
+        private
+    {
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        createOffer(offer, lender1);
+        vm.warp(offer.expiration);
+        approveLending(offer);
+        tryToExecuteLoanByBorrower(offer, "00010");
+    }
+
+    function test_fuzz_cannot_refinanceByLender_if_offer_expired(FuzzedOfferFields memory fuzzed)
+        public
+        validateFuzzedOfferFields(fuzzed)
+    {
+        _test_cannot_refinanceByLender_if_offer_expired(fuzzed);
+    }
+
+    function test_unit_cannot_refinanceByLender_if_offer_expired() public {
+        _test_cannot_refinanceByLender_if_offer_expired(defaultFixedFuzzedFieldsForFastUnitTesting);
+    }
+
+    function _test_cannot_refinanceByLender_if_asset_not_in_allow_list(
+        FuzzedOfferFields memory fuzzed
+    ) public {
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        createOffer(offer, lender1);
+        vm.startPrank(owner);
+        liquidity.setCAssetAddress(offer.asset, address(0));
+        vm.stopPrank();
+        tryToExecuteLoanByBorrower(offer, "00040");
+    }
+
+    function test_fuzz_cannot_refinanceByLender_if_asset_not_in_allow_list(
+        FuzzedOfferFields memory fuzzed
+    ) public validateFuzzedOfferFields(fuzzed) {
+        _test_cannot_refinanceByLender_if_asset_not_in_allow_list(fuzzed);
+    }
+
+    function test_unit_cannot_refinanceByLender_if_asset_not_in_allow_list() public {
+        _test_cannot_refinanceByLender_if_asset_not_in_allow_list(
+            defaultFixedFuzzedFieldsForFastUnitTesting
+        );
+    }
+
+    function _test_cannot_refinanceByLender_if_offer_not_created(FuzzedOfferFields memory fuzzed)
+        private
+    {
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        // notice conspicuous absence of createOffer here
+        approveLending(offer);
+        tryToExecuteLoanByBorrower(offer, "00012");
+    }
+
+    function test_fuzz_cannot_refinanceByLender_if_offer_not_created(
+        FuzzedOfferFields memory fuzzed
+    ) public validateFuzzedOfferFields(fuzzed) {
+        _test_cannot_refinanceByLender_if_offer_not_created(fuzzed);
+    }
+
+    function test_unit_cannot_refinanceByLender_if_offer_not_created() public {
+        _test_cannot_refinanceByLender_if_offer_not_created(
+            defaultFixedFuzzedFieldsForFastUnitTesting
+        );
+    }
+
+    function _test_cannot_refinanceByLender_if_dont_own_nft(FuzzedOfferFields memory fuzzed)
+        private
+    {
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        createOffer(offer, lender1);
+        approveLending(offer);
+        vm.startPrank(borrower1);
+        mockNft.safeTransferFrom(borrower1, borrower2, 1);
+        vm.stopPrank();
+        tryToExecuteLoanByBorrower(offer, "00018");
+    }
+
+    function test_fuzz_cannot_refinanceByLender_if_dont_own_nft(FuzzedOfferFields memory fuzzed)
+        public
+        validateFuzzedOfferFields(fuzzed)
+    {
+        _test_cannot_refinanceByLender_if_dont_own_nft(fuzzed);
+    }
+
+    function test_unit_cannot_refinanceByLender_if_dont_own_nft() public {
+        _test_cannot_refinanceByLender_if_dont_own_nft(defaultFixedFuzzedFieldsForFastUnitTesting);
+    }
+
+    function _test_cannot_refinanceByLender_if_not_enough_tokens(FuzzedOfferFields memory fuzzed)
+        private
+    {
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        createOffer(offer, lender1);
+        approveLending(offer);
+
+        vm.startPrank(lender1);
+        if (offer.asset == address(daiToken)) {
+            liquidity.withdrawErc20(address(daiToken), defaultDaiLiquiditySupplied);
+        } else {
+            liquidity.withdrawEth(defaultEthLiquiditySupplied);
+        }
+        vm.stopPrank();
+
+        tryToExecuteLoanByBorrower(offer, "00034");
+    }
+
+    function test_fuzz_cannot_refinanceByLender_if_not_enough_tokens(
+        FuzzedOfferFields memory fuzzed
+    ) public validateFuzzedOfferFields(fuzzed) {
+        _test_cannot_refinanceByLender_if_not_enough_tokens(fuzzed);
+    }
+
+    function test_unit_cannot_refinanceByLender_if_not_enough_tokens() public {
+        _test_cannot_refinanceByLender_if_not_enough_tokens(
+            defaultFixedFuzzedFieldsForFastUnitTesting
+        );
+    }
+
+    function _test_cannot_refinanceByLender_if_underlying_transfer_fails(
+        FuzzedOfferFields memory fuzzed
+    ) private {
+        // Can only be mocked
+        bool integration = false;
+        try vm.envBool("INTEGRATION") returns (bool isIntegration) {
+            integration = isIntegration;
+        } catch (bytes memory) {
+            // This catches revert that occurs if env variable not supplied
+        }
+
+        if (!integration) {
+            fuzzed.randomAsset = 0; // DAI
+            Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+            daiToken.setTransferFail(true);
+            createOfferAndTryToExecuteLoanByBorrower(
+                offer,
+                "SafeERC20: ERC20 operation did not succeed"
+            );
+        }
+    }
+
+    function test_fuzz_cannot_refinanceByLender_if_underlying_transfer_fails(
+        FuzzedOfferFields memory fuzzed
+    ) public validateFuzzedOfferFields(fuzzed) {
+        _test_cannot_refinanceByLender_if_underlying_transfer_fails(fuzzed);
+    }
+
+    function test_unit_cannot_refinanceByLender_if_underlying_transfer_fails() public {
+        _test_cannot_refinanceByLender_if_underlying_transfer_fails(
+            defaultFixedFuzzedFieldsForFastUnitTesting
+        );
+    }
+
+    // function _test_cannot_refinanceByLender_if_eth_transfer_fails(FuzzedOfferFields memory fuzzed)
     //     private
     // {
-    //     Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
-    //     createOffer(offer);
-    //     vm.warp(offer.expiration);
-    //     approveLending(offer);
-    //     tryToExecuteLoanByBorrower(offer, "00010");
-    // }
-
-    // function test_fuzz_cannot_refinanceByLender_if_offer_expired(
-    //     FuzzedOfferFields memory fuzzed
-    // ) public validateFuzzedOfferFields(fuzzed) {
-    //     _test_cannot_refinanceByLender_if_offer_expired(fuzzed);
-    // }
-
-    // function test_unit_cannot_refinanceByLender_if_offer_expired() public {
-    //     _test_cannot_refinanceByLender_if_offer_expired(
-    //         defaultFixedFuzzedFieldsForFastUnitTesting
-    //     );
-    // }
-
-    // function _test_cannot_refinanceByLender_if_asset_not_in_allow_list(
-    //     FuzzedOfferFields memory fuzzed
-    // ) public {
-    //     Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
-    //     createOffer(offer);
-    //     vm.startPrank(owner);
-    //     liquidity.setCAssetAddress(offer.asset, address(0));
-    //     vm.stopPrank();
-    //     tryToExecuteLoanByBorrower(offer, "00040");
-    // }
-
-    // function test_fuzz_cannot_refinanceByLender_if_asset_not_in_allow_list(
-    //     FuzzedOfferFields memory fuzzed
-    // ) public validateFuzzedOfferFields(fuzzed) {
-    //     _test_cannot_refinanceByLender_if_asset_not_in_allow_list(fuzzed);
-    // }
-
-    // function test_unit_cannot_refinanceByLender_if_asset_not_in_allow_list() public {
-    //     _test_cannot_refinanceByLender_if_asset_not_in_allow_list(
-    //         defaultFixedFuzzedFieldsForFastUnitTesting
-    //     );
-    // }
-
-    // function _test_cannot_refinanceByLender_if_offer_not_created(
-    //     FuzzedOfferFields memory fuzzed
-    // ) private {
-    //     Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
-    //     // notice conspicuous absence of createOffer here
-    //     approveLending(offer);
-    //     tryToExecuteLoanByBorrower(offer, "00012");
-    // }
-
-    // function test_fuzz_cannot_refinanceByLender_if_offer_not_created(
-    //     FuzzedOfferFields memory fuzzed
-    // ) public validateFuzzedOfferFields(fuzzed) {
-    //     _test_cannot_refinanceByLender_if_offer_not_created(fuzzed);
-    // }
-
-    // function test_unit_cannot_refinanceByLender_if_offer_not_created() public {
-    //     _test_cannot_refinanceByLender_if_offer_not_created(
-    //         defaultFixedFuzzedFieldsForFastUnitTesting
-    //     );
-    // }
-
-    // function _test_cannot_refinanceByLender_if_dont_own_nft(FuzzedOfferFields memory fuzzed)
-    //     private
-    // {
-    //     Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
-    //     createOffer(offer);
-    //     approveLending(offer);
-    //     vm.startPrank(borrower1);
-    //     mockNft.safeTransferFrom(borrower1, borrower2, 1);
-    //     vm.stopPrank();
-    //     tryToExecuteLoanByBorrower(offer, "00018");
-    // }
-
-    // function test_fuzz_cannot_refinanceByLender_if_dont_own_nft(FuzzedOfferFields memory fuzzed)
-    //     public
-    //     validateFuzzedOfferFields(fuzzed)
-    // {
-    //     _test_cannot_refinanceByLender_if_dont_own_nft(fuzzed);
-    // }
-
-    // function test_unit_cannot_refinanceByLender_if_dont_own_nft() public {
-    //     _test_cannot_refinanceByLender_if_dont_own_nft(
-    //         defaultFixedFuzzedFieldsForFastUnitTesting
-    //     );
-    // }
-
-    // function _test_cannot_refinanceByLender_if_not_enough_tokens(
-    //     FuzzedOfferFields memory fuzzed
-    // ) private {
-    //     Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
-    //     createOffer(offer);
-    //     approveLending(offer);
-
-    //     vm.startPrank(lender1);
-    //     if (offer.asset == address(daiToken)) {
-    //         liquidity.withdrawErc20(address(daiToken), defaultDaiLiquiditySupplied);
-    //     } else {
-    //         liquidity.withdrawEth(defaultEthLiquiditySupplied);
-    //     }
-    //     vm.stopPrank();
-
-    //     tryToExecuteLoanByBorrower(offer, "00034");
-    // }
-
-    // function test_fuzz_cannot_refinanceByLender_if_not_enough_tokens(
-    //     FuzzedOfferFields memory fuzzed
-    // ) public validateFuzzedOfferFields(fuzzed) {
-    //     _test_cannot_refinanceByLender_if_not_enough_tokens(fuzzed);
-    // }
-
-    // function test_unit_cannot_refinanceByLender_if_not_enough_tokens() public {
-    //     _test_cannot_refinanceByLender_if_not_enough_tokens(
-    //         defaultFixedFuzzedFieldsForFastUnitTesting
-    //     );
-    // }
-
-    // function _test_cannot_refinanceByLender_if_underlying_transfer_fails(
-    //     FuzzedOfferFields memory fuzzed
-    // ) private {
-    //     // Can only be mocked
-    //     bool integration = false;
-    //     try vm.envBool("INTEGRATION") returns (bool isIntegration) {
-    //         integration = isIntegration;
-    //     } catch (bytes memory) {
-    //         // This catches revert that occurs if env variable not supplied
-    //     }
-
-    //     if (!integration) {
-    //         fuzzed.randomAsset = 0; // DAI
-    //         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
-    //         daiToken.setTransferFail(true);
-    //         createOfferAndTryToExecuteLoanByBorrower(
-    //             offer,
-    //             "SafeERC20: ERC20 operation did not succeed"
-    //         );
-    //     }
-    // }
-
-    // function test_fuzz_cannot_refinanceByLender_if_underlying_transfer_fails(
-    //     FuzzedOfferFields memory fuzzed
-    // ) public validateFuzzedOfferFields(fuzzed) {
-    //     _test_cannot_refinanceByLender_if_underlying_transfer_fails(fuzzed);
-    // }
-
-    // function test_unit_cannot_refinanceByLender_if_underlying_transfer_fails() public {
-    //     _test_cannot_refinanceByLender_if_underlying_transfer_fails(
-    //         defaultFixedFuzzedFieldsForFastUnitTesting
-    //     );
-    // }
-
-    // function _test_cannot_refinanceByLender_if_eth_transfer_fails(
-    //     FuzzedOfferFields memory fuzzed
-    // ) private {
     //     fuzzed.randomAsset = 1; // ETH
     //     Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
 
@@ -905,69 +885,67 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
     //     );
     // }
 
-    // function _test_cannot_refinanceByLender_if_borrower_offer(FuzzedOfferFields memory fuzzed)
-    //     private
-    // {
-    //     defaultFixedOfferFields.lenderOffer = false;
-    //     fuzzed.floorTerm = false; // borrower can't make a floor term offer
+    function _test_cannot_refinanceByLender_if_borrower_offer(FuzzedOfferFields memory fuzzed)
+        private
+    {
+        defaultFixedOfferFields.lenderOffer = false;
+        fuzzed.floorTerm = false; // borrower can't make a floor term offer
 
-    //     Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
 
-    //     // pass NFT to lender1 so they can make a borrower offer
-    //     vm.startPrank(borrower1);
-    //     mockNft.safeTransferFrom(borrower1, lender1, 1);
-    //     vm.stopPrank();
+        // pass NFT to lender1 so they can make a borrower offer
+        vm.startPrank(borrower1);
+        mockNft.safeTransferFrom(borrower1, lender1, 1);
+        vm.stopPrank();
 
-    //     createOffer(offer);
+        createOffer(offer, lender1);
 
-    //     // pass NFT back to borrower1 so they can try to execute a borrower offer
-    //     vm.startPrank(lender1);
-    //     mockNft.safeTransferFrom(lender1, borrower1, 1);
-    //     vm.stopPrank();
+        // pass NFT back to borrower1 so they can try to execute a borrower offer
+        vm.startPrank(lender1);
+        mockNft.safeTransferFrom(lender1, borrower1, 1);
+        vm.stopPrank();
 
-    //     approveLending(offer);
-    //     tryToExecuteLoanByBorrower(offer, "00012");
-    // }
+        approveLending(offer);
+        tryToExecuteLoanByBorrower(offer, "00012");
+    }
 
-    // function test_fuzz_refinanceByLender_if_borrower_offer(FuzzedOfferFields memory fuzzed)
-    //     public
-    //     validateFuzzedOfferFields(fuzzed)
-    // {
-    //     _test_cannot_refinanceByLender_if_borrower_offer(fuzzed);
-    // }
+    function test_fuzz_refinanceByLender_if_borrower_offer(FuzzedOfferFields memory fuzzed)
+        public
+        validateFuzzedOfferFields(fuzzed)
+    {
+        _test_cannot_refinanceByLender_if_borrower_offer(fuzzed);
+    }
 
-    // function test_unit_refinanceByLender_if_borrower_offer() public {
-    //     _test_cannot_refinanceByLender_if_borrower_offer(
-    //         defaultFixedFuzzedFieldsForFastUnitTesting
-    //     );
-    // }
+    function test_unit_refinanceByLender_if_borrower_offer() public {
+        _test_cannot_refinanceByLender_if_borrower_offer(
+            defaultFixedFuzzedFieldsForFastUnitTesting
+        );
+    }
 
-    // function _test_cannot_refinanceByLender_if_loan_active(FuzzedOfferFields memory fuzzed)
-    //     private
-    // {
-    //     defaultFixedOfferFields.lenderOffer = true;
-    //     fuzzed.floorTerm = true;
+    function _test_cannot_refinanceByLender_if_loan_active(FuzzedOfferFields memory fuzzed)
+        private
+    {
+        defaultFixedOfferFields.lenderOffer = true;
+        fuzzed.floorTerm = true;
 
-    //     Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
 
-    //     createOffer(offer);
+        createOffer(offer, lender1);
 
-    //     approveLending(offer);
-    //     tryToExecuteLoanByBorrower(offer, "should work");
+        approveLending(offer);
+        tryToExecuteLoanByBorrower(offer, "should work");
 
-    //     tryToExecuteLoanByBorrower(offer, "00006");
-    // }
+        tryToExecuteLoanByBorrower(offer, "00006");
+    }
 
-    // function test_fuzz_refinanceByLender_if_loan_active(FuzzedOfferFields memory fuzzed)
-    //     public
-    //     validateFuzzedOfferFields(fuzzed)
-    // {
-    //     _test_cannot_refinanceByLender_if_loan_active(fuzzed);
-    // }
+    function test_fuzz_refinanceByLender_if_loan_active(FuzzedOfferFields memory fuzzed)
+        public
+        validateFuzzedOfferFields(fuzzed)
+    {
+        _test_cannot_refinanceByLender_if_loan_active(fuzzed);
+    }
 
-    // function test_unit_refinanceByLender_if_loan_active() public {
-    //     _test_cannot_refinanceByLender_if_loan_active(
-    //         defaultFixedFuzzedFieldsForFastUnitTesting
-    //     );
-    // }
+    function test_unit_refinanceByLender_if_loan_active() public {
+        _test_cannot_refinanceByLender_if_loan_active(defaultFixedFuzzedFieldsForFastUnitTesting);
+    }
 }
