@@ -351,9 +351,10 @@ contract NiftyApesLending is
 
         uint256 toLenderUnderlying = loanAuction.amountDrawn +
             loanAuction.accumulatedLenderInterest +
-            loanAuction.slashableLenderInterest;
+            loanAuction.slashableLenderInterest +
+            loanAuction.accumulatedPaidProtocolInterest;
 
-        uint256 toProtocolUnderlying = loanAuction.accumulatedProtocolInterest;
+        uint256 toProtocolUnderlying = loanAuction.unpaidProtocolInterest;
 
         require(offer.amount >= toLenderUnderlying + toProtocolUnderlying, "00005");
 
@@ -393,7 +394,8 @@ contract NiftyApesLending is
             toLenderUnderlying + toProtocolUnderlying
         );
         loanAuction.accumulatedLenderInterest = 0;
-        loanAuction.accumulatedProtocolInterest = 0;
+        loanAuction.accumulatedPaidProtocolInterest = 0;
+        loanAuction.unpaidProtocolInterest = 0;
         if (offer.fixedTerms) {
             loanAuction.fixedTerms = offer.fixedTerms;
         }
@@ -452,12 +454,7 @@ contract NiftyApesLending is
             offer.duration
         );
 
-        uint128 currentAccumulatedProtocolInterest = loanAuction.accumulatedProtocolInterest;
-
-        // add interest to accumulatedInterest and/or slashableInterest values from the current preiod of interest
-        // this allows the incoming lender to have a 0 interest value upon start
-        (, uint256 protocolInterest) = _updateInterest(loanAuction);
-        // (uint256 lenderInterest, uint256 protocolInterest) = _updateInterest(loanAuction);
+        _updateInterest(loanAuction);
 
         // set lenderRefi to true to signify the last action to occur in the loan was a lenderRefinance
         loanAuction.lenderRefi = true;
@@ -514,11 +511,11 @@ contract NiftyApesLending is
             uint256 interestAndPremiumOwedToCurrentLender = uint256(
                 loanAuction.accumulatedLenderInterest
             ) +
-                currentAccumulatedProtocolInterest +
+                loanAuction.accumulatedPaidProtocolInterest +
                 ((uint256(loanAuction.amountDrawn) * originationPremiumBps) / MAX_BPS);
 
             // add protocolInterest
-            protocolInterestAndPremium += protocolInterest;
+            protocolInterestAndPremium += loanAuction.unpaidProtocolInterest;
 
             // add gasGriefing premium
             if (interestThresholdDelta > 0) {
@@ -576,6 +573,9 @@ contract NiftyApesLending is
                 cAsset,
                 protocolPremiumInCtokens
             );
+
+            loanAuction.accumulatedPaidProtocolInterest += loanAuction.unpaidProtocolInterest;
+            loanAuction.unpaidProtocolInterest = 0;
         }
 
         emit Refinance(offer.nftContractAddress, offer.nftId, offer);
@@ -704,7 +704,8 @@ contract NiftyApesLending is
         if (repayFull) {
             paymentAmount =
                 uint256(loanAuction.accumulatedLenderInterest) +
-                loanAuction.accumulatedProtocolInterest +
+                loanAuction.accumulatedPaidProtocolInterest +
+                loanAuction.unpaidProtocolInterest +
                 loanAuction.slashableLenderInterest +
                 loanAuction.amountDrawn;
         } else {
@@ -866,7 +867,7 @@ contract NiftyApesLending is
             loanAuction.accumulatedLenderInterest += SafeCastUpgradeable.toUint128(lenderInterest);
         }
 
-        loanAuction.accumulatedProtocolInterest += SafeCastUpgradeable.toUint128(protocolInterest);
+        loanAuction.unpaidProtocolInterest += SafeCastUpgradeable.toUint128(protocolInterest);
         loanAuction.lastUpdatedTimestamp = _currentTimestamp32();
     }
 
@@ -1113,7 +1114,7 @@ contract NiftyApesLending is
         loanAuction.fixedTerms = offer.fixedTerms;
         loanAuction.lenderRefi = false;
         loanAuction.accumulatedLenderInterest = 0;
-        loanAuction.accumulatedProtocolInterest = 0;
+        loanAuction.accumulatedPaidProtocolInterest = 0;
         loanAuction.interestRatePerSecond = offer.interestRatePerSecond;
         loanAuction.protocolInterestRatePerSecond = calculateInterestPerSecond(
             offer.amount,
@@ -1141,8 +1142,8 @@ contract NiftyApesLending is
     ) internal {
         uint256 cTokensToLender = totalCTokens;
 
-        if (repayFull && (loanAuction.accumulatedProtocolInterest > 0)) {
-            uint256 cTokensToProtocol = (totalCTokens * loanAuction.accumulatedProtocolInterest) /
+        if (repayFull) {
+            uint256 cTokensToProtocol = (totalCTokens * loanAuction.unpaidProtocolInterest) /
                 totalPayment;
             cTokensToLender -= cTokensToProtocol;
 

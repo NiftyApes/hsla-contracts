@@ -68,7 +68,7 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
             beforeRefinanceLenderBalance
         );
         assertEq(loanAuction.accumulatedLenderInterest, lenderInterest);
-        assertEq(loanAuction.accumulatedProtocolInterest, protocolInterest);
+        assertEq(loanAuction.accumulatedPaidProtocolInterest, protocolInterest);
         assertEq(loanAuction.slashableLenderInterest, 0);
     }
 
@@ -400,11 +400,34 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         );
         assertEq(lenderAccruedInterest, 1 hours * loanAuctionAfterDraw.interestRatePerSecond);
 
+        uint256 protocolInterest = loanAuctionAfterDraw.accumulatedPaidProtocolInterest +
+            loanAuctionAfterDraw.unpaidProtocolInterest +
+            protocolAccruedInterest;
+
         // set up borrower repay full amount
         mintDai(borrower1, 10_000 * 10**daiToken.decimals());
         vm.startPrank(borrower1);
         daiToken.approve(address(liquidity), 10_000 * 10**daiToken.decimals());
 
+        console.log("loanAuctionAfterDraw.lender", loanAuctionAfterDraw.lender);
+        console.log("loanAuctionAfterDraw.nftOwner", loanAuctionAfterDraw.nftOwner);
+        console.log("offer.nftContractAddress", offer.nftContractAddress);
+        console.log("offer.nftId", offer.nftId);
+        console.log("loanAuctionAfterDraw.asset", loanAuctionAfterDraw.asset);
+        console.log("loanAuctionAfterDraw.amountDrawn", loanAuctionAfterDraw.amountDrawn);
+        console.log(
+            "loanAuctionAfterDraw.amountDrawn + 1 hours * loanAuctionBeforeDraw.interestRatePerSecond",
+            loanAuctionAfterDraw.amountDrawn + 1 hours * loanAuctionBeforeDraw.interestRatePerSecond
+        );
+        console.log(
+            "loanAuctionAfterDraw.amountDrawn + 1 hours * loanAuctionBeforeDraw.interestRatePerSecond + 1 hours * loanAuctionAfterDraw.interestRatePerSecond",
+            loanAuctionAfterDraw.amountDrawn +
+                1 hours *
+                loanAuctionBeforeDraw.interestRatePerSecond +
+                1 hours *
+                loanAuctionAfterDraw.interestRatePerSecond
+        );
+        console.log("protocolInterest", protocolInterest);
         // most important part here is the amount repaid, the last argument to the event
         // the amount drawn + 1 hour at initial interest rate + 1 hour at "after draw" interest rate
         // even though the borrower couldn't draw 1000 DAI, they could draw some, so the rate changes
@@ -419,7 +442,8 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
                 1 hours *
                 loanAuctionBeforeDraw.interestRatePerSecond +
                 1 hours *
-                loanAuctionAfterDraw.interestRatePerSecond
+                loanAuctionAfterDraw.interestRatePerSecond +
+                protocolInterest
         );
 
         lending.repayLoan(offer.nftContractAddress, offer.nftId);
@@ -614,6 +638,10 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         );
         assertEq(lenderAccruedInterest, 1 hours * loanAuctionAfterDraw.interestRatePerSecond);
 
+        uint256 protocolInterest = loanAuctionAfterDraw.accumulatedPaidProtocolInterest +
+            loanAuctionAfterDraw.unpaidProtocolInterest +
+            protocolAccruedInterest;
+
         // set up borrower repay full amount
         mintDai(
             borrower1,
@@ -621,7 +649,8 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
                 1 hours *
                 loanAuctionBeforeDraw.interestRatePerSecond +
                 1 hours *
-                loanAuctionAfterDraw.interestRatePerSecond
+                loanAuctionAfterDraw.interestRatePerSecond +
+                protocolInterest
         );
 
         vm.startPrank(borrower1);
@@ -641,7 +670,8 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
                 1 hours *
                 loanAuctionBeforeDraw.interestRatePerSecond +
                 1 hours *
-                loanAuctionAfterDraw.interestRatePerSecond
+                loanAuctionAfterDraw.interestRatePerSecond +
+                protocolInterest
         );
 
         lending.repayLoan(offer.nftContractAddress, offer.nftId);

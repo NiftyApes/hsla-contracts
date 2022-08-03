@@ -43,7 +43,17 @@ contract TestRepayLoan is Test, OffersLoansRefinancesFixtures {
 
         vm.warp(block.timestamp + secondsBeforeRepayment);
 
-        uint256 interest = offer.interestRatePerSecond * secondsBeforeRepayment;
+        (, uint256 accruedProtocolInterest) = lending.calculateInterestAccrued(
+            defaultFixedOfferFields.nftContractAddress,
+            defaultFixedOfferFields.nftId
+        );
+
+        uint256 protocolInterest = loanAuction.accumulatedPaidProtocolInterest +
+            loanAuction.unpaidProtocolInterest +
+            accruedProtocolInterest;
+
+        uint256 interest = (offer.interestRatePerSecond * secondsBeforeRepayment) +
+            protocolInterest;
 
         if (offer.asset == address(daiToken)) {
             // Give borrower enough to pay interest

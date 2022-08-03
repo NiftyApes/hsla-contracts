@@ -52,7 +52,7 @@ contract TestCalculateInterestAccrued is Test, OffersLoansRefinancesFixtures {
         assertEq(lenderInterest, expectedLenderInterest);
         assertEq(protocolInterest, expectedProtocolInterest);
         assertEq(secondLoan.accumulatedLenderInterest, expectedLenderInterest);
-        assertEq(secondLoan.accumulatedProtocolInterest, expectedProtocolInterest);
+        assertEq(secondLoan.accumulatedPaidProtocolInterest, expectedProtocolInterest);
     }
 
     function test_fuzz_calculateInterestAccrued_works(

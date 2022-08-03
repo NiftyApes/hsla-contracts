@@ -1198,7 +1198,7 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.loanEndTimestamp, block.timestamp + 1 days);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
         assertEq(loanAuction.accumulatedLenderInterest, 0);
-        assertEq(loanAuction.accumulatedProtocolInterest, 0);
+        assertEq(loanAuction.accumulatedPaidProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 6);
 
         // ensure that the offer is still there since its a floor offer
@@ -1278,7 +1278,7 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.loanEndTimestamp, block.timestamp + 1 days);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
         assertEq(loanAuction.accumulatedLenderInterest, 0);
-        assertEq(loanAuction.accumulatedProtocolInterest, 0);
+        assertEq(loanAuction.accumulatedPaidProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 6);
 
         // ensure that the offer is gone
@@ -1795,7 +1795,7 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.loanEndTimestamp, block.timestamp + 1 days);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
         assertEq(loanAuction.accumulatedLenderInterest, 0);
-        assertEq(loanAuction.accumulatedProtocolInterest, 0);
+        assertEq(loanAuction.accumulatedPaidProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 6);
 
         // ensure that the offer is still there since its a floor offer
@@ -1856,7 +1856,7 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.loanEndTimestamp, block.timestamp + 1 days);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
         assertEq(loanAuction.accumulatedLenderInterest, 0);
-        assertEq(loanAuction.accumulatedProtocolInterest, 0);
+        assertEq(loanAuction.accumulatedPaidProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 6);
 
         // ensure that the offer is gone
@@ -2375,7 +2375,7 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.loanEndTimestamp, block.timestamp + 1 days);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
         assertEq(loanAuction.accumulatedLenderInterest, 0);
-        assertEq(loanAuction.accumulatedProtocolInterest, 0);
+        assertEq(loanAuction.accumulatedPaidProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 6);
 
         // ensure that the offer is gone
@@ -2867,7 +2867,7 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.loanEndTimestamp, block.timestamp + 1 days);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
         assertEq(loanAuction.accumulatedLenderInterest, 0);
-        assertEq(loanAuction.accumulatedProtocolInterest, 0);
+        assertEq(loanAuction.accumulatedPaidProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 6);
 
         // ensure that the offer is gone
@@ -3791,7 +3791,7 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.loanEndTimestamp, block.timestamp + 3 days);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
         assertEq(loanAuction.accumulatedLenderInterest, 0);
-        assertEq(loanAuction.accumulatedProtocolInterest, 0);
+        assertEq(loanAuction.accumulatedPaidProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 6);
     }
 
@@ -3894,7 +3894,7 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.loanEndTimestamp, block.timestamp + 3 days);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
         assertEq(loanAuction.accumulatedLenderInterest, 0);
-        assertEq(loanAuction.accumulatedProtocolInterest, 0);
+        assertEq(loanAuction.accumulatedPaidProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 6);
     }
 
@@ -4153,7 +4153,7 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.loanEndTimestamp, loanAuction.loanBeginTimestamp + 3 days);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
         assertEq(loanAuction.accumulatedLenderInterest, 0);
-        assertEq(loanAuction.accumulatedProtocolInterest, 0); // 0 fee set so 0 balance expected
+        assertEq(loanAuction.accumulatedPaidProtocolInterest, 0); // 0 fee set so 0 balance expected
     }
 
     // refinanceByBorrowerSignature Tests
@@ -4974,7 +4974,7 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.loanEndTimestamp, block.timestamp + 3 days);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
         assertEq(loanAuction.accumulatedLenderInterest, 0);
-        assertEq(loanAuction.accumulatedProtocolInterest, 0);
+        assertEq(loanAuction.accumulatedPaidProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 6);
 
         // ensure the signature is not invalidated
@@ -5077,7 +5077,7 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.loanEndTimestamp, block.timestamp + 3 days);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
         assertEq(loanAuction.accumulatedLenderInterest, 0);
-        assertEq(loanAuction.accumulatedProtocolInterest, 0);
+        assertEq(loanAuction.accumulatedPaidProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 6);
 
         assertTrue(offersContract.getOfferSignatureStatus(signature));
@@ -5179,7 +5179,7 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.loanEndTimestamp, block.timestamp + 3 days);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
         assertEq(loanAuction.accumulatedLenderInterest, 0);
-        assertEq(loanAuction.accumulatedProtocolInterest, 0);
+        assertEq(loanAuction.accumulatedPaidProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 6);
     }
 
@@ -5431,7 +5431,7 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.loanEndTimestamp, loanAuction.loanBeginTimestamp + 3 days);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
         assertEq(loanAuction.accumulatedLenderInterest, 0);
-        assertEq(loanAuction.accumulatedProtocolInterest, 0); // 0 fee set so 0 balance expected
+        assertEq(loanAuction.accumulatedPaidProtocolInterest, 0); // 0 fee set so 0 balance expected
     }
 
     // refinanceByLender Tests
@@ -6231,7 +6231,7 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.loanEndTimestamp, block.timestamp + 1 days - 12 hours);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
         assertEq(loanAuction.accumulatedLenderInterest, 295679998080000000);
-        assertEq(loanAuction.accumulatedProtocolInterest, 0);
+        assertEq(loanAuction.accumulatedPaidProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 6 ether);
     }
 
@@ -6460,7 +6460,7 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.loanEndTimestamp, loanAuction.loanBeginTimestamp + 3 days);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
         assertEq(loanAuction.accumulatedLenderInterest, 15416666666656800);
-        assertEq(loanAuction.accumulatedProtocolInterest, 0);
+        assertEq(loanAuction.accumulatedPaidProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 6000000000000000000);
     }
 
@@ -6556,7 +6556,7 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.loanEndTimestamp, loanAuction.loanBeginTimestamp + 3 days);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
         assertEq(loanAuction.accumulatedLenderInterest, 69444444444400);
-        assertEq(loanAuction.accumulatedProtocolInterest, 0);
+        assertEq(loanAuction.accumulatedPaidProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 6 ether);
     }
 
@@ -6673,12 +6673,12 @@ contract LendingAuctionUnitTest is
         );
         assertEq(
             liquidityProviders.getCAssetBalance(LENDER_2, address(cDAIToken)),
-            10000000000000000000 ether
+            10015416666666612400 ether
         );
 
         assertEq(
             liquidityProviders.getCAssetBalance(LENDER_3, address(cDAIToken)),
-            3954583333333343200 ether
+            3939166666666730800 ether
         );
 
         assertEq(
@@ -6697,8 +6697,8 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.amount, 8 ether);
         assertEq(loanAuction.loanEndTimestamp, loanAuction.loanBeginTimestamp + 3 days);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
-        assertEq(loanAuction.accumulatedLenderInterest, 15416666666656800);
-        assertEq(loanAuction.accumulatedProtocolInterest, 0);
+        assertEq(loanAuction.accumulatedLenderInterest, 30833333333269200);
+        assertEq(loanAuction.accumulatedPaidProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 6000000000000000000);
     }
 
@@ -6856,7 +6856,7 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.loanEndTimestamp, 0);
         assertEq(loanAuction.lastUpdatedTimestamp, 0);
         assertEq(loanAuction.accumulatedLenderInterest, 0);
-        assertEq(loanAuction.accumulatedProtocolInterest, 0);
+        assertEq(loanAuction.accumulatedPaidProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 0);
 
         assertEq(mockNft.ownerOf(1), LENDER_1);
@@ -7061,7 +7061,7 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.loanEndTimestamp, 0);
         assertEq(loanAuction.lastUpdatedTimestamp, 0);
         assertEq(loanAuction.accumulatedLenderInterest, 0);
-        assertEq(loanAuction.accumulatedProtocolInterest, 0);
+        assertEq(loanAuction.accumulatedPaidProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 0);
     }
 
@@ -7139,7 +7139,7 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.loanEndTimestamp, 0);
         assertEq(loanAuction.lastUpdatedTimestamp, 0);
         assertEq(loanAuction.accumulatedLenderInterest, 0);
-        assertEq(loanAuction.accumulatedProtocolInterest, 0);
+        assertEq(loanAuction.accumulatedPaidProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 0);
     }
 
@@ -7205,7 +7205,7 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.loanEndTimestamp, block.timestamp + 12 hours);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
         assertEq(loanAuction.accumulatedLenderInterest, 29999999999980800);
-        assertEq(loanAuction.accumulatedProtocolInterest, 0);
+        assertEq(loanAuction.accumulatedPaidProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 0.5 ether);
     }
 
@@ -7274,7 +7274,8 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.loanEndTimestamp, block.timestamp + 12 hours);
         assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
         assertEq(loanAuction.accumulatedLenderInterest, 29999999999980800);
-        assertEq(loanAuction.accumulatedProtocolInterest, 4999999999968000);
+        assertEq(loanAuction.accumulatedPaidProtocolInterest, 0);
+        assertEq(loanAuction.unpaidProtocolInterest, 4999999999968000);
         assertEq(loanAuction.amountDrawn, 0.5 ether);
     }
 

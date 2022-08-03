@@ -128,21 +128,40 @@ contract TestSeizeAsset is Test, OffersLoansRefinancesFixtures {
         // warp ahead to end of loan
         vm.warp(initialTimestamp + offer.duration);
 
+        LoanAuction memory loanAuction = lending.getLoanAuction(
+            offer.nftContractAddress,
+            offer.nftId
+        );
+
+        (, uint256 accruedProtocolInterest) = lending.calculateInterestAccrued(
+            defaultFixedOfferFields.nftContractAddress,
+            defaultFixedOfferFields.nftId
+        );
+
+        uint256 protocolInterest = loanAuction.accumulatedPaidProtocolInterest +
+            loanAuction.unpaidProtocolInterest +
+            accruedProtocolInterest;
+
         // borrower still owns NFT (in contract escrow)
         assertEq(mockNft.ownerOf(offer.nftId), address(lending));
         assertEq(lending.ownerOf(offer.nftContractAddress, offer.nftId), address(borrower1));
 
         // borrower repays loan
-        mintDai(borrower1, offer.interestRatePerSecond * offer.duration);
+        mintDai(borrower1, (offer.interestRatePerSecond * offer.duration) + protocolInterest);
 
         vm.startPrank(borrower1);
         if (offer.asset == address(daiToken)) {
             daiToken.approve(address(liquidity), ~uint256(0));
             lending.repayLoan(offer.nftContractAddress, offer.nftId);
         } else {
-            vm.deal(borrower1, offer.amount + offer.interestRatePerSecond * offer.duration);
+            vm.deal(
+                borrower1,
+                offer.amount + (offer.interestRatePerSecond * offer.duration) + protocolInterest
+            );
             lending.repayLoan{
-                value: offer.amount + (offer.interestRatePerSecond * offer.duration)
+                value: offer.amount +
+                    (offer.interestRatePerSecond * offer.duration) +
+                    protocolInterest
             }(offer.nftContractAddress, offer.nftId);
         }
         vm.stopPrank();
