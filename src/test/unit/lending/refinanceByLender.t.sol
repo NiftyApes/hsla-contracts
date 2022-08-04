@@ -948,4 +948,62 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
     function test_unit_refinanceByLender_if_loan_active() public {
         _test_cannot_refinanceByLender_if_loan_active(defaultFixedFuzzedFieldsForFastUnitTesting);
     }
+
+    function test_unit_refinanceByLender_term_griefing_math() public {
+        Offer memory offer = offerStructFromFields(
+            defaultFixedFuzzedFieldsForFastUnitTesting,
+            defaultFixedOfferFields
+        );
+
+        uint16 secondsBeforeRefinance = 100;
+
+        createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
+
+        assertionsForExecutedLoan(offer);
+
+        vm.warp(block.timestamp + secondsBeforeRefinance);
+
+        defaultFixedOfferFields.creator = lender2;
+        defaultFixedFuzzedFieldsForFastUnitTesting.duration =
+            defaultFixedFuzzedFieldsForFastUnitTesting.duration +
+            1; // make sure offer is better
+        defaultFixedFuzzedFieldsForFastUnitTesting.floorTerm = false; // refinance can't be floor term
+        defaultFixedFuzzedFieldsForFastUnitTesting.expiration =
+            uint32(block.timestamp) +
+            secondsBeforeRefinance +
+            1;
+        defaultFixedFuzzedFieldsForFastUnitTesting.amount = uint128(offer.amount);
+
+        Offer memory newOffer = offerStructFromFields(
+            defaultFixedFuzzedFieldsForFastUnitTesting,
+            defaultFixedOfferFields
+        );
+
+        uint256 beforeRefinanceOwnerBalance = assetBalance(owner, address(daiToken));
+
+        LoanAuction memory loanAuction = tryToRefinanceByLender(newOffer, "should work");
+
+        uint256 afterRefinanceOwnerBalance = assetBalance(owner, address(daiToken));
+        uint256 afterRefinanceOwnerBalancePlusOne = assetBalancePlusOneCToken(
+            owner,
+            address(daiToken)
+        );
+
+        console.log("beforeRefinanceOwnerBalance", beforeRefinanceOwnerBalance);
+        console.log("afterRefinanceOwnerBalance", afterRefinanceOwnerBalance);
+        console.log(
+            "total",
+            beforeRefinanceOwnerBalance +
+                ((loanAuction.amountDrawn * lending.termGriefingPremiumBps()) / MAX_BPS) +
+                loanAuction.accumulatedPaidProtocolInterest
+        );
+
+        assertCloseEnough(
+            beforeRefinanceOwnerBalance +
+                ((loanAuction.amountDrawn * lending.termGriefingPremiumBps()) / MAX_BPS) +
+                loanAuction.accumulatedPaidProtocolInterest,
+            afterRefinanceOwnerBalance,
+            afterRefinanceOwnerBalancePlusOne
+        );
+    }
 }
