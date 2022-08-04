@@ -58,6 +58,9 @@ contract TestPartialRepayLoan is Test, OffersLoansRefinancesFixtures {
             );
             vm.stopPrank();
 
+            // lenderRefi is false
+            assertFalse(lending.getLoanAuction(address(mockNft), 1).lenderRefi);
+
             // Liquidity contract cToken balance
             isApproxEqual(
                 cDAIToken.balanceOf(address(liquidity)),
@@ -89,6 +92,9 @@ contract TestPartialRepayLoan is Test, OffersLoansRefinancesFixtures {
                 repaymentAmount
             );
             vm.stopPrank();
+
+            // lenderRefi is false
+            assertFalse(lending.getLoanAuction(address(mockNft), 1).lenderRefi);
 
             // Liquidity contract cToken balance
             isApproxEqual(

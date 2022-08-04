@@ -254,6 +254,9 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
             (loanAuctionAfter.loanEndTimestamp - loanAuctionAfter.loanBeginTimestamp)
         );
 
+        // lenderRefi is false
+        assertFalse(lending.getLoanAuction(address(mockNft), 1).lenderRefi);
+
         assertEq(calculatedInterestRatePerSecond, interestRatePerSecondAfter);
         assertEq(calculatedProtocolInterestRatePerSecond, protocolInterestRatePerSecondAfter);
         assertEq(loanAuctionAfter.amountDrawn, amountDrawnBefore + amountExtraOnRefinance);
@@ -332,6 +335,9 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
             lending.protocolInterestBps(),
             (loanAuctionAfter.loanEndTimestamp - loanAuctionAfter.loanBeginTimestamp)
         );
+
+        // lenderRefi is false
+        assertFalse(lending.getLoanAuction(address(mockNft), 1).lenderRefi);
 
         assertEq(calculatedInterestRatePerSecond, interestRatePerSecondAfter);
         assertEq(calculatedProtocolInterestRatePerSecond, protocolInterestRatePerSecondAfter);

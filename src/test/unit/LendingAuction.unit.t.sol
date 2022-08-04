@@ -2798,12 +2798,6 @@ contract LendingAuctionUnitTest is
         sigLendingAuction.executeLoanByLenderSignature(offer, signature);
     }
 
-    function testCannotExecuteLoanByLenderSignature_eth_payment_fails() public {
-        // TODO(miller): This is tough to test since we can not revert the signers
-        //                 address on ETH transfers
-        // can you look into this?
-    }
-
     function testExecuteLoanByLenderSignature_works_not_floor_term() public {
         hevm.startPrank(LENDER_1);
 
@@ -6700,10 +6694,6 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.accumulatedPaidProtocolInterest, 0);
         assertEq(loanAuction.amountDrawn, 6000000000000000000);
     }
-
-    // TODO(miller): Missing test:
-    //                 Refinance with different improvements same lender
-    //                 Min duration update
 
     function testCannotSeizeAsset_asset_missing_in_allow_list() public {
         hevm.expectRevert("00040");
