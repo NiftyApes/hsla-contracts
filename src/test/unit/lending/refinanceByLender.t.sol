@@ -1006,4 +1006,63 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
             afterRefinanceOwnerBalancePlusOne
         );
     }
+
+    function test_unit_refinanceByLender_worksWith0ExpectedTimestamp() public {
+        assertEq(lending.defaultRefinancePremiumBps(), 25);
+
+        Offer memory offer = offerStructFromFields(
+            defaultFixedFuzzedFieldsForFastUnitTesting,
+            defaultFixedOfferFields
+        );
+        (, LoanAuction memory firstLoan) = createOfferAndTryToExecuteLoanByBorrower(
+            offer,
+            "should work"
+        );
+
+        // new offer from lender2 with +1 amount
+        // will trigger term griefing and gas griefing
+        defaultFixedOfferFields.creator = lender2;
+        defaultFixedFuzzedFieldsForFastUnitTesting.duration =
+            defaultFixedFuzzedFieldsForFastUnitTesting.duration +
+            1; // make sure offer is better
+        defaultFixedFuzzedFieldsForFastUnitTesting.floorTerm = false; // refinance can't be floor term
+        defaultFixedFuzzedFieldsForFastUnitTesting.expiration = firstLoan.loanEndTimestamp - 1;
+        Offer memory newOffer = offerStructFromFields(
+            defaultFixedFuzzedFieldsForFastUnitTesting,
+            defaultFixedOfferFields
+        );
+
+        vm.warp(firstLoan.loanEndTimestamp - 2);
+
+        vm.startPrank(lender2);
+        lending.refinanceByLender(newOffer, 0);
+        vm.stopPrank();
+        uint256 termGriefingToProtocol = (lending.termGriefingPremiumBps() *
+            firstLoan.amountDrawn) / MAX_BPS;
+
+        uint256 defaultPremiumToProtocol = (lending.defaultRefinancePremiumBps() *
+            firstLoan.amountDrawn) / MAX_BPS;
+
+        LoanAuction memory loanAuction = lending.getLoanAuction(
+            newOffer.nftContractAddress,
+            newOffer.nftId
+        );
+
+        uint256 protocolInterest = loanAuction.accumulatedPaidProtocolInterest +
+            loanAuction.unpaidProtocolInterest;
+
+        if (offer.asset == address(daiToken)) {
+            assertBetween(
+                protocolInterest + defaultPremiumToProtocol + termGriefingToProtocol,
+                assetBalance(owner, address(daiToken)),
+                assetBalancePlusOneCToken(owner, address(daiToken))
+            );
+        } else {
+            assertBetween(
+                protocolInterest + defaultPremiumToProtocol + termGriefingToProtocol,
+                assetBalance(owner, ETH_ADDRESS),
+                assetBalancePlusOneCToken(owner, ETH_ADDRESS)
+            );
+        }
+    }
 }
