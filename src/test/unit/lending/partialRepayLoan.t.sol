@@ -49,6 +49,16 @@ contract TestPartialRepayLoan is Test, OffersLoansRefinancesFixtures {
         if (offer.asset == address(daiToken)) {
             uint256 liquidityBalanceBeforeRepay = cDAIToken.balanceOf(address(liquidity));
 
+            vm.expectEmit(true, true, true, true);
+            emit PartialRepayment(
+                lender1,
+                borrower1,
+                address(mockNft),
+                1,
+                offer.asset,
+                repaymentAmount
+            );
+
             vm.startPrank(borrower1);
             daiToken.approve(address(liquidity), repaymentAmount);
             lending.partialRepayLoan(
@@ -84,6 +94,16 @@ contract TestPartialRepayLoan is Test, OffersLoansRefinancesFixtures {
             );
         } else {
             uint256 liquidityBalanceBeforeRepay = cEtherToken.balanceOf(address(liquidity));
+
+            vm.expectEmit(true, true, true, true);
+            emit PartialRepayment(
+                lender1,
+                borrower1,
+                address(mockNft),
+                1,
+                offer.asset,
+                repaymentAmount
+            );
 
             vm.startPrank(borrower1);
             lending.partialRepayLoan{ value: repaymentAmount }(
@@ -394,7 +414,6 @@ contract TestPartialRepayLoan is Test, OffersLoansRefinancesFixtures {
     }
 
     function test_unit_CANNOT_partialRepayLoan_loanExpired() public {
-        uint16 secondsBeforeRepayment = 100;
         uint8 repaymentPercentageFuzzed = 50;
         uint8 repaymentPercentage = repaymentPercentageFuzzed % 100;
 
