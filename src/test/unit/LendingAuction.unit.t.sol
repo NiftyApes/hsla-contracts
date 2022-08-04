@@ -2296,14 +2296,14 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 1)
         });
 
+        hevm.expectRevert("00014");
         offersContract.createOffer(offer);
 
         bytes32 offerHash = offersContract.getOfferHash(offer);
 
         hevm.startPrank(LENDER_1);
 
-        hevm.expectRevert("00014");
-
+        hevm.expectRevert("00004");
         lendingAuction.executeLoanByLender(
             offer.nftContractAddress,
             offer.nftId,

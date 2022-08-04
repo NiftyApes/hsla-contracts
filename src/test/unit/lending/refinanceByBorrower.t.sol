@@ -255,7 +255,7 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         );
         vm.stopPrank();
 
-        assertBetween(
+        assertCloseEnough(
             beforeLenderBalance +
                 (newOffer.interestRatePerSecond * 12 hours) +
                 interestShortfall -
