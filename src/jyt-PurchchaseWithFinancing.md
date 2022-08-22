@@ -1,6 +1,6 @@
 # Purchase With Financing
 
-Author: (jyturley)[https://github.com/jyturley]
+Author: [jyturley](https://github.com/jyturley)
 
 ## Requirements
 
