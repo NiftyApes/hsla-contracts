@@ -68,25 +68,21 @@ contract TestRepayLoanForAccount is Test, OffersLoansRefinancesFixtures {
                 loanAuction.loanBeginTimestamp
             );
             vm.stopPrank();
-            console.log("here");
             // Liquidity contract cToken balance
             assertEq(
                 cDAIToken.balanceOf(address(liquidity)),
                 liquidityBalanceBeforeRepay +
                     liquidity.assetAmountToCAssetAmount(address(daiToken), offer.amount + interest)
             );
-            console.log("here 1");
 
             // repayer balance unchanged
             assertEq(
                 daiToken.balanceOf(repayer),
                 repayerBalanceBeforeRepay - (offer.amount + interest)
             );
-            console.log("here 2");
 
             // borrower balance unchanged
             assertEq(borrowerBalanceBeforeRepay, daiToken.balanceOf(borrower1));
-            console.log("here 3");
 
             // lender back with interest
             assertCloseEnough(
@@ -108,7 +104,6 @@ contract TestRepayLoanForAccount is Test, OffersLoansRefinancesFixtures {
                 loanAuction.loanBeginTimestamp
             );
             vm.stopPrank();
-            console.log("here 4");
 
             // liquidity contract cToken balance
             assertEq(
@@ -119,15 +114,12 @@ contract TestRepayLoanForAccount is Test, OffersLoansRefinancesFixtures {
                         offer.amount + interest
                     )
             );
-            console.log("here 5");
 
             // repayer balance unchanged
             assertEq(repayer.balance, repayerBalanceBeforeRepay - (offer.amount + interest));
-            console.log("here 6");
 
             // borrower balance unchanged
             assertEq(borrowerBalanceBeforeRepay, borrower1.balance);
-            console.log("here 7");
 
             // lender back with interest
             assertCloseEnough(
@@ -136,5 +128,21 @@ contract TestRepayLoanForAccount is Test, OffersLoansRefinancesFixtures {
                 assetBalancePlusOneCToken(lender1, address(ETH_ADDRESS))
             );
         }
+    }
+
+    function test_unit_CANNOT_repayLoanForAccount_expectedLoanNotActive() public {
+        Offer memory offer = offerStructFromFields(
+            defaultFixedFuzzedFieldsForFastUnitTesting,
+            defaultFixedOfferFields
+        );
+
+        createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
+        assertionsForExecutedLoan(offer);
+
+        vm.startPrank(borrower1);
+        daiToken.approve(address(liquidity), offer.amount);
+        vm.expectRevert("00027");
+        lending.repayLoanForAccount(offer.nftContractAddress, offer.nftId, 1);
+        vm.stopPrank();
     }
 }

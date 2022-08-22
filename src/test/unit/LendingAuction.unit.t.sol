@@ -2287,7 +2287,7 @@ contract LendingAuctionUnitTest is
             nftContractAddress: address(mockNft),
             interestRatePerSecond: 3,
             fixedTerms: true,
-            floorTerm: false,
+            floorTerm: true,
             lenderOffer: false,
             nftId: 1,
             asset: address(daiToken),
@@ -2296,15 +2296,14 @@ contract LendingAuctionUnitTest is
             expiration: uint32(block.timestamp + 1)
         });
 
+        hevm.expectRevert("00014");
         offersContract.createOffer(offer);
 
         bytes32 offerHash = offersContract.getOfferHash(offer);
 
         hevm.startPrank(LENDER_1);
 
-        // TODO(miller): there was a TODO here, but not sure exactly what Daniel's intention with is was, some expected revert
-        // hevm.expectRevert("foo");
-
+        hevm.expectRevert("00004");
         lendingAuction.executeLoanByLender(
             offer.nftContractAddress,
             offer.nftId,
@@ -2797,12 +2796,6 @@ contract LendingAuctionUnitTest is
         hevm.expectRevert("SafeERC20: ERC20 operation did not succeed");
 
         sigLendingAuction.executeLoanByLenderSignature(offer, signature);
-    }
-
-    function testCannotExecuteLoanByLenderSignature_eth_payment_fails() public {
-        // TODO(miller): This is tough to test since we can not revert the signers
-        //                 address on ETH transfers
-        // can you look into this?
     }
 
     function testExecuteLoanByLenderSignature_works_not_floor_term() public {
@@ -6702,10 +6695,6 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.amountDrawn, 6000000000000000000);
     }
 
-    // TODO(miller): Missing test:
-    //                 Refinance with different improvements same lender
-    //                 Min duration update
-
     function testCannotSeizeAsset_asset_missing_in_allow_list() public {
         hevm.expectRevert("00040");
         lendingAuction.seizeAsset(address(0x1), 6);
@@ -7117,6 +7106,16 @@ contract LendingAuctionUnitTest is
 
         daiToken.approve(address(liquidityProviders), repayAmount);
 
+        hevm.expectEmit(true, true, true, true);
+        emit LoanRepaid(
+            LENDER_1,
+            address(this),
+            offer.nftContractAddress,
+            offer.nftId,
+            offer.asset,
+            repayAmount
+        );
+
         lendingAuction.repayLoan(offer.nftContractAddress, offer.nftId);
 
         assertEq(daiToken.balanceOf(address(this)), 0);
@@ -7504,14 +7503,12 @@ contract LendingAuctionUnitTest is
     }
 
     function testRefinanceByLender_gas_griefing_fee_works() public {
-        // Also Note: assuming DAI has decimals 18 throughout
-        // even though the real version has decimals 6
         hevm.startPrank(LENDER_1);
         daiToken.mint(address(LENDER_1), 1 ether);
         daiToken.approve(address(liquidityProviders), 1 ether);
         liquidityProviders.supplyErc20(address(daiToken), 1 ether);
 
-        // Lender 1 has 10 DAI
+        // Lender 1 has 1 DAI
         assertEq(
             liquidityProviders.cAssetAmountToAssetAmount(
                 address(cDAIToken),
@@ -7548,7 +7545,7 @@ contract LendingAuctionUnitTest is
             offer.floorTerm
         );
 
-        // Lender 1 has 1 fewer DAI, i.e., 9
+        // Lender 1 has 1 fewer DAI, i.e., 0
         assertEq(
             liquidityProviders.cAssetAmountToAssetAmount(
                 address(cDAIToken),
@@ -7590,7 +7587,7 @@ contract LendingAuctionUnitTest is
         hevm.stopPrank();
 
         // Below are calculations concerning how much Lender 1 has after fees
-        // Note that gas griefing fee, if appicable, means we don't add interest,
+        // Note that gas griefing fee, if appicable, means we don't add interest in this test,
         // since add whichever is greater, interest or gas griefing fee.
         uint256 principal = 1 ether;
         uint256 amtDrawn = 1 ether;
@@ -7815,6 +7812,7 @@ contract LendingAuctionUnitTest is
         uint256 interest = 10_000_000_000 * 10**6; // interest per second * seconds
         uint256 amtDrawn = 1 ether;
         uint256 originationFeeBps = 50;
+        uint256 termGriefingPremiumBps = 25;
         uint256 MAX_BPS = 10_000;
         uint256 feesFromLender2 = ((amtDrawn * originationFeeBps) / MAX_BPS);
 
@@ -7832,7 +7830,7 @@ contract LendingAuctionUnitTest is
                 address(cDAIToken),
                 liquidityProviders.getCAssetBalance(OWNER, address(cDAIToken))
             ),
-            1 ether * 0.0025
+            ((1 ether * termGriefingPremiumBps) / MAX_BPS)
         );
     }
 
@@ -8232,20 +8230,4 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuctionAfter.amountDrawn, 7000000000000000000);
         assertTrue(!loanAuctionAfter.lenderRefi);
     }
-
-    // TODO(miller): More tests for regen collective percentage
-    // TODO(miller): Tests for slashUnsupportedAmount
-    // TODO(miller): Tests for interest math and dynamic interestRatePerSecond
-    // TODO(miller): Tests for gas griefing preimum
-    // TODO(miller): Tests for term griefing premium
-    // TODO(miller): Review existing tests for additional cases
-    // TODO(miller): Review contract functions and ensure there are tests for each function
-    // TODO updateLendingContractAddress test
-    // TODO updateLiquidityContractAddress test
-    // TODO(captnseagraves): Add tests for lenderRefi in relevant functions
-    // TODO: Write tests that set protocolInterestBps higher than 0 and check payout
-    // TODO: Write tests for full flow with ETH
-    // TODO: write tests for _requireExpectedLoanIsActive in repayLoanForAccount
-    // TODO: write tests for termGriefing on same lender refinanceByLender
-    // TODO: write tests for gasGriefing on refinanceByBorrower
 }

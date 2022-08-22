@@ -30,16 +30,11 @@ contract TestWithdrawCErc20 is Test, OffersLoansRefinancesFixtures {
         cDAIToken.mint(daiToken.balanceOf(borrower1));
         uint256 cTokenBalanceAfter = cDAIToken.balanceOf(borrower1);
 
-        console.log("cTokenBalanceAfter", cTokenBalanceAfter);
-
         // avoid `redeemTokens zero` error by providing at least 1 cDAI
         vm.assume(amount >= 100000000);
         vm.assume(amount < cDAIToken.balanceOf(borrower1));
 
-        console.log("amount", amount);
-
         uint256 balanceBefore = liquidity.getCAssetBalance(borrower1, address(cDAIToken));
-        console.log("balanceBefore", balanceBefore);
 
         assertEq(balanceBefore, 0);
 
@@ -47,15 +42,11 @@ contract TestWithdrawCErc20 is Test, OffersLoansRefinancesFixtures {
         uint256 cTokensTransferred = liquidity.supplyCErc20(address(cDAIToken), amount);
 
         uint256 balanceAfterSupply = liquidity.getCAssetBalance(borrower1, address(cDAIToken));
-        console.log("balanceAfterSupply", balanceAfterSupply);
-        console.log("cTokensTransferred", cTokensTransferred);
 
         assertEq(balanceAfterSupply, cTokensTransferred);
 
         uint256 cTokensWithdrawn = liquidity.withdrawCErc20(address(cDAIToken), amount);
         uint256 balanceAfterWithdraw = liquidity.getCAssetBalance(borrower1, address(cDAIToken));
-        console.log("cTokensWithdrawn", cTokensWithdrawn);
-        console.log("balanceAfterWithdraw", balanceAfterWithdraw);
 
         assertEq(cTokensWithdrawn, balanceAfterSupply);
         assertEq(balanceAfterWithdraw, 0);
@@ -92,15 +83,10 @@ contract TestWithdrawCErc20 is Test, OffersLoansRefinancesFixtures {
         vm.assume(amount >= 100000000);
         vm.assume(amount < cDAIToken.balanceOf(owner) / 10000);
 
-        console.log("amount", amount);
-
         uint256 cDAIBalanceBefore = cDAIToken.balanceOf(owner);
-        console.log("cDAIBalanceBefore", cDAIBalanceBefore);
 
         uint256 regenBalanceBefore = cDAIToken.balanceOf(liquidity.regenCollectiveAddress());
         uint256 balanceBefore = liquidity.getCAssetBalance(owner, address(cDAIToken));
-        console.log("balanceBefore", balanceBefore);
-        console.log("regenBalanceBefore", regenBalanceBefore);
 
         assertEq(balanceBefore, 0);
         assertEq(regenBalanceBefore, 0);
@@ -109,25 +95,16 @@ contract TestWithdrawCErc20 is Test, OffersLoansRefinancesFixtures {
         uint256 cTokensTransferred = liquidity.supplyCErc20(address(cDAIToken), amount);
 
         uint256 balanceAfterSupply = liquidity.getCAssetBalance(owner, address(cDAIToken));
-        console.log("balanceAfterSupply", balanceAfterSupply);
-        console.log("cTokensTransferred", cTokensTransferred);
 
         assertEq(balanceAfterSupply, cTokensTransferred);
 
         uint256 cTokensWithdrawn = liquidity.withdrawCErc20(address(cDAIToken), amount);
         uint256 balanceAfterWithdraw = liquidity.getCAssetBalance(owner, address(cDAIToken));
-        console.log("cTokensWithdrawn", cTokensWithdrawn);
-        console.log("balanceAfterWithdraw", balanceAfterWithdraw);
 
         uint256 cDAIBalanceAfter = cDAIToken.balanceOf(owner);
         uint256 regenBalanceAfter = cDAIToken.balanceOf(liquidity.regenCollectiveAddress());
 
-        console.log("cDAIBalanceAfter", cDAIBalanceAfter);
-        console.log("regenBalanceAfter", regenBalanceAfter);
-
         uint256 expectedRegenAmount = (amount * liquidity.regenCollectiveBpsOfRevenue()) / 10_000;
-
-        console.log("expectedRegenAmount", expectedRegenAmount);
 
         isApproxEqual(cTokensWithdrawn, balanceAfterSupply, 1);
         isApproxEqual(balanceAfterWithdraw, 0, 1);

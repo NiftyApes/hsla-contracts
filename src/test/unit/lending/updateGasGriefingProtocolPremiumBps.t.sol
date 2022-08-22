@@ -14,6 +14,8 @@ contract TestUpdateGasGriefingProtocolPremiumBps is Test, OffersLoansRefinancesF
         super.setUp();
     }
 
+    // This functionality has been removed from the v1 contracts
+
     // function _test_updateGasGriefingProtocolPremiumBps_works(
     //     FuzzedOfferFields memory fuzzed,
     //     uint16 secondsBeforeRefinance,

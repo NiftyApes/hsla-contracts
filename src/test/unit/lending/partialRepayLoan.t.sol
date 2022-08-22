@@ -49,6 +49,16 @@ contract TestPartialRepayLoan is Test, OffersLoansRefinancesFixtures {
         if (offer.asset == address(daiToken)) {
             uint256 liquidityBalanceBeforeRepay = cDAIToken.balanceOf(address(liquidity));
 
+            vm.expectEmit(true, true, true, true);
+            emit PartialRepayment(
+                lender1,
+                borrower1,
+                address(mockNft),
+                1,
+                offer.asset,
+                repaymentAmount
+            );
+
             vm.startPrank(borrower1);
             daiToken.approve(address(liquidity), repaymentAmount);
             lending.partialRepayLoan(
@@ -57,6 +67,9 @@ contract TestPartialRepayLoan is Test, OffersLoansRefinancesFixtures {
                 repaymentAmount
             );
             vm.stopPrank();
+
+            // lenderRefi is false
+            assertFalse(lending.getLoanAuction(address(mockNft), 1).lenderRefi);
 
             // Liquidity contract cToken balance
             isApproxEqual(
@@ -82,6 +95,16 @@ contract TestPartialRepayLoan is Test, OffersLoansRefinancesFixtures {
         } else {
             uint256 liquidityBalanceBeforeRepay = cEtherToken.balanceOf(address(liquidity));
 
+            vm.expectEmit(true, true, true, true);
+            emit PartialRepayment(
+                lender1,
+                borrower1,
+                address(mockNft),
+                1,
+                offer.asset,
+                repaymentAmount
+            );
+
             vm.startPrank(borrower1);
             lending.partialRepayLoan{ value: repaymentAmount }(
                 defaultFixedOfferFields.nftContractAddress,
@@ -89,6 +112,9 @@ contract TestPartialRepayLoan is Test, OffersLoansRefinancesFixtures {
                 repaymentAmount
             );
             vm.stopPrank();
+
+            // lenderRefi is false
+            assertFalse(lending.getLoanAuction(address(mockNft), 1).lenderRefi);
 
             // Liquidity contract cToken balance
             isApproxEqual(
@@ -385,5 +411,56 @@ contract TestPartialRepayLoan is Test, OffersLoansRefinancesFixtures {
         assertEq(calculatedInterestRatePerSecond, interestRatePerSecondAfter);
         assertEq(calculatedProtocolInterestRatePerSecond, protocolInterestRatePerSecondAfter);
         assertEq(loanAuctionAfter.amountDrawn, amountDrawnBefore - amountToRepay);
+    }
+
+    function test_unit_CANNOT_partialRepayLoan_loanExpired() public {
+        uint8 repaymentPercentageFuzzed = 50;
+        uint8 repaymentPercentage = repaymentPercentageFuzzed % 100;
+
+        // repaymentPercentage >= 1
+        repaymentPercentage = repaymentPercentage == 0 ? 1 : repaymentPercentage;
+
+        Offer memory offerToCreate = offerStructFromFields(
+            defaultFixedFuzzedFieldsForFastUnitTesting,
+            defaultFixedOfferFields
+        );
+
+        (Offer memory offer, ) = createOfferAndTryToExecuteLoanByBorrower(
+            offerToCreate,
+            "should work"
+        );
+
+        uint256 repaymentAmount = (offer.amount * repaymentPercentage) / 100;
+
+        assertionsForExecutedLoan(offer);
+
+        vm.warp(
+            block.timestamp +
+                lending.getLoanAuction(offer.nftContractAddress, offer.nftId).loanEndTimestamp +
+                1
+        );
+
+        if (offer.asset == address(daiToken)) {
+            vm.startPrank(borrower1);
+            daiToken.approve(address(liquidity), repaymentAmount);
+            vm.expectRevert("00009");
+
+            lending.partialRepayLoan(
+                defaultFixedOfferFields.nftContractAddress,
+                defaultFixedOfferFields.nftId,
+                repaymentAmount
+            );
+            vm.stopPrank();
+        } else {
+            vm.startPrank(borrower1);
+            vm.expectRevert("00009");
+
+            lending.partialRepayLoan{ value: repaymentAmount }(
+                defaultFixedOfferFields.nftContractAddress,
+                defaultFixedOfferFields.nftId,
+                repaymentAmount
+            );
+            vm.stopPrank();
+        }
     }
 }

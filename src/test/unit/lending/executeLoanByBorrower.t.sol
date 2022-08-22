@@ -180,9 +180,6 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         createOffer(offer, lender1);
         approveLending(offer);
 
-        console.log("balance", daiToken.balanceOf(lender1));
-        console.log("liquidity", defaultDaiLiquiditySupplied);
-
         vm.startPrank(lender1);
         if (offer.asset == address(daiToken)) {
             liquidity.withdrawErc20(address(daiToken), defaultDaiLiquiditySupplied);

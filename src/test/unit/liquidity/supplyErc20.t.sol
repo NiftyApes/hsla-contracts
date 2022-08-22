@@ -27,7 +27,6 @@ contract TestSupplyErc20 is Test, OffersLoansRefinancesFixtures {
         vm.assume(amount <= daiToken.balanceOf(borrower1));
 
         uint256 balanceBefore = liquidity.getCAssetBalance(borrower1, address(cDAIToken));
-        console.log("balanceBefore", balanceBefore);
 
         assertEq(balanceBefore, 0);
 
@@ -37,8 +36,6 @@ contract TestSupplyErc20 is Test, OffersLoansRefinancesFixtures {
         vm.stopPrank();
 
         uint256 balanceAfter = liquidity.getCAssetBalance(borrower1, address(cDAIToken));
-        console.log("balanceAfter", balanceAfter);
-        console.log("cTokensMinted", cTokensMinted);
 
         assertEq(balanceAfter, cTokensMinted);
     }

@@ -19,7 +19,6 @@ contract TestSupplyEth is Test, OffersLoansRefinancesFixtures {
         vm.assume(amount <= address(borrower1).balance);
 
         uint256 balanceBefore = liquidity.getCAssetBalance(borrower1, address(cEtherToken));
-        console.log("balanceBefore", balanceBefore);
 
         assertEq(balanceBefore, 0);
 
@@ -29,8 +28,6 @@ contract TestSupplyEth is Test, OffersLoansRefinancesFixtures {
         vm.stopPrank();
 
         uint256 balanceAfter = liquidity.getCAssetBalance(borrower1, address(cEtherToken));
-        console.log("balanceAfter", balanceAfter);
-        console.log("cTokensMinted", cTokensMinted);
 
         assertEq(balanceAfter, cTokensMinted);
     }

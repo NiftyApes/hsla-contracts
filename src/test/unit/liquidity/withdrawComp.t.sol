@@ -26,35 +26,21 @@ contract TestWithdrawComp is Test, OffersLoansRefinancesFixtures {
         vm.assume(amount > 0);
         vm.assume(amount <= compToken.balanceOf(address(liquidity)));
 
-        console.log("amount", amount);
         uint256 compBalanceBefore = compToken.balanceOf(address(liquidity));
         uint256 regenBalanceBefore = compToken.balanceOf(liquidity.regenCollectiveAddress());
-
-        console.log("contractCompBalanceBefore", compToken.balanceOf(address(liquidity)));
-
-        console.log("compBalanceBefore", compBalanceBefore);
-        console.log("regenBalanceBefore", regenBalanceBefore);
 
         assertEq(regenBalanceBefore, 0);
 
         vm.startPrank(owner);
 
         uint256 compWithdrawn = liquidity.withdrawComp();
-        console.log("compWithdrawn", compWithdrawn);
 
         vm.stopPrank();
-
-        console.log("amount", amount);
 
         uint256 compBalanceAfter = compToken.balanceOf(owner);
         uint256 regenBalanceAfter = compToken.balanceOf(liquidity.regenCollectiveAddress());
 
-        console.log("compBalanceAfter", compBalanceAfter);
-        console.log("regenBalanceAfter", regenBalanceAfter);
-
         uint256 expectedRegenAmount = (amount * liquidity.regenCollectiveBpsOfRevenue()) / 10_000;
-
-        console.log("expectedRegenAmount", expectedRegenAmount);
 
         isApproxEqual(amount, compWithdrawn, 1);
         isApproxEqual((expectedRegenAmount), (compBalanceBefore - compBalanceAfter), 1);
