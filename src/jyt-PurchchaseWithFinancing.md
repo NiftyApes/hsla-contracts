@@ -59,21 +59,39 @@ I've included a test file in [`./test/unit/lending/purchaseWithFinancing.t.sol`]
 
 ```js
 {
+    // considerationToken
     0x0000000000000000000000000000000000000000,
+    // considerationTokenId
     0,
+    // considerationAmount
     72000000000000000000,
+    // offerer
     0xe5546f0f94b2874fad696c22f3c38d43172edc06,
+    // zone
     0x004C00500000aD104D7DBd00e3ae0A5C00560C00,
+    // offerToken (BAYC)
     0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D,
+    // offerIdentifier
     9095,
+    // offerAmount
     1,
+    // BasicOrderType
     ETH_TO_ERC721_FULL_OPEN,
+    // startTime
     1660796367,
+    // endTime
     1660882767,
+    // zoneHash
     0x0000000000000000000000000000000000000000000000000000000000000000,
+    // salt
     25654833391100762,
-    0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000,0x0000000000000000000000000000000000000000000000000000000000000000,
+    // offererConduitKey
+    0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000,
+    // fulfillerConduitKey
+    0x0000000000000000000000000000000000000000000000000000000000000000,
+    // totalOriginalAdditionalRecipients
     2,
+    // additionalRecipients
     [
         {
             1800000000000000000,
@@ -84,6 +102,7 @@ I've included a test file in [`./test/unit/lending/purchaseWithFinancing.t.sol`]
             0xA858DDc0445d8131daC4d1DE01f834ffcbA52Ef1
         }
     ],
+    // signature
     0xd7341b1768e3a7f64d0a249e6c6c0f389cf93ec4293cef1307649b06b979ad072725107f4c7320c070bd1f9676b4a451227da497531fdfac92c26ebff80c1e051b
 }
 

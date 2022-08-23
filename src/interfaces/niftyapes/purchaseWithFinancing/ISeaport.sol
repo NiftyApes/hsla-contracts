@@ -23,26 +23,24 @@ interface ISeaport {
 
     /// @dev taken from https://docs.opensea.io/v2.0/reference/seaport-structs
     struct BasicOrderParameters {
-        // calldata offset
-        address considerationToken; // 0x24
-        uint256 considerationIdentifier; // 0x44
-        uint256 considerationAmount; // 0x64
-        address payable offerer; // 0x84
-        address zone; // 0xa4
-        address offerToken; // 0xc4
-        uint256 offerIdentifier; // 0xe4
-        uint256 offerAmount; // 0x104
-        BasicOrderType basicOrderType; // 0x124
-        uint256 startTime; // 0x144
-        uint256 endTime; // 0x164
-        bytes32 zoneHash; // 0x184
-        uint256 salt; // 0x1a4
-        bytes32 offererConduitKey; // 0x1c4
-        bytes32 fulfillerConduitKey; // 0x1e4
-        uint256 totalOriginalAdditionalRecipients; // 0x204
-        AdditionalRecipient[] additionalRecipients; // 0x224
-        bytes signature; // 0x244
-        // Total length, excluding dynamic array data: 0x264 (580)
+        address considerationToken;
+        uint256 considerationIdentifier;
+        uint256 considerationAmount;
+        address payable offerer;
+        address zone;
+        address offerToken;
+        uint256 offerIdentifier;
+        uint256 offerAmount;
+        BasicOrderType basicOrderType;
+        uint256 startTime;
+        uint256 endTime;
+        bytes32 zoneHash;
+        uint256 salt;
+        bytes32 offererConduitKey;
+        bytes32 fulfillerConduitKey;
+        uint256 totalOriginalAdditionalRecipients;
+        AdditionalRecipient[] additionalRecipients;
+        bytes signature;
     }
 
     /// @dev taken from https://docs.opensea.io/v2.0/reference/seaport-interface

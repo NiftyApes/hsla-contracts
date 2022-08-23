@@ -11,7 +11,7 @@ contract TestPurchaseWithFinancing is Test, OffersLoansRefinancesFixtures {
         super.setUp();
     }
 
-    function testExample() public {
+    function testPurchaseWithFinancing() public {
         assertEq(true, false);
     }
 
