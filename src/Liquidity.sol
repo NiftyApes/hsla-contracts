@@ -498,7 +498,7 @@ contract NiftyApesLiquidity is
         return _burnCErc20(asset, amount);
     }
 
-    // @notice param amount is denominated in the underlying asset, not cAsset
+    /// @notice param amount is denominated in the underlying asset, not cAsset
     function _burnCErc20(address asset, uint256 amount) internal returns (uint256) {
         _requireAmountGreaterThanZero(amount);
 

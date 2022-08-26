@@ -6,7 +6,10 @@ import "./ISeaport.sol";
 
 interface IPurchaseWithFinancing is IOffersStructs {
     function purchaseWithFinancingOpenSea(
-        Offer memory offer,
+        address nftContractAddress,
+        uint256 nftId,
+        bytes32 offerHash,
+        bool floorTerm,
         ISeaport.BasicOrderParameters calldata order
     ) external payable;
 }

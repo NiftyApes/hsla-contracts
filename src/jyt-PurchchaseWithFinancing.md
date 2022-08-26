@@ -45,6 +45,8 @@ function purchaseWithFinancingOpenSea(
 
 ## Project Notes
 
+- `purchaseWithFinancingOpenSea()` currently calls external functions only allowed by `Lending.sol`. Hence even though this function is in its own contract, it is designed to be implemented in `Lending.sol`.
+
 ### Known Tradeoffs
 
 ## Testing
