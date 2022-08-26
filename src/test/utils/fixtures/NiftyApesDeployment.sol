@@ -5,7 +5,9 @@ import "../../../Lending.sol";
 import "../../../Liquidity.sol";
 import "../../../Offers.sol";
 import "../../../SigLending.sol";
+import "../../../PurchaseWithFinancing.sol";
 import "./NFTAndERC20Fixtures.sol";
+import "../../mock/SeaportMock.sol";
 
 import "forge-std/Test.sol";
 
@@ -18,6 +20,8 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
     NiftyApesOffers offers;
     NiftyApesLiquidity liquidity;
     NiftyApesSigLending sigLending;
+    PurchaseWithFinancing purchaseWithFinancing;
+    SeaportMock seaportMock;
 
     address constant ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
@@ -38,12 +42,17 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         lending = new NiftyApesLending();
         lending.initialize(address(liquidity), address(offers), address(sigLending));
 
-        sigLending.updateLendingContractAddress(address(lending));
+        seaportMock = new SeaportMock();
+        purchaseWithFinancing = new PurchaseWithFinancing(address(seaportMock));
+        purchaseWithFinancing.initialize(address(liquidity), address(offers), address(sigLending));
+        seaportMock.approve(address(purchaseWithFinancing));
 
-        offers.updateLendingContractAddress(address(lending));
+        sigLending.updateLendingContractAddress(address(purchaseWithFinancing));
+
+        offers.updateLendingContractAddress(address(purchaseWithFinancing));
         offers.updateSigLendingContractAddress(address(sigLending));
 
-        liquidity.updateLendingContractAddress(address(lending));
+        liquidity.updateLendingContractAddress(address(purchaseWithFinancing));
 
         liquidity.setCAssetAddress(ETH_ADDRESS, address(cEtherToken));
         liquidity.setMaxCAssetBalance(address(cEtherToken), ~uint256(0));

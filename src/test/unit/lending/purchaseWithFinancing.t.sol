@@ -1,18 +1,15 @@
 pragma solidity 0.8.13;
 
 import "forge-std/Test.sol";
+import "forge-std/console.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 
 import "../../utils/fixtures/OffersLoansRefinancesFixtures.sol";
 import "../../../interfaces/niftyapes/offers/IOffersStructs.sol";
 import "../../../interfaces/niftyapes/purchaseWithFinancing/ISeaport.sol";
 import "../../../PurchaseWithFinancing.sol";
-import "../../mock/ERC721Mock.sol";
-import "../../mock/SeaportMock.sol";
 
 contract TestPurchaseWithFinancing is Test, OffersLoansRefinancesFixtures {
-    PurchaseWithFinancing purchaseWithFinancing;
-    SeaportMock seaportMock;
 
     struct FuzzedBasicOrderParams {
         address zone;
@@ -24,10 +21,6 @@ contract TestPurchaseWithFinancing is Test, OffersLoansRefinancesFixtures {
 
     function setUp() public override {
         super.setUp();
-
-        seaportMock = new SeaportMock();
-        purchaseWithFinancing = new PurchaseWithFinancing(address(seaportMock));
-        seaportMock.approve(address(purchaseWithFinancing));
     }
 
     function _test_purchaseWithFinancing_simplest_case(
@@ -35,9 +28,12 @@ contract TestPurchaseWithFinancing is Test, OffersLoansRefinancesFixtures {
         FuzzedBasicOrderParams memory fuzzedParamData
     ) private {
         Offer memory offer = offerStructFromFields(fuzzedOfferData, defaultFixedOfferFields);
+        offer.nftContractAddress = seaportMock.mockNft.address;
+        offer.nftId = 1;
+        offer.asset = ETH_ADDRESS;
         ISeaport.BasicOrderParameters memory params = basicOrderParamsFromFields(fuzzedParamData);
 
-        createOfferAndTryPurchaseWithFinancing(offer, "should work");
+        createOfferAndTryPurchaseWithFinancing(offer, params, "should work");
     }
 
     function testPurchaseWithFinancing(
@@ -51,18 +47,20 @@ contract TestPurchaseWithFinancing is Test, OffersLoansRefinancesFixtures {
     //
     // HELPERS
     //
-    function createOfferAndTryPurchaseWithFinancing(Offer memory offer, bytes memory errorCode)
+    function createOfferAndTryPurchaseWithFinancing(Offer memory offer, ISeaport.BasicOrderParameters memory params, bytes memory errorCode)
         internal
         returns (Offer memory, LoanAuction memory)
     {
         Offer memory offerCreated = createOffer(offer, lender1);
 
         approveLending(offer);
-        LoanAuction memory loan = tryPurchaseWithFinancing(offer, errorCode);
+        LoanAuction memory loan = tryPurchaseWithFinancing(offer, params, errorCode);
         return (offerCreated, loan);
     }
 
-    function tryPurchaseWithFinancing(Offer memory offer, bytes memory errorCode)
+    function tryPurchaseWithFinancing(Offer memory offer,
+    ISeaport.BasicOrderParameters memory params,
+    bytes memory errorCode)
         internal
         returns (LoanAuction memory)
     {
@@ -72,16 +70,19 @@ contract TestPurchaseWithFinancing is Test, OffersLoansRefinancesFixtures {
         if (bytes16(errorCode) != bytes16("should work")) {
             vm.expectRevert(errorCode);
         }
-
-        // purchaseWithFinancing.purchaseWithFinancingOpenSea(
-        //     offer.nftContractAddress,
-        //     offer.nftId,
-        //     offerHash,
-        //     offer.floorTerm,
-        // );
+        console.log(offer.amount);
+        console.log(params.considerationAmount);
+        uint borrowerPays = params.considerationAmount - offer.amount;
+        purchaseWithFinancing.purchaseWithFinancingOpenSea{value:borrowerPays}(
+            offer.nftContractAddress,
+            offer.nftId,
+            offerHash,
+            offer.floorTerm,
+            params
+        );
         vm.stopPrank();
 
-        return lending.getLoanAuction(offer.nftContractAddress, offer.nftId);
+        return purchaseWithFinancing.getLoanAuction(offer.nftContractAddress, offer.nftId);
     }
 
     function basicOrderParamsFromFields(FuzzedBasicOrderParams memory fuzzed)
@@ -90,12 +91,12 @@ contract TestPurchaseWithFinancing is Test, OffersLoansRefinancesFixtures {
     {
         ISeaport.BasicOrderParameters memory params;
         params.considerationToken = address(0);
-        params.considerationIdentifier = 0;
-        params.considerationAmount = fuzzed.paymentAmount;
+        params.considerationIdentifier = 1;
+        params.considerationAmount = 100 ether;
         params.offerer = payable(address(0));
         params.zone = fuzzed.zone;
         params.offerToken = seaportMock.mockNft.address;
-        params.offerIdentifier = 999;
+        params.offerIdentifier = 1;
         params.offerAmount = 1;
         params.basicOrderType = ISeaport.BasicOrderType.ETH_TO_ERC721_FULL_OPEN;
         params.startTime = block.timestamp;

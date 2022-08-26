@@ -3,6 +3,7 @@ pragma solidity 0.8.13;
 
 import "../../interfaces/niftyapes/purchaseWithFinancing/ISeaport.sol";
 import "./ERC721Mock.sol";
+import "forge-std/console.sol";
 
 contract SeaportMock is ISeaport {
     ERC721Mock public mockNft;
@@ -22,19 +23,26 @@ contract SeaportMock is ISeaport {
         payable
         returns (bool fulfilled)
     {
-        require(parameters.considerationToken != address(0), "Invalid NFT Address");
+        console.log("start fullfillbasicorder");
+        require(parameters.considerationToken == address(0), "Must use ETH");
         require(parameters.considerationIdentifier != 0, "Invalid NFT ID");
 
         uint256 testNFTPrice = 100 ether;
         if (msg.value != testNFTPrice) {
+            console.log("bad price");
             return false;
         }
 
-        uint256 testTokenId = 999;
+        uint256 testTokenId = 1;
         if (parameters.considerationIdentifier != testTokenId) {
+            console.log("bad tokenId");
             return false;
         }
 
+        console.log("transferring token");
+        console.log(address(mockNft));
+        console.log(mockNft.ownerOf(testTokenId));
+        console.log(address(this));
         mockNft.safeTransferFrom(address(this), msg.sender, testTokenId);
         return true;
     }

@@ -12,8 +12,17 @@ contract PurchaseWithFinancing is NiftyApesLending, IPurchaseWithFinancing {
 
     /// @dev this should be taken from `Lending.sol` but it's marked private and not internal.
     address private constant ETH_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
+    bool internal _ethTransferable = false;
 
     constructor(address _seaportAddress) {
+        seaport = ISeaport(_seaportAddress);
+    }
+
+    receive() external payable {
+        _requireEthTransferable();
+    }
+
+    function setSeaport(address _seaportAddress) public {
         seaport = ISeaport(_seaportAddress);
     }
 
@@ -32,6 +41,7 @@ contract PurchaseWithFinancing is NiftyApesLending, IPurchaseWithFinancing {
             offerHash,
             floorTerm
         );
+
         _requireLenderOffer(offer);
         _requireOfferNotExpired(offer);
         _requireMinDurationForOffer(offer);
@@ -51,8 +61,8 @@ contract PurchaseWithFinancing is NiftyApesLending, IPurchaseWithFinancing {
         _requireMatchingAsset(offer.asset, ETH_ADDRESS);
         _requireSeaportNativeETH(order);
 
-        _requireIsNotSanctioned(offer.creator);
-        _requireIsNotSanctioned(msg.sender);
+        // _requireIsNotSanctioned(offer.creator);
+        // _requireIsNotSanctioned(msg.sender);
 
         // Ensure enough ETH has been sent in to purchase with NFT (with the help of lender)
         uint256 purchaseAmount = msg.value + offer.amount;
@@ -70,15 +80,17 @@ contract PurchaseWithFinancing is NiftyApesLending, IPurchaseWithFinancing {
         ILiquidity(liquidityContractAddress).withdrawCBalance(offer.creator, cAsset, cTokensBurned);
 
         // Transfer liquidated funds from Liquidity contract to this contract
+        _ethTransferable = true;
         ILiquidity(liquidityContractAddress).sendValue(offer.asset, offer.amount, address(this));
+        _ethTransferable = false;
 
         // Purchase NFT
         bool success = seaport.fulfillBasicOrder{ value: purchaseAmount }(order);
         require(success, "00101"); // "Unsuccessful Seaport transaction"
-        require(
-            IERC721Upgradeable(offer.nftContractAddress).ownerOf(nftId) == address(this),
-            "00018"
-        );
+        // require(
+        //     IERC721Upgradeable(offer.nftContractAddress).ownerOf(nftId) == address(this),
+        //     "00018"
+        // );
 
         // update loanAuction struct (this should be similar functionality to `_createLoan()`);
         LoanAuction storage loanAuction = _getLoanAuctionInternal(
@@ -123,6 +135,10 @@ contract PurchaseWithFinancing is NiftyApesLending, IPurchaseWithFinancing {
 
     function _requireSeaportNativeETH(ISeaport.BasicOrderParameters calldata order) internal view {
         require(order.considerationToken == address(0), "00102"); // "Must be native ETH"
+    }
+
+    function _requireEthTransferable() internal view {
+        require(_ethTransferable, "00043");
     }
 
     function onERC721Received(
