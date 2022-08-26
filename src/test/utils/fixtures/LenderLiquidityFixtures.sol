@@ -7,7 +7,7 @@ import "./NiftyApesDeployment.sol";
 
 contract LenderLiquidityFixtures is Test, NiftyApesDeployment {
     uint256 internal defaultEthLiquiditySupplied;
-    uint256 internal defaultUsdcLiquiditySupplied;
+    uint256 internal defaultDaiLiquiditySupplied;
 
     function setUp() public virtual override {
         super.setUp();
@@ -15,9 +15,9 @@ contract LenderLiquidityFixtures is Test, NiftyApesDeployment {
         defaultEthLiquiditySupplied = address(lender1).balance;
 
         if (integration) {
-            defaultUsdcLiquiditySupplied = daiToken.balanceOf(lender1);
+            defaultDaiLiquiditySupplied = daiToken.balanceOf(lender1);
         } else {
-            defaultUsdcLiquiditySupplied = 3672711471 * uint128(10**daiToken.decimals());
+            defaultDaiLiquiditySupplied = 3672711471 * uint128(10**daiToken.decimals());
         }
 
         vm.startPrank(lender1);

@@ -75,4 +75,16 @@ contract TestCreateOffer is Test, IOffersEvents, OffersLoansRefinancesFixtures {
         vm.expectRevert("00046");
         offers.createOffer(offer);
     }
+
+    function test_fuzz_cannot_createOffer_msgSenderDoesnNotEqualOfferCreator(
+        FuzzedOfferFields memory fuzzed
+    ) public validateFuzzedOfferFields(fuzzed) {
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedBorrowerOfferFields);
+
+        offer.floorTerm = false;
+
+        vm.startPrank(lender1);
+        vm.expectRevert("00024");
+        offers.createOffer(offer);
+    }
 }

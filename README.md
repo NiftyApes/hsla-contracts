@@ -46,7 +46,7 @@ The NiftyApes protocol is made up of four core contracts `Liquidity.sol`, `Offer
    a. Make sure you have a dedicated test wallet with funding. You can obtain test ETH, ERC20s, and NFTs here: https://faucet.paradigm.xyz/
    b. Add you test wallet private keys to `.env`.
    c. If you have made any changes to the `.env` run: `$ source .env`
-   c. Then run:
+   d. Then run:
    `forge script script/Rinkeby_Deploy_NiftyApes.s.sol:DeployNiftyApesScript --optimize --rpc-url $RINKEBY_RPC_URL --private-key $RINKEBY_PRIVATE_KEY --slow --broadcast`
 
    Rinkeby contract addresses:
@@ -56,7 +56,23 @@ The NiftyApes protocol is made up of four core contracts `Liquidity.sol`, `Offer
    Lending: 0xd830dcFC57816aDeB9Bf34A5dA38197810fA8Fd4
 
 5. For deployment to Mainnet:
-   d. `forge script script/NiftyApes.s.sol:NiftyApesScript --optimize --slow --rpc-url $MAINNET_RPC_URL --ledger --broadcast`
+   a. `forge script script/NiftyApes.s.sol:NiftyApesScript --optimize --slow --rpc-url $MAINNET_RPC_URL --ledger --broadcast`
+
+## Pause
+
+1. To pause Rinkeby protocol:
+   a. `forge script script/Rinkeby_PauseProtocol.s.sol:PauseScript --rpc-url $RINKEBY_RPC_URL --ledger --broadcast`
+
+2. To pause Mainnet protocol:
+   a. `forge script script/Rinkeby_PauseProtocol.s.sol:PauseScript --rpc-url $MAINNET_RPC_URL --ledger --broadcast`
+
+## Unpause
+
+3. To unpause Rinkeby protocol:
+   a. `forge script script/Rinkeby_UnpauseProtocol.s.sol:UnpauseScript --rpc-url $RINKEBY_RPC_URL --ledger --broadcast`
+
+4. To unpause Mainnet protocol:
+   a. `forge script script/Rinkeby_UnpauseProtocol.s.sol:UnpauseScript --rpc-url $MAINNET_RPC_URL --ledger --broadcast`
 
 ## NiftyApes Error Messages
 
@@ -106,4 +122,3 @@ The NiftyApes protocol is made up of four core contracts `Liquidity.sol`, `Offer
 "00044" == "max casset"
 "00045" == "amount 0"
 "00046" == "offer already exists"
-"00047" == "amount must be >= ~uint32(0)"

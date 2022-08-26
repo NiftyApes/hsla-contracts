@@ -14,126 +14,128 @@ contract TestUpdateGasGriefingProtocolPremiumBps is Test, OffersLoansRefinancesF
         super.setUp();
     }
 
-    function _test_updateGasGriefingProtocolPremiumBps_works(
-        FuzzedOfferFields memory fuzzed,
-        uint16 secondsBeforeRefinance,
-        uint16 updatedGasGriefingProtocolPremiumAmount
-    ) private {
-        vm.startPrank(owner);
-        lending.updateGasGriefingProtocolPremiumBps(updatedGasGriefingProtocolPremiumAmount);
-        vm.stopPrank();
+    // This functionality has been removed from the v1 contracts
 
-        assertEq(lending.gasGriefingProtocolPremiumBps(), updatedGasGriefingProtocolPremiumAmount);
+    // function _test_updateGasGriefingProtocolPremiumBps_works(
+    //     FuzzedOfferFields memory fuzzed,
+    //     uint16 secondsBeforeRefinance,
+    //     uint16 updatedGasGriefingProtocolPremiumAmount
+    // ) private {
+    //     vm.startPrank(owner);
+    //     lending.updateGasGriefingProtocolPremiumBps(updatedGasGriefingProtocolPremiumAmount);
+    //     vm.stopPrank();
 
-        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
-        (, LoanAuction memory firstLoan) = createOfferAndTryToExecuteLoanByBorrower(
-            offer,
-            "should work"
-        );
+    //     assertEq(lending.gasGriefingProtocolPremiumBps(), updatedGasGriefingProtocolPremiumAmount);
 
-        // new offer from lender2 with +1 amount
-        // will trigger term griefing and gas griefing
-        defaultFixedOfferFields.creator = lender2;
-        fuzzed.duration = fuzzed.duration + 1; // make sure offer is better
-        fuzzed.floorTerm = false; // refinance can't be floor term
-        fuzzed.expiration = uint32(block.timestamp) + secondsBeforeRefinance + 1;
-        Offer memory newOffer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+    //     Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+    //     (, LoanAuction memory firstLoan) = createOfferAndTryToExecuteLoanByBorrower(
+    //         offer,
+    //         "should work"
+    //     );
 
-        vm.warp(block.timestamp + secondsBeforeRefinance);
+    //     // new offer from lender2 with +1 amount
+    //     // will trigger term griefing and gas griefing
+    //     defaultFixedOfferFields.creator = lender2;
+    //     fuzzed.duration = fuzzed.duration + 1; // make sure offer is better
+    //     fuzzed.floorTerm = false; // refinance can't be floor term
+    //     fuzzed.expiration = uint32(block.timestamp) + secondsBeforeRefinance + 1;
+    //     Offer memory newOffer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
 
-        tryToRefinanceByLender(newOffer, "should work");
+    //     vm.warp(block.timestamp + secondsBeforeRefinance);
 
-        uint256 interest = offer.interestRatePerSecond * secondsBeforeRefinance;
+    //     tryToRefinanceByLender(newOffer, "should work");
 
-        uint256 threshold = (lending.gasGriefingPremiumBps() * firstLoan.amountDrawn) / MAX_BPS;
+    //     uint256 interest = offer.interestRatePerSecond * secondsBeforeRefinance;
 
-        // uint256 griefingToLender = threshold - interest;
+    //     uint256 threshold = (lending.gasGriefingPremiumBps() * firstLoan.amountDrawn) / MAX_BPS;
 
-        uint256 gasGriefingToProtocol = (interest * lending.gasGriefingProtocolPremiumBps()) /
-            MAX_BPS;
+    //     // uint256 griefingToLender = threshold - interest;
 
-        uint256 termGriefingToProtocol = (lending.termGriefingPremiumBps() *
-            firstLoan.amountDrawn) / MAX_BPS;
+    //     uint256 gasGriefingToProtocol = (interest * lending.gasGriefingProtocolPremiumBps()) /
+    //         MAX_BPS;
 
-        if (offer.asset == address(daiToken)) {
-            if (interest < threshold) {
-                assertBetween(
-                    gasGriefingToProtocol + termGriefingToProtocol,
-                    assetBalance(owner, address(daiToken)),
-                    assetBalancePlusOneCToken(owner, address(daiToken))
-                );
-            } else {
-                assertBetween(
-                    termGriefingToProtocol,
-                    assetBalance(owner, address(daiToken)),
-                    assetBalancePlusOneCToken(owner, address(daiToken))
-                );
-            }
-        } else {
-            if (interest < threshold) {
-                assertBetween(
-                    gasGriefingToProtocol + termGriefingToProtocol,
-                    assetBalance(owner, ETH_ADDRESS),
-                    assetBalancePlusOneCToken(owner, ETH_ADDRESS)
-                );
-            } else {
-                assertBetween(
-                    termGriefingToProtocol,
-                    assetBalance(owner, ETH_ADDRESS),
-                    assetBalancePlusOneCToken(owner, ETH_ADDRESS)
-                );
-            }
-        }
-    }
+    //     uint256 termGriefingToProtocol = (lending.termGriefingPremiumBps() *
+    //         firstLoan.amountDrawn) / MAX_BPS;
 
-    function test_fuzz_updateGasGriefingProtocolPremiumBps_works(
-        FuzzedOfferFields memory fuzzedOffer,
-        uint16 secondsBeforeRefinance,
-        uint16 updatedGasGriefingProtocolPremiumAmount
-    ) public validateFuzzedOfferFields(fuzzedOffer) {
-        vm.assume(updatedGasGriefingProtocolPremiumAmount < MAX_BPS);
+    //     if (offer.asset == address(daiToken)) {
+    //         if (interest < threshold) {
+    //             assertBetween(
+    //                 gasGriefingToProtocol + termGriefingToProtocol,
+    //                 assetBalance(owner, address(daiToken)),
+    //                 assetBalancePlusOneCToken(owner, address(daiToken))
+    //             );
+    //         } else {
+    //             assertBetween(
+    //                 termGriefingToProtocol,
+    //                 assetBalance(owner, address(daiToken)),
+    //                 assetBalancePlusOneCToken(owner, address(daiToken))
+    //             );
+    //         }
+    //     } else {
+    //         if (interest < threshold) {
+    //             assertBetween(
+    //                 gasGriefingToProtocol + termGriefingToProtocol,
+    //                 assetBalance(owner, ETH_ADDRESS),
+    //                 assetBalancePlusOneCToken(owner, ETH_ADDRESS)
+    //             );
+    //         } else {
+    //             assertBetween(
+    //                 termGriefingToProtocol,
+    //                 assetBalance(owner, ETH_ADDRESS),
+    //                 assetBalancePlusOneCToken(owner, ETH_ADDRESS)
+    //             );
+    //         }
+    //     }
+    // }
 
-        _test_updateGasGriefingProtocolPremiumBps_works(
-            fuzzedOffer,
-            secondsBeforeRefinance,
-            updatedGasGriefingProtocolPremiumAmount
-        );
-    }
+    // function test_fuzz_updateGasGriefingProtocolPremiumBps_works(
+    //     FuzzedOfferFields memory fuzzedOffer,
+    //     uint16 secondsBeforeRefinance,
+    //     uint16 updatedGasGriefingProtocolPremiumAmount
+    // ) public validateFuzzedOfferFields(fuzzedOffer) {
+    //     vm.assume(updatedGasGriefingProtocolPremiumAmount < MAX_BPS);
 
-    function test_unit_updateGasGriefingProtocolPremiumBps_works() public {
-        uint16 secondsBeforeRefinance = 300;
-        uint16 updatedGasGriefingProtocolPremiumAmount = 5000;
+    //     _test_updateGasGriefingProtocolPremiumBps_works(
+    //         fuzzedOffer,
+    //         secondsBeforeRefinance,
+    //         updatedGasGriefingProtocolPremiumAmount
+    //     );
+    // }
 
-        _test_updateGasGriefingProtocolPremiumBps_works(
-            defaultFixedFuzzedFieldsForFastUnitTesting,
-            secondsBeforeRefinance,
-            updatedGasGriefingProtocolPremiumAmount
-        );
-    }
+    // function test_unit_updateGasGriefingProtocolPremiumBps_works() public {
+    //     uint16 secondsBeforeRefinance = 300;
+    //     uint16 updatedGasGriefingProtocolPremiumAmount = 5000;
 
-    function _test_cannot_updateGasGriefingProtocolPremiumBps_if_not_owner() private {
-        uint16 updatedGasGriefingProtocolPremiumAmount = 5000;
+    //     _test_updateGasGriefingProtocolPremiumBps_works(
+    //         defaultFixedFuzzedFieldsForFastUnitTesting,
+    //         secondsBeforeRefinance,
+    //         updatedGasGriefingProtocolPremiumAmount
+    //     );
+    // }
 
-        vm.startPrank(borrower1);
-        vm.expectRevert("Ownable: caller is not the owner");
-        lending.updateGasGriefingProtocolPremiumBps(updatedGasGriefingProtocolPremiumAmount);
-        vm.stopPrank();
-    }
+    // function _test_cannot_updateGasGriefingProtocolPremiumBps_if_not_owner() private {
+    //     uint16 updatedGasGriefingProtocolPremiumAmount = 5000;
 
-    function test_unit_cannot_updateGasGriefingProtocolPremiumBps_if_not_owner() public {
-        _test_cannot_updateGasGriefingProtocolPremiumBps_if_not_owner();
-    }
+    //     vm.startPrank(borrower1);
+    //     vm.expectRevert("Ownable: caller is not the owner");
+    //     lending.updateGasGriefingProtocolPremiumBps(updatedGasGriefingProtocolPremiumAmount);
+    //     vm.stopPrank();
+    // }
 
-    function _test_cannot_updateGasGriefingProtocolPremiumBps_beyond_max_bps() private {
-        uint16 updatedGasGriefingProtocolPremiumAmount = 10_001;
+    // function test_unit_cannot_updateGasGriefingProtocolPremiumBps_if_not_owner() public {
+    //     _test_cannot_updateGasGriefingProtocolPremiumBps_if_not_owner();
+    // }
 
-        vm.startPrank(owner);
-        vm.expectRevert("00002");
-        lending.updateGasGriefingProtocolPremiumBps(updatedGasGriefingProtocolPremiumAmount);
-        vm.stopPrank();
-    }
+    // function _test_cannot_updateGasGriefingProtocolPremiumBps_beyond_max_bps() private {
+    //     uint16 updatedGasGriefingProtocolPremiumAmount = 10_001;
 
-    function test_unit_cannot_updateGasGriefingProtocolPremiumBps_beyond_max_bps() public {
-        _test_cannot_updateGasGriefingProtocolPremiumBps_beyond_max_bps();
-    }
+    //     vm.startPrank(owner);
+    //     vm.expectRevert("00002");
+    //     lending.updateGasGriefingProtocolPremiumBps(updatedGasGriefingProtocolPremiumAmount);
+    //     vm.stopPrank();
+    // }
+
+    // function test_unit_cannot_updateGasGriefingProtocolPremiumBps_beyond_max_bps() public {
+    //     _test_cannot_updateGasGriefingProtocolPremiumBps_beyond_max_bps();
+    // }
 }

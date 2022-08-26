@@ -33,7 +33,7 @@ contract TestGetLoanAuction is Test, OffersLoansRefinancesFixtures {
         assertEq(loan.fixedTerms, offer.fixedTerms);
         assertEq(loan.lenderRefi, false);
         assertEq(loan.accumulatedLenderInterest, 0);
-        assertEq(loan.accumulatedProtocolInterest, 0);
+        assertEq(loan.accumulatedPaidProtocolInterest, 0);
         assertEq(loan.interestRatePerSecond, offer.interestRatePerSecond);
     }
 

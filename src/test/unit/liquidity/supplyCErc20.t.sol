@@ -30,13 +30,10 @@ contract TestSupplyCErc20 is Test, OffersLoansRefinancesFixtures {
         cDAIToken.mint(daiToken.balanceOf(borrower1));
         uint256 cTokenBalanceAfter = cDAIToken.balanceOf(borrower1);
 
-        console.log("cTokenBalanceAfter", cTokenBalanceAfter);
-
         vm.assume(amount > 0);
         vm.assume(amount < cDAIToken.balanceOf(borrower1));
 
         uint256 balanceBefore = liquidity.getCAssetBalance(borrower1, address(cDAIToken));
-        console.log("balanceBefore", balanceBefore);
 
         assertEq(balanceBefore, 0);
 
@@ -45,8 +42,6 @@ contract TestSupplyCErc20 is Test, OffersLoansRefinancesFixtures {
         vm.stopPrank();
 
         uint256 balanceAfter = liquidity.getCAssetBalance(borrower1, address(cDAIToken));
-        console.log("balanceAfter", balanceAfter);
-        console.log("cTokensTransferred", cTokensTransferred);
 
         assertEq(balanceAfter, cTokensTransferred);
     }

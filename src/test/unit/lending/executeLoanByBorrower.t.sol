@@ -180,12 +180,9 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         createOffer(offer, lender1);
         approveLending(offer);
 
-        console.log("balance", daiToken.balanceOf(lender1));
-        console.log("liquidity", defaultUsdcLiquiditySupplied);
-
         vm.startPrank(lender1);
         if (offer.asset == address(daiToken)) {
-            liquidity.withdrawErc20(address(daiToken), defaultUsdcLiquiditySupplied);
+            liquidity.withdrawErc20(address(daiToken), defaultDaiLiquiditySupplied);
         } else {
             liquidity.withdrawEth(defaultEthLiquiditySupplied);
         }
@@ -426,34 +423,24 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
 
         if (integration) {
             vm.startPrank(daiWhale);
-            vm.expectRevert("Blacklistable: account is blacklisted");
-            daiToken.transfer(SANCTIONED_ADDRESS, 1001);
+            daiToken.transfer(SANCTIONED_ADDRESS, defaultDaiLiquiditySupplied);
             vm.stopPrank();
         } else {
             vm.startPrank(SANCTIONED_ADDRESS);
-            daiToken.mint(SANCTIONED_ADDRESS, 1001);
+            daiToken.mint(SANCTIONED_ADDRESS, defaultDaiLiquiditySupplied);
             vm.stopPrank();
         }
 
         vm.startPrank(SANCTIONED_ADDRESS);
-        if (integration) {
-            vm.expectRevert("Blacklistable: account is blacklisted");
-        }
-        daiToken.approve(address(liquidity), defaultUsdcLiquiditySupplied);
+        daiToken.approve(address(liquidity), defaultDaiLiquiditySupplied);
 
-        if (integration) {
-            vm.expectRevert("Blacklistable: account is blacklisted");
-        }
-        liquidity.supplyErc20(address(daiToken), defaultUsdcLiquiditySupplied);
+        liquidity.supplyErc20(address(daiToken), defaultDaiLiquiditySupplied);
         vm.stopPrank();
 
         defaultFixedOfferFields.lenderOffer = true;
 
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
 
-        if (integration) {
-            vm.expectRevert("00034");
-        }
         createOffer(offer, SANCTIONED_ADDRESS);
 
         vm.startPrank(owner);
@@ -465,12 +452,7 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         vm.startPrank(borrower1);
         mockNft.approve(address(lending), 1);
 
-        if (integration) {
-            //results in 00012 error because createOffer fails and offerHash points to an empty struct in the mapping
-            vm.expectRevert("00012");
-        } else {
-            vm.expectRevert("00017");
-        }
+        vm.expectRevert("00017");
         lending.executeLoanByBorrower(
             offer.nftContractAddress,
             offer.nftId,

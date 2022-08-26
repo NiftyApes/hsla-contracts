@@ -3,6 +3,7 @@ pragma solidity 0.8.13;
 
 import "forge-std/Test.sol";
 
+import "@openzeppelin/contracts/utils/cryptography/draft-EIP712Upgradeable.sol";
 import "../../utils/fixtures/OffersLoansRefinancesFixtures.sol";
 import "../../../interfaces/niftyapes/offers/IOffersEvents.sol";
 
@@ -28,7 +29,7 @@ contract TestGetOfferHash is Test, IOffersEvents, OffersLoansRefinancesFixtures 
 
         bytes32 functionOfferHash = offers.getOfferHash(offer);
 
-        bytes32 expectedFunctionHash = 0x0f2313886dd9a11c50a0f02b4602a7b9defeb8422e948049606684c801025e25;
+        bytes32 expectedFunctionHash = 0xf4917d87dcc2e648e575f4caa8211e0e9fef194f009ec7927c92c37a22252c5b;
 
         assertEq(functionOfferHash, expectedFunctionHash);
     }

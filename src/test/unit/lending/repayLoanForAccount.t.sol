@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 
 import "../../utils/fixtures/OffersLoansRefinancesFixtures.sol";
 
-contract TestRepayLoan is Test, OffersLoansRefinancesFixtures {
+contract TestRepayLoanForAccount is Test, OffersLoansRefinancesFixtures {
     function setUp() public override {
         super.setUp();
     }
@@ -23,21 +23,19 @@ contract TestRepayLoan is Test, OffersLoansRefinancesFixtures {
         assertEq(lending.getLoanAuction(address(mockNft), 1).lastUpdatedTimestamp, block.timestamp);
     }
 
-    function test_fuzz_repayLoan_simplest_case(
+    function test_fuzz_repayLoanForAccount_simplest_case(
         FuzzedOfferFields memory fuzzedOffer,
-        uint16 secondsBeforeRepayment
+        uint16 secondsBeforeRepayment,
+        address repayer
     ) public validateFuzzedOfferFields(fuzzedOffer) {
+        vm.assume(repayer != borrower1);
+
         Offer memory offerToCreate = offerStructFromFields(fuzzedOffer, defaultFixedOfferFields);
 
-        (Offer memory offer, ) = createOfferAndTryToExecuteLoanByBorrower(
-            offerToCreate,
-            "should work"
-        );
-
-        LoanAuction memory loanAuction = lending.getLoanAuction(
-            defaultFixedOfferFields.nftContractAddress,
-            defaultFixedOfferFields.nftId
-        );
+        (
+            Offer memory offer,
+            LoanAuction memory loanAuction
+        ) = createOfferAndTryToExecuteLoanByBorrower(offerToCreate, "should work");
 
         assertionsForExecutedLoan(offer);
 
@@ -56,19 +54,20 @@ contract TestRepayLoan is Test, OffersLoansRefinancesFixtures {
             protocolInterest;
 
         if (offer.asset == address(daiToken)) {
-            // Give borrower enough to pay interest
-            mintDai(borrower1, interest);
+            mintDai(repayer, offer.amount + interest);
 
             uint256 liquidityBalanceBeforeRepay = cDAIToken.balanceOf(address(liquidity));
+            uint256 borrowerBalanceBeforeRepay = daiToken.balanceOf(borrower1);
+            uint256 repayerBalanceBeforeRepay = daiToken.balanceOf(repayer);
 
-            vm.startPrank(borrower1);
-            daiToken.approve(address(liquidity), ~uint256(0));
-            lending.repayLoan(
+            vm.startPrank(repayer);
+            daiToken.approve(address(liquidity), offer.amount + interest);
+            lending.repayLoanForAccount(
                 defaultFixedOfferFields.nftContractAddress,
-                defaultFixedOfferFields.nftId
+                defaultFixedOfferFields.nftId,
+                loanAuction.loanBeginTimestamp
             );
             vm.stopPrank();
-
             // Liquidity contract cToken balance
             assertEq(
                 cDAIToken.balanceOf(address(liquidity)),
@@ -76,33 +75,37 @@ contract TestRepayLoan is Test, OffersLoansRefinancesFixtures {
                     liquidity.assetAmountToCAssetAmount(address(daiToken), offer.amount + interest)
             );
 
-            // Borrower back to 0
-            assertEq(daiToken.balanceOf(address(borrower1)), 0);
+            // repayer balance unchanged
+            assertEq(
+                daiToken.balanceOf(repayer),
+                repayerBalanceBeforeRepay - (offer.amount + interest)
+            );
 
-            // Lender back with interest
+            // borrower balance unchanged
+            assertEq(borrowerBalanceBeforeRepay, daiToken.balanceOf(borrower1));
+
+            // lender back with interest
             assertCloseEnough(
                 defaultDaiLiquiditySupplied + interest,
                 assetBalance(lender1, address(daiToken)),
                 assetBalancePlusOneCToken(lender1, address(daiToken))
             );
         } else {
+            vm.deal(repayer, offer.amount + interest);
+
             uint256 liquidityBalanceBeforeRepay = cEtherToken.balanceOf(address(liquidity));
+            uint256 borrowerBalanceBeforeRepay = borrower1.balance;
+            uint256 repayerBalanceBeforeRepay = repayer.balance;
 
-            vm.startPrank(borrower1);
-            vm.expectRevert("00030");
-            //  subtract 1 in order to fail when 0 interest
-            lending.repayLoan{ value: loanAuction.amountDrawn - 1 }(
+            vm.startPrank(repayer);
+            lending.repayLoanForAccount{ value: offer.amount + interest }(
                 defaultFixedOfferFields.nftContractAddress,
-                defaultFixedOfferFields.nftId
-            );
-
-            lending.repayLoan{ value: loanAuction.amountDrawn + interest }(
-                defaultFixedOfferFields.nftContractAddress,
-                defaultFixedOfferFields.nftId
+                defaultFixedOfferFields.nftId,
+                loanAuction.loanBeginTimestamp
             );
             vm.stopPrank();
 
-            // Liquidity contract cToken balance
+            // liquidity contract cToken balance
             assertEq(
                 cEtherToken.balanceOf(address(liquidity)),
                 liquidityBalanceBeforeRepay +
@@ -112,15 +115,34 @@ contract TestRepayLoan is Test, OffersLoansRefinancesFixtures {
                     )
             );
 
-            // Borrower back to initial minus interest
-            assertEq(address(borrower1).balance, defaultInitialEthBalance - interest);
+            // repayer balance unchanged
+            assertEq(repayer.balance, repayerBalanceBeforeRepay - (offer.amount + interest));
 
-            // Lender back with interest
+            // borrower balance unchanged
+            assertEq(borrowerBalanceBeforeRepay, borrower1.balance);
+
+            // lender back with interest
             assertCloseEnough(
                 defaultEthLiquiditySupplied + interest,
                 assetBalance(lender1, address(ETH_ADDRESS)),
                 assetBalancePlusOneCToken(lender1, address(ETH_ADDRESS))
             );
         }
+    }
+
+    function test_unit_CANNOT_repayLoanForAccount_expectedLoanNotActive() public {
+        Offer memory offer = offerStructFromFields(
+            defaultFixedFuzzedFieldsForFastUnitTesting,
+            defaultFixedOfferFields
+        );
+
+        createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
+        assertionsForExecutedLoan(offer);
+
+        vm.startPrank(borrower1);
+        daiToken.approve(address(liquidity), offer.amount);
+        vm.expectRevert("00027");
+        lending.repayLoanForAccount(offer.nftContractAddress, offer.nftId, 1);
+        vm.stopPrank();
     }
 }

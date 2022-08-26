@@ -3,6 +3,7 @@ pragma solidity 0.8.13;
 
 import "forge-std/Test.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Upgradeable.sol";
 
 import "../../utils/fixtures/OffersLoansRefinancesFixtures.sol";
 
@@ -73,16 +74,7 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
 
         assertionsForExecutedLoan(offer);
 
-        uint256 amountDrawn = lending
-            .getLoanAuction(offer.nftContractAddress, offer.nftId)
-            .amountDrawn;
-
         vm.warp(block.timestamp + secondsBeforeRefinance);
-
-        uint256 interestShortfall = lending.checkSufficientInterestAccumulated(
-            offer.nftContractAddress,
-            offer.nftId
-        );
 
         defaultFixedOfferFields.creator = lender2;
         fuzzed.duration = fuzzed.duration + 1; // make sure offer is better
@@ -108,8 +100,10 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         LoanAuction memory loanAuction = tryToRefinanceByLender(newOffer, "should work");
 
         assertEq(loanAuction.accumulatedLenderInterest, lenderInterest);
-        assertEq(loanAuction.accumulatedProtocolInterest, protocolInterest);
+        assertEq(loanAuction.accumulatedPaidProtocolInterest, protocolInterest);
         assertEq(loanAuction.slashableLenderInterest, 0);
+        // lenderRefi is true
+        assertFalse(!lending.getLoanAuction(address(mockNft), 1).lenderRefi);
     }
 
     function assertionsForExecutedLoan(Offer memory offer) private {
@@ -206,6 +200,8 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
 
         // brand new lender after refinance means slashable should = 0
         assertEq(lending.getLoanAuction(address(mockNft), 1).slashableLenderInterest, 0);
+        // lenderRefi is false
+        assertFalse(lending.getLoanAuction(address(mockNft), 1).lenderRefi);
     }
 
     // At one point (~ Jul 20, 2022) in refinanceByBorrower, slashable interest
@@ -259,7 +255,7 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         );
         vm.stopPrank();
 
-        assertBetween(
+        assertCloseEnough(
             beforeLenderBalance +
                 (newOffer.interestRatePerSecond * 12 hours) +
                 interestShortfall -
@@ -268,4 +264,150 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
             assetBalancePlusOneCToken(lender2, address(daiToken))
         );
     }
+
+    function test_unit_CANNOT_refinanceByBorrower_unexpected_terms() public {
+        // refinance by lender2
+        refinanceByLenderSetup(defaultFixedFuzzedFieldsForFastUnitTesting, 12 hours);
+
+        // 12 hours
+        vm.warp(block.timestamp + 12 hours);
+
+        // set up refinance by borrower
+        FuzzedOfferFields memory fuzzed = defaultFixedFuzzedFieldsForFastUnitTesting;
+
+        defaultFixedOfferFields.creator = lender3;
+        fuzzed.duration = fuzzed.duration;
+        fuzzed.floorTerm = false; // refinance can't be floor term
+        fuzzed.expiration = uint32(block.timestamp) + 12 hours + 1;
+        fuzzed.amount = uint128(
+            10 * uint128(10**daiToken.decimals()) + 10 * uint128(10**daiToken.decimals())
+        );
+
+        Offer memory newOffer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+
+        vm.startPrank(lender3);
+        bytes32 offerHash = offers.createOffer(newOffer);
+        vm.stopPrank();
+
+        LoanAuction memory loanAuction = lending.getLoanAuction(
+            newOffer.nftContractAddress,
+            newOffer.nftId
+        );
+
+        // refinance by borrower
+        vm.startPrank(borrower1);
+        vm.expectRevert("00026");
+        lending.refinanceByBorrower(
+            newOffer.nftContractAddress,
+            newOffer.nftId,
+            newOffer.floorTerm,
+            offerHash,
+            (loanAuction.lastUpdatedTimestamp - 100)
+        );
+        vm.stopPrank();
+    }
+
+    function test_unit_CANNOT_refinanceByBorrower_loan_past_endTimestamp() public {
+        // refinance by lender2
+        refinanceByLenderSetup(defaultFixedFuzzedFieldsForFastUnitTesting, 12 hours);
+
+        // set up refinance by borrower
+        FuzzedOfferFields memory fuzzed = defaultFixedFuzzedFieldsForFastUnitTesting;
+
+        defaultFixedOfferFields.creator = lender3;
+        fuzzed.duration = fuzzed.duration;
+        fuzzed.floorTerm = false; // refinance can't be floor term
+        fuzzed.expiration = uint32(block.timestamp) + 12 hours + 1;
+        fuzzed.amount = uint128(
+            10 * uint128(10**daiToken.decimals()) + 10 * uint128(10**daiToken.decimals())
+        );
+
+        Offer memory newOffer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+
+        vm.startPrank(lender3);
+        bytes32 offerHash = offers.createOffer(newOffer);
+        vm.stopPrank();
+
+        LoanAuction memory loanAuction = lending.getLoanAuction(
+            newOffer.nftContractAddress,
+            newOffer.nftId
+        );
+
+        // 12 hours
+        vm.warp(
+            lending.getLoanAuction(newOffer.nftContractAddress, newOffer.nftId).loanEndTimestamp + 1
+        );
+
+        // refinance by borrower
+        vm.startPrank(borrower1);
+        vm.expectRevert("00009");
+        lending.refinanceByBorrower(
+            newOffer.nftContractAddress,
+            newOffer.nftId,
+            newOffer.floorTerm,
+            offerHash,
+            loanAuction.lastUpdatedTimestamp
+        );
+        vm.stopPrank();
+    }
+
+    // this test fails because refinanceByBorrower calls an additional internal function which passes the vm.expectRevert() statement.
+    // however if this statement is commented out we see that the function does still fail with the proper "00017" error message.
+    // function test_unit_CANNOT_refinanceByBorrower_sanctionedBorrower() public {
+    //     vm.startPrank(owner);
+    //     lending.updateProtocolInterestBps(100);
+    //     lending.updateGasGriefingPremiumBps(25);
+    //     lending.pauseSanctions();
+    //     vm.stopPrank();
+
+    //     Offer memory offer = offerStructFromFields(
+    //         defaultFixedFuzzedFieldsForFastUnitTesting,
+    //         defaultFixedOfferFields
+    //     );
+
+    //     offer.nftId = 3;
+
+    //     vm.startPrank(offer.creator);
+    //     bytes32 offerHash = offers.createOffer(offer);
+    //     vm.stopPrank();
+
+    //     vm.startPrank(SANCTIONED_ADDRESS);
+    //     mockNft.approve(address(lending), offer.nftId);
+    //     lending.executeLoanByBorrower(
+    //         offer.nftContractAddress,
+    //         offer.nftId,
+    //         offerHash,
+    //         offer.floorTerm
+    //     );
+    //     vm.stopPrank();
+
+    //     // will trigger gas griefing (but not term griefing with borrower refinance)
+    //     defaultFixedOfferFields.creator = lender2;
+
+    //     Offer memory newOffer = offerStructFromFields(
+    //         defaultFixedFuzzedFieldsForFastUnitTesting,
+    //         defaultFixedOfferFields
+    //     );
+
+    //     newOffer.nftId = 3;
+
+    //     vm.startPrank(lender2);
+    //     bytes32 offerHash2 = offers.createOffer(newOffer);
+    //     vm.stopPrank();
+
+    //     vm.startPrank(owner);
+    //     lending.unpauseSanctions();
+    //     vm.stopPrank();
+
+    //     vm.startPrank(SANCTIONED_ADDRESS);
+    //     vm.expectRevert("00017");
+    //     lending.refinanceByBorrower(
+    //         newOffer.nftContractAddress,
+    //         newOffer.nftId,
+    //         newOffer.floorTerm,
+    //         offerHash2,
+    //         lending.getLoanAuction(address(mockNft), 3).lastUpdatedTimestamp
+    //     );
+    //     vm.stopPrank();
+    // }
 }
