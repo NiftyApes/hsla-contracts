@@ -23,7 +23,6 @@ contract SeaportMock is ISeaport {
         payable
         returns (bool fulfilled)
     {
-        console.log("start fullfillbasicorder");
         require(parameters.considerationToken == address(0), "Must use ETH");
         require(parameters.considerationIdentifier != 0, "Invalid NFT ID");
 
@@ -40,9 +39,6 @@ contract SeaportMock is ISeaport {
         }
 
         console.log("transferring token");
-        console.log(address(mockNft));
-        console.log(mockNft.ownerOf(testTokenId));
-        console.log(address(this));
         mockNft.safeTransferFrom(address(this), msg.sender, testTokenId);
         return true;
     }

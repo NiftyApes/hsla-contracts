@@ -7,27 +7,35 @@ import "./interfaces/niftyapes/purchaseWithFinancing/IPurchaseWithFinacing.sol";
 import "./interfaces/niftyapes/purchaseWithFinancing/ISeaport.sol";
 import "forge-std/Test.sol";
 
+/// @notice Extension of NiftApes lending contract to allow for OpenSea purchases
 contract PurchaseWithFinancing is NiftyApesLending, IPurchaseWithFinancing {
     ISeaport public seaport;
 
     /// @dev this should be taken from `Lending.sol` but it's marked private and not internal.
     address private constant ETH_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
+
+    /// @notice Mutex to selectively enable ETH transfers
+    /// @dev    Follows a similar pattern to `Liquidiy.sol`
     bool internal _ethTransferable = false;
 
+    /// @notice Constructor to take set the OpenSea Seaport address
     constructor(address _seaportAddress) {
         seaport = ISeaport(_seaportAddress);
     }
 
+    /// @notice This contract needs to accept ETH to acquire enough funds to purchase NFTs
     receive() external payable {
         _requireEthTransferable();
     }
 
-    function setSeaport(address _seaportAddress) public {
-        seaport = ISeaport(_seaportAddress);
-    }
-
-    // borrower = msg.sender
-    // lender = offer.creator
+    /// @notice Allows a user to borrow ETH to purchase NFTs.
+    ///         borrower = msg.sender, lender = offer.creator
+    /// @param nftId Id of NFT contract borrower would like to purchase
+    /// @param offerHash Hash of the existing offer in Nifty
+    /// @param floorTerm Determines if this is a floor offer or not.
+    /// @param order Seaport parameters the caller is expected to fill out.
+    /// @dev The OrderParametrs are EIP712 compliant with a signature field in the struct.
+    ///      This will be enforced and verified by OpenSea, not this function.
     function purchaseWithFinancingOpenSea(
         address nftContractAddress,
         uint256 nftId,
@@ -75,7 +83,6 @@ contract PurchaseWithFinancing is NiftyApesLending, IPurchaseWithFinancing {
         );
 
         // Do some internal accounting so that Liquidity contract knows lender has less balance
-        // Also: why is this not done in `burnCErc20()`?
         address cAsset = ILiquidity(liquidityContractAddress).getCAsset(ETH_ADDRESS);
         ILiquidity(liquidityContractAddress).withdrawCBalance(offer.creator, cAsset, cTokensBurned);
 
@@ -86,13 +93,16 @@ contract PurchaseWithFinancing is NiftyApesLending, IPurchaseWithFinancing {
 
         // Purchase NFT
         bool success = seaport.fulfillBasicOrder{ value: purchaseAmount }(order);
-        require(success, "00101"); // "Unsuccessful Seaport transaction"
-        // require(
-        //     IERC721Upgradeable(offer.nftContractAddress).ownerOf(nftId) == address(this),
-        //     "00018"
-        // );
+        require(success, "00101");
+        require(
+            IERC721Upgradeable(offer.nftContractAddress).ownerOf(nftId) == address(this),
+            "00018"
+        );
 
-        // update loanAuction struct (this should be similar functionality to `_createLoan()`);
+        // Transfer purchased NFT to borrower
+        _transferNft(offer.nftContractAddress, nftId, address(this), msg.sender);
+
+        // Update loanAuction struct (this should be similar functionality to `_createLoan()`);
         LoanAuction storage loanAuction = _getLoanAuctionInternal(
             offer.nftContractAddress,
             offer.nftId
@@ -102,7 +112,7 @@ contract PurchaseWithFinancing is NiftyApesLending, IPurchaseWithFinancing {
         emit LoanExecutedForOpenSea(offer.nftContractAddress, offer.nftId, offer);
     }
 
-    /// @dev based off of to _createLoan in Lender.sol
+    /// @dev based off of _createLoan() in Lender.sol
     function _createSeaportLoan(LoanAuction storage loanAuction, Offer memory offer) internal {
         loanAuction.nftOwner = msg.sender;
         loanAuction.lender = offer.creator;
@@ -129,18 +139,7 @@ contract PurchaseWithFinancing is NiftyApesLending, IPurchaseWithFinancing {
         loanAuction.slashableLenderInterest = 0;
     }
 
-    function _requireMatchingNFTContract(address nftAddress1, address nftAddress2) internal view {
-        require(nftAddress1 == nftAddress2, "00101"); // "NFT Contracts do not match"
-    }
-
-    function _requireSeaportNativeETH(ISeaport.BasicOrderParameters calldata order) internal view {
-        require(order.considerationToken == address(0), "00102"); // "Must be native ETH"
-    }
-
-    function _requireEthTransferable() internal view {
-        require(_ethTransferable, "00043");
-    }
-
+    /// @notice Allow for contract to receive safe ERC721 transfers
     function onERC721Received(
         address,
         address,
@@ -148,5 +147,17 @@ contract PurchaseWithFinancing is NiftyApesLending, IPurchaseWithFinancing {
         bytes memory
     ) public virtual override returns (bytes4) {
         return this.onERC721Received.selector;
+    }
+
+    function _requireMatchingNFTContract(address nftAddress1, address nftAddress2) internal pure {
+        require(nftAddress1 == nftAddress2, "00102");
+    }
+
+    function _requireSeaportNativeETH(ISeaport.BasicOrderParameters calldata order) internal pure {
+        require(order.considerationToken == address(0), "00102");
+    }
+
+    function _requireEthTransferable() internal view {
+        require(_ethTransferable, "00043");
     }
 }

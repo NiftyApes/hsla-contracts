@@ -6,12 +6,12 @@ Author: [jyturley](https://github.com/jyturley)
 
 - [x] New contract that extends to `Lending.sol`
 - [x] New branch: `jyt-purchaseWithFinancing`
-- [ ] `purchaseWithFinancingOpenSea()` function
-  - [ ] Input: NiftyApes `Offer` struct
-  - [ ] Input: OpenSea `BasicOrderParameters` struct
-  - [ ] Executes `fullfullBasicOrder()`
-  - [ ] Transacts in ETH
-- [ ] Optional: unit tests
+- [x] `purchaseWithFinancingOpenSea()` function
+  - [x] Input: NiftyApes `Offer` info
+  - [x] Input: OpenSea `BasicOrderParameters` struct
+  - [x] Executes `fullfullBasicOrder()`
+  - [x] Transacts in ETH
+- [~] Optional: unit tests
 
 ## Provided Pseudo Code
 
@@ -45,11 +45,27 @@ function purchaseWithFinancingOpenSea(
 
 ## Project Notes
 
+- As of now this is a WIP solution.
+- I believe I've implemented all the non-optional parts of the assignment.
+- I am at 17/20hrs, and would like to check in with you guys if you would like me to continue working so that I can get the items listed below sorted out. With that said, I believe the issues I am experiencing are all related to the optional testing requirement for this assignment. This is why I can understand it will not be productive for you to pay me to continue.
 - `purchaseWithFinancingOpenSea()` currently calls external functions only allowed by `Lending.sol`. Hence even though this function is in its own contract, it is designed to be implemented in `Lending.sol`.
 
-### Known Tradeoffs
-
 ## Testing
+
+- Overall, I struggled with the testing aspect. This stems mostly from my lack of experience with the forge framework (I come from a Hardhat JS/TS testing background). The NiftyApes test suite is very tightly coupled with the lending contract, so incorporating my wholly new `PurchaseWithFinancing` contract proved difficult.
+- I got around this by modifying `NiftyApesDeployment` test contract with the following code:
+
+```solidity
+liquidity.updateLendingContractAddress(address(purchaseWithFinancing));
+sigLending.updateLendingContractAddress(address(purchaseWithFinancing));
+offers.updateLendingContractAddress(address(purchaseWithFinancing));
+```
+
+- I was able to establish a mockOpenSea contract, and create a test case that calls `purchaseWithFinancing()`, and purchase an NFT which successfully transfers over the target NFT to the borrower, and emits an event.
+- However:
+  - I am running into an `Reason: Arithmetic over/underflow` issue that I have no been able to investigate.
+  - I was not able to get around the `_requireIsNotSanctioned()` in the testing (this is why it is commented)
+  - The above code block probably broke some other tests.
 
 I've included a test file in [`./test/unit/lending/purchaseWithFinancing.t.sol`](./test/unit/lending/purchaseWithFinancing.t.sol)
 
