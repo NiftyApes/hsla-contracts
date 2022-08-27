@@ -18,8 +18,8 @@ contract DeployNiftyApesScript is Script {
         address seaportContractAddress = 0x00000000006c3852cbEf3e08E8dF289169EdE581;
         vm.startBroadcast();
 
-        purchasewWithFinancing = new NiftyApesPurchaseWithFinancing();
-        purchasewWithFinancing.initialize(seaportContractAddress);
+        purchaseWithFinancing = new NiftyApesPurchaseWithFinancing();
+        purchaseWithFinancing.initialize(seaportContractAddress);
 
         liquidityProviders = new NiftyApesLiquidity();
         liquidityProviders.initialize(compContractAddress, address(purchaseWithFinancing));

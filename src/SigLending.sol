@@ -7,6 +7,8 @@ import "@openzeppelin/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "./interfaces/niftyapes/lending/ILending.sol";
 import "./interfaces/niftyapes/sigLending/ISigLending.sol";
 import "./interfaces/niftyapes/offers/IOffers.sol";
+import "./interfaces/niftyapes/purchaseWithFinancing/IPurchaseWithFinancing.sol";
+import "./interfaces/seaport/ISeaport.sol";
 
 /// @title Implementation of the ILending interface
 contract NiftyApesSigLending is

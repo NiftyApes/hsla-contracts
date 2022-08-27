@@ -50,7 +50,7 @@ contract NiftyApesLending is
     /// @inheritdoc ILending
     address public sigLendingContractAddress;
 
-        /// @inheritdoc ILending
+    /// @inheritdoc ILending
     address public purchaseWithFinancingContractAddress;
 
     /// @inheritdoc ILending
@@ -93,7 +93,7 @@ contract NiftyApesLending is
         liquidityContractAddress = newLiquidityContractAddress;
         offersContractAddress = newOffersContractAddress;
         sigLendingContractAddress = newSigLendingContractAddress;
-        purchaseWithFinancingContractAddress = newPurchaseWithFinancingAddress
+        purchaseWithFinancingContractAddress = newPurchaseWithFinancingAddress;
 
         OwnableUpgradeable.__Ownable_init();
         PausableUpgradeable.__Pausable_init();
@@ -1108,11 +1108,12 @@ contract NiftyApesLending is
 
     /// @inheritdoc ILending
     function createLoan(
-        LoanAuction storage loanAuction,
         Offer memory offer,
+        address nftId,
         address lender,
         address borrower
     ) external {
+        LoanAuction storage loanAuction = _getLoanAuctionInternal(offer.nftContractAddress, nftId);
         _requirePurchaseWithFinancingContract();
         _createLoan(loanAuction, offer, lender, borrower);
     }

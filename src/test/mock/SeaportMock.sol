@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "../../interfaces/niftyapes/purchaseWithFinancing/ISeaport.sol";
+import "../../interfaces/seaport/ISeaport.sol";
 import "./ERC721Mock.sol";
 import "forge-std/console.sol";
 

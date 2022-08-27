@@ -272,13 +272,13 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
 
     /// @notice Function only callable by the NiftyApesPurchaseWithFinancing contract
     ///         Allows PurchaseWithFinacning.sol to create a loan
-    /// @param loanAuction The instantiation of the loan auction
     /// @param offer The details of the loan auction offer
+    /// @param nftId The id of the specified NFT
     /// @param lender the address of the lender in the loan auction
     /// @param borrower the address of the borrower in the loan auction
     function createLoan(
-        LoanAuction storage loanAuction,
         Offer memory offer,
+        address nftId,
         address lender,
         address borrower
     ) external;

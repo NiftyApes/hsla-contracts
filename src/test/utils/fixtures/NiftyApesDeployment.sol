@@ -20,7 +20,7 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
     NiftyApesOffers offers;
     NiftyApesLiquidity liquidity;
     NiftyApesSigLending sigLending;
-    PurchaseWithFinancing purchaseWithFinancing;
+    NiftyApesPurchaseWithFinancing purchaseWithFinancing;
     SeaportMock seaportMock;
 
     address constant ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
@@ -29,30 +29,39 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         super.setUp();
 
         vm.startPrank(owner);
-
-        liquidity = new NiftyApesLiquidity();
-        liquidity.initialize(address(compToken));
-
-        offers = new NiftyApesOffers();
-        offers.initialize(address(liquidity));
-
-        sigLending = new NiftyApesSigLending();
-        sigLending.initialize(address(offers));
-
-        lending = new NiftyApesLending();
-        lending.initialize(address(liquidity), address(offers), address(sigLending));
-
         seaportMock = new SeaportMock();
-        purchaseWithFinancing = new PurchaseWithFinancing(address(seaportMock));
-        purchaseWithFinancing.initialize(address(liquidity), address(offers), address(sigLending));
+        purchaseWithFinancing = new NiftyApesPurchaseWithFinancing();
+        purchaseWithFinancing.initialize(address(seaportMock));
         seaportMock.approve(address(purchaseWithFinancing));
 
-        sigLending.updateLendingContractAddress(address(purchaseWithFinancing));
+        liquidity = new NiftyApesLiquidity();
+        liquidity.initialize(address(compToken), address(purchaseWithFinancing));
 
-        offers.updateLendingContractAddress(address(purchaseWithFinancing));
+        offers = new NiftyApesOffers();
+        offers.initialize(address(liquidity), address(purchaseWithFinancing));
+
+        sigLending = new NiftyApesSigLending();
+        sigLending.initialize(address(offers), address(purchaseWithFinancing));
+
+        lending = new NiftyApesLending();
+        lending.initialize(
+            address(liquidity),
+            address(offers),
+            address(sigLending),
+            address(purchaseWithFinancing)
+        );
+
+        sigLending.updateLendingContractAddress(address(lending));
+
+        offers.updateLendingContractAddress(address(lending));
         offers.updateSigLendingContractAddress(address(sigLending));
 
-        liquidity.updateLendingContractAddress(address(purchaseWithFinancing));
+        liquidity.updateLendingContractAddress(address(lending));
+
+        purchaseWithFinancing.updateLiquidityContractAddress(address(liquidity));
+        purchaseWithFinancing.updateOffersContractAddress(address(offers));
+        purchaseWithFinancing.updateLendingContractAddress(address(lending));
+        purchaseWithFinancing.updateSigLendingContractAddress(address(sigLending));
 
         liquidity.setCAssetAddress(ETH_ADDRESS, address(cEtherToken));
         liquidity.setMaxCAssetBalance(address(cEtherToken), ~uint256(0));

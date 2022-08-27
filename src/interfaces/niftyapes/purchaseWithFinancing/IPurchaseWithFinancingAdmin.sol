@@ -15,6 +15,9 @@ interface IPurchaseWithFinancingAdmin {
     /// @notice Updates the associated signature lending contract address
     function updateSigLendingContractAddress(address newSigLendingContractAddress) external;
 
+    /// @notice Updates the associated seaport contract address
+    function updateSeaportContractAddress(address newSeaportContractAddress) external;
+
     /// @notice Pauses sanctions checks
     function pauseSanctions() external;
 

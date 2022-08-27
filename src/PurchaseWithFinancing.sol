@@ -8,12 +8,13 @@ import "@openzeppelin/contracts/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
-import "./interfaces/niftyapes/purchaseWithFinancing/IPurchaseWithFinacing.sol";
+import "@openzeppelin/contracts/utils/math/SafeCastUpgradeable.sol";
+import "./interfaces/niftyapes/purchaseWithFinancing/IPurchaseWithFinancing.sol";
 import "./interfaces/niftyapes/lending/ILending.sol";
 import "./interfaces/niftyapes/liquidity/ILiquidity.sol";
 import "./interfaces/niftyapes/offers/IOffers.sol";
 import "./interfaces/sanctions/SanctionsList.sol";
-import "./interfaces/niftyapes/purchaseWithFinancing/ISeaport.sol";
+import "./interfaces/seaport/ISeaport.sol";
 import "forge-std/Test.sol";
 
 /// @notice Extension of NiftApes lending contract to allow for Seaport purchases
@@ -33,19 +34,19 @@ contract NiftyApesPurchaseWithFinancing is
     /// @dev Internal constant address for the Chainalysis OFAC sanctions oracle
     address private constant SANCTIONS_CONTRACT = 0x40C57923924B5c5c5455c48D93317139ADDaC8fb;
 
-    /// @inheritdoc IPurchaseWithFinancingAdmin
+    /// @inheritdoc IPurchaseWithFinancing
     address public offersContractAddress;
 
-    /// @inheritdoc IPurchaseWithFinancingAdmin
+    /// @inheritdoc IPurchaseWithFinancing
     address public liquidityContractAddress;
 
-    /// @inheritdoc IPurchaseWithFinancingAdmin
+    /// @inheritdoc IPurchaseWithFinancing
     address public lendingContractAddress;
 
-    /// @inheritdoc IPurchaseWithFinancingAdmin
+    /// @inheritdoc IPurchaseWithFinancing
     address public sigLendingContractAddress;
 
-    /// @inheritdoc IPurchaseWithFinancingAdmin
+    /// @inheritdoc IPurchaseWithFinancing
     address public seaportContractAddress;
 
     /// @notice Mutex to selectively enable ETH transfers
@@ -125,13 +126,13 @@ contract NiftyApesPurchaseWithFinancing is
     /// @inheritdoc IPurchaseWithFinancingAdmin
     function pauseSanctions() external onlyOwner {
         _sanctionsPause = true;
-        emit LendingSanctionsPaused();
+        emit PurchaseWithFinancingSanctionsPaused();
     }
 
     /// @inheritdoc IPurchaseWithFinancingAdmin
     function unpauseSanctions() external onlyOwner {
         _sanctionsPause = false;
-        emit LendingSanctionsUnpaused();
+        emit PurchaseWithFinancingSanctionsUnpaused();
     }
 
     /// @inheritdoc IPurchaseWithFinancingAdmin
@@ -191,7 +192,7 @@ contract NiftyApesPurchaseWithFinancing is
     ) internal {
         address cAsset = ILiquidity(liquidityContractAddress).getCAsset(offer.asset);
 
-        LoanAuction storage loanAuction = ILending(lendingContractAddress).getLoanAuction(
+        LoanAuction memory loanAuction = ILending(lendingContractAddress).getLoanAuction(
             offer.nftContractAddress,
             offer.nftId
         );
@@ -218,7 +219,7 @@ contract NiftyApesPurchaseWithFinancing is
             }
         } else {
             IERC20Upgradeable asset = IERC20Upgradeable(offer.asset);
-            asset.safeTransferFrom(from, address(this), considerationDelta);
+            asset.safeTransferFrom(borrower, address(this), considerationDelta);
 
             uint256 allowance = asset.allowance(address(this), address(asset));
             if (allowance > 0) {
@@ -242,7 +243,9 @@ contract NiftyApesPurchaseWithFinancing is
 
         // Purchase NFT
         require(
-            ISeaport(seaportContractAddress).fulfillBasicOrder{ value: considerationAmount }(order),
+            ISeaport(seaportContractAddress).fulfillBasicOrder{ value: order.considerationAmount }(
+                order
+            ),
             "00048"
         );
 
@@ -254,7 +257,13 @@ contract NiftyApesPurchaseWithFinancing is
             lendingContractAddress
         );
 
-        ILending(lendingContractAddress).createLoan(loanAuction, offer, offer.creator, msg.sender);
+        ILending(lendingContractAddress).createLoan(
+            loanAuction,
+            order.offerIdentifier,
+            offer,
+            offer.creator,
+            msg.sender
+        );
 
         emit LoanExecutedSeaport(offer.nftContractAddress, order.offerIdentifier, offer);
     }

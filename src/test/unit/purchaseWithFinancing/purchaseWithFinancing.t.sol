@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 
 import "../../utils/fixtures/OffersLoansRefinancesFixtures.sol";
 import "../../../interfaces/niftyapes/offers/IOffersStructs.sol";
-import "../../../interfaces/niftyapes/purchaseWithFinancing/ISeaport.sol";
+import "../../../interfaces/seaport/ISeaport.sol";
 import "../../../PurchaseWithFinancing.sol";
 import "forge-std/Test.sol";
 
