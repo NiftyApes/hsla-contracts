@@ -14,6 +14,9 @@ interface ISigLending is ISigLendingAdmin, ISigLendingEvents, IOffersStructs {
     /// @notice Returns the address for the associated liquidity contract
     function lendingContractAddress() external view returns (address);
 
+    /// @notice Returns the address for the associated purchase with financing contract
+    function purchaseWithFinancingContractAddress() external view returns (address);
+
     /// @notice Start a loan as the borrower using a signed offer.
     ///         The caller of this method has to be the current owner of the NFT
     ///         Since offers can be floorTerm offers they might not include a specific nft id,

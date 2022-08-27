@@ -18,6 +18,9 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     /// @notice Returns the address for the associated signature lending contract
     function sigLendingContractAddress() external view returns (address);
 
+    /// @notice Returns the address for the associated purchase with financing contract
+    function purchaseWithFinancingContractAddress() external view returns (address);
+
     /// @notice Returns the fee that computes protocol interest
     ///         This fee is the basis points in order to calculate interest per second
     function protocolInterestBps() external view returns (uint16);
@@ -265,5 +268,18 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         uint256 nftId,
         address nftOwner,
         uint32 expectedLastUpdatedTimestamp
+    ) external;
+
+    /// @notice Function only callable by the NiftyApesPurchaseWithFinancing contract
+    ///         Allows PurchaseWithFinacning.sol to create a loan
+    /// @param loanAuction The instantiation of the loan auction
+    /// @param offer The details of the loan auction offer
+    /// @param lender the address of the lender in the loan auction
+    /// @param borrower the address of the borrower in the loan auction
+    function createLoan(
+        LoanAuction storage loanAuction,
+        Offer memory offer,
+        address lender,
+        address borrower
     ) external;
 }

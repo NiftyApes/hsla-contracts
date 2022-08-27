@@ -50,6 +50,9 @@ contract NiftyApesLending is
     /// @inheritdoc ILending
     address public sigLendingContractAddress;
 
+        /// @inheritdoc ILending
+    address public purchaseWithFinancingContractAddress;
+
     /// @inheritdoc ILending
     uint16 public protocolInterestBps;
 
@@ -78,7 +81,8 @@ contract NiftyApesLending is
     function initialize(
         address newLiquidityContractAddress,
         address newOffersContractAddress,
-        address newSigLendingContractAddress
+        address newSigLendingContractAddress,
+        address newPurchaseWithFinancingAddress
     ) public initializer {
         protocolInterestBps = 0;
         originationPremiumBps = 50;
@@ -89,6 +93,7 @@ contract NiftyApesLending is
         liquidityContractAddress = newLiquidityContractAddress;
         offersContractAddress = newOffersContractAddress;
         sigLendingContractAddress = newSigLendingContractAddress;
+        purchaseWithFinancingContractAddress = newPurchaseWithFinancingAddress
 
         OwnableUpgradeable.__Ownable_init();
         PausableUpgradeable.__Pausable_init();
@@ -1057,6 +1062,10 @@ contract NiftyApesLending is
         require(msg.sender == sigLendingContractAddress, "00031");
     }
 
+    function _requirePurchaseWithFinancingContract() internal view {
+        require(msg.sender == purchaseWithFinancingContractAddress, "00031");
+    }
+
     function _requireOfferParity(LoanAuction storage loanAuction, Offer memory offer)
         internal
         view
@@ -1097,6 +1106,17 @@ contract NiftyApesLending is
         revert("00025");
     }
 
+    /// @inheritdoc ILending
+    function createLoan(
+        LoanAuction storage loanAuction,
+        Offer memory offer,
+        address lender,
+        address borrower
+    ) external {
+        _requirePurchaseWithFinancingContract();
+        _createLoan(loanAuction, offer, lender, borrower);
+    }
+
     function _createLoan(
         LoanAuction storage loanAuction,
         Offer memory offer,
@@ -1122,6 +1142,7 @@ contract NiftyApesLending is
             offer.duration
         );
         loanAuction.slashableLenderInterest = 0;
+        loanAuction.unpaidProtocolInterest = 0;
     }
 
     function _transferNft(

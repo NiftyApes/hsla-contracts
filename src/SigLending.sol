@@ -21,6 +21,9 @@ contract NiftyApesSigLending is
     /// @inheritdoc ISigLending
     address public lendingContractAddress;
 
+    /// @inheritdoc ISigLending
+    address public purchaseWithFinancingContractAddress;
+
     /// @dev This empty reserved space is put in place to allow future versions to add new
     /// variables without shifting storage.
     uint256[500] private __gap;
@@ -28,8 +31,12 @@ contract NiftyApesSigLending is
     /// @notice The initializer for the NiftyApes protocol.
     ///         Nifty Apes is intended to be deployed behind a proxy amd thus needs to initialize
     ///         its state outsize of a constructor.
-    function initialize(address newOffersContractAddress) public initializer {
+    function initialize(
+        address newOffersContractAddress,
+        address newPurchaseWithFinancingContractAddress
+    ) public initializer {
         offersContractAddress = newOffersContractAddress;
+        purchaseWithFinancingContractAddress = newPurchaseWithFinancingContractAddress;
 
         OwnableUpgradeable.__Ownable_init();
         PausableUpgradeable.__Pausable_init();
@@ -74,7 +81,6 @@ contract NiftyApesSigLending is
             IOffers(offersContractAddress).markSignatureUsed(offer, signature);
         }
 
-        // execute state changes for executeLoanByBid
         ILending(lendingContractAddress).doExecuteLoan(offer, lender, msg.sender, nftId);
     }
 
@@ -124,6 +130,32 @@ contract NiftyApesSigLending is
             msg.sender,
             expectedLastUpdatedTimestamp
         );
+    }
+
+    // @inheritdoc ISigLending
+    function purchaseWithFinancingSeaportSignature(
+        Offer memory offer,
+        bytes memory signature,
+        ISeaport.BasicOrderParameters calldata order
+    ) external payable whenNotPaused nonReentrant {
+        address lender = IOffers(offersContractAddress).getOfferSigner(offer, signature);
+
+        _requireOfferCreator(offer, lender);
+        IOffers(offersContractAddress).requireAvailableSignature(signature);
+        IOffers(offersContractAddress).requireSignature65(signature);
+
+        if (!offer.floorTerm) {
+            _requireMatchingNftId(offer, order.offerIdentifier);
+            IOffers(offersContractAddress).markSignatureUsed(offer, signature);
+        }
+
+        IPurchaseWithFinancing(purchaseWithFinancingContractAddress).doPurchaseWithFinancingSeaport(
+                offer,
+                lender,
+                msg.sender,
+                order,
+                msg.value
+            );
     }
 
     function _requireLenderOffer(Offer memory offer) internal pure {

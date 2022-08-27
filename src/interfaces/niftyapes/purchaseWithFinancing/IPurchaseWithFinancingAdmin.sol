@@ -2,11 +2,10 @@
 pragma solidity 0.8.13;
 
 /// @title NiftyApes interface for the admin role.
-interface IOffersAdmin {
-
+interface IPurchaseWithFinancingAdmin {
     /// @notice Updates the associated liquidity contract address
     function updateLiquidityContractAddress(address newLiquidityContractAddress) external;
-   
+
     /// @notice Updates the associated offers contract address
     function updateOffersContractAddress(address newOffersContractAddress) external;
 
@@ -16,8 +15,11 @@ interface IOffersAdmin {
     /// @notice Updates the associated signature lending contract address
     function updateSigLendingContractAddress(address newSigLendingContractAddress) external;
 
-    /// @notice Updates the associated seaport contract address
-    function updateSeaportContractAddress(address newSeaportContractAddress) external
+    /// @notice Pauses sanctions checks
+    function pauseSanctions() external;
+
+    /// @notice Unpauses sanctions checks
+    function unpauseSanctions() external;
 
     /// @notice Pauses all interactions with the contract.
     ///         This is intended to be used as an emergency measure to avoid loosing funds.

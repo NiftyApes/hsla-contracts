@@ -122,3 +122,5 @@ The NiftyApes protocol is made up of four core contracts `Liquidity.sol`, `Offer
 "00044" == "max casset"
 "00045" == "amount 0"
 "00046" == "offer already exists"
+"00047" == "not enough value"
+"00048" == "seaport fulfillBasicOrder failed"
