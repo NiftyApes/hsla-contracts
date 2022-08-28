@@ -1109,7 +1109,7 @@ contract NiftyApesLending is
     /// @inheritdoc ILending
     function createLoan(
         Offer memory offer,
-        address nftId,
+        uint256 nftId,
         address lender,
         address borrower
     ) external {

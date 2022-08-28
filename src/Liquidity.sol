@@ -368,10 +368,9 @@ contract NiftyApesLiquidity is
     }
 
     function _requireExpectedContract() internal view {
-        require(
-            msg.sender == lendingContractAddress || purchaseWithFinancingContractAddress,
-            "00031"
-        );
+        if (msg.sender != purchaseWithFinancingContractAddress) {
+            require(msg.sender == lendingContractAddress, "00031");
+        }
     }
 
     function _ownerWithdrawUnderlying(address asset, address cAsset)

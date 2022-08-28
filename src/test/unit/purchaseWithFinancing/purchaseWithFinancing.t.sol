@@ -77,16 +77,15 @@ contract TestPurchaseWithFinancing is
             vm.expectRevert(errorCode);
         }
         uint256 borrowerPays = params.considerationAmount - uint256(offer.amount);
-        purchaseWithFinancing.purchaseWithFinancingOpenSea{ value: borrowerPays }(
+        purchaseWithFinancing.purchaseWithFinancingSeaport{ value: borrowerPays }(
             offer.nftContractAddress,
-            offer.nftId,
             offerHash,
             offer.floorTerm,
             params
         );
         vm.stopPrank();
 
-        return purchaseWithFinancing.getLoanAuction(offer.nftContractAddress, offer.nftId);
+        return lending.getLoanAuction(offer.nftContractAddress, offer.nftId);
     }
 
     function basicOrderParamsFromFields(FuzzedBasicOrderParams memory fuzzed)

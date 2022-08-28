@@ -9,6 +9,7 @@ import "../../Lending.sol";
 import "../../Liquidity.sol";
 import "../../Offers.sol";
 import "../../SigLending.sol";
+import "../../PurchaseWithFinancing.sol";
 import "../../interfaces/niftyapes/lending/ILendingStructs.sol";
 import "../../interfaces/niftyapes/offers/IOffersStructs.sol";
 
@@ -17,6 +18,7 @@ import "../mock/CERC20Mock.sol";
 import "../mock/CEtherMock.sol";
 import "../mock/ERC20Mock.sol";
 import "../mock/ERC721Mock.sol";
+import "../mock/SeaportMock.sol";
 
 contract NiftyApesPauseUnitTest is
     BaseTest,
@@ -28,6 +30,8 @@ contract NiftyApesPauseUnitTest is
     NiftyApesOffers offersContract;
     NiftyApesLiquidity liquidityProviders;
     NiftyApesSigLending sigLendingAuction;
+    NiftyApesPurchaseWithFinancing purchaseWithFinancing;
+    SeaportMock seaportMock;
     ERC20Mock daiToken;
     CERC20Mock cDAIToken;
     CEtherMock cEtherToken;
@@ -49,20 +53,26 @@ contract NiftyApesPauseUnitTest is
     }
 
     function setUp() public {
+        seaportMock = new SeaportMock();
+
+        purchaseWithFinancing = new NiftyApesPurchaseWithFinancing();
+        purchaseWithFinancing.initialize(address(seaportMock));
+
         liquidityProviders = new NiftyApesLiquidity();
-        liquidityProviders.initialize(compContractAddress);
+        liquidityProviders.initialize(compContractAddress, address(purchaseWithFinancing));
 
         offersContract = new NiftyApesOffers();
-        offersContract.initialize(address(liquidityProviders));
+        offersContract.initialize(address(liquidityProviders), address(purchaseWithFinancing));
 
         sigLendingAuction = new NiftyApesSigLending();
-        sigLendingAuction.initialize(address(offersContract));
+        sigLendingAuction.initialize(address(offersContract), address(purchaseWithFinancing));
 
         lendingAuction = new NiftyApesLending();
         lendingAuction.initialize(
             address(liquidityProviders),
             address(offersContract),
-            address(sigLendingAuction)
+            address(sigLendingAuction),
+            address(purchaseWithFinancing)
         );
 
         offersContract.updateLendingContractAddress(address(lendingAuction));

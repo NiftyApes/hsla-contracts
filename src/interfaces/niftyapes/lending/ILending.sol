@@ -278,7 +278,7 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     /// @param borrower the address of the borrower in the loan auction
     function createLoan(
         Offer memory offer,
-        address nftId,
+        uint256 nftId,
         address lender,
         address borrower
     ) external;

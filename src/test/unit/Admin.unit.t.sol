@@ -8,18 +8,22 @@ import "../../Lending.sol";
 import "../../Liquidity.sol";
 import "../../Offers.sol";
 import "../../SigLending.sol";
+import "../../PurchaseWithFinancing.sol";
 import "../../interfaces/niftyapes/lending/ILendingEvents.sol";
 import "../../interfaces/niftyapes/liquidity/ILiquidityEvents.sol";
 import "../common/BaseTest.sol";
 import "../mock/CERC20Mock.sol";
 import "../mock/CEtherMock.sol";
 import "../mock/ERC20Mock.sol";
+import "../mock/SeaportMock.sol";
 
 contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
     NiftyApesLending niftyApes;
     NiftyApesOffers offersContract;
     NiftyApesLiquidity liquidityProviders;
     NiftyApesSigLending sigLendingAuction;
+    NiftyApesPurchaseWithFinancing purchaseWithFinancing;
+    SeaportMock seaportMock;
     ERC20Mock daiToken;
     CERC20Mock cDAIToken;
     CEtherMock cEtherToken;
@@ -34,20 +38,26 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
     }
 
     function setUp() public {
+        seaportMock = new SeaportMock();
+
+        purchaseWithFinancing = new NiftyApesPurchaseWithFinancing();
+        purchaseWithFinancing.initialize(address(seaportMock));
+
         liquidityProviders = new NiftyApesLiquidity();
-        liquidityProviders.initialize(compContractAddress);
+        liquidityProviders.initialize(compContractAddress, address(purchaseWithFinancing));
 
         offersContract = new NiftyApesOffers();
-        offersContract.initialize(address(liquidityProviders));
+        offersContract.initialize(address(liquidityProviders), address(purchaseWithFinancing));
 
         sigLendingAuction = new NiftyApesSigLending();
-        sigLendingAuction.initialize(address(offersContract));
+        sigLendingAuction.initialize(address(offersContract), address(purchaseWithFinancing));
 
         niftyApes = new NiftyApesLending();
         niftyApes.initialize(
             address(liquidityProviders),
             address(offersContract),
-            address(sigLendingAuction)
+            address(sigLendingAuction),
+            address(purchaseWithFinancing)
         );
 
         daiToken = new ERC20Mock();

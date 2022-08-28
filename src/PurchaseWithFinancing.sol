@@ -258,9 +258,8 @@ contract NiftyApesPurchaseWithFinancing is
         );
 
         ILending(lendingContractAddress).createLoan(
-            loanAuction,
-            order.offerIdentifier,
             offer,
+            order.offerIdentifier,
             offer.creator,
             msg.sender
         );

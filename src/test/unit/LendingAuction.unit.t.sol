@@ -9,6 +9,7 @@ import "../../Lending.sol";
 import "../../Liquidity.sol";
 import "../../Offers.sol";
 import "../../SigLending.sol";
+import "../../PurchaseWithFinancing.sol";
 import "../../interfaces/niftyapes/lending/ILendingEvents.sol";
 import "../../interfaces/niftyapes/offers/IOffersEvents.sol";
 
@@ -17,6 +18,7 @@ import "../mock/CERC20Mock.sol";
 import "../mock/CEtherMock.sol";
 import "../mock/ERC20Mock.sol";
 import "../mock/ERC721Mock.sol";
+import "../mock/SeaportMock.sol";
 
 import "forge-std/Test.sol";
 
@@ -32,6 +34,8 @@ contract LendingAuctionUnitTest is
     NiftyApesOffers offersContract;
     NiftyApesLiquidity liquidityProviders;
     NiftyApesSigLending sigLendingAuction;
+    NiftyApesPurchaseWithFinancing purchaseWithFinancing;
+    SeaportMock seaportMock;
     ERC20Mock daiToken;
     CERC20Mock cDAIToken;
     CEtherMock cEtherToken;
@@ -64,20 +68,26 @@ contract LendingAuctionUnitTest is
     function setUp() public {
         hevm.startPrank(OWNER);
 
+        seaportMock = new SeaportMock();
+
+        purchaseWithFinancing = new NiftyApesPurchaseWithFinancing();
+        purchaseWithFinancing.initialize(address(seaportMock));
+
         liquidityProviders = new NiftyApesLiquidity();
-        liquidityProviders.initialize(compContractAddress);
+        liquidityProviders.initialize(compContractAddress, address(purchaseWithFinancing));
 
         offersContract = new NiftyApesOffers();
-        offersContract.initialize(address(liquidityProviders));
+        offersContract.initialize(address(liquidityProviders), address(purchaseWithFinancing));
 
         sigLendingAuction = new NiftyApesSigLending();
-        sigLendingAuction.initialize(address(offersContract));
+        sigLendingAuction.initialize(address(offersContract), address(purchaseWithFinancing));
 
         lendingAuction = new NiftyApesLending();
         lendingAuction.initialize(
             address(liquidityProviders),
             address(offersContract),
-            address(sigLendingAuction)
+            address(sigLendingAuction),
+            address(purchaseWithFinancing)
         );
 
         liquidityProviders.updateLendingContractAddress(address(lendingAuction));

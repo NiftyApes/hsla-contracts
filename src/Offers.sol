@@ -288,8 +288,10 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
         internal
         view
     {
-        if (msg.sender != lendingContractAddress || purchaseWithFinancingContractAddress) {
-            require(signer == expected, "00024");
+        if (msg.sender != lendingContractAddress) {
+            if (msg.sender != purchaseWithFinancingContractAddress) {
+                require(signer == expected, "00024");
+            }
         }
     }
 

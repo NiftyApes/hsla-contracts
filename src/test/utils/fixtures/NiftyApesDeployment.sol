@@ -8,6 +8,7 @@ import "../../../SigLending.sol";
 import "../../../PurchaseWithFinancing.sol";
 import "./NFTAndERC20Fixtures.sol";
 import "../../mock/SeaportMock.sol";
+import "../../../interfaces/seaport/ISeaport.sol";
 
 import "forge-std/Test.sol";
 
@@ -24,15 +25,21 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
     SeaportMock seaportMock;
 
     address constant ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+    address constant SEAPORT_ADDRESS = 0x00000000006c3852cbEf3e08E8dF289169EdE581;
 
     function setUp() public virtual override {
         super.setUp();
 
         vm.startPrank(owner);
-        seaportMock = new SeaportMock();
-        purchaseWithFinancing = new NiftyApesPurchaseWithFinancing();
-        purchaseWithFinancing.initialize(address(seaportMock));
-        seaportMock.approve(address(purchaseWithFinancing));
+
+        if (integration) {
+            purchaseWithFinancing = new NiftyApesPurchaseWithFinancing();
+            purchaseWithFinancing.initialize(SEAPORT_ADDRESS);
+        } else {
+            seaportMock = new SeaportMock();
+            purchaseWithFinancing = new NiftyApesPurchaseWithFinancing();
+            purchaseWithFinancing.initialize(address(seaportMock));
+        }
 
         liquidity = new NiftyApesLiquidity();
         liquidity.initialize(address(compToken), address(purchaseWithFinancing));
