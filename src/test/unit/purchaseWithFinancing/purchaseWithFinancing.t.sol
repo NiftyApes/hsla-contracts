@@ -12,38 +12,58 @@ import "../../../PurchaseWithFinancing.sol";
 import "forge-std/Test.sol";
 
 contract TestPurchaseWithFinancing is Test, OffersLoansRefinancesFixtures, ERC721HolderUpgradeable {
-    struct FuzzedBasicOrderParams {
-        address zone;
-        uint256 tokenId;
-        uint128 paymentAmount;
-        bytes32 zoneHash;
-        uint256 salt;
-    }
-
     function setUp() public override {
         super.setUp();
+
+        // pin block to time of writing test to reflect consistent state
+        // vm.rollFork(15455075);
+        vm.warp(1664587837 - 100);
+
+        // adjust tests to operate on consistent ETH and DAI on specific NFTs
     }
 
-    function _test_purchaseWithFinancing_simplest_case(
-        FuzzedOfferFields memory fuzzedOfferData,
-        FuzzedBasicOrderParams memory fuzzedParamData
-    ) private {
+    function _test_purchaseWithFinancing_simplest_case(FuzzedOfferFields memory fuzzedOfferData)
+        private
+    {
+        console.log("here 1");
         Offer memory offer = offerStructFromFields(fuzzedOfferData, defaultFixedOfferFields);
-        ISeaport.BasicOrderParameters memory params = basicOrderParamsFromFields(fuzzedParamData);
+        console.log("here 1.1");
+        ISeaport.BasicOrderParameters memory params = basicETHOrderParamsFromFields();
 
-        createOfferAndTryPurchaseWithFinancing(offer, params, "should work");
+        console.log("here 2");
+
+        offer.nftContractAddress = params.offerToken;
+        offer.nftId = params.offerIdentifier;
+        offer.asset = ETH_ADDRESS;
+        offer.amount = uint128(params.considerationAmount / 2);
+        offer.expiration = uint32(block.timestamp + 1);
+
+        (, LoanAuction memory loanAuction) = createOfferAndTryPurchaseWithFinancing(
+            offer,
+            params,
+            "should work"
+        );
+
+        console.log("here 3");
+
         // lending contract has NFT
-        assertEq(mockNft.ownerOf(1), address(lending));
+        assertEq(
+            IERC721Upgradeable(params.offerToken).ownerOf(params.offerIdentifier),
+            address(lending)
+        );
         // loan auction exists
-        assertEq(lending.getLoanAuction(address(mockNft), 1).lastUpdatedTimestamp, block.timestamp);
+        assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
     }
 
-    function testPurchaseWithFinancing(
-        FuzzedOfferFields memory fuzzedOfferData,
-        FuzzedBasicOrderParams memory fuzzedParamData
-    ) public validateFuzzedOfferFields(fuzzedOfferData) {
-        _test_purchaseWithFinancing_simplest_case(fuzzedOfferData, fuzzedParamData);
-        assertEq(true, true);
+    function test_fuzz_PurchaseWithFinancing_simplest_case(FuzzedOfferFields memory fuzzedOfferData)
+        public
+        validateFuzzedOfferFields(fuzzedOfferData)
+    {
+        _test_purchaseWithFinancing_simplest_case(fuzzedOfferData);
+    }
+
+    function test_unit_PurchaseWithFinancing_simplest_case() public {
+        _test_purchaseWithFinancing_simplest_case(defaultFixedFuzzedFieldsForFastUnitTesting);
     }
 
     //
@@ -55,6 +75,8 @@ contract TestPurchaseWithFinancing is Test, OffersLoansRefinancesFixtures, ERC72
         bytes memory errorCode
     ) internal returns (Offer memory, LoanAuction memory) {
         Offer memory offerCreated = createOffer(offer, lender1);
+
+        console.log("here 4");
 
         LoanAuction memory loan = tryPurchaseWithFinancing(offer, params, errorCode);
         return (offerCreated, loan);
@@ -73,13 +95,16 @@ contract TestPurchaseWithFinancing is Test, OffersLoansRefinancesFixtures, ERC72
         }
         uint256 borrowerPays = params.considerationAmount - uint256(offer.amount);
 
-        if (offer.randomAsset == 1) {
+        if (offer.asset == ETH_ADDRESS) {
+            console.log("here 5");
+
             purchaseWithFinancing.purchaseWithFinancingSeaport{ value: borrowerPays }(
                 offer.nftContractAddress,
                 offerHash,
                 offer.floorTerm,
                 params
             );
+            console.log("here 6");
         } else {
             daiToken.approve(address(purchaseWithFinancing), borrowerPays);
             purchaseWithFinancing.purchaseWithFinancingSeaport(
@@ -94,53 +119,43 @@ contract TestPurchaseWithFinancing is Test, OffersLoansRefinancesFixtures, ERC72
         return lending.getLoanAuction(offer.nftContractAddress, offer.nftId);
     }
 
-    function massageParams(Offer memory offer, ISeaport.BasicOrderParameters memory params)
-        internal
-        returns (ISeaport.BasicOrderParameters memory)
-    {
-        ISeaport.BasicOrderParameters memory params;
-        params.considerationToken = offer.randomAsset == 1 ? address(daiToken) : address(0);
-        params.considerationIdentifier = 1;
-        params.considerationAmount = 100 ether;
-        params.offerer = payable(address(0));
-        params.zone = fuzzed.zone;
-        params.offerToken = address(mockNft;
-        params.offerIdentifier = 1;
-        params.offerAmount = 1;
-        params.basicOrderType = ISeaport.BasicOrderType.ETH_TO_ERC721_FULL_OPEN;
-        params.startTime = block.timestamp;
-        params.endTime = block.timestamp + 100;
-        params.zoneHash = fuzzed.zoneHash;
-        params.salt = fuzzed.salt;
-        params.offererConduitKey = bytes32(0);
-        params.fulfillerConduitKey = bytes32(0);
-        params.totalOriginalAdditionalRecipients = 0;
-        params.signature = bytes("test signature");
-        return params;
-    }
-
-    function basicOrderParamsFromFields(FuzzedBasicOrderParams memory fuzzed)
+    function basicETHOrderParamsFromFields()
         internal
         returns (ISeaport.BasicOrderParameters memory)
     {
         ISeaport.BasicOrderParameters memory params;
         params.considerationToken = address(0);
-        params.considerationIdentifier = 1;
-        params.considerationAmount = 100 ether;
-        params.offerer = payable(address(0));
-        params.zone = fuzzed.zone;
-        params.offerToken = address(mockNft;
-        params.offerIdentifier = 1;
+        params.considerationIdentifier = 0;
+        params.considerationAmount = 80 ether;
+        params.offerer = payable(address(0xb2C0b589fa31B7c776aa6F7d4f231255cB0Fe373));
+        params.zone = address(0x004C00500000aD104D7DBd00e3ae0A5C00560C00);
+        params.offerToken = address(0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D);
+        params.offerIdentifier = 9719;
         params.offerAmount = 1;
         params.basicOrderType = ISeaport.BasicOrderType.ETH_TO_ERC721_FULL_OPEN;
-        params.startTime = block.timestamp;
-        params.endTime = block.timestamp + 100;
-        params.zoneHash = fuzzed.zoneHash;
-        params.salt = fuzzed.salt;
-        params.offererConduitKey = bytes32(0);
+        params.startTime = 1661995837;
+        params.endTime = 1664587837;
+        params.zoneHash = bytes32(
+            0x0000000000000000000000000000000000000000000000000000000000000000
+        );
+        params.salt = 14181645366604922;
+        params.offererConduitKey = bytes32(
+            0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000
+        );
         params.fulfillerConduitKey = bytes32(0);
-        params.totalOriginalAdditionalRecipients = 0;
-        params.signature = bytes("test signature");
+        params.totalOriginalAdditionalRecipients = 2;
+        params.additionalRecipients = new ISeaport.AdditionalRecipient[](2);
+        params.additionalRecipients[0].amount = 0.2 ether;
+        params.additionalRecipients[0].recipient = payable(
+            address(0x0000a26b00c1F0DF003000390027140000fAa719)
+        );
+        params.additionalRecipients[1].amount = 0.2 ether;
+        params.additionalRecipients[1].recipient = payable(
+            address(0xA858DDc0445d8131daC4d1DE01f834ffcbA52Ef1)
+        );
+        params.signature = bytes(
+            "0xede1357d160d0111a96d3fcfd13c9cab4949c3282724b5e4108ae66616db02a51ad9ba42e0a41d16ebf586ce09b4435d81a627bb84dfe28c62123c7c0de8429e1c"
+        );
         return params;
     }
 }
