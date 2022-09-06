@@ -101,6 +101,55 @@ interface ISeaport {
     }
 
     /**
+     * @notice Retrieve the current counter for a given offerer.
+     *
+     * @param offerer The offerer in question.
+     *
+     * @return counter The current counter.
+     */
+    function getCounter(address offerer)
+    external
+    view
+    returns (uint256 counter);
+
+
+    /**
+ * @dev An order contains eleven components: an offerer, a zone (or account that
+ *      can cancel the order or restrict who can fulfill the order depending on
+ *      the type), the order type (specifying partial fill support as well as
+ *      restricted order status), the start and end time, a hash that will be
+ *      provided to the zone when validating restricted orders, a salt, a key
+ *      corresponding to a given conduit, a counter, and an arbitrary number of
+ *      offer items that can be spent along with consideration items that must
+ *      be received by their respective recipient.
+ */
+    struct OrderComponents {
+        address offerer;
+        address zone;
+        OfferItem[] offer;
+        ConsiderationItem[] consideration;
+        OrderType orderType;
+        uint256 startTime;
+        uint256 endTime;
+        bytes32 zoneHash;
+        uint256 salt;
+        bytes32 conduitKey;
+        uint256 counter;
+    }
+
+    /**
+     * @notice Retrieve the order hash for a given order.
+     *
+     * @param order The components of the order.
+     *
+     * @return orderHash The order hash.
+     */
+    function getOrderHash(OrderComponents calldata order)
+    external
+    view
+    returns (bytes32 orderHash);
+
+    /**
      * @dev The full set of order components, with the exception of the counter,
      *      must be supplied when fulfilling more sophisticated orders or groups of
      *      orders. The total number of original consideration items must also be

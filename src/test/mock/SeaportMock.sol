@@ -64,4 +64,27 @@ contract SeaportMock is ISeaport {
         // mockNft.safeTransferFrom(address(this), msg.sender, testTokenId);
         return true;
     }
+
+    function getCounter(address offerer)
+    external
+    view
+    returns (uint256 counter) {
+        return 0;
+    }
+
+    function getOrderHash(OrderComponents calldata order)
+    external
+    view
+    returns (bytes32 orderHash) {
+        revert();
+    }
+
+    /**
+     * @dev The full set of order components, with the exception of the counter,
+     *      must be supplied when fulfilling more sophisticated orders or groups of
+     *      orders. The total number of original consideration items must also be
+     *      supplied, as the caller may specify additional consideration items.
+     */
+
+
 }
