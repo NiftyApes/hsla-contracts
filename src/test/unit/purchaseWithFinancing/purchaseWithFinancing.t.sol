@@ -33,52 +33,53 @@ contract TestPurchaseWithFinancing is Test, OffersLoansRefinancesFixtures, ERC72
         // vm.stopPrank();
 
         ISeaport.Order memory order;
-        order.parameters.offerer = address(0xb2C0b589fa31B7c776aa6F7d4f231255cB0Fe373);
+        order.parameters.offerer = address(0xf1BCf736a46D41f8a9d210777B3d75090860a665);
         order.parameters.zone = address(0x004C00500000aD104D7DBd00e3ae0A5C00560C00);
         order.parameters.offer = new ISeaport.OfferItem[](1);
         order.parameters.offer[0].itemType = ISeaport.ItemType.ERC721;
         order.parameters.offer[0].token = address(0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D);
-        order.parameters.offer[0].identifierOrCriteria = 9719;
+        order.parameters.offer[0].identifierOrCriteria = 326;
         order.parameters.offer[0].startAmount = 1;
         order.parameters.offer[0].endAmount = 1;
         order.parameters.consideration = new ISeaport.ConsiderationItem[](3);
         order.parameters.consideration[0].itemType = ISeaport.ItemType.NATIVE;
         order.parameters.consideration[0].token = address(0);
         order.parameters.consideration[0].identifierOrCriteria = 0;
-        order.parameters.consideration[0].startAmount = 76000000000000000000;
-        order.parameters.consideration[0].endAmount = 76000000000000000000;
+        order.parameters.consideration[0].startAmount = 73625000000000000000;
+        order.parameters.consideration[0].endAmount = 73625000000000000000;
         order.parameters.consideration[0].recipient = payable(
-            address(0xb2C0b589fa31B7c776aa6F7d4f231255cB0Fe373)
+            address(0xf1BCf736a46D41f8a9d210777B3d75090860a665)
         );
         order.parameters.consideration[1].itemType = ISeaport.ItemType.NATIVE;
         order.parameters.consideration[1].token = address(0);
         order.parameters.consideration[1].identifierOrCriteria = 0;
-        order.parameters.consideration[1].startAmount = 2000000000000000000;
-        order.parameters.consideration[1].endAmount = 2000000000000000000;
+        order.parameters.consideration[1].startAmount = 1937500000000000000;
+        order.parameters.consideration[1].endAmount = 1937500000000000000;
         order.parameters.consideration[1].recipient = payable(
             address(0x0000a26b00c1F0DF003000390027140000fAa719)
         );
         order.parameters.consideration[2].itemType = ISeaport.ItemType.NATIVE;
         order.parameters.consideration[2].token = address(0);
         order.parameters.consideration[2].identifierOrCriteria = 0;
-        order.parameters.consideration[2].startAmount = 2000000000000000000;
-        order.parameters.consideration[2].endAmount = 2000000000000000000;
+        order.parameters.consideration[2].startAmount = 1937500000000000000;
+        order.parameters.consideration[2].endAmount = 1937500000000000000;
         order.parameters.consideration[2].recipient = payable(
             address(0xA858DDc0445d8131daC4d1DE01f834ffcbA52Ef1)
         );
-        order.parameters.orderType = ISeaport.OrderType.FULL_RESTRICTED;
-        order.parameters.startTime = 1661995837;
-        order.parameters.endTime = 1664587837;
+        order.parameters.orderType = ISeaport.OrderType.PARTIAL_OPEN;
+        order.parameters.startTime = 1662306983;
+        order.parameters.endTime = 1664820334;
         order.parameters.zoneHash = bytes32(
             0x0000000000000000000000000000000000000000000000000000000000000000
         );
-        order.parameters.salt = 14181645366604922;
+        order.parameters.salt = 96789058676732069;
         order.parameters.conduitKey = bytes32(
             0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000
         );
         order.parameters.totalOriginalConsiderationItems = 3;
-        order
-            .signature = "0xede1357d160d0111a96d3fcfd13c9cab4949c3282724b5e4108ae66616db02a51ad9ba42e0a41d16ebf586ce09b4435d81a627bb84dfe28c62123c7c0de8429e1c";
+        order.signature = bytes(
+            0x0fd8072572bdec4b6f496cef4380c1fde6aa43f0fc9c0c89b3df988195d1cfc047cdc65045bc836e3238a1f9d2ac074e0d7a7e74f646f6b0ed23339f780680131b
+        );
 
         uint256 msgValue = order.parameters.consideration[0].startAmount +
             order.parameters.consideration[1].startAmount +

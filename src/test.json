@@ -1,0 +1,1053 @@
+{
+  "next": null,
+  "previous": null,
+  "orders": [
+    {
+      "created_date": "2022-09-06T06:42:24.976789",
+      "closing_date": "2022-09-08T14:08:59",
+      "listing_time": 1662446349,
+      "expiration_time": 1662646139,
+      "order_hash": "0x2ff4ee1564419d494f0e777a7f7ab3865fb9e6e9a51f88bed89de2f470fad31d",
+      "protocol_data": {
+        "parameters": {
+          "offerer": "0x06a298ad6c5176f782ac9fa3a690dc68b7a030bd",
+          "offer": [
+            {
+              "itemType": 2,
+              "token": "0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D",
+              "identifierOrCriteria": "449",
+              "startAmount": "1",
+              "endAmount": "1"
+            }
+          ],
+          "consideration": [
+            {
+              "itemType": 0,
+              "token": "0x0000000000000000000000000000000000000000",
+              "identifierOrCriteria": "0",
+              "startAmount": "74290000000000000000",
+              "endAmount": "74290000000000000000",
+              "recipient": "0x06A298AD6c5176f782Ac9fa3A690dc68b7a030bd"
+            },
+            {
+              "itemType": 0,
+              "token": "0x0000000000000000000000000000000000000000",
+              "identifierOrCriteria": "0",
+              "startAmount": "1955000000000000000",
+              "endAmount": "1955000000000000000",
+              "recipient": "0x0000a26b00c1F0DF003000390027140000fAa719"
+            },
+            {
+              "itemType": 0,
+              "token": "0x0000000000000000000000000000000000000000",
+              "identifierOrCriteria": "0",
+              "startAmount": "1955000000000000000",
+              "endAmount": "1955000000000000000",
+              "recipient": "0xA858DDc0445d8131daC4d1DE01f834ffcbA52Ef1"
+            }
+          ],
+          "startTime": "1662446349",
+          "endTime": "1662646139",
+          "orderType": 2,
+          "zone": "0x004C00500000aD104D7DBd00e3ae0A5C00560C00",
+          "zoneHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "salt": "37993219135068304",
+          "conduitKey": "0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000",
+          "totalOriginalConsiderationItems": 3,
+          "counter": 0
+        },
+        "signature": "0x22762a16adaaa400dd85f98116853c1a4eddbdaf9671d8fe6b65746d233550827dd106524e714379f0afe3f8df953f422f54918eec95cab0e36e83aeeb203d7a1c"
+      },
+      "protocol_address": "0x00000000006c3852cbef3e08e8df289169ede581",
+      "maker": {
+        "user": 35770231,
+        "profile_img_url": "https://storage.googleapis.com/opensea-static/opensea-profile/30.png",
+        "address": "0x06a298ad6c5176f782ac9fa3a690dc68b7a030bd",
+        "config": ""
+      },
+      "taker": null,
+      "current_price": "78200000000000000000",
+      "maker_fees": [
+        {
+          "account": {
+            "user": null,
+            "profile_img_url": "https://storage.googleapis.com/opensea-static/opensea-profile/29.png",
+            "address": "0x0000a26b00c1f0df003000390027140000faa719",
+            "config": ""
+          },
+          "basis_points": "250"
+        },
+        {
+          "account": {
+            "user": 35330734,
+            "profile_img_url": "https://storage.googleapis.com/opensea-static/opensea-profile/32.png",
+            "address": "0xa858ddc0445d8131dac4d1de01f834ffcba52ef1",
+            "config": "verified"
+          },
+          "basis_points": "250"
+        }
+      ],
+      "taker_fees": [],
+      "side": "ask",
+      "order_type": "basic",
+      "cancelled": false,
+      "finalized": false,
+      "marked_invalid": true,
+      "client_signature": "0x22762a16adaaa400dd85f98116853c1a4eddbdaf9671d8fe6b65746d233550827dd106524e714379f0afe3f8df953f422f54918eec95cab0e36e83aeeb203d7a1c",
+      "relay_id": "T3JkZXJWMlR5cGU6NjM4NzUxNjU3NA",
+      "criteria_proof": null,
+      "maker_asset_bundle": {
+        "assets": [
+          {
+            "id": 23110447,
+            "num_sales": 1,
+            "background_color": null,
+            "image_url": "https://lh3.googleusercontent.com/bIVZurwe7HW8UmoSt6ciMeG8P55zJMIjSnM6Y2vW9zKEjzPloiYq15a_5R9OBiqUgYBoV3RmeDD_m6x6OnmP_2du1eXo5NJMRHj1",
+            "image_preview_url": "https://lh3.googleusercontent.com/bIVZurwe7HW8UmoSt6ciMeG8P55zJMIjSnM6Y2vW9zKEjzPloiYq15a_5R9OBiqUgYBoV3RmeDD_m6x6OnmP_2du1eXo5NJMRHj1=s250",
+            "image_thumbnail_url": "https://lh3.googleusercontent.com/bIVZurwe7HW8UmoSt6ciMeG8P55zJMIjSnM6Y2vW9zKEjzPloiYq15a_5R9OBiqUgYBoV3RmeDD_m6x6OnmP_2du1eXo5NJMRHj1=s128",
+            "image_original_url": "ipfs://QmV4PHuWterMcYGRcVK1KWceEch3HBRUgSmovsGXjLDocW",
+            "animation_url": null,
+            "animation_original_url": null,
+            "name": null,
+            "description": null,
+            "external_link": null,
+            "asset_contract": {
+              "address": "0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d",
+              "asset_contract_type": "non-fungible",
+              "created_date": "2021-04-22T03:03:43.731860",
+              "name": "BoredApeYachtClub",
+              "nft_version": "3.0",
+              "opensea_version": null,
+              "owner": 601,
+              "schema_name": "ERC721",
+              "symbol": "BAYC",
+              "total_supply": "0",
+              "description": "The Bored Ape Yacht Club is a collection of 10,000 unique Bored Ape NFTs— unique digital collectibles living on the Ethereum blockchain. Your Bored Ape doubles as your Yacht Club membership card, and grants access to members-only benefits, the first of which is access to THE BATHROOM, a collaborative graffiti board. Future areas and perks can be unlocked by the community through roadmap activation. Visit www.BoredApeYachtClub.com for more details.",
+              "external_link": "http://www.boredapeyachtclub.com/",
+              "image_url": "https://lh3.googleusercontent.com/Ju9CkWtV-1Okvf45wo8UctR-M9He2PjILP0oOvxE89AyiPPGtrR3gysu1Zgy0hjd2xKIgjJJtWIc0ybj4Vd7wv8t3pxDGHoJBzDB=s120",
+              "default_to_fiat": false,
+              "dev_buyer_fee_basis_points": 0,
+              "dev_seller_fee_basis_points": 250,
+              "only_proxied_transfers": false,
+              "opensea_buyer_fee_basis_points": 0,
+              "opensea_seller_fee_basis_points": 250,
+              "buyer_fee_basis_points": 0,
+              "seller_fee_basis_points": 500,
+              "payout_address": "0xa858ddc0445d8131dac4d1de01f834ffcba52ef1"
+            },
+            "permalink": "https://opensea.io/assets/ethereum/0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d/449",
+            "collection": {
+              "banner_image_url": "https://lh3.googleusercontent.com/i5dYZRkVCUK97bfprQ3WXyrT9BnLSZtVKGJlKQ919uaUB0sxbngVCioaiyu9r6snqfi2aaTyIvv6DHm4m2R3y7hMajbsv14pSZK8mhs=s2500",
+              "chat_url": null,
+              "created_date": "2021-04-22T23:14:03.967121",
+              "default_to_fiat": false,
+              "description": "The Bored Ape Yacht Club is a collection of 10,000 unique Bored Ape NFTs— unique digital collectibles living on the Ethereum blockchain. Your Bored Ape doubles as your Yacht Club membership card, and grants access to members-only benefits, the first of which is access to THE BATHROOM, a collaborative graffiti board. Future areas and perks can be unlocked by the community through roadmap activation. Visit www.BoredApeYachtClub.com for more details.",
+              "dev_buyer_fee_basis_points": "0",
+              "dev_seller_fee_basis_points": "250",
+              "discord_url": "https://discord.gg/3P5K3dzgdB",
+              "display_data": {
+                "card_display_style": "contain"
+              },
+              "external_url": "http://www.boredapeyachtclub.com/",
+              "featured": false,
+              "featured_image_url": "https://lh3.googleusercontent.com/RBX3jwgykdaQO3rjTcKNf5OVwdukKO46oOAV3zZeiaMb8VER6cKxPDTdGZQdfWcDou75A8KtVZWM_fEnHG4d4q6Um8MeZIlw79BpWPA=s300",
+              "hidden": false,
+              "safelist_request_status": "verified",
+              "image_url": "https://lh3.googleusercontent.com/Ju9CkWtV-1Okvf45wo8UctR-M9He2PjILP0oOvxE89AyiPPGtrR3gysu1Zgy0hjd2xKIgjJJtWIc0ybj4Vd7wv8t3pxDGHoJBzDB=s120",
+              "is_subject_to_whitelist": false,
+              "large_image_url": "https://lh3.googleusercontent.com/RBX3jwgykdaQO3rjTcKNf5OVwdukKO46oOAV3zZeiaMb8VER6cKxPDTdGZQdfWcDou75A8KtVZWM_fEnHG4d4q6Um8MeZIlw79BpWPA=s300",
+              "medium_username": null,
+              "name": "Bored Ape Yacht Club",
+              "only_proxied_transfers": false,
+              "opensea_buyer_fee_basis_points": "0",
+              "opensea_seller_fee_basis_points": "250",
+              "payout_address": "0xa858ddc0445d8131dac4d1de01f834ffcba52ef1",
+              "require_email": false,
+              "short_description": null,
+              "slug": "boredapeyachtclub",
+              "telegram_url": null,
+              "twitter_username": "BoredApeYC",
+              "instagram_username": null,
+              "wiki_url": null,
+              "is_nsfw": false,
+              "fees": {
+                "seller_fees": {
+                  "0xa858ddc0445d8131dac4d1de01f834ffcba52ef1": 250
+                },
+                "opensea_fees": {
+                  "0x0000a26b00c1f0df003000390027140000faa719": 250
+                }
+              }
+            },
+            "decimals": 0,
+            "token_metadata": "https://opensea.mypinata.cloud/ipfs/QmeSjSinHpPnmXmspMjwiXyN6zS4E9zccariGR3jxcaWtq/449",
+            "is_nsfw": false,
+            "owner": {
+              "user": {
+                "username": null
+              },
+              "profile_img_url": "https://storage.googleapis.com/opensea-static/opensea-profile/30.png",
+              "address": "0x06a298ad6c5176f782ac9fa3a690dc68b7a030bd",
+              "config": ""
+            },
+            "token_id": "449"
+          }
+        ],
+        "maker": null,
+        "slug": null,
+        "name": null,
+        "description": null,
+        "external_link": null,
+        "asset_contract": {
+          "address": "0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d",
+          "asset_contract_type": "non-fungible",
+          "created_date": "2021-04-22T03:03:43.731860",
+          "name": "BoredApeYachtClub",
+          "nft_version": "3.0",
+          "opensea_version": null,
+          "owner": 601,
+          "schema_name": "ERC721",
+          "symbol": "BAYC",
+          "total_supply": "0",
+          "description": "The Bored Ape Yacht Club is a collection of 10,000 unique Bored Ape NFTs— unique digital collectibles living on the Ethereum blockchain. Your Bored Ape doubles as your Yacht Club membership card, and grants access to members-only benefits, the first of which is access to THE BATHROOM, a collaborative graffiti board. Future areas and perks can be unlocked by the community through roadmap activation. Visit www.BoredApeYachtClub.com for more details.",
+          "external_link": "http://www.boredapeyachtclub.com/",
+          "image_url": "https://lh3.googleusercontent.com/Ju9CkWtV-1Okvf45wo8UctR-M9He2PjILP0oOvxE89AyiPPGtrR3gysu1Zgy0hjd2xKIgjJJtWIc0ybj4Vd7wv8t3pxDGHoJBzDB=s120",
+          "default_to_fiat": false,
+          "dev_buyer_fee_basis_points": 0,
+          "dev_seller_fee_basis_points": 250,
+          "only_proxied_transfers": false,
+          "opensea_buyer_fee_basis_points": 0,
+          "opensea_seller_fee_basis_points": 250,
+          "buyer_fee_basis_points": 0,
+          "seller_fee_basis_points": 500,
+          "payout_address": "0xa858ddc0445d8131dac4d1de01f834ffcba52ef1"
+        },
+        "permalink": "https://opensea.io/bundles/None",
+        "seaport_sell_orders": null
+      },
+      "taker_asset_bundle": {
+        "assets": [
+          {
+            "id": 13689077,
+            "num_sales": 0,
+            "background_color": null,
+            "image_url": "https://openseauserdata.com/files/6f8e2979d428180222796ff4a33ab929.svg",
+            "image_preview_url": "https://openseauserdata.com/files/6f8e2979d428180222796ff4a33ab929.svg",
+            "image_thumbnail_url": "https://openseauserdata.com/files/6f8e2979d428180222796ff4a33ab929.svg",
+            "image_original_url": "https://openseauserdata.com/files/6f8e2979d428180222796ff4a33ab929.svg",
+            "animation_url": null,
+            "animation_original_url": null,
+            "name": "Ether",
+            "description": "",
+            "external_link": null,
+            "asset_contract": {
+              "address": "0x0000000000000000000000000000000000000000",
+              "asset_contract_type": "fungible",
+              "created_date": "2019-08-02T23:41:09.503168",
+              "name": "Ether",
+              "nft_version": null,
+              "opensea_version": null,
+              "owner": null,
+              "schema_name": "ERC20",
+              "symbol": "ETH",
+              "total_supply": null,
+              "description": "This is the collection of owners of Ether",
+              "external_link": null,
+              "image_url": null,
+              "default_to_fiat": false,
+              "dev_buyer_fee_basis_points": 0,
+              "dev_seller_fee_basis_points": 0,
+              "only_proxied_transfers": false,
+              "opensea_buyer_fee_basis_points": 0,
+              "opensea_seller_fee_basis_points": 250,
+              "buyer_fee_basis_points": 0,
+              "seller_fee_basis_points": 250,
+              "payout_address": null
+            },
+            "permalink": "https://opensea.io/assets/ethereum/0x0000000000000000000000000000000000000000/0",
+            "collection": {
+              "banner_image_url": null,
+              "chat_url": null,
+              "created_date": "2019-08-02T23:41:09.501266",
+              "default_to_fiat": false,
+              "description": "This is the collection of owners of Ether",
+              "dev_buyer_fee_basis_points": "0",
+              "dev_seller_fee_basis_points": "0",
+              "discord_url": null,
+              "display_data": {},
+              "external_url": null,
+              "featured": false,
+              "featured_image_url": null,
+              "hidden": true,
+              "safelist_request_status": "not_requested",
+              "image_url": null,
+              "is_subject_to_whitelist": false,
+              "large_image_url": null,
+              "medium_username": null,
+              "name": "Ether",
+              "only_proxied_transfers": false,
+              "opensea_buyer_fee_basis_points": "0",
+              "opensea_seller_fee_basis_points": "250",
+              "payout_address": null,
+              "require_email": false,
+              "short_description": null,
+              "slug": "ether",
+              "telegram_url": null,
+              "twitter_username": null,
+              "instagram_username": null,
+              "wiki_url": null,
+              "is_nsfw": false,
+              "fees": {
+                "seller_fees": {},
+                "opensea_fees": {
+                  "0x0000a26b00c1f0df003000390027140000faa719": 250
+                }
+              }
+            },
+            "decimals": 18,
+            "token_metadata": null,
+            "is_nsfw": false,
+            "owner": {
+              "user": {
+                "username": "NullAddress"
+              },
+              "profile_img_url": "https://storage.googleapis.com/opensea-static/opensea-profile/1.png",
+              "address": "0x0000000000000000000000000000000000000000",
+              "config": ""
+            },
+            "token_id": "0"
+          }
+        ],
+        "maker": null,
+        "slug": null,
+        "name": null,
+        "description": null,
+        "external_link": null,
+        "asset_contract": {
+          "address": "0x0000000000000000000000000000000000000000",
+          "asset_contract_type": "fungible",
+          "created_date": "2019-08-02T23:41:09.503168",
+          "name": "Ether",
+          "nft_version": null,
+          "opensea_version": null,
+          "owner": null,
+          "schema_name": "ERC20",
+          "symbol": "ETH",
+          "total_supply": null,
+          "description": "This is the collection of owners of Ether",
+          "external_link": null,
+          "image_url": null,
+          "default_to_fiat": false,
+          "dev_buyer_fee_basis_points": 0,
+          "dev_seller_fee_basis_points": 0,
+          "only_proxied_transfers": false,
+          "opensea_buyer_fee_basis_points": 0,
+          "opensea_seller_fee_basis_points": 250,
+          "buyer_fee_basis_points": 0,
+          "seller_fee_basis_points": 250,
+          "payout_address": null
+        },
+        "permalink": "https://opensea.io/bundles/None",
+        "seaport_sell_orders": null
+      }
+    },
+    {
+      "created_date": "2022-09-06T06:37:52.511622",
+      "closing_date": "2022-09-08T14:08:59",
+      "listing_time": 1662446142,
+      "expiration_time": 1662646139,
+      "order_hash": "0x409f02c70871ea844794ae76a3112aa510aadc9c109f1b5840a3b122b8f6c778",
+      "protocol_data": {
+        "parameters": {
+          "offerer": "0x06a298ad6c5176f782ac9fa3a690dc68b7a030bd",
+          "offer": [
+            {
+              "itemType": 2,
+              "token": "0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D",
+              "identifierOrCriteria": "449",
+              "startAmount": "1",
+              "endAmount": "1"
+            }
+          ],
+          "consideration": [
+            {
+              "itemType": 0,
+              "token": "0x0000000000000000000000000000000000000000",
+              "identifierOrCriteria": "0",
+              "startAmount": "74575000000000000000",
+              "endAmount": "74575000000000000000",
+              "recipient": "0x06A298AD6c5176f782Ac9fa3A690dc68b7a030bd"
+            },
+            {
+              "itemType": 0,
+              "token": "0x0000000000000000000000000000000000000000",
+              "identifierOrCriteria": "0",
+              "startAmount": "1962500000000000000",
+              "endAmount": "1962500000000000000",
+              "recipient": "0x0000a26b00c1F0DF003000390027140000fAa719"
+            },
+            {
+              "itemType": 0,
+              "token": "0x0000000000000000000000000000000000000000",
+              "identifierOrCriteria": "0",
+              "startAmount": "1962500000000000000",
+              "endAmount": "1962500000000000000",
+              "recipient": "0xA858DDc0445d8131daC4d1DE01f834ffcbA52Ef1"
+            }
+          ],
+          "startTime": "1662446142",
+          "endTime": "1662646139",
+          "orderType": 2,
+          "zone": "0x004C00500000aD104D7DBd00e3ae0A5C00560C00",
+          "zoneHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "salt": "9181414760235854",
+          "conduitKey": "0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000",
+          "totalOriginalConsiderationItems": 3,
+          "counter": 0
+        },
+        "signature": "0x1ceb5f5569a59ec97aa43470cfec1d4ed7ac025dfad705fe6330e880351a906c1a2c8011141d43014358e86190e01cb124ebc0383878103fe5af6f4c5dd8e4ef1b"
+      },
+      "protocol_address": "0x00000000006c3852cbef3e08e8df289169ede581",
+      "maker": {
+        "user": 35770231,
+        "profile_img_url": "https://storage.googleapis.com/opensea-static/opensea-profile/30.png",
+        "address": "0x06a298ad6c5176f782ac9fa3a690dc68b7a030bd",
+        "config": ""
+      },
+      "taker": null,
+      "current_price": "78500000000000000000",
+      "maker_fees": [
+        {
+          "account": {
+            "user": null,
+            "profile_img_url": "https://storage.googleapis.com/opensea-static/opensea-profile/29.png",
+            "address": "0x0000a26b00c1f0df003000390027140000faa719",
+            "config": ""
+          },
+          "basis_points": "250"
+        },
+        {
+          "account": {
+            "user": 35330734,
+            "profile_img_url": "https://storage.googleapis.com/opensea-static/opensea-profile/32.png",
+            "address": "0xa858ddc0445d8131dac4d1de01f834ffcba52ef1",
+            "config": "verified"
+          },
+          "basis_points": "250"
+        }
+      ],
+      "taker_fees": [],
+      "side": "ask",
+      "order_type": "basic",
+      "cancelled": false,
+      "finalized": false,
+      "marked_invalid": true,
+      "client_signature": "0x1ceb5f5569a59ec97aa43470cfec1d4ed7ac025dfad705fe6330e880351a906c1a2c8011141d43014358e86190e01cb124ebc0383878103fe5af6f4c5dd8e4ef1b",
+      "relay_id": "T3JkZXJWMlR5cGU6NjM4NzQ5NzIwOQ",
+      "criteria_proof": null,
+      "maker_asset_bundle": {
+        "assets": [
+          {
+            "id": 23110447,
+            "num_sales": 1,
+            "background_color": null,
+            "image_url": "https://lh3.googleusercontent.com/bIVZurwe7HW8UmoSt6ciMeG8P55zJMIjSnM6Y2vW9zKEjzPloiYq15a_5R9OBiqUgYBoV3RmeDD_m6x6OnmP_2du1eXo5NJMRHj1",
+            "image_preview_url": "https://lh3.googleusercontent.com/bIVZurwe7HW8UmoSt6ciMeG8P55zJMIjSnM6Y2vW9zKEjzPloiYq15a_5R9OBiqUgYBoV3RmeDD_m6x6OnmP_2du1eXo5NJMRHj1=s250",
+            "image_thumbnail_url": "https://lh3.googleusercontent.com/bIVZurwe7HW8UmoSt6ciMeG8P55zJMIjSnM6Y2vW9zKEjzPloiYq15a_5R9OBiqUgYBoV3RmeDD_m6x6OnmP_2du1eXo5NJMRHj1=s128",
+            "image_original_url": "ipfs://QmV4PHuWterMcYGRcVK1KWceEch3HBRUgSmovsGXjLDocW",
+            "animation_url": null,
+            "animation_original_url": null,
+            "name": null,
+            "description": null,
+            "external_link": null,
+            "asset_contract": {
+              "address": "0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d",
+              "asset_contract_type": "non-fungible",
+              "created_date": "2021-04-22T03:03:43.731860",
+              "name": "BoredApeYachtClub",
+              "nft_version": "3.0",
+              "opensea_version": null,
+              "owner": 601,
+              "schema_name": "ERC721",
+              "symbol": "BAYC",
+              "total_supply": "0",
+              "description": "The Bored Ape Yacht Club is a collection of 10,000 unique Bored Ape NFTs— unique digital collectibles living on the Ethereum blockchain. Your Bored Ape doubles as your Yacht Club membership card, and grants access to members-only benefits, the first of which is access to THE BATHROOM, a collaborative graffiti board. Future areas and perks can be unlocked by the community through roadmap activation. Visit www.BoredApeYachtClub.com for more details.",
+              "external_link": "http://www.boredapeyachtclub.com/",
+              "image_url": "https://lh3.googleusercontent.com/Ju9CkWtV-1Okvf45wo8UctR-M9He2PjILP0oOvxE89AyiPPGtrR3gysu1Zgy0hjd2xKIgjJJtWIc0ybj4Vd7wv8t3pxDGHoJBzDB=s120",
+              "default_to_fiat": false,
+              "dev_buyer_fee_basis_points": 0,
+              "dev_seller_fee_basis_points": 250,
+              "only_proxied_transfers": false,
+              "opensea_buyer_fee_basis_points": 0,
+              "opensea_seller_fee_basis_points": 250,
+              "buyer_fee_basis_points": 0,
+              "seller_fee_basis_points": 500,
+              "payout_address": "0xa858ddc0445d8131dac4d1de01f834ffcba52ef1"
+            },
+            "permalink": "https://opensea.io/assets/ethereum/0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d/449",
+            "collection": {
+              "banner_image_url": "https://lh3.googleusercontent.com/i5dYZRkVCUK97bfprQ3WXyrT9BnLSZtVKGJlKQ919uaUB0sxbngVCioaiyu9r6snqfi2aaTyIvv6DHm4m2R3y7hMajbsv14pSZK8mhs=s2500",
+              "chat_url": null,
+              "created_date": "2021-04-22T23:14:03.967121",
+              "default_to_fiat": false,
+              "description": "The Bored Ape Yacht Club is a collection of 10,000 unique Bored Ape NFTs— unique digital collectibles living on the Ethereum blockchain. Your Bored Ape doubles as your Yacht Club membership card, and grants access to members-only benefits, the first of which is access to THE BATHROOM, a collaborative graffiti board. Future areas and perks can be unlocked by the community through roadmap activation. Visit www.BoredApeYachtClub.com for more details.",
+              "dev_buyer_fee_basis_points": "0",
+              "dev_seller_fee_basis_points": "250",
+              "discord_url": "https://discord.gg/3P5K3dzgdB",
+              "display_data": {
+                "card_display_style": "contain"
+              },
+              "external_url": "http://www.boredapeyachtclub.com/",
+              "featured": false,
+              "featured_image_url": "https://lh3.googleusercontent.com/RBX3jwgykdaQO3rjTcKNf5OVwdukKO46oOAV3zZeiaMb8VER6cKxPDTdGZQdfWcDou75A8KtVZWM_fEnHG4d4q6Um8MeZIlw79BpWPA=s300",
+              "hidden": false,
+              "safelist_request_status": "verified",
+              "image_url": "https://lh3.googleusercontent.com/Ju9CkWtV-1Okvf45wo8UctR-M9He2PjILP0oOvxE89AyiPPGtrR3gysu1Zgy0hjd2xKIgjJJtWIc0ybj4Vd7wv8t3pxDGHoJBzDB=s120",
+              "is_subject_to_whitelist": false,
+              "large_image_url": "https://lh3.googleusercontent.com/RBX3jwgykdaQO3rjTcKNf5OVwdukKO46oOAV3zZeiaMb8VER6cKxPDTdGZQdfWcDou75A8KtVZWM_fEnHG4d4q6Um8MeZIlw79BpWPA=s300",
+              "medium_username": null,
+              "name": "Bored Ape Yacht Club",
+              "only_proxied_transfers": false,
+              "opensea_buyer_fee_basis_points": "0",
+              "opensea_seller_fee_basis_points": "250",
+              "payout_address": "0xa858ddc0445d8131dac4d1de01f834ffcba52ef1",
+              "require_email": false,
+              "short_description": null,
+              "slug": "boredapeyachtclub",
+              "telegram_url": null,
+              "twitter_username": "BoredApeYC",
+              "instagram_username": null,
+              "wiki_url": null,
+              "is_nsfw": false,
+              "fees": {
+                "seller_fees": {
+                  "0xa858ddc0445d8131dac4d1de01f834ffcba52ef1": 250
+                },
+                "opensea_fees": {
+                  "0x0000a26b00c1f0df003000390027140000faa719": 250
+                }
+              }
+            },
+            "decimals": 0,
+            "token_metadata": "https://opensea.mypinata.cloud/ipfs/QmeSjSinHpPnmXmspMjwiXyN6zS4E9zccariGR3jxcaWtq/449",
+            "is_nsfw": false,
+            "owner": {
+              "user": {
+                "username": null
+              },
+              "profile_img_url": "https://storage.googleapis.com/opensea-static/opensea-profile/30.png",
+              "address": "0x06a298ad6c5176f782ac9fa3a690dc68b7a030bd",
+              "config": ""
+            },
+            "token_id": "449"
+          }
+        ],
+        "maker": null,
+        "slug": null,
+        "name": null,
+        "description": null,
+        "external_link": null,
+        "asset_contract": {
+          "address": "0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d",
+          "asset_contract_type": "non-fungible",
+          "created_date": "2021-04-22T03:03:43.731860",
+          "name": "BoredApeYachtClub",
+          "nft_version": "3.0",
+          "opensea_version": null,
+          "owner": 601,
+          "schema_name": "ERC721",
+          "symbol": "BAYC",
+          "total_supply": "0",
+          "description": "The Bored Ape Yacht Club is a collection of 10,000 unique Bored Ape NFTs— unique digital collectibles living on the Ethereum blockchain. Your Bored Ape doubles as your Yacht Club membership card, and grants access to members-only benefits, the first of which is access to THE BATHROOM, a collaborative graffiti board. Future areas and perks can be unlocked by the community through roadmap activation. Visit www.BoredApeYachtClub.com for more details.",
+          "external_link": "http://www.boredapeyachtclub.com/",
+          "image_url": "https://lh3.googleusercontent.com/Ju9CkWtV-1Okvf45wo8UctR-M9He2PjILP0oOvxE89AyiPPGtrR3gysu1Zgy0hjd2xKIgjJJtWIc0ybj4Vd7wv8t3pxDGHoJBzDB=s120",
+          "default_to_fiat": false,
+          "dev_buyer_fee_basis_points": 0,
+          "dev_seller_fee_basis_points": 250,
+          "only_proxied_transfers": false,
+          "opensea_buyer_fee_basis_points": 0,
+          "opensea_seller_fee_basis_points": 250,
+          "buyer_fee_basis_points": 0,
+          "seller_fee_basis_points": 500,
+          "payout_address": "0xa858ddc0445d8131dac4d1de01f834ffcba52ef1"
+        },
+        "permalink": "https://opensea.io/bundles/None",
+        "seaport_sell_orders": null
+      },
+      "taker_asset_bundle": {
+        "assets": [
+          {
+            "id": 13689077,
+            "num_sales": 0,
+            "background_color": null,
+            "image_url": "https://openseauserdata.com/files/6f8e2979d428180222796ff4a33ab929.svg",
+            "image_preview_url": "https://openseauserdata.com/files/6f8e2979d428180222796ff4a33ab929.svg",
+            "image_thumbnail_url": "https://openseauserdata.com/files/6f8e2979d428180222796ff4a33ab929.svg",
+            "image_original_url": "https://openseauserdata.com/files/6f8e2979d428180222796ff4a33ab929.svg",
+            "animation_url": null,
+            "animation_original_url": null,
+            "name": "Ether",
+            "description": "",
+            "external_link": null,
+            "asset_contract": {
+              "address": "0x0000000000000000000000000000000000000000",
+              "asset_contract_type": "fungible",
+              "created_date": "2019-08-02T23:41:09.503168",
+              "name": "Ether",
+              "nft_version": null,
+              "opensea_version": null,
+              "owner": null,
+              "schema_name": "ERC20",
+              "symbol": "ETH",
+              "total_supply": null,
+              "description": "This is the collection of owners of Ether",
+              "external_link": null,
+              "image_url": null,
+              "default_to_fiat": false,
+              "dev_buyer_fee_basis_points": 0,
+              "dev_seller_fee_basis_points": 0,
+              "only_proxied_transfers": false,
+              "opensea_buyer_fee_basis_points": 0,
+              "opensea_seller_fee_basis_points": 250,
+              "buyer_fee_basis_points": 0,
+              "seller_fee_basis_points": 250,
+              "payout_address": null
+            },
+            "permalink": "https://opensea.io/assets/ethereum/0x0000000000000000000000000000000000000000/0",
+            "collection": {
+              "banner_image_url": null,
+              "chat_url": null,
+              "created_date": "2019-08-02T23:41:09.501266",
+              "default_to_fiat": false,
+              "description": "This is the collection of owners of Ether",
+              "dev_buyer_fee_basis_points": "0",
+              "dev_seller_fee_basis_points": "0",
+              "discord_url": null,
+              "display_data": {},
+              "external_url": null,
+              "featured": false,
+              "featured_image_url": null,
+              "hidden": true,
+              "safelist_request_status": "not_requested",
+              "image_url": null,
+              "is_subject_to_whitelist": false,
+              "large_image_url": null,
+              "medium_username": null,
+              "name": "Ether",
+              "only_proxied_transfers": false,
+              "opensea_buyer_fee_basis_points": "0",
+              "opensea_seller_fee_basis_points": "250",
+              "payout_address": null,
+              "require_email": false,
+              "short_description": null,
+              "slug": "ether",
+              "telegram_url": null,
+              "twitter_username": null,
+              "instagram_username": null,
+              "wiki_url": null,
+              "is_nsfw": false,
+              "fees": {
+                "seller_fees": {},
+                "opensea_fees": {
+                  "0x0000a26b00c1f0df003000390027140000faa719": 250
+                }
+              }
+            },
+            "decimals": 18,
+            "token_metadata": null,
+            "is_nsfw": false,
+            "owner": {
+              "user": {
+                "username": "NullAddress"
+              },
+              "profile_img_url": "https://storage.googleapis.com/opensea-static/opensea-profile/1.png",
+              "address": "0x0000000000000000000000000000000000000000",
+              "config": ""
+            },
+            "token_id": "0"
+          }
+        ],
+        "maker": null,
+        "slug": null,
+        "name": null,
+        "description": null,
+        "external_link": null,
+        "asset_contract": {
+          "address": "0x0000000000000000000000000000000000000000",
+          "asset_contract_type": "fungible",
+          "created_date": "2019-08-02T23:41:09.503168",
+          "name": "Ether",
+          "nft_version": null,
+          "opensea_version": null,
+          "owner": null,
+          "schema_name": "ERC20",
+          "symbol": "ETH",
+          "total_supply": null,
+          "description": "This is the collection of owners of Ether",
+          "external_link": null,
+          "image_url": null,
+          "default_to_fiat": false,
+          "dev_buyer_fee_basis_points": 0,
+          "dev_seller_fee_basis_points": 0,
+          "only_proxied_transfers": false,
+          "opensea_buyer_fee_basis_points": 0,
+          "opensea_seller_fee_basis_points": 250,
+          "buyer_fee_basis_points": 0,
+          "seller_fee_basis_points": 250,
+          "payout_address": null
+        },
+        "permalink": "https://opensea.io/bundles/None",
+        "seaport_sell_orders": null
+      }
+    },
+    {
+      "created_date": "2022-09-05T14:15:07.106295",
+      "closing_date": "2022-09-08T14:08:59",
+      "listing_time": 1662386939,
+      "expiration_time": 1662646139,
+      "order_hash": "0x18cf67de022be1b05fb249fc996c452ffc43fade8a531419f1c904cbdc747d7f",
+      "protocol_data": {
+        "parameters": {
+          "offerer": "0x06a298ad6c5176f782ac9fa3a690dc68b7a030bd",
+          "offer": [
+            {
+              "itemType": 2,
+              "token": "0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D",
+              "identifierOrCriteria": "449",
+              "startAmount": "1",
+              "endAmount": "1"
+            }
+          ],
+          "consideration": [
+            {
+              "itemType": 0,
+              "token": "0x0000000000000000000000000000000000000000",
+              "identifierOrCriteria": "0",
+              "startAmount": "75525000000000000000",
+              "endAmount": "75525000000000000000",
+              "recipient": "0x06A298AD6c5176f782Ac9fa3A690dc68b7a030bd"
+            },
+            {
+              "itemType": 0,
+              "token": "0x0000000000000000000000000000000000000000",
+              "identifierOrCriteria": "0",
+              "startAmount": "1987500000000000000",
+              "endAmount": "1987500000000000000",
+              "recipient": "0x0000a26b00c1F0DF003000390027140000fAa719"
+            },
+            {
+              "itemType": 0,
+              "token": "0x0000000000000000000000000000000000000000",
+              "identifierOrCriteria": "0",
+              "startAmount": "1987500000000000000",
+              "endAmount": "1987500000000000000",
+              "recipient": "0xA858DDc0445d8131daC4d1DE01f834ffcbA52Ef1"
+            }
+          ],
+          "startTime": "1662386939",
+          "endTime": "1662646139",
+          "orderType": 2,
+          "zone": "0x004C00500000aD104D7DBd00e3ae0A5C00560C00",
+          "zoneHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "salt": "16532018761938865",
+          "conduitKey": "0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000",
+          "totalOriginalConsiderationItems": 3,
+          "counter": 0
+        },
+        "signature": "0x4a0467117b2fe85542eae4e10a2e2eeb1dbe671bee5412cb3e131560088fad1f707978750d2ec97543e5ff55f7ad6e4145f73e06affd7ba0127b5a67cb53b4e51b"
+      },
+      "protocol_address": "0x00000000006c3852cbef3e08e8df289169ede581",
+      "maker": {
+        "user": 35770231,
+        "profile_img_url": "https://storage.googleapis.com/opensea-static/opensea-profile/30.png",
+        "address": "0x06a298ad6c5176f782ac9fa3a690dc68b7a030bd",
+        "config": ""
+      },
+      "taker": null,
+      "current_price": "79500000000000000000",
+      "maker_fees": [
+        {
+          "account": {
+            "user": null,
+            "profile_img_url": "https://storage.googleapis.com/opensea-static/opensea-profile/29.png",
+            "address": "0x0000a26b00c1f0df003000390027140000faa719",
+            "config": ""
+          },
+          "basis_points": "250"
+        },
+        {
+          "account": {
+            "user": 35330734,
+            "profile_img_url": "https://storage.googleapis.com/opensea-static/opensea-profile/32.png",
+            "address": "0xa858ddc0445d8131dac4d1de01f834ffcba52ef1",
+            "config": "verified"
+          },
+          "basis_points": "250"
+        }
+      ],
+      "taker_fees": [],
+      "side": "ask",
+      "order_type": "basic",
+      "cancelled": false,
+      "finalized": false,
+      "marked_invalid": true,
+      "client_signature": "0x4a0467117b2fe85542eae4e10a2e2eeb1dbe671bee5412cb3e131560088fad1f707978750d2ec97543e5ff55f7ad6e4145f73e06affd7ba0127b5a67cb53b4e51b",
+      "relay_id": "T3JkZXJWMlR5cGU6NjM4MzIyNjAyOA",
+      "criteria_proof": null,
+      "maker_asset_bundle": {
+        "assets": [
+          {
+            "id": 23110447,
+            "num_sales": 1,
+            "background_color": null,
+            "image_url": "https://lh3.googleusercontent.com/bIVZurwe7HW8UmoSt6ciMeG8P55zJMIjSnM6Y2vW9zKEjzPloiYq15a_5R9OBiqUgYBoV3RmeDD_m6x6OnmP_2du1eXo5NJMRHj1",
+            "image_preview_url": "https://lh3.googleusercontent.com/bIVZurwe7HW8UmoSt6ciMeG8P55zJMIjSnM6Y2vW9zKEjzPloiYq15a_5R9OBiqUgYBoV3RmeDD_m6x6OnmP_2du1eXo5NJMRHj1=s250",
+            "image_thumbnail_url": "https://lh3.googleusercontent.com/bIVZurwe7HW8UmoSt6ciMeG8P55zJMIjSnM6Y2vW9zKEjzPloiYq15a_5R9OBiqUgYBoV3RmeDD_m6x6OnmP_2du1eXo5NJMRHj1=s128",
+            "image_original_url": "ipfs://QmV4PHuWterMcYGRcVK1KWceEch3HBRUgSmovsGXjLDocW",
+            "animation_url": null,
+            "animation_original_url": null,
+            "name": null,
+            "description": null,
+            "external_link": null,
+            "asset_contract": {
+              "address": "0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d",
+              "asset_contract_type": "non-fungible",
+              "created_date": "2021-04-22T03:03:43.731860",
+              "name": "BoredApeYachtClub",
+              "nft_version": "3.0",
+              "opensea_version": null,
+              "owner": 601,
+              "schema_name": "ERC721",
+              "symbol": "BAYC",
+              "total_supply": "0",
+              "description": "The Bored Ape Yacht Club is a collection of 10,000 unique Bored Ape NFTs— unique digital collectibles living on the Ethereum blockchain. Your Bored Ape doubles as your Yacht Club membership card, and grants access to members-only benefits, the first of which is access to THE BATHROOM, a collaborative graffiti board. Future areas and perks can be unlocked by the community through roadmap activation. Visit www.BoredApeYachtClub.com for more details.",
+              "external_link": "http://www.boredapeyachtclub.com/",
+              "image_url": "https://lh3.googleusercontent.com/Ju9CkWtV-1Okvf45wo8UctR-M9He2PjILP0oOvxE89AyiPPGtrR3gysu1Zgy0hjd2xKIgjJJtWIc0ybj4Vd7wv8t3pxDGHoJBzDB=s120",
+              "default_to_fiat": false,
+              "dev_buyer_fee_basis_points": 0,
+              "dev_seller_fee_basis_points": 250,
+              "only_proxied_transfers": false,
+              "opensea_buyer_fee_basis_points": 0,
+              "opensea_seller_fee_basis_points": 250,
+              "buyer_fee_basis_points": 0,
+              "seller_fee_basis_points": 500,
+              "payout_address": "0xa858ddc0445d8131dac4d1de01f834ffcba52ef1"
+            },
+            "permalink": "https://opensea.io/assets/ethereum/0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d/449",
+            "collection": {
+              "banner_image_url": "https://lh3.googleusercontent.com/i5dYZRkVCUK97bfprQ3WXyrT9BnLSZtVKGJlKQ919uaUB0sxbngVCioaiyu9r6snqfi2aaTyIvv6DHm4m2R3y7hMajbsv14pSZK8mhs=s2500",
+              "chat_url": null,
+              "created_date": "2021-04-22T23:14:03.967121",
+              "default_to_fiat": false,
+              "description": "The Bored Ape Yacht Club is a collection of 10,000 unique Bored Ape NFTs— unique digital collectibles living on the Ethereum blockchain. Your Bored Ape doubles as your Yacht Club membership card, and grants access to members-only benefits, the first of which is access to THE BATHROOM, a collaborative graffiti board. Future areas and perks can be unlocked by the community through roadmap activation. Visit www.BoredApeYachtClub.com for more details.",
+              "dev_buyer_fee_basis_points": "0",
+              "dev_seller_fee_basis_points": "250",
+              "discord_url": "https://discord.gg/3P5K3dzgdB",
+              "display_data": {
+                "card_display_style": "contain"
+              },
+              "external_url": "http://www.boredapeyachtclub.com/",
+              "featured": false,
+              "featured_image_url": "https://lh3.googleusercontent.com/RBX3jwgykdaQO3rjTcKNf5OVwdukKO46oOAV3zZeiaMb8VER6cKxPDTdGZQdfWcDou75A8KtVZWM_fEnHG4d4q6Um8MeZIlw79BpWPA=s300",
+              "hidden": false,
+              "safelist_request_status": "verified",
+              "image_url": "https://lh3.googleusercontent.com/Ju9CkWtV-1Okvf45wo8UctR-M9He2PjILP0oOvxE89AyiPPGtrR3gysu1Zgy0hjd2xKIgjJJtWIc0ybj4Vd7wv8t3pxDGHoJBzDB=s120",
+              "is_subject_to_whitelist": false,
+              "large_image_url": "https://lh3.googleusercontent.com/RBX3jwgykdaQO3rjTcKNf5OVwdukKO46oOAV3zZeiaMb8VER6cKxPDTdGZQdfWcDou75A8KtVZWM_fEnHG4d4q6Um8MeZIlw79BpWPA=s300",
+              "medium_username": null,
+              "name": "Bored Ape Yacht Club",
+              "only_proxied_transfers": false,
+              "opensea_buyer_fee_basis_points": "0",
+              "opensea_seller_fee_basis_points": "250",
+              "payout_address": "0xa858ddc0445d8131dac4d1de01f834ffcba52ef1",
+              "require_email": false,
+              "short_description": null,
+              "slug": "boredapeyachtclub",
+              "telegram_url": null,
+              "twitter_username": "BoredApeYC",
+              "instagram_username": null,
+              "wiki_url": null,
+              "is_nsfw": false,
+              "fees": {
+                "seller_fees": {
+                  "0xa858ddc0445d8131dac4d1de01f834ffcba52ef1": 250
+                },
+                "opensea_fees": {
+                  "0x0000a26b00c1f0df003000390027140000faa719": 250
+                }
+              }
+            },
+            "decimals": 0,
+            "token_metadata": "https://opensea.mypinata.cloud/ipfs/QmeSjSinHpPnmXmspMjwiXyN6zS4E9zccariGR3jxcaWtq/449",
+            "is_nsfw": false,
+            "owner": {
+              "user": {
+                "username": null
+              },
+              "profile_img_url": "https://storage.googleapis.com/opensea-static/opensea-profile/30.png",
+              "address": "0x06a298ad6c5176f782ac9fa3a690dc68b7a030bd",
+              "config": ""
+            },
+            "token_id": "449"
+          }
+        ],
+        "maker": null,
+        "slug": null,
+        "name": null,
+        "description": null,
+        "external_link": null,
+        "asset_contract": {
+          "address": "0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d",
+          "asset_contract_type": "non-fungible",
+          "created_date": "2021-04-22T03:03:43.731860",
+          "name": "BoredApeYachtClub",
+          "nft_version": "3.0",
+          "opensea_version": null,
+          "owner": 601,
+          "schema_name": "ERC721",
+          "symbol": "BAYC",
+          "total_supply": "0",
+          "description": "The Bored Ape Yacht Club is a collection of 10,000 unique Bored Ape NFTs— unique digital collectibles living on the Ethereum blockchain. Your Bored Ape doubles as your Yacht Club membership card, and grants access to members-only benefits, the first of which is access to THE BATHROOM, a collaborative graffiti board. Future areas and perks can be unlocked by the community through roadmap activation. Visit www.BoredApeYachtClub.com for more details.",
+          "external_link": "http://www.boredapeyachtclub.com/",
+          "image_url": "https://lh3.googleusercontent.com/Ju9CkWtV-1Okvf45wo8UctR-M9He2PjILP0oOvxE89AyiPPGtrR3gysu1Zgy0hjd2xKIgjJJtWIc0ybj4Vd7wv8t3pxDGHoJBzDB=s120",
+          "default_to_fiat": false,
+          "dev_buyer_fee_basis_points": 0,
+          "dev_seller_fee_basis_points": 250,
+          "only_proxied_transfers": false,
+          "opensea_buyer_fee_basis_points": 0,
+          "opensea_seller_fee_basis_points": 250,
+          "buyer_fee_basis_points": 0,
+          "seller_fee_basis_points": 500,
+          "payout_address": "0xa858ddc0445d8131dac4d1de01f834ffcba52ef1"
+        },
+        "permalink": "https://opensea.io/bundles/None",
+        "seaport_sell_orders": null
+      },
+      "taker_asset_bundle": {
+        "assets": [
+          {
+            "id": 13689077,
+            "num_sales": 0,
+            "background_color": null,
+            "image_url": "https://openseauserdata.com/files/6f8e2979d428180222796ff4a33ab929.svg",
+            "image_preview_url": "https://openseauserdata.com/files/6f8e2979d428180222796ff4a33ab929.svg",
+            "image_thumbnail_url": "https://openseauserdata.com/files/6f8e2979d428180222796ff4a33ab929.svg",
+            "image_original_url": "https://openseauserdata.com/files/6f8e2979d428180222796ff4a33ab929.svg",
+            "animation_url": null,
+            "animation_original_url": null,
+            "name": "Ether",
+            "description": "",
+            "external_link": null,
+            "asset_contract": {
+              "address": "0x0000000000000000000000000000000000000000",
+              "asset_contract_type": "fungible",
+              "created_date": "2019-08-02T23:41:09.503168",
+              "name": "Ether",
+              "nft_version": null,
+              "opensea_version": null,
+              "owner": null,
+              "schema_name": "ERC20",
+              "symbol": "ETH",
+              "total_supply": null,
+              "description": "This is the collection of owners of Ether",
+              "external_link": null,
+              "image_url": null,
+              "default_to_fiat": false,
+              "dev_buyer_fee_basis_points": 0,
+              "dev_seller_fee_basis_points": 0,
+              "only_proxied_transfers": false,
+              "opensea_buyer_fee_basis_points": 0,
+              "opensea_seller_fee_basis_points": 250,
+              "buyer_fee_basis_points": 0,
+              "seller_fee_basis_points": 250,
+              "payout_address": null
+            },
+            "permalink": "https://opensea.io/assets/ethereum/0x0000000000000000000000000000000000000000/0",
+            "collection": {
+              "banner_image_url": null,
+              "chat_url": null,
+              "created_date": "2019-08-02T23:41:09.501266",
+              "default_to_fiat": false,
+              "description": "This is the collection of owners of Ether",
+              "dev_buyer_fee_basis_points": "0",
+              "dev_seller_fee_basis_points": "0",
+              "discord_url": null,
+              "display_data": {},
+              "external_url": null,
+              "featured": false,
+              "featured_image_url": null,
+              "hidden": true,
+              "safelist_request_status": "not_requested",
+              "image_url": null,
+              "is_subject_to_whitelist": false,
+              "large_image_url": null,
+              "medium_username": null,
+              "name": "Ether",
+              "only_proxied_transfers": false,
+              "opensea_buyer_fee_basis_points": "0",
+              "opensea_seller_fee_basis_points": "250",
+              "payout_address": null,
+              "require_email": false,
+              "short_description": null,
+              "slug": "ether",
+              "telegram_url": null,
+              "twitter_username": null,
+              "instagram_username": null,
+              "wiki_url": null,
+              "is_nsfw": false,
+              "fees": {
+                "seller_fees": {},
+                "opensea_fees": {
+                  "0x0000a26b00c1f0df003000390027140000faa719": 250
+                }
+              }
+            },
+            "decimals": 18,
+            "token_metadata": null,
+            "is_nsfw": false,
+            "owner": {
+              "user": {
+                "username": "NullAddress"
+              },
+              "profile_img_url": "https://storage.googleapis.com/opensea-static/opensea-profile/1.png",
+              "address": "0x0000000000000000000000000000000000000000",
+              "config": ""
+            },
+            "token_id": "0"
+          }
+        ],
+        "maker": null,
+        "slug": null,
+        "name": null,
+        "description": null,
+        "external_link": null,
+        "asset_contract": {
+          "address": "0x0000000000000000000000000000000000000000",
+          "asset_contract_type": "fungible",
+          "created_date": "2019-08-02T23:41:09.503168",
+          "name": "Ether",
+          "nft_version": null,
+          "opensea_version": null,
+          "owner": null,
+          "schema_name": "ERC20",
+          "symbol": "ETH",
+          "total_supply": null,
+          "description": "This is the collection of owners of Ether",
+          "external_link": null,
+          "image_url": null,
+          "default_to_fiat": false,
+          "dev_buyer_fee_basis_points": 0,
+          "dev_seller_fee_basis_points": 0,
+          "only_proxied_transfers": false,
+          "opensea_buyer_fee_basis_points": 0,
+          "opensea_seller_fee_basis_points": 250,
+          "buyer_fee_basis_points": 0,
+          "seller_fee_basis_points": 250,
+          "payout_address": null
+        },
+        "permalink": "https://opensea.io/bundles/None",
+        "seaport_sell_orders": null
+      }
+    }
+  ]
+}
