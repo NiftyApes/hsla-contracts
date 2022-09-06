@@ -78,7 +78,7 @@ contract TestPurchaseWithFinancing is Test, OffersLoansRefinancesFixtures, ERC72
         );
         order.parameters.totalOriginalConsiderationItems = 3;
         order.signature = bytes(
-            0x0fd8072572bdec4b6f496cef4380c1fde6aa43f0fc9c0c89b3df988195d1cfc047cdc65045bc836e3238a1f9d2ac074e0d7a7e74f646f6b0ed23339f780680131b
+            "0x0fd8072572bdec4b6f496cef4380c1fde6aa43f0fc9c0c89b3df988195d1cfc047cdc65045bc836e3238a1f9d2ac074e0d7a7e74f646f6b0ed23339f780680131b"
         );
 
         uint256 msgValue = order.parameters.consideration[0].startAmount +
@@ -221,9 +221,11 @@ contract TestPurchaseWithFinancing is Test, OffersLoansRefinancesFixtures, ERC72
         params.additionalRecipients[1].recipient = payable(
             address(0xA858DDc0445d8131daC4d1DE01f834ffcbA52Ef1)
         );
-        params.signature = bytes(
-            "0xede1357d160d0111a96d3fcfd13c9cab4949c3282724b5e4108ae66616db02a51ad9ba42e0a41d16ebf586ce09b4435d81a627bb84dfe28c62123c7c0de8429e1c"
-        );
+        // This is not getting parsed correctly
+        //params.signature = bytes(
+        //    "0xede1357d160d0111a96d3fcfd13c9cab4949c3282724b5e4108ae66616db02a51ad9ba42e0a41d16ebf586ce09b4435d81a627bb84dfe28c62123c7c0de8429e1c"
+        //);
+        params.signature = bytes("0x0");
         return params;
     }
 }
