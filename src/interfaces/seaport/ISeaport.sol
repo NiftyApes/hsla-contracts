@@ -112,6 +112,33 @@ interface ISeaport {
     view
     returns (uint256 counter);
 
+    /**
+     * @notice Retrieve the status of a given order by hash, including whether
+     *         the order has been cancelled or validated and the fraction of the
+     *         order that has been filled.
+     *
+     * @param orderHash The order hash in question.
+     *
+     * @return isValidated A boolean indicating whether the order in question
+     *                     has been validated (i.e. previously approved or
+     *                     partially filled).
+     * @return isCancelled A boolean indicating whether the order in question
+     *                     has been cancelled.
+     * @return totalFilled The total portion of the order that has been filled
+     *                     (i.e. the "numerator").
+     * @return totalSize   The total size of the order that is either filled or
+     *                     unfilled (i.e. the "denominator").
+     */
+    function getOrderStatus(bytes32 orderHash)
+    external
+    view
+    returns (
+        bool isValidated,
+        bool isCancelled,
+        uint256 totalFilled,
+        uint256 totalSize
+    );
+
 
     /**
  * @dev An order contains eleven components: an offerer, a zone (or account that

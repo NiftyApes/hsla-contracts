@@ -86,5 +86,18 @@ contract SeaportMock is ISeaport {
      *      supplied, as the caller may specify additional consideration items.
      */
 
+    function getOrderStatus(bytes32 orderHash)
+    external
+    view
+    returns (
+        bool isValidated,
+        bool isCancelled,
+        uint256 totalFilled,
+        uint256 totalSize
+    )
+    {
+        return (true, true, 0, 0);
+    }
+
 
 }
