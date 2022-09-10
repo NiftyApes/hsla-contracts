@@ -138,7 +138,8 @@ contract NiftyApesSigLending is
     function purchaseWithFinancingSeaportSignature(
         Offer memory offer,
         bytes memory signature,
-        ISeaport.BasicOrderParameters calldata order
+        ISeaport.Order calldata order,
+        bytes32 fulfillerConduitKey
     ) external payable whenNotPaused nonReentrant {
         address lender = IOffers(offersContractAddress).getOfferSigner(offer, signature);
 
@@ -147,7 +148,7 @@ contract NiftyApesSigLending is
         IOffers(offersContractAddress).requireSignature65(signature);
 
         if (!offer.floorTerm) {
-            _requireMatchingNftId(offer, order.offerIdentifier);
+            _requireMatchingNftId(offer, order.parameters.offer[0].identifierOrCriteria);
             IOffers(offersContractAddress).markSignatureUsed(offer, signature);
         }
 
@@ -156,7 +157,8 @@ contract NiftyApesSigLending is
                 lender,
                 msg.sender,
                 order,
-                msg.value
+                msg.value,
+                fulfillerConduitKey
             );
     }
 

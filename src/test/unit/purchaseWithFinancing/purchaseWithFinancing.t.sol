@@ -82,7 +82,7 @@ contract TestPurchaseWithFinancing is Test, OffersLoansRefinancesFixtures, ERC72
         offer.nftContractAddress = order.parameters.offer[0].token;
         offer.nftId = order.parameters.offer[0].identifierOrCriteria;
         offer.asset = ETH_ADDRESS;
-        offer.amount = msgValue / 2;
+        offer.amount = uint128(msgValue / 2);
         offer.expiration = uint32(block.timestamp + 1);
 
         (, LoanAuction memory loanAuction) = createOfferAndTryPurchaseWithFinancing(
@@ -145,7 +145,7 @@ contract TestPurchaseWithFinancing is Test, OffersLoansRefinancesFixtures, ERC72
     //
     function createOfferAndTryPurchaseWithFinancing(
         Offer memory offer,
-        ISeaport.BasicOrderParameters memory params,
+        ISeaport.Order memory params,
         bytes memory errorCode
     ) internal returns (Offer memory, LoanAuction memory) {
         Offer memory offerCreated = createOffer(offer, lender1);
@@ -176,7 +176,8 @@ contract TestPurchaseWithFinancing is Test, OffersLoansRefinancesFixtures, ERC72
                 offer.nftContractAddress,
                 offerHash,
                 offer.floorTerm,
-                order
+                order,
+                bytes32(0)
             );
             console.log("here 6");
         } else {
@@ -185,7 +186,8 @@ contract TestPurchaseWithFinancing is Test, OffersLoansRefinancesFixtures, ERC72
                 offer.nftContractAddress,
                 offerHash,
                 offer.floorTerm,
-                order
+                order,
+                bytes32(0)
             );
         }
         vm.stopPrank();

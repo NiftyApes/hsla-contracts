@@ -32,11 +32,13 @@ interface IPurchaseWithFinancing is
     /// @param offerHash Hash of the existing offer in NiftyApes on-chain offerBook
     /// @param floorTerm Determines if this is a floor offer or not.
     /// @param order Seaport parameters the caller is expected to fill out.
+    /// @param fulfillerConduitKey Seaport conduit key of the fulfiller
     function purchaseWithFinancingSeaport(
         address nftContractAddress,
         bytes32 offerHash,
         bool floorTerm,
-        ISeaport.BasicOrderParameters calldata order
+        ISeaport.Order calldata order,
+        bytes32 fulfillerConduitKey
     ) external payable;
 
     /// @notice Allows the PurchaseWithFiancning contract to interact directly with the lending contract
@@ -45,11 +47,13 @@ interface IPurchaseWithFinancing is
     /// @param borrower The prospecive borrower on the loan
     /// @param order Seaport parameters the caller is expected to fill out
     /// @param msgValue The value of ETH sent with the original transaction
+    /// @param fulfillerConduitKey Seaport conduit key of the fulfiller
     function doPurchaseWithFinancingSeaport(
         Offer memory offer,
         address lender,
         address borrower,
-        ISeaport.BasicOrderParameters calldata order,
-        uint256 msgValue
+        ISeaport.Order calldata order,
+        uint256 msgValue,
+        bytes32 fulfillerConduitKey
     ) external payable;
 }

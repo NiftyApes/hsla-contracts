@@ -4,6 +4,7 @@ pragma solidity 0.8.13;
 import "./ISigLendingAdmin.sol";
 import "./ISigLendingEvents.sol";
 import "../offers/IOffersStructs.sol";
+import "../../seaport/ISeaport.sol";
 
 /// @title The signature lending interface for Nifty Apes
 ///        This interface is intended to be used for interacting with loans on the protocol.
@@ -51,4 +52,16 @@ interface ISigLending is ISigLendingAdmin, ISigLendingEvents, IOffersStructs {
         uint256 nftId,
         uint32 expectedLastUpdatedTimestamp
     ) external;
+
+    /// @notice Allows a user to borrow ETH to purchase NFTs
+    /// @param offer The details of the loan auction offer
+    /// @param signature The signature for the offer
+    /// @param order Seaport parameters the caller is expected to fill out.
+    /// @param fulfillerConduitKey Seaport conduit key of the fulfiller
+    function purchaseWithFinancingSeaportSignature(
+        Offer memory offer,
+        bytes memory signature,
+        ISeaport.Order calldata order,
+        bytes32 fulfillerConduitKey
+    ) external payable;
 }
