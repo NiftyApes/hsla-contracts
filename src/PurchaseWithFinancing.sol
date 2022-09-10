@@ -187,7 +187,7 @@ contract NiftyApesPurchaseWithFinancing is
         Offer memory offer,
         address lender,
         address borrower,
-        ISeaport.BasicOrderParameters calldata order,
+        ISeaport.Order calldata order,
         uint256 msgValue
     ) internal {
         address cAsset = ILiquidity(liquidityContractAddress).getCAsset(offer.asset);
@@ -243,8 +243,9 @@ contract NiftyApesPurchaseWithFinancing is
 
         // Purchase NFT
         require(
-            ISeaport(seaportContractAddress).fulfillBasicOrder{ value: order.considerationAmount }(
-                order
+            ISeaport(seaportContractAddress).fulfillOrder{ value: order.considerationAmount }(
+                order,
+                bytes32(0)
             ),
             "00048"
         );

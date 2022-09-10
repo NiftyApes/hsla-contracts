@@ -13,186 +13,91 @@ import "forge-std/Test.sol";
 
 contract TestPurchaseWithFinancing is Test, OffersLoansRefinancesFixtures, ERC721HolderUpgradeable {
     function setUp() public override {
-        super.setUp();
-
         // pin block to time of writing test to reflect consistent state
-        // vm.rollFork(15455075);
-        vm.warp(1664587837 - 100);
+        vm.rollFork(15510097);
+        vm.warp(1662833943);
 
-        // adjust tests to operate on consistent ETH and DAI on specific NFTs
+        super.setUp();
     }
 
     function toOrderComponents(ISeaport.OrderParameters memory _params, uint256 nonce)
-    internal
-    pure
-    returns (ISeaport.OrderComponents memory)
+        internal
+        pure
+        returns (ISeaport.OrderComponents memory)
     {
         return
-        ISeaport.OrderComponents(
-            _params.offerer,
-            _params.zone,
-            _params.offer,
-            _params.consideration,
-            _params.orderType,
-            _params.startTime,
-            _params.endTime,
-            _params.zoneHash,
-            _params.salt,
-            _params.conduitKey,
-            nonce
-        );
+            ISeaport.OrderComponents(
+                _params.offerer,
+                _params.zone,
+                _params.offer,
+                _params.consideration,
+                _params.orderType,
+                _params.startTime,
+                _params.endTime,
+                _params.zoneHash,
+                _params.salt,
+                _params.conduitKey,
+                nonce
+            );
     }
 
-    function test_unit_validOffer()
-    public
-    {
-        // ISeaport.BasicOrderParameters memory params = basicETHOrderParamsFromFields();
-
-        // vm.startPrank(borrower1);
-        // ISeaport(SEAPORT_ADDRESS).fulfillBasicOrder{ value: params.considerationAmount }(params);
-        // vm.stopPrank();
+    function createAndValidateOffer() public returns (ISeaport.Order memory) {
+        ISeaport.Order memory order = ETHOrder();
 
         address offerer = 0xf1BCf736a46D41f8a9d210777B3d75090860a665;
         bytes32 order_hash = 0x95a8fef9a007729a938410f6c7f4bdce07b929a2ef83979a84f53ec14dbda06b;
 
-        ISeaport.Order memory order;
-        order.parameters.offerer = offerer;
-        order.parameters.zone = address(0x004C00500000aD104D7DBd00e3ae0A5C00560C00);
-        order.parameters.offer = new ISeaport.OfferItem[](1);
-        order.parameters.offer[0].itemType = ISeaport.ItemType.ERC721;
-        order.parameters.offer[0].token = address(0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D);
-        order.parameters.offer[0].identifierOrCriteria = 326;
-        order.parameters.offer[0].startAmount = 1;
-        order.parameters.offer[0].endAmount = 1;
-        order.parameters.consideration = new ISeaport.ConsiderationItem[](3);
-        order.parameters.consideration[0].itemType = ISeaport.ItemType.NATIVE;
-        order.parameters.consideration[0].token = address(0);
-        order.parameters.consideration[0].identifierOrCriteria = 0;
-        order.parameters.consideration[0].startAmount = 73625000000000000000;
-        order.parameters.consideration[0].endAmount = 73625000000000000000;
-        order.parameters.consideration[0].recipient = payable(
-            address(0xf1BCf736a46D41f8a9d210777B3d75090860a665)
-        );
-        order.parameters.consideration[1].itemType = ISeaport.ItemType.NATIVE;
-        order.parameters.consideration[1].token = address(0);
-        order.parameters.consideration[1].identifierOrCriteria = 0;
-        order.parameters.consideration[1].startAmount = 1937500000000000000;
-        order.parameters.consideration[1].endAmount = 1937500000000000000;
-        order.parameters.consideration[1].recipient = payable(
-            address(0x0000a26b00c1F0DF003000390027140000fAa719)
-        );
-        order.parameters.consideration[2].itemType = ISeaport.ItemType.NATIVE;
-        order.parameters.consideration[2].token = address(0);
-        order.parameters.consideration[2].identifierOrCriteria = 0;
-        order.parameters.consideration[2].startAmount = 1937500000000000000;
-        order.parameters.consideration[2].endAmount = 1937500000000000000;
-        order.parameters.consideration[2].recipient = payable(
-            address(0xA858DDc0445d8131daC4d1DE01f834ffcbA52Ef1)
-        );
-        order.parameters.orderType = ISeaport.OrderType.FULL_RESTRICTED;
-        order.parameters.startTime = 1662306983;
-        order.parameters.endTime = 1664820334;
-        order.parameters.zoneHash = bytes32(
-            0x0000000000000000000000000000000000000000000000000000000000000000
-        );
-        order.parameters.salt = 96789058676732069;
-        order.parameters.conduitKey = bytes32(
-            0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000
-        );
-        order.parameters.totalOriginalConsiderationItems = 3;
-        order.signature = bytes(
-            hex"0fd8072572bdec4b6f496cef4380c1fde6aa43f0fc9c0c89b3df988195d1cfc047cdc65045bc836e3238a1f9d2ac074e0d7a7e74f646f6b0ed23339f780680131b"
-        );
-
-        uint256 msgValue = order.parameters.consideration[0].startAmount +
-        order.parameters.consideration[1].startAmount +
-        order.parameters.consideration[2].startAmount;
-
         vm.startPrank(borrower1);
-        assertEq(order_hash, ISeaport(SEAPORT_ADDRESS).getOrderHash(toOrderComponents(order.parameters, ISeaport(SEAPORT_ADDRESS).getCounter(offerer))));
-        (bool valid, bool cancelled, uint256 filled, ) = ISeaport(SEAPORT_ADDRESS).getOrderStatus(order_hash);
+        assertEq(
+            order_hash,
+            ISeaport(SEAPORT_ADDRESS).getOrderHash(
+                toOrderComponents(order.parameters, ISeaport(SEAPORT_ADDRESS).getCounter(offerer))
+            )
+        );
+        (bool valid, bool cancelled, uint256 filled, ) = ISeaport(SEAPORT_ADDRESS).getOrderStatus(
+            order_hash
+        );
         assertEq(valid, false);
         assertEq(cancelled, false);
         assertEq(filled, 0);
-        ISeaport(SEAPORT_ADDRESS).fulfillOrder{ value: msgValue }(order, bytes32(0));
         vm.stopPrank();
-    }
 
+        return order;
+    }
 
     function _test_purchaseWithFinancing_simplest_case(FuzzedOfferFields memory fuzzedOfferData)
         private
     {
         Offer memory offer = offerStructFromFields(fuzzedOfferData, defaultFixedOfferFields);
-        // ISeaport.BasicOrderParameters memory params = basicETHOrderParamsFromFields();
-
-        // vm.startPrank(borrower1);
-        // ISeaport(SEAPORT_ADDRESS).fulfillBasicOrder{ value: params.considerationAmount }(params);
-        // vm.stopPrank();
-
-        address offerer = 0xf1BCf736a46D41f8a9d210777B3d75090860a665;
-        bytes32 order_hash = 0x95a8fef9a007729a938410f6c7f4bdce07b929a2ef83979a84f53ec14dbda06b;
-
-        ISeaport.Order memory order;
-        order.parameters.offerer = offerer;
-        order.parameters.zone = address(0x004C00500000aD104D7DBd00e3ae0A5C00560C00);
-        order.parameters.offer = new ISeaport.OfferItem[](1);
-        order.parameters.offer[0].itemType = ISeaport.ItemType.ERC721;
-        order.parameters.offer[0].token = address(0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D);
-        order.parameters.offer[0].identifierOrCriteria = 326;
-        order.parameters.offer[0].startAmount = 1;
-        order.parameters.offer[0].endAmount = 1;
-        order.parameters.consideration = new ISeaport.ConsiderationItem[](3);
-        order.parameters.consideration[0].itemType = ISeaport.ItemType.NATIVE;
-        order.parameters.consideration[0].token = address(0);
-        order.parameters.consideration[0].identifierOrCriteria = 0;
-        order.parameters.consideration[0].startAmount = 73625000000000000000;
-        order.parameters.consideration[0].endAmount = 73625000000000000000;
-        order.parameters.consideration[0].recipient = payable(
-            address(0xf1BCf736a46D41f8a9d210777B3d75090860a665)
-        );
-        order.parameters.consideration[1].itemType = ISeaport.ItemType.NATIVE;
-        order.parameters.consideration[1].token = address(0);
-        order.parameters.consideration[1].identifierOrCriteria = 0;
-        order.parameters.consideration[1].startAmount = 1937500000000000000;
-        order.parameters.consideration[1].endAmount = 1937500000000000000;
-        order.parameters.consideration[1].recipient = payable(
-            address(0x0000a26b00c1F0DF003000390027140000fAa719)
-        );
-        order.parameters.consideration[2].itemType = ISeaport.ItemType.NATIVE;
-        order.parameters.consideration[2].token = address(0);
-        order.parameters.consideration[2].identifierOrCriteria = 0;
-        order.parameters.consideration[2].startAmount = 1937500000000000000;
-        order.parameters.consideration[2].endAmount = 1937500000000000000;
-        order.parameters.consideration[2].recipient = payable(
-            address(0xA858DDc0445d8131daC4d1DE01f834ffcbA52Ef1)
-        );
-        order.parameters.orderType = ISeaport.OrderType.FULL_RESTRICTED;
-        order.parameters.startTime = 1662306983;
-        order.parameters.endTime = 1664820334;
-        order.parameters.zoneHash = bytes32(
-            0x0000000000000000000000000000000000000000000000000000000000000000
-        );
-        order.parameters.salt = 96789058676732069;
-        order.parameters.conduitKey = bytes32(
-            0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000
-        );
-        order.parameters.totalOriginalConsiderationItems = 3;
-        order.signature = bytes(
-            "0x0fd8072572bdec4b6f496cef4380c1fde6aa43f0fc9c0c89b3df988195d1cfc047cdc65045bc836e3238a1f9d2ac074e0d7a7e74f646f6b0ed23339f780680131b"
-        );
+        ISeaport.Order memory order = createAndValidateOffer();
 
         uint256 msgValue = order.parameters.consideration[0].startAmount +
             order.parameters.consideration[1].startAmount +
             order.parameters.consideration[2].startAmount;
 
         vm.startPrank(borrower1);
-        assertEq(order_hash, ISeaport(SEAPORT_ADDRESS).getOrderHash(toOrderComponents(order.parameters, ISeaport(SEAPORT_ADDRESS).getCounter(offerer))));
-        (bool valid, bool cancelled, uint256 filled, ) = ISeaport(SEAPORT_ADDRESS).getOrderStatus(order_hash);
-        assertEq(valid, false);
-        assertEq(cancelled, false);
-        assertEq(filled, 0);
         ISeaport(SEAPORT_ADDRESS).fulfillOrder{ value: msgValue }(order, bytes32(0));
         vm.stopPrank();
+
+        offer.nftContractAddress = order.parameters.offer[0].token;
+        offer.nftId = order.parameters.offer[0].identifierOrCriteria;
+        offer.asset = ETH_ADDRESS;
+        offer.amount = msgValue / 2;
+        offer.expiration = uint32(block.timestamp + 1);
+
+        (, LoanAuction memory loanAuction) = createOfferAndTryPurchaseWithFinancing(
+            offer,
+            order,
+            "should work"
+        );
+
+        // lending contract has NFT
+        assertEq(
+            IERC721Upgradeable(offer.nftContractAddress).ownerOf(offer.nftId),
+            address(lending)
+        );
+        // loan auction exists
+        assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
 
         // offer.nftContractAddress = params.offerToken;
         // offer.nftId = params.offerIdentifier;
@@ -253,7 +158,7 @@ contract TestPurchaseWithFinancing is Test, OffersLoansRefinancesFixtures, ERC72
 
     function tryPurchaseWithFinancing(
         Offer memory offer,
-        ISeaport.BasicOrderParameters memory params,
+        ISeaport.Order memory order,
         bytes memory errorCode
     ) internal returns (LoanAuction memory) {
         vm.startPrank(borrower1);
@@ -262,7 +167,7 @@ contract TestPurchaseWithFinancing is Test, OffersLoansRefinancesFixtures, ERC72
         if (bytes16(errorCode) != bytes16("should work")) {
             vm.expectRevert(errorCode);
         }
-        uint256 borrowerPays = params.considerationAmount - uint256(offer.amount);
+        uint256 borrowerPays = (uint256(offer.amount) * 2) - uint256(offer.amount);
 
         if (offer.asset == ETH_ADDRESS) {
             console.log("here 5");
@@ -271,7 +176,7 @@ contract TestPurchaseWithFinancing is Test, OffersLoansRefinancesFixtures, ERC72
                 offer.nftContractAddress,
                 offerHash,
                 offer.floorTerm,
-                params
+                order
             );
             console.log("here 6");
         } else {
@@ -280,7 +185,7 @@ contract TestPurchaseWithFinancing is Test, OffersLoansRefinancesFixtures, ERC72
                 offer.nftContractAddress,
                 offerHash,
                 offer.floorTerm,
-                params
+                order
             );
         }
         vm.stopPrank();
@@ -288,49 +193,55 @@ contract TestPurchaseWithFinancing is Test, OffersLoansRefinancesFixtures, ERC72
         return lending.getLoanAuction(offer.nftContractAddress, offer.nftId);
     }
 
-    function basicETHOrderParamsFromFields()
-        internal
-        returns (ISeaport.BasicOrderParameters memory)
-    {
-        ISeaport.BasicOrderParameters memory params;
-        params.considerationToken = address(0);
-        params.considerationIdentifier = uint256(0);
-        params.considerationAmount = uint256(80 ether);
-        params.offerer = payable(address(0xb2C0b589fa31B7c776aa6F7d4f231255cB0Fe373));
-        params.zone = address(0x004C00500000aD104D7DBd00e3ae0A5C00560C00);
-        params.offerToken = address(0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D);
-        params.offerIdentifier = uint256(9719);
-        params.offerAmount = uint256(1);
-        params.basicOrderType = ISeaport.BasicOrderType.ETH_TO_ERC721_FULL_OPEN;
-        params.startTime = uint256(1661995837);
-        params.endTime = uint256(1664587837);
-        params.zoneHash = bytes32(
-            0x0000000000000000000000000000000000000000000000000000000000000000
+    function ETHOrder() internal returns (ISeaport.Order memory) {
+        ISeaport.Order memory order;
+        order.parameters.offerer = address(0xf1BCf736a46D41f8a9d210777B3d75090860a665);
+        order.parameters.zone = address(0x004C00500000aD104D7DBd00e3ae0A5C00560C00);
+        order.parameters.offer = new ISeaport.OfferItem[](1);
+        order.parameters.offer[0].itemType = ISeaport.ItemType.ERC721;
+        order.parameters.offer[0].token = address(0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D);
+        order.parameters.offer[0].identifierOrCriteria = 326;
+        order.parameters.offer[0].startAmount = 1;
+        order.parameters.offer[0].endAmount = 1;
+        order.parameters.consideration = new ISeaport.ConsiderationItem[](3);
+        order.parameters.consideration[0].itemType = ISeaport.ItemType.NATIVE;
+        order.parameters.consideration[0].token = address(0);
+        order.parameters.consideration[0].identifierOrCriteria = 0;
+        order.parameters.consideration[0].startAmount = 73625000000000000000;
+        order.parameters.consideration[0].endAmount = 73625000000000000000;
+        order.parameters.consideration[0].recipient = payable(
+            address(0xf1BCf736a46D41f8a9d210777B3d75090860a665)
         );
-        params.salt = uint256(14181645366604922);
-        params.offererConduitKey = bytes32(
-            0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000
-        );
-        params.fulfillerConduitKey = bytes32(0);
-        params.totalOriginalAdditionalRecipients = uint256(2);
-        params.additionalRecipients = new ISeaport.AdditionalRecipient[](2);
-        // params.additionalRecipients[0].amount = 76 ether;
-        // params.additionalRecipients[0].recipient = payable(
-        //     address(0xb2C0b589fa31B7c776aa6F7d4f231255cB0Fe373)
-        // );
-        params.additionalRecipients[0].amount = 2 ether;
-        params.additionalRecipients[0].recipient = payable(
+        order.parameters.consideration[1].itemType = ISeaport.ItemType.NATIVE;
+        order.parameters.consideration[1].token = address(0);
+        order.parameters.consideration[1].identifierOrCriteria = 0;
+        order.parameters.consideration[1].startAmount = 1937500000000000000;
+        order.parameters.consideration[1].endAmount = 1937500000000000000;
+        order.parameters.consideration[1].recipient = payable(
             address(0x0000a26b00c1F0DF003000390027140000fAa719)
         );
-        params.additionalRecipients[1].amount = 2 ether;
-        params.additionalRecipients[1].recipient = payable(
+        order.parameters.consideration[2].itemType = ISeaport.ItemType.NATIVE;
+        order.parameters.consideration[2].token = address(0);
+        order.parameters.consideration[2].identifierOrCriteria = 0;
+        order.parameters.consideration[2].startAmount = 1937500000000000000;
+        order.parameters.consideration[2].endAmount = 1937500000000000000;
+        order.parameters.consideration[2].recipient = payable(
             address(0xA858DDc0445d8131daC4d1DE01f834ffcbA52Ef1)
         );
-        // This is not getting parsed correctly
-        //params.signature = bytes(
-        //    "0xede1357d160d0111a96d3fcfd13c9cab4949c3282724b5e4108ae66616db02a51ad9ba42e0a41d16ebf586ce09b4435d81a627bb84dfe28c62123c7c0de8429e1c"
-        //);
-        params.signature = bytes("0x0");
-        return params;
+        order.parameters.orderType = ISeaport.OrderType.FULL_RESTRICTED;
+        order.parameters.startTime = 1662306983;
+        order.parameters.endTime = 1664820334;
+        order.parameters.zoneHash = bytes32(
+            0x0000000000000000000000000000000000000000000000000000000000000000
+        );
+        order.parameters.salt = 96789058676732069;
+        order.parameters.conduitKey = bytes32(
+            0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000
+        );
+        order.parameters.totalOriginalConsiderationItems = 3;
+        order.signature = bytes(
+            hex"0fd8072572bdec4b6f496cef4380c1fde6aa43f0fc9c0c89b3df988195d1cfc047cdc65045bc836e3238a1f9d2ac074e0d7a7e74f646f6b0ed23339f780680131b"
+        );
+        return order;
     }
 }
