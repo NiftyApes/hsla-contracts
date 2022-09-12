@@ -238,7 +238,7 @@ contract NiftyApesPurchaseWithFinancing is
 
         uint256 considerationAmount;
 
-        for (uint256 i = 0; i < order.parameters.totalOriginalConsiderationItems - 1; i++) {
+        for (uint256 i = 0; i < order.parameters.totalOriginalConsiderationItems; i++) {
             considerationAmount += order.parameters.consideration[i].endAmount;
         }
 
@@ -253,11 +253,11 @@ contract NiftyApesPurchaseWithFinancing is
             IERC20Upgradeable asset = IERC20Upgradeable(offer.asset);
             asset.safeTransferFrom(borrower, address(this), considerationDelta);
 
-            uint256 allowance = asset.allowance(address(this), address(cAsset));
+            uint256 allowance = asset.allowance(address(this), address(seaportContractAddress));
             if (allowance > 0) {
-                asset.safeDecreaseAllowance(cAsset, allowance);
+                asset.safeDecreaseAllowance(seaportContractAddress, allowance);
             }
-            asset.safeIncreaseAllowance(cAsset, considerationDelta);
+            asset.safeIncreaseAllowance(seaportContractAddress, considerationAmount);
         }
 
         uint256 cTokensBurned = ILiquidity(liquidityContractAddress).burnCErc20(
@@ -272,13 +272,20 @@ contract NiftyApesPurchaseWithFinancing is
         _ethTransferable = false;
 
         // Purchase NFT
-        require(
-            ISeaport(seaportContractAddress).fulfillOrder{ value: considerationAmount }(
-                order,
-                bytes32(0)
-            ),
-            "00048"
-        );
+        if (offer.asset == ETH_ADDRESS) {
+            require(
+                ISeaport(seaportContractAddress).fulfillOrder{ value: considerationAmount }(
+                    order,
+                    fulfillerConduitKey
+                ),
+                "00048"
+            );
+        } else {
+            require(
+                ISeaport(seaportContractAddress).fulfillOrder(order, fulfillerConduitKey),
+                "00048"
+            );
+        }
 
         // Transfer purchased NFT to Lending.sol
         _transferNft(
