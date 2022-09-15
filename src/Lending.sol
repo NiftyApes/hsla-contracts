@@ -373,10 +373,6 @@ contract NiftyApesLending is
             loanAuction.slashableLenderInterest +
             ((uint256(loanAuction.amountDrawn) * originationPremiumBps) / MAX_BPS);
 
-        console.log("toLenderUnderlying", toLenderUnderlying);
-        console.log("loanAuction.accumulatedLenderInterest", loanAuction.accumulatedLenderInterest);
-        console.log("loanAuction.slashableLenderInterest", loanAuction.slashableLenderInterest);
-
         uint256 toProtocolUnderlying = loanAuction.accumulatedProtocolInterest;
 
         require(offer.amount >= toLenderUnderlying + toProtocolUnderlying, "00005");
@@ -507,9 +503,6 @@ contract NiftyApesLending is
 
             protocolPremiumInCtokens = ILiquidity(liquidityContractAddress)
                 .assetAmountToCAssetAmount(offer.asset, protocolInterestAndPremium);
-
-            console.log("fri jul 15 -- additionalTokens", additionalTokens);
-            console.log("fri jul 15 -- protocolPremiumInCtokens", protocolPremiumInCtokens);
 
             _requireSufficientBalance(
                 offer.creator,
