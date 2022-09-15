@@ -370,7 +370,8 @@ contract NiftyApesLending is
 
         uint256 toLenderUnderlying = loanAuction.amountDrawn +
             loanAuction.accumulatedLenderInterest +
-            loanAuction.slashableLenderInterest;
+            loanAuction.slashableLenderInterest +
+            ((uint256(loanAuction.amountDrawn) * originationPremiumBps) / MAX_BPS);
 
         console.log("toLenderUnderlying", toLenderUnderlying);
         console.log("loanAuction.accumulatedLenderInterest", loanAuction.accumulatedLenderInterest);
