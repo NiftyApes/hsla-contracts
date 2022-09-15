@@ -17,18 +17,20 @@ contract TestCalculateInterestRatePerSecond is Test, OffersLoansRefinancesFixtur
     function test_unit_calculateInterestRatePerSecond_math() public {
         uint256 interestBps = 10000;
         uint256 amount = 1 ether;
-        uint256 duration = 30 * 52 weeks;
+        uint256 duration = 1 weeks;
         uint256 maxBps = 10000;
 
         uint256 IRPS = ((amount * interestBps) / duration) / maxBps;
 
-        assertEq(1059896893, IRPS);
+        console.log("IRPS", IRPS);
+
+        assertEq(1653439153439, IRPS);
     }
 
     function test_unit_calculateInterestBps_math() public {
-        uint256 interestRatePerSecond = 1;
-        uint256 amount = 864000000;
-        uint256 duration = 1 days;
+        uint256 interestRatePerSecond = 1653439153439;
+        uint256 amount = 1 ether;
+        uint256 duration = 1 weeks;
         uint256 maxBps = 10000;
 
         console.log("(interestRatePerSecond * duration)", (interestRatePerSecond * duration));
@@ -45,7 +47,7 @@ contract TestCalculateInterestRatePerSecond is Test, OffersLoansRefinancesFixtur
 
         console.log("interestRateResult", interestRateResult);
 
-        assertEq(1, interestRateResult);
+        assertEq(10000, interestRateResult);
     }
 
     function test_fuzz_calculateInterestRatePerSecond_math(

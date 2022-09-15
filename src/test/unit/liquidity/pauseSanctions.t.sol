@@ -15,28 +15,20 @@ contract TestLiquidityPauseSanctions is Test, OffersLoansRefinancesFixtures {
     }
 
     function test_unit_liquidity_pauseSanctions_works() public {
-        vm.prank(owner);
-        liquidity.pauseSanctions();
-
         if (integration) {
             vm.startPrank(daiWhale);
-            vm.expectRevert("Blacklistable: account is blacklisted");
-            daiToken.transfer(SANCTIONED_ADDRESS, 1);
+            daiToken.transfer(SANCTIONED_ADDRESS, daiToken.balanceOf(daiWhale));
             vm.stopPrank();
         } else {
-            vm.prank(SANCTIONED_ADDRESS);
-            daiToken.mint(SANCTIONED_ADDRESS, 1);
+            daiToken.mint(SANCTIONED_ADDRESS, 3672711471 ether);
         }
+
+        vm.startPrank(owner);
+        liquidity.pauseSanctions();
+        vm.stopPrank();
 
         vm.startPrank(SANCTIONED_ADDRESS);
-        if (integration) {
-            vm.expectRevert("Blacklistable: account is blacklisted");
-        }
         daiToken.approve(address(liquidity), 1);
-
-        if (integration) {
-            vm.expectRevert("Blacklistable: account is blacklisted");
-        }
         liquidity.supplyErc20(address(daiToken), 1);
         vm.stopPrank();
     }
@@ -47,33 +39,25 @@ contract TestLiquidityPauseSanctions is Test, OffersLoansRefinancesFixtures {
     }
 
     function test_unit_liquidity_unpauseSanctions_works() public {
-        vm.prank(owner);
-        liquidity.pauseSanctions();
-
         if (integration) {
             vm.startPrank(daiWhale);
-            vm.expectRevert("Blacklistable: account is blacklisted");
-            daiToken.transfer(SANCTIONED_ADDRESS, 1);
+            daiToken.transfer(SANCTIONED_ADDRESS, daiToken.balanceOf(daiWhale));
             vm.stopPrank();
         } else {
-            vm.prank(SANCTIONED_ADDRESS);
-            daiToken.mint(SANCTIONED_ADDRESS, 1);
+            daiToken.mint(SANCTIONED_ADDRESS, 3672711471 ether);
         }
 
-        vm.startPrank(SANCTIONED_ADDRESS);
-        if (integration) {
-            vm.expectRevert("Blacklistable: account is blacklisted");
-        }
-        daiToken.approve(address(liquidity), 1);
-
-        if (integration) {
-            vm.expectRevert("Blacklistable: account is blacklisted");
-        }
-        liquidity.supplyErc20(address(daiToken), 1);
+        vm.startPrank(owner);
+        liquidity.pauseSanctions();
         vm.stopPrank();
 
-        vm.prank(owner);
+        vm.startPrank(SANCTIONED_ADDRESS);
+        daiToken.approve(address(liquidity), 1);
+        liquidity.supplyErc20(address(daiToken), 1);
+        vm.stopPrank();
+        vm.startPrank(owner);
         liquidity.unpauseSanctions();
+        vm.stopPrank();
 
         vm.startPrank(SANCTIONED_ADDRESS);
         vm.expectRevert("00017");

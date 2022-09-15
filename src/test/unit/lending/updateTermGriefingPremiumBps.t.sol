@@ -42,59 +42,32 @@ contract TestUpdateTermGriefingPremiumBps is Test, OffersLoansRefinancesFixtures
 
         tryToRefinanceByLender(newOffer, "should work");
 
-        uint256 interest = offer.interestRatePerSecond *
-            (block.timestamp - firstLoan.lastUpdatedTimestamp);
-
-        uint256 threshold = (lending.gasGriefingPremiumBps() * firstLoan.amountDrawn) / MAX_BPS;
-
-        // uint256 griefingToLender = threshold - interest;
-
-        uint256 gasGriefingToProtocol = (interest * lending.gasGriefingProtocolPremiumBps()) /
-            MAX_BPS;
-
         uint256 termGriefingToProtocol = (lending.termGriefingPremiumBps() *
             firstLoan.amountDrawn) / MAX_BPS;
 
         uint256 defaultPremiumToProtocol = (lending.defaultRefinancePremiumBps() *
             firstLoan.amountDrawn) / MAX_BPS;
 
-        console.log("interest", interest);
-        console.log("threshold", threshold);
-        console.log(
-            "defaultPremiumToProtocol",
-            defaultPremiumToProtocol + gasGriefingToProtocol + termGriefingToProtocol
+        LoanAuction memory loanAuction = lending.getLoanAuction(
+            newOffer.nftContractAddress,
+            newOffer.nftId
         );
-        console.log("lower", assetBalance(owner, address(daiToken)));
-        console.log("upper", assetBalancePlusOneCToken(owner, address(daiToken)));
+
+        uint256 protocolInterest = loanAuction.accumulatedPaidProtocolInterest +
+            loanAuction.unpaidProtocolInterest;
 
         if (offer.asset == address(daiToken)) {
-            if (interest < threshold) {
-                assertBetween(
-                    defaultPremiumToProtocol + gasGriefingToProtocol + termGriefingToProtocol,
-                    assetBalance(owner, address(daiToken)),
-                    assetBalancePlusOneCToken(owner, address(daiToken))
-                );
-            } else {
-                assertBetween(
-                    defaultPremiumToProtocol + termGriefingToProtocol,
-                    assetBalance(owner, address(daiToken)),
-                    assetBalancePlusOneCToken(owner, address(daiToken))
-                );
-            }
+            assertBetween(
+                protocolInterest + defaultPremiumToProtocol + termGriefingToProtocol,
+                assetBalance(owner, address(daiToken)),
+                assetBalancePlusOneCToken(owner, address(daiToken))
+            );
         } else {
-            if (interest < threshold) {
-                assertBetween(
-                    defaultPremiumToProtocol + gasGriefingToProtocol + termGriefingToProtocol,
-                    assetBalance(owner, ETH_ADDRESS),
-                    assetBalancePlusOneCToken(owner, ETH_ADDRESS)
-                );
-            } else {
-                assertBetween(
-                    defaultPremiumToProtocol + termGriefingToProtocol,
-                    assetBalance(owner, ETH_ADDRESS),
-                    assetBalancePlusOneCToken(owner, ETH_ADDRESS)
-                );
-            }
+            assertBetween(
+                protocolInterest + defaultPremiumToProtocol + termGriefingToProtocol,
+                assetBalance(owner, ETH_ADDRESS),
+                assetBalancePlusOneCToken(owner, ETH_ADDRESS)
+            );
         }
     }
 

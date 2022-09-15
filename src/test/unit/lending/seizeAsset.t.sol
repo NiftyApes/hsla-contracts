@@ -15,8 +15,8 @@ contract TestSeizeAsset is Test, OffersLoansRefinancesFixtures {
         uint256 initialTimestamp = block.timestamp;
 
         vm.assume(fuzzed.floorTerm == false);
-        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedBorrowerOfferFields);
-        createOfferAndTryToExecuteLoanByLender(offer, "should work");
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
 
         // attempts to seize something lending doesn't know about should fail
         vm.startPrank(lender1);
@@ -66,8 +66,8 @@ contract TestSeizeAsset is Test, OffersLoansRefinancesFixtures {
         uint256 initialTimestamp = block.timestamp;
 
         // create loan
-        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedBorrowerOfferFields);
-        createOfferAndTryToExecuteLoanByLender(offer, "should work");
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
 
         // warp ahead 1 second *before* loan end
         vm.warp(initialTimestamp + offer.duration - 1);
@@ -122,30 +122,49 @@ contract TestSeizeAsset is Test, OffersLoansRefinancesFixtures {
         uint256 initialTimestamp = block.timestamp;
 
         // create loan
-        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedBorrowerOfferFields);
-        createOfferAndTryToExecuteLoanByLender(offer, "should work");
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
 
         // warp ahead to end of loan
         vm.warp(initialTimestamp + offer.duration);
+
+        LoanAuction memory loanAuction = lending.getLoanAuction(
+            offer.nftContractAddress,
+            offer.nftId
+        );
+
+        (, uint256 accruedProtocolInterest) = lending.calculateInterestAccrued(
+            defaultFixedOfferFields.nftContractAddress,
+            defaultFixedOfferFields.nftId
+        );
+
+        uint256 protocolInterest = loanAuction.accumulatedPaidProtocolInterest +
+            loanAuction.unpaidProtocolInterest +
+            accruedProtocolInterest;
 
         // borrower still owns NFT (in contract escrow)
         assertEq(mockNft.ownerOf(offer.nftId), address(lending));
         assertEq(lending.ownerOf(offer.nftContractAddress, offer.nftId), address(borrower1));
 
         // borrower repays loan
-        mintDai(borrower1, offer.interestRatePerSecond * offer.duration);
+        mintDai(borrower1, (offer.interestRatePerSecond * offer.duration) + protocolInterest);
+
         vm.startPrank(borrower1);
         if (offer.asset == address(daiToken)) {
-            daiToken.increaseAllowance(address(liquidity), ~uint256(0));
+            daiToken.approve(address(liquidity), ~uint256(0));
             lending.repayLoan(offer.nftContractAddress, offer.nftId);
         } else {
-            vm.deal(borrower1, offer.amount + offer.interestRatePerSecond * offer.duration);
+            vm.deal(
+                borrower1,
+                offer.amount + (offer.interestRatePerSecond * offer.duration) + protocolInterest
+            );
             lending.repayLoan{
-                value: offer.amount + (offer.interestRatePerSecond * offer.duration)
+                value: offer.amount +
+                    (offer.interestRatePerSecond * offer.duration) +
+                    protocolInterest
             }(offer.nftContractAddress, offer.nftId);
         }
         vm.stopPrank();
-
         // attempt to seize results in revert
         vm.startPrank(lender1);
         vm.expectRevert("00040");
@@ -167,5 +186,31 @@ contract TestSeizeAsset is Test, OffersLoansRefinancesFixtures {
     function test_unit_seizeAsset_CANNOT_if_loan_repaid() public {
         FuzzedOfferFields memory fixedForSpeed = defaultFixedFuzzedFieldsForFastUnitTesting;
         _test_seizeAsset_CANNOT_if_loan_repaid(fixedForSpeed);
+    }
+
+    function test_unit_seizeAsset_3rdParty_works() public {
+        uint256 initialTimestamp = block.timestamp;
+
+        Offer memory offer = offerStructFromFields(
+            defaultFixedFuzzedFieldsForFastUnitTesting,
+            defaultFixedOfferFields
+        );
+        createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
+
+        // warp to end of loan
+        vm.warp(initialTimestamp + offer.duration);
+
+        // still owned by borrower (in contract escrow)
+        assertEq(mockNft.ownerOf(offer.nftId), address(lending));
+        assertEq(lending.ownerOf(offer.nftContractAddress, offer.nftId), address(borrower1));
+
+        // seize asset by other lendershould work
+        vm.startPrank(lender2);
+        lending.seizeAsset(offer.nftContractAddress, offer.nftId);
+        vm.stopPrank();
+
+        // lender1 owns NFT after seize
+        assertEq(mockNft.ownerOf(offer.nftId), address(lender1));
+        assertEq(lending.ownerOf(offer.nftContractAddress, offer.nftId), address(0));
     }
 }
