@@ -69,6 +69,7 @@ contract NiftyApesPurchaseWithFinancing is
         OwnableUpgradeable.__Ownable_init();
         PausableUpgradeable.__Pausable_init();
         ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
+        ERC721HolderUpgradeable.__ERC721Holder_init();
     }
 
     /// @inheritdoc IPurchaseWithFinancingAdmin
