@@ -814,37 +814,39 @@ contract NiftyApesLending is
         uint256 drawAmount,
         address cAsset
     ) internal returns (uint256) {
+        uint256 lenderBalance = ILiquidity(liquidityContractAddress).getCAssetBalance(
+            loanAuction.lender,
+            cAsset
+        );
+
+        uint256 drawTokens = ILiquidity(liquidityContractAddress).assetAmountToCAssetAmount(
+            loanAuction.asset,
+            drawAmount
+        );
+
+        if (lenderBalance < drawTokens) {
+            drawAmount = ILiquidity(liquidityContractAddress).cAssetAmountToAssetAmount(
+                cAsset,
+                lenderBalance
+            );
+
+            loanAuction.amount = SafeCastUpgradeable.toUint128(
+                loanAuction.amountDrawn + drawAmount
+            );
+        }
+
         if (loanAuction.lenderRefi) {
             loanAuction.lenderRefi = false;
 
-            uint256 lenderBalance = ILiquidity(liquidityContractAddress).getCAssetBalance(
-                loanAuction.lender,
-                cAsset
-            );
-
-            uint256 drawTokens = ILiquidity(liquidityContractAddress).assetAmountToCAssetAmount(
-                loanAuction.asset,
-                drawAmount
-            );
-
             if (lenderBalance < drawTokens) {
-                drawAmount = ILiquidity(liquidityContractAddress).cAssetAmountToAssetAmount(
-                    cAsset,
-                    lenderBalance
-                );
-
-                // This eliminates all accumulated interest for this lender on the loan
+                // This eliminates all accumulated interest/profit for this lender on the loan
                 loanAuction.slashableLenderInterest = 0;
-
-                loanAuction.amount = SafeCastUpgradeable.toUint128(
-                    loanAuction.amountDrawn + drawAmount
-                );
-            } else {
-                if (loanAuction.slashableLenderInterest > 0) {
-                    loanAuction.accumulatedLenderInterest += loanAuction.slashableLenderInterest;
-                    loanAuction.slashableLenderInterest = 0;
-                }
             }
+        }
+
+        if (loanAuction.slashableLenderInterest > 0) {
+            loanAuction.accumulatedLenderInterest += loanAuction.slashableLenderInterest;
+            loanAuction.slashableLenderInterest = 0;
         }
 
         return drawAmount;
