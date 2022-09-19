@@ -41,7 +41,8 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
             offer.amount +
                 (offer.interestRatePerSecond * secondsBeforeRefinance) +
                 interestShortfall +
-                ((amountDrawn * lending.protocolInterestBps()) / 10_000)
+                ((amountDrawn * lending.protocolInterestBps()) / 10_000) +
+                ((amountDrawn * lending.originationPremiumBps()) / 10_000)
         );
 
         Offer memory newOffer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
