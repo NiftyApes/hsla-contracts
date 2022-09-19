@@ -268,7 +268,7 @@ contract LendingAuctionUnitTest is
         uint256 principal = 1 ether;
         uint256 interest = 10_000_000_000 * 10**6; // interest per second * seconds
         uint256 amtDrawn = 1 ether;
-        uint256 originationFeeBps = 50;
+        uint256 originationFeeBps = 25;
         uint256 MAX_BPS = 10_000;
         uint256 feesFromLender2 = ((amtDrawn * originationFeeBps) / MAX_BPS);
 
@@ -388,7 +388,7 @@ contract LendingAuctionUnitTest is
         uint256 principal = 1 ether;
         uint256 interest = 10_000_000_000 * 10**6; // interest per second * seconds
         uint256 amtDrawn = 1 ether;
-        uint256 originationFeeBps = 50;
+        uint256 originationFeeBps = 25;
         uint256 MAX_BPS = 10_000;
         uint256 feesFromLender2 = ((amtDrawn * originationFeeBps) / MAX_BPS);
 
@@ -4127,11 +4127,11 @@ contract LendingAuctionUnitTest is
         assertEq(liquidityProviders.getCAssetBalance(address(this), address(cDAIToken)), 0);
         assertEq(
             liquidityProviders.getCAssetBalance(LENDER_1, address(cDAIToken)),
-            6029999999999980800 ether
+            6044999999999980800 ether
         );
         assertEq(
             liquidityProviders.getCAssetBalance(LENDER_2, address(cDAIToken)),
-            3970000000000019200 ether
+            3955000000000019200 ether
         );
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
@@ -5405,11 +5405,11 @@ contract LendingAuctionUnitTest is
         assertEq(liquidityProviders.getCAssetBalance(address(this), address(cDAIToken)), 0);
         assertEq(
             liquidityProviders.getCAssetBalance(LENDER_1, address(cDAIToken)),
-            6029999999999980800 ether
+            6044999999999980800 ether
         );
         assertEq(
             liquidityProviders.getCAssetBalance(SIGNER_1, address(cDAIToken)),
-            3970000000000019200 ether
+            3955000000000019200 ether
         );
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
@@ -6203,11 +6203,11 @@ contract LendingAuctionUnitTest is
         assertEq(liquidityProviders.getCAssetBalance(address(this), address(cDAIToken)), 0);
         assertEq(
             liquidityProviders.getCAssetBalance(LENDER_1, address(cDAIToken)),
-            6325679998080000000 ether
+            6310679998080000000 ether
         );
         assertEq(
             liquidityProviders.getCAssetBalance(LENDER_2, address(cDAIToken)),
-            1674320001920000000 ether
+            1689320001920000000 ether
         );
 
         assertEq(liquidityProviders.getCAssetBalance(OWNER, address(cDAIToken)), 0 ether);
@@ -6429,11 +6429,11 @@ contract LendingAuctionUnitTest is
         assertEq(liquidityProviders.getCAssetBalance(address(this), address(cDAIToken)), 0);
         assertEq(
             liquidityProviders.getCAssetBalance(LENDER_1, address(cDAIToken)),
-            6045416666666656800 ether
+            6030416666666656800 ether
         );
         assertEq(
             liquidityProviders.getCAssetBalance(LENDER_2, address(cDAIToken)),
-            3954583333333343200 ether
+            3969583333333343200 ether
         );
 
         assertEq(
@@ -6662,7 +6662,7 @@ contract LendingAuctionUnitTest is
         assertEq(liquidityProviders.getCAssetBalance(address(this), address(cDAIToken)), 0);
         assertEq(
             liquidityProviders.getCAssetBalance(LENDER_1, address(cDAIToken)),
-            6045416666666656800 ether
+            6030416666666656800 ether
         );
         assertEq(
             liquidityProviders.getCAssetBalance(LENDER_2, address(cDAIToken)),
@@ -6671,7 +6671,7 @@ contract LendingAuctionUnitTest is
 
         assertEq(
             liquidityProviders.getCAssetBalance(LENDER_3, address(cDAIToken)),
-            3939166666666730800 ether
+            3954166666666730800 ether
         );
 
         assertEq(
@@ -7342,11 +7342,12 @@ contract LendingAuctionUnitTest is
     function testRepayLoanForAccount_works() public {
         setupLoan();
 
-        hevm.prank(SIGNER_1);
+        hevm.startPrank(SIGNER_1);
         daiToken.mint(address(SIGNER_1), 1000 ether);
         daiToken.approve(address(liquidityProviders), 1000 ether);
 
         lendingAuction.repayLoanForAccount(address(mockNft), 1, uint32(block.timestamp));
+        hevm.stopPrank();
     }
 
     function testCannotRepayLoanForAccount_if_sanctioned() public {
@@ -7591,7 +7592,7 @@ contract LendingAuctionUnitTest is
         // since add whichever is greater, interest or gas griefing fee.
         uint256 principal = 1 ether;
         uint256 amtDrawn = 1 ether;
-        uint256 originationFeeBps = 50;
+        uint256 originationFeeBps = 25;
         uint256 gasGriefingFeeBps = 25;
         uint256 MAX_BPS = 10_000;
         uint256 feesFromLender2 = ((amtDrawn * originationFeeBps) / MAX_BPS) +
@@ -7697,7 +7698,7 @@ contract LendingAuctionUnitTest is
         uint256 principal = 1 ether;
         uint256 interest = 10**10 * 10**6;
         uint256 amtDrawn = 1 ether;
-        uint256 originationFeeBps = 50;
+        uint256 originationFeeBps = 25;
         uint256 MAX_BPS = 10_000;
         uint256 feesFromLender2 = ((amtDrawn * originationFeeBps) / MAX_BPS);
 
@@ -7811,7 +7812,7 @@ contract LendingAuctionUnitTest is
         uint256 principal = 1 ether;
         uint256 interest = 10_000_000_000 * 10**6; // interest per second * seconds
         uint256 amtDrawn = 1 ether;
-        uint256 originationFeeBps = 50;
+        uint256 originationFeeBps = 25;
         uint256 termGriefingPremiumBps = 25;
         uint256 MAX_BPS = 10_000;
         uint256 feesFromLender2 = ((amtDrawn * originationFeeBps) / MAX_BPS);
@@ -8167,7 +8168,7 @@ contract LendingAuctionUnitTest is
         uint256 principal = 1 ether;
         uint256 interest = 10_000_000_000 * 10**6 seconds; // interest per second * seconds
         uint256 amtDrawn = 1 ether;
-        uint256 originationFeeBps = 50;
+        uint256 originationFeeBps = 25;
         uint256 MAX_BPS = 10_000;
         uint256 feesFromLender2 = ((amtDrawn * originationFeeBps) / MAX_BPS);
 
@@ -8208,7 +8209,7 @@ contract LendingAuctionUnitTest is
         assertEq(lenderInterest, 29999999999980800);
         assertEq(loanAuction.amountDrawn, 6 ether);
         assertTrue(loanAuction.lenderRefi);
-        assertEq(lenderBalanceBefore, 1040000000000019200000000000000000000);
+        assertEq(lenderBalanceBefore, 1055000000000019200000000000000000000);
 
         lendingAuction.drawLoanAmount(address(mockNft), 1, 1 ether);
 
@@ -8223,7 +8224,7 @@ contract LendingAuctionUnitTest is
         );
 
         assertEq(lenderInterestAfter, 0);
-        assertEq(lenderBalanceAfter, 40000000000019200000000000000000000);
+        assertEq(lenderBalanceAfter, 55000000000019200000000000000000000);
         // balance of the borrower
         assertEq(daiToken.balanceOf(address(this)), 7000000000000000000);
         // we expect the amountDrawn to be 6.04x ether. This is the remaining balance of the lender plus the current amountdrawn

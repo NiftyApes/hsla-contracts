@@ -16,6 +16,8 @@ import "./interfaces/niftyapes/offers/IOffers.sol";
 import "./interfaces/sanctions/SanctionsList.sol";
 import "./lib/Math.sol";
 
+import "forge-std/Test.sol";
+
 /// @title Implementation of the ILiquidity interface
 contract NiftyApesLiquidity is
     OwnableUpgradeable,
@@ -461,8 +463,8 @@ contract NiftyApesLiquidity is
         address cAsset = assetToCAsset[asset];
         IERC20Upgradeable underlying = IERC20Upgradeable(asset);
         ICERC20 cToken = ICERC20(cAsset);
-
         underlying.safeTransferFrom(from, address(this), amount);
+
         uint256 allowance = underlying.allowance(address(this), address(cToken));
         if (allowance > 0) {
             underlying.safeDecreaseAllowance(cAsset, allowance);

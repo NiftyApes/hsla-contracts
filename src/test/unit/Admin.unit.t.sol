@@ -130,7 +130,7 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
     }
 
     function testUpdateOriginationPremiumLenderBps_owner() public {
-        assertEq(niftyApes.originationPremiumBps(), 50);
+        assertEq(niftyApes.originationPremiumBps(), 25);
         hevm.expectEmit(false, false, false, true);
 
         emit OriginationPremiumBpsUpdated(50, 1);
