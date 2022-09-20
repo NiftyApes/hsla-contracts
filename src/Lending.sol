@@ -474,8 +474,6 @@ contract NiftyApesLending is
         loanAuction.loanEndTimestamp = loanAuction.loanBeginTimestamp + offer.duration;
 
         if (loanAuction.lender == offer.creator) {
-            // If current lender is refinancing the loan they do not need to pay any fees or buy themselves out.
-            // require prospective lender has sufficient available balance to refinance loan
             uint256 additionalTokens = ILiquidity(liquidityContractAddress)
                 .assetAmountToCAssetAmount(offer.asset, offer.amount - loanAuction.amountDrawn);
 
@@ -507,7 +505,6 @@ contract NiftyApesLending is
             }
             // calculate the value to pay out to the current lender, this includes the protocolInterest, which is paid out each refinance,
             // and reimbursed by the borrower at the end of the loan.
-            // this value may double count the currentProtocolInterest, it is paid to the current lender here and paid out to the protocol  on ln 548
             uint256 interestAndPremiumOwedToCurrentLender = uint256(
                 loanAuction.accumulatedLenderInterest
             ) +
@@ -1122,6 +1119,7 @@ contract NiftyApesLending is
             offer.duration
         );
         loanAuction.slashableLenderInterest = 0;
+        loanAuction.unpaidProtocolInterest = 0;
     }
 
     function _transferNft(

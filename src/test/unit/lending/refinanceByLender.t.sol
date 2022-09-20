@@ -989,15 +989,6 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
             address(daiToken)
         );
 
-        console.log("beforeRefinanceOwnerBalance", beforeRefinanceOwnerBalance);
-        console.log("afterRefinanceOwnerBalance", afterRefinanceOwnerBalance);
-        console.log(
-            "total",
-            beforeRefinanceOwnerBalance +
-                ((loanAuction.amountDrawn * lending.termGriefingPremiumBps()) / MAX_BPS) +
-                loanAuction.accumulatedPaidProtocolInterest
-        );
-
         assertCloseEnough(
             beforeRefinanceOwnerBalance +
                 ((loanAuction.amountDrawn * lending.termGriefingPremiumBps()) / MAX_BPS) +

@@ -1,4 +1,4 @@
-//SPDX-License-Identifier: MIT
+//SPDX-License-Identifier: Unlicensed
 pragma solidity 0.8.13;
 
 /// @title Events emitted by the signature lending part of the protocol.

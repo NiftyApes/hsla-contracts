@@ -277,7 +277,7 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
         require(signer == expected, "00033");
     }
 
-    function _requireOfferCreator(address signer, address expected) internal view {
+    function _requireOfferCreator(address signer, address expected) internal pure {
         require(signer == expected, "00024");
     }
 
