@@ -400,12 +400,17 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         );
         assertEq(lenderAccruedInterest, 1 hours * loanAuctionAfterDraw.interestRatePerSecond);
 
+        uint256 interestThreshold = (uint256(loanAuctionAfterDraw.amountDrawn) *
+            lending.gasGriefingPremiumBps()) / MAX_BPS;
+
+        uint256 interestDelta = interestThreshold - lenderAccruedInterest;
+
         uint256 protocolInterest = loanAuctionAfterDraw.accumulatedPaidProtocolInterest +
             loanAuctionAfterDraw.unpaidProtocolInterest +
             protocolAccruedInterest;
 
         // set up borrower repay full amount
-        mintDai(borrower1, 10_000 * 10**daiToken.decimals());
+        mintDai(borrower1, 10_000 * 10**daiToken.decimals() + interestDelta);
         vm.startPrank(borrower1);
         daiToken.approve(address(liquidity), 10_000 * 10**daiToken.decimals());
 
@@ -424,7 +429,8 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
                 loanAuctionBeforeDraw.interestRatePerSecond +
                 1 hours *
                 loanAuctionAfterDraw.interestRatePerSecond +
-                protocolInterest
+                protocolInterest +
+                interestDelta
         );
 
         lending.repayLoan(offer.nftContractAddress, offer.nftId);
@@ -439,7 +445,8 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
                 1 hours *
                 loanAuctionBeforeDraw.interestRatePerSecond +
                 1 hours *
-                loanAuctionAfterDraw.interestRatePerSecond,
+                loanAuctionAfterDraw.interestRatePerSecond +
+                interestDelta,
             assetBalance(lender2, address(daiToken)),
             assetBalancePlusOneCToken(lender2, address(daiToken))
         );
