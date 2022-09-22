@@ -114,8 +114,9 @@ contract TestRefinanceLoanByBorrowerSignature is
             1;
         bytes memory signature = signOffer(lender1_private_key, offer);
 
-        vm.expectEmit(true, true, false, true); // Refinance has 2 indexes
-        emit Refinance(offer.nftContractAddress, offer.nftId, offer);
+        hevm.expectEmit(true, true, false, false);
+
+        emit Refinance(offer.nftContractAddress, offer.nftId, loanAuction);
 
         vm.startPrank(borrower1);
         sigLending.refinanceByBorrowerSignature(
@@ -173,12 +174,12 @@ contract TestRefinanceLoanByBorrowerSignature is
             1;
         bytes memory signature = signOffer(lender1_private_key, offer);
 
-        vm.expectEmit(true, true, false, true); // Refinance has 2 indexes
+        vm.expectEmit(true, true, false, false); // Refinance has 2 indexes
         emit AmountDrawn(
             offer.nftContractAddress,
             offer.nftId,
             (offer.interestRatePerSecond * 0) + interestShortfall,
-            initialAmount + (offer.interestRatePerSecond * 0) + interestShortfall
+            loanAuction
         );
 
         vm.startPrank(borrower1);
