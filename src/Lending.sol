@@ -1,4 +1,4 @@
-//SPDX-License-Identifier: Unlicensed
+//SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/access/OwnableUpgradeable.sol";
@@ -13,7 +13,13 @@ import "./interfaces/niftyapes/liquidity/ILiquidity.sol";
 import "./interfaces/niftyapes/offers/IOffers.sol";
 import "./interfaces/sanctions/SanctionsList.sol";
 
-/// @title Implementation of the ILending interface
+/// @title NiftyApes Lending
+/// @custom:version 1.0
+/// @author captnseagraves (captnseagraves.eth)
+/// @custom:contributor dankurka
+/// @custom:contributor 0xAlcibiades (alcibiades.eth)
+/// @custom:contributor zjmiller
+
 contract NiftyApesLending is
     OwnableUpgradeable,
     PausableUpgradeable,

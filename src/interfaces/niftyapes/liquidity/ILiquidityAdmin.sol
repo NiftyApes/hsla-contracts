@@ -1,4 +1,4 @@
-//SPDX-License-Identifier: Unlicensed
+//SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
 /// @title NiftyApes interface for the admin role.

@@ -1,4 +1,4 @@
-//SPDX-License-Identifier: Unlicensed
+//SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/access/OwnableUpgradeable.sol";
@@ -11,7 +11,13 @@ import "./interfaces/niftyapes/offers/IOffers.sol";
 import "./interfaces/niftyapes/liquidity/ILiquidity.sol";
 import "./lib/ECDSABridge.sol";
 
-/// @title Implementation of the IOffers interface
+/// @title NiftyApes Offers
+/// @custom:version 1.0
+/// @author captnseagraves (captnseagraves.eth)
+/// @custom:contributor dankurka
+/// @custom:contributor 0xAlcibiades (alcibiades.eth)
+/// @custom:contributor zjmiller
+
 contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgradeable, IOffers {
     /// @dev A mapping for a NFT to an Offer
     ///      The mapping has to be broken into three parts since an NFT is denominated by its address (first part)

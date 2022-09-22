@@ -1,4 +1,4 @@
-//SPDX-License-Identifier: Unlicensed
+//SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/access/OwnableUpgradeable.sol";
@@ -15,7 +15,13 @@ import "./interfaces/niftyapes/offers/IOffers.sol";
 import "./interfaces/sanctions/SanctionsList.sol";
 import "./lib/Math.sol";
 
-/// @title Implementation of the ILiquidity interface
+/// @title NiftyApes Liquidity
+/// @custom:version 1.0
+/// @author captnseagraves (captnseagraves.eth)
+/// @custom:contributor dankurka
+/// @custom:contributor 0xAlcibiades (alcibiades.eth)
+/// @custom:contributor zjmiller
+
 contract NiftyApesLiquidity is
     OwnableUpgradeable,
     PausableUpgradeable,
