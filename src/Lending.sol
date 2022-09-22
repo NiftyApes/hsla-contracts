@@ -670,6 +670,7 @@ contract NiftyApesLending is
         LoanAuction memory loanAuction = _getLoanAuctionInternal(nftContractAddress, nftId);
         // requireExpectedLoanIsActive
         require(loanAuction.loanBeginTimestamp == expectedLoanBeginTimestamp, "00027");
+        _requireIsNotSanctioned(msg.sender);
 
         _repayLoanAmount(nftContractAddress, nftId, true, 0, false);
     }
