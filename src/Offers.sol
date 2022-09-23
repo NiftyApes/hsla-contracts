@@ -14,9 +14,9 @@ import "./lib/ECDSABridge.sol";
 /// @title NiftyApes Offers
 /// @custom:version 1.0
 /// @author captnseagraves (captnseagraves.eth)
-/// @custom:contributor dankurka
+/// @custom:contributor dankurka (dankurka.eth)
 /// @custom:contributor 0xAlcibiades (alcibiades.eth)
-/// @custom:contributor zjmiller
+/// @custom:contributor zjmiller (zjmiller.eth)
 
 contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgradeable, IOffers {
     /// @dev A mapping for a NFT to an Offer
