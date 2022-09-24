@@ -263,6 +263,12 @@ contract NiftyApesPurchaseWithFinancing is
             address(this),
             lendingContractAddress
         );
+
+        emit LoanExecutedSeaport(
+            nftContractAddress,
+            order.parameters.offer[0].identifierOrCriteria,
+            offer
+        );
     }
 
     /// @inheritdoc IPurchaseWithFinancing
@@ -359,6 +365,12 @@ contract NiftyApesPurchaseWithFinancing is
                 block.timestamp
             );
         }
+
+        emit LoanExecutedSudoswap(
+            nftContractAddress,
+            nftId,
+            offer
+        );
     }
 
     function _prepareForPurchaseWithFinancing(
@@ -424,12 +436,6 @@ contract NiftyApesPurchaseWithFinancing is
             nftId,
             offer.creator,
             borrower
-        );
-
-        emit LoanExecutedSeaport(
-            nftContractAddress,
-            nftId,
-            offer
         );
     }
 

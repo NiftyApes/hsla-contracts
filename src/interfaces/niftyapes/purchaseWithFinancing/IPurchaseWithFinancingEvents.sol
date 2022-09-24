@@ -15,6 +15,16 @@ interface IPurchaseWithFinancingEvents {
         IOffersStructs.Offer offer
     );
 
+    /// @notice Emitted when a Sudoswap new loan is executed
+    /// @param nftContractAddress The nft contract address
+    /// @param nftId The nft id, this field can be meaningless if the offer is a floor term offer
+    /// @param offer The offer details
+    event LoanExecutedSudoswap(
+        address indexed nftContractAddress,
+        uint256 indexed nftId,
+        IOffersStructs.Offer offer
+    );
+
     /// @notice Emitted when the associated liquidity contract address is changed
     /// @param oldLiquidityContractAddress The old liquidity contract address
     /// @param newLiquidityContractAddress The new liquidity contract address
