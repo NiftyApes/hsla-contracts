@@ -6,6 +6,7 @@ import "./IPurchaseWithFinancingEvents.sol";
 import "../offers/IOffersStructs.sol";
 import "../lending/ILendingStructs.sol";
 import "../../seaport/ISeaport.sol";
+import "../../sudoswap/ILSSVMPair.sol";
 
 interface IPurchaseWithFinancing is
     IPurchaseWithFinancingAdmin,
@@ -27,6 +28,12 @@ interface IPurchaseWithFinancing is
 
     /// @notice Returns the address for the associated seaport contract
     function seaportContractAddress() external view returns (address);
+
+    /// @notice Returns the address for the associated sudoswap router
+    function sudoswapRouterContractAddress() external view returns (address);
+
+    /// @notice Returns the address for the associated sudoswap factory
+    function sudoswapFactoryContractAddress() external view returns (address);
 
     /// @notice Allows a user to borrow ETH to purchase NFTs.
     /// @param offerHash Hash of the existing offer in NiftyApes on-chain offerBook
@@ -55,5 +62,17 @@ interface IPurchaseWithFinancing is
         ISeaport.Order calldata order,
         uint256 msgValue,
         bytes32 fulfillerConduitKey
+    ) external payable;
+
+    /// @notice Allows a user to borrow ETH to purchase NFTs through Sudoswap.
+    /// @param lssvmPair Sudoswap nft-token pair pool.
+    /// @param nftId Id of the NFT the borrower intends to buy.
+    /// @param offerHash Hash of the existing offer in NiftyApes on-chain offerBook.
+    /// @param floorTerm Determines if this is a floor offer or not.
+    function purchaseWithFinancingSudoswap(
+        ILSSVMPair lssvmPair,
+        uint256 nftId,
+        bytes32 offerHash,
+        bool floorTerm
     ) external payable;
 }
