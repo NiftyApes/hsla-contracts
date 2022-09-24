@@ -50,29 +50,37 @@ interface IPurchaseWithFinancing is
 
     /// @notice Allows the PurchaseWithFiancning contract to interact directly with the lending contract
     /// @param offer The details of the loan offer
-    /// @param lender The prospective lender on the loan
     /// @param borrower The prospecive borrower on the loan
     /// @param order Seaport parameters the caller is expected to fill out
-    /// @param msgValue The value of ETH sent with the original transaction
     /// @param fulfillerConduitKey Seaport conduit key of the fulfiller
     function doPurchaseWithFinancingSeaport(
         Offer memory offer,
-        address lender,
         address borrower,
         ISeaport.Order calldata order,
-        uint256 msgValue,
         bytes32 fulfillerConduitKey
     ) external payable;
 
     /// @notice Allows a user to borrow ETH to purchase NFTs through Sudoswap.
-    /// @param lssvmPair Sudoswap nft-token pair pool.
-    /// @param nftId Id of the NFT the borrower intends to buy.
     /// @param offerHash Hash of the existing offer in NiftyApes on-chain offerBook.
     /// @param floorTerm Determines if this is a floor offer or not.
+    /// @param lssvmPair Sudoswap nft-token pair pool.
+    /// @param nftId Id of the NFT the borrower intends to buy.
     function purchaseWithFinancingSudoswap(
-        ILSSVMPair lssvmPair,
-        uint256 nftId,
         bytes32 offerHash,
-        bool floorTerm
+        bool floorTerm,
+        ILSSVMPair lssvmPair,
+        uint256 nftId
+    ) external payable;
+
+    /// @notice Allows a user to borrow ETH to purchase NFTs through Sudoswap.
+    /// @param offer The details of the loan offer
+    /// @param borrower The prospecive borrower on the loan
+    /// @param lssvmPair Sudoswap nft-token pair pool.
+    /// @param nftId Id of the NFT the borrower intends to purchase.
+    function doPurchaseWithFinancingSudoswap(
+        Offer memory offer,
+        address borrower,
+        ILSSVMPair lssvmPair,
+        uint256 nftId
     ) external payable;
 }

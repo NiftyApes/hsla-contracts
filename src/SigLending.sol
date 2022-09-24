@@ -9,6 +9,7 @@ import "./interfaces/niftyapes/sigLending/ISigLending.sol";
 import "./interfaces/niftyapes/offers/IOffers.sol";
 import "./interfaces/niftyapes/purchaseWithFinancing/IPurchaseWithFinancing.sol";
 import "./interfaces/seaport/ISeaport.sol";
+import "./interfaces/sudoswap/ILSSVMPair.sol";
 
 /// @title Implementation of the ILending interface
 contract NiftyApesSigLending is
@@ -152,13 +153,37 @@ contract NiftyApesSigLending is
             IOffers(offersContractAddress).markSignatureUsed(offer, signature);
         }
 
-        IPurchaseWithFinancing(purchaseWithFinancingContractAddress).doPurchaseWithFinancingSeaport(
+        IPurchaseWithFinancing(purchaseWithFinancingContractAddress).doPurchaseWithFinancingSeaport{value: msg.value}(
                 offer,
-                lender,
                 msg.sender,
                 order,
-                msg.value,
                 fulfillerConduitKey
+            );
+    }
+
+    // @inheritdoc ISigLending
+    function purchaseWithFinancingSudoswapSignature(
+        Offer memory offer,
+        bytes memory signature,
+        ILSSVMPair lssvmPair,
+        uint256 nftId
+    ) external payable whenNotPaused nonReentrant {
+        address lender = IOffers(offersContractAddress).getOfferSigner(offer, signature);
+
+        _requireOfferCreator(offer, lender);
+        IOffers(offersContractAddress).requireAvailableSignature(signature);
+        IOffers(offersContractAddress).requireSignature65(signature);
+
+        if (!offer.floorTerm) {
+            _requireMatchingNftId(offer, nftId);
+            IOffers(offersContractAddress).markSignatureUsed(offer, signature);
+        }
+
+        IPurchaseWithFinancing(purchaseWithFinancingContractAddress).doPurchaseWithFinancingSudoswap{value: msg.value}(
+                offer,
+                msg.sender,
+                lssvmPair,
+                nftId
             );
     }
 

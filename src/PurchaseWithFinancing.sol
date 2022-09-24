@@ -163,6 +163,7 @@ contract NiftyApesPurchaseWithFinancing is
         ISeaport.Order calldata order,
         bytes32 fulfillerConduitKey
     ) external payable whenNotPaused nonReentrant {
+        // fetch offer
         Offer memory offer = IOffers(offersContractAddress).getOffer(
             nftContractAddress,
             order.parameters.offer[0].identifierOrCriteria,
@@ -170,6 +171,7 @@ contract NiftyApesPurchaseWithFinancing is
             floorTerm
         );
 
+        // remove non-floor offer
         if (!offer.floorTerm) {
             _requireMatchingNftId(offer, order.parameters.offer[0].identifierOrCriteria);
             IOffers(offersContractAddress).removeOffer(
@@ -179,58 +181,99 @@ contract NiftyApesPurchaseWithFinancing is
                 floorTerm
             );
         }
-        _doPurchaseWithFinancingSeaport(
-            offer,
-            offer.creator,
-            msg.sender,
-            order,
-            msg.value,
-            fulfillerConduitKey
-        );
+
+        _doPurchaseWithFinancingSeaport(offer, msg.sender, order, nftContractAddress, fulfillerConduitKey);
     }
 
     /// @inheritdoc IPurchaseWithFinancing
     function doPurchaseWithFinancingSeaport(
         Offer memory offer,
-        address lender,
         address borrower,
         ISeaport.Order calldata order,
-        uint256 msgValue,
         bytes32 fulfillerConduitKey
     ) external payable whenNotPaused nonReentrant {
         _requireSigLendingContract();
         _doPurchaseWithFinancingSeaport(
             offer,
-            lender,
             borrower,
             order,
-            msgValue,
+            order.parameters.offer[0].token,
             fulfillerConduitKey
+        );
+    }
+
+    function _doPurchaseWithFinancingSeaport(
+        Offer memory offer,
+        address borrower,
+        ISeaport.Order calldata order,
+        address nftContractAddress,
+        bytes32 fulfillerConduitKey
+    ) internal {
+        // requireOrderTokenERC721
+        require(order.parameters.offer[0].itemType == ISeaport.ItemType.ERC721, "00049");
+        // requireOrderTokenAmount
+        require(order.parameters.offer[0].startAmount == 1, "00049");
+        // requireOrderNotAuction
+        require(
+            order.parameters.consideration[0].startAmount ==
+                order.parameters.consideration[0].endAmount,
+            "00049"
+        );
+        
+        // fetch purchasing asset address
+        address purchasingAsset = order.parameters.consideration[0].token;
+
+        // calculate consideration amount
+        uint256 considerationAmount;
+        for (uint256 i = 0; i < order.parameters.totalOriginalConsiderationItems; i++) {
+            considerationAmount += order.parameters.consideration[i].endAmount;
+        }
+
+        // prepare for purchase by increasing allowance to seaport and
+        // getting funds from lender and borrower for the considerationAmount
+        _prepareForPurchaseWithFinancing(
+        offer,
+        borrower,
+        order.parameters.offer[0].identifierOrCriteria,
+        nftContractAddress,
+        purchasingAsset,
+        considerationAmount,
+        seaportContractAddress
+        );
+
+        // Purchase NFT
+        if (offer.asset == ETH_ADDRESS) {
+            require(
+                ISeaport(seaportContractAddress).fulfillOrder{ value: considerationAmount }(
+                    order,
+                    fulfillerConduitKey
+                ),
+                "00048"
+            );
+        } else {
+            require(
+                ISeaport(seaportContractAddress).fulfillOrder(order, fulfillerConduitKey),
+                "00048"
+            );
+        }
+        // Transfer purchased NFT to Lending.sol
+        _transferNft(
+            offer.nftContractAddress,
+            order.parameters.offer[0].identifierOrCriteria,
+            address(this),
+            lendingContractAddress
         );
     }
 
     /// @inheritdoc IPurchaseWithFinancing
     function purchaseWithFinancingSudoswap(
-        ILSSVMPair lssvmPair,
-        uint256 nftId,
         bytes32 offerHash,
-        bool floorTerm
+        bool floorTerm,
+        ILSSVMPair lssvmPair,
+        uint256 nftId
     ) external payable whenNotPaused nonReentrant {
-        // verify pair provided is a valid clone of sudoswap factory pair template
-        ILSSVMPairFactoryLike.PairVariant pairVariant = lssvmPair.pairVariant();
-        require(ILSSVMPairFactoryLike(sudoswapFactoryContractAddress).isPair(address(lssvmPair), pairVariant), "00050");
-        
         // fetch nft contract address
         address nftContractAddress = address(lssvmPair.nft());
-
-        // fetch purchasing asset address
-        address purchasingAsset;
-        if (pairVariant == ILSSVMPairFactoryLike.PairVariant.ENUMERABLE_ERC20 || pairVariant == ILSSVMPairFactoryLike.PairVariant.MISSING_ENUMERABLE_ERC20) 
-            purchasingAsset = address(lssvmPair.token());
-
-        // calculate consideration amount
-        uint256 considerationAmount;
-        ( , , , considerationAmount, ) = lssvmPair.getBuyNFTQuote(1);
 
         // get offer
         Offer memory offer = IOffers(offersContractAddress).getOffer(
@@ -250,17 +293,50 @@ contract NiftyApesPurchaseWithFinancing is
                 floorTerm
             );
         }
+        _doPurchaseWithFinancingSudoswap(offer, msg.sender, lssvmPair, nftId, nftContractAddress);
+    }
+
+    /// @inheritdoc IPurchaseWithFinancing
+    function doPurchaseWithFinancingSudoswap(
+        Offer memory offer,
+        address borrower,
+        ILSSVMPair lssvmPair,
+        uint256 nftId
+    ) external payable whenNotPaused nonReentrant {
+        _requireSigLendingContract();
+        _doPurchaseWithFinancingSudoswap(offer, borrower, lssvmPair, nftId, address(lssvmPair.nft()));
+    }
+
+    function _doPurchaseWithFinancingSudoswap(
+        Offer memory offer,
+        address borrower,
+        ILSSVMPair lssvmPair,
+        uint256 nftId,
+        address nftContractAddress
+    ) internal {
+        // verify pair provided is a valid clone of sudoswap factory pair template
+        ILSSVMPairFactoryLike.PairVariant pairVariant = lssvmPair.pairVariant();
+        require(ILSSVMPairFactoryLike(sudoswapFactoryContractAddress).isPair(address(lssvmPair), pairVariant), "00050");
+
+        // fetch purchasing asset address
+        address purchasingAsset;
+        if (pairVariant == ILSSVMPairFactoryLike.PairVariant.ENUMERABLE_ERC20 || pairVariant == ILSSVMPairFactoryLike.PairVariant.MISSING_ENUMERABLE_ERC20) 
+            purchasingAsset = address(lssvmPair.token());
+
+        // calculate consideration amount
+        uint256 considerationAmount;
+        ( , , , considerationAmount, ) = lssvmPair.getBuyNFTQuote(1);
 
         // prepare for purchase by increasing allowance to sudoswap router and
         // getting funds from lender and borrower for the considerationAmount
         _prepareForPurchaseWithFinancing(
-        nftContractAddress,
-        nftId,
         offer,
-        msg.sender,
-        msg.value,
+        borrower,
+        nftId,
+        nftContractAddress,
         purchasingAsset,
-        considerationAmount
+        considerationAmount,
+        sudoswapRouterContractAddress
         );
 
         // Purchase the NFT
@@ -286,13 +362,13 @@ contract NiftyApesPurchaseWithFinancing is
     }
 
     function _prepareForPurchaseWithFinancing(
-        address nftContractAddress,
-        uint256 nftId,
         Offer memory offer,
         address borrower,
-        uint256 msgValue,
+        uint256 nftId,
+        address nftContractAddress,
         address purchasingAsset,
-        uint256 considerationAmount
+        uint256 considerationAmount,
+        address routerAddress
         ) internal {
         
         _requireIsNotSanctioned(offer.creator);
@@ -316,19 +392,19 @@ contract NiftyApesPurchaseWithFinancing is
         // arrange asset amount from borrower side for the purchase
         uint256 considerationDelta = considerationAmount - offer.amount;
         if (offer.asset == ETH_ADDRESS) {
-            require(msgValue >= considerationDelta, "00047");
-            if (msgValue > considerationDelta) {
-                payable(borrower).sendValue(msgValue - considerationDelta);
+            require(msg.value >= considerationDelta, "00047");
+            if (msg.value > considerationDelta) {
+                payable(borrower).sendValue(msg.value - considerationDelta);
             }
         } else {
             IERC20Upgradeable asset = IERC20Upgradeable(offer.asset);
             asset.safeTransferFrom(borrower, address(this), considerationDelta);
 
-            uint256 allowance = asset.allowance(address(this), address(sudoswapRouterContractAddress));
+            uint256 allowance = asset.allowance(address(this), address(routerAddress));
             if (allowance > 0) {
-                asset.safeDecreaseAllowance(sudoswapRouterContractAddress, allowance);
+                asset.safeDecreaseAllowance(routerAddress, allowance);
             }
-            asset.safeIncreaseAllowance(sudoswapRouterContractAddress, considerationAmount);
+            asset.safeIncreaseAllowance(routerAddress, considerationAmount);
         }
 
         // take remaining asset from the lender side
@@ -353,116 +429,6 @@ contract NiftyApesPurchaseWithFinancing is
         emit LoanExecutedSeaport(
             nftContractAddress,
             nftId,
-            offer
-        );
-    }
-
-    function _doPurchaseWithFinancingSeaport(
-        Offer memory offer,
-        address lender,
-        address borrower,
-        ISeaport.Order calldata order,
-        uint256 msgValue,
-        bytes32 fulfillerConduitKey
-    ) internal {
-        address cAsset = ILiquidity(liquidityContractAddress).getCAsset(offer.asset);
-
-        LoanAuction memory loanAuction = ILending(lendingContractAddress).getLoanAuction(
-            offer.nftContractAddress,
-            offer.nftId
-        );
-
-        _requireIsNotSanctioned(lender);
-        _requireIsNotSanctioned(borrower);
-        // requireOfferPresent
-        require(offer.asset != address(0), "00004");
-        _requireLenderOffer(offer);
-        _requireOfferNotExpired(offer);
-        _requireMinDurationForOffer(offer);
-        // requireNoOpenLoan
-        require(loanAuction.lastUpdatedTimestamp == 0, "00006");
-        _requireMatchingAsset(offer.asset, order.parameters.consideration[0].token);
-        _requireMatchingNFTContract(offer.nftContractAddress, order.parameters.offer[0].token);
-        // requireOrderTokenERC721
-        require(order.parameters.offer[0].itemType == ISeaport.ItemType.ERC721, "00049");
-        // requireOrderTokenAmount
-        require(order.parameters.offer[0].startAmount == 1, "00049");
-        // requireOrderNotAuction
-        require(
-            order.parameters.consideration[0].startAmount ==
-                order.parameters.consideration[0].endAmount,
-            "00049"
-        );
-
-        uint256 considerationAmount;
-
-        for (uint256 i = 0; i < order.parameters.totalOriginalConsiderationItems; i++) {
-            considerationAmount += order.parameters.consideration[i].endAmount;
-        }
-
-        uint256 considerationDelta = considerationAmount - offer.amount;
-
-        if (offer.asset == ETH_ADDRESS) {
-            require(msgValue >= considerationDelta, "00047");
-            if (msgValue > considerationDelta) {
-                payable(borrower).sendValue(msgValue - considerationDelta);
-            }
-        } else {
-            IERC20Upgradeable asset = IERC20Upgradeable(offer.asset);
-            asset.safeTransferFrom(borrower, address(this), considerationDelta);
-
-            uint256 allowance = asset.allowance(address(this), address(seaportContractAddress));
-            if (allowance > 0) {
-                asset.safeDecreaseAllowance(seaportContractAddress, allowance);
-            }
-            asset.safeIncreaseAllowance(seaportContractAddress, considerationAmount);
-        }
-
-        uint256 cTokensBurned = ILiquidity(liquidityContractAddress).burnCErc20(
-            offer.asset,
-            offer.amount
-        );
-
-        ILiquidity(liquidityContractAddress).withdrawCBalance(offer.creator, cAsset, cTokensBurned);
-
-        _ethTransferable = true;
-        ILiquidity(liquidityContractAddress).sendValue(offer.asset, offer.amount, address(this));
-        _ethTransferable = false;
-
-        // Purchase NFT
-        if (offer.asset == ETH_ADDRESS) {
-            require(
-                ISeaport(seaportContractAddress).fulfillOrder{ value: considerationAmount }(
-                    order,
-                    fulfillerConduitKey
-                ),
-                "00048"
-            );
-        } else {
-            require(
-                ISeaport(seaportContractAddress).fulfillOrder(order, fulfillerConduitKey),
-                "00048"
-            );
-        }
-
-        // Transfer purchased NFT to Lending.sol
-        _transferNft(
-            offer.nftContractAddress,
-            order.parameters.offer[0].identifierOrCriteria,
-            address(this),
-            lendingContractAddress
-        );
-
-        ILending(lendingContractAddress).createLoan(
-            offer,
-            order.parameters.offer[0].identifierOrCriteria,
-            offer.creator,
-            msg.sender
-        );
-
-        emit LoanExecutedSeaport(
-            offer.nftContractAddress,
-            order.parameters.offer[0].identifierOrCriteria,
             offer
         );
     }

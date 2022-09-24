@@ -5,6 +5,7 @@ import "./ISigLendingAdmin.sol";
 import "./ISigLendingEvents.sol";
 import "../offers/IOffersStructs.sol";
 import "../../seaport/ISeaport.sol";
+import "../../sudoswap/ILSSVMPair.sol";
 
 /// @title The signature lending interface for Nifty Apes
 ///        This interface is intended to be used for interacting with loans on the protocol.
@@ -63,5 +64,17 @@ interface ISigLending is ISigLendingAdmin, ISigLendingEvents, IOffersStructs {
         bytes memory signature,
         ISeaport.Order calldata order,
         bytes32 fulfillerConduitKey
+    ) external payable;
+
+    /// @notice Allows a user to borrow funds to purchase NFTs from Sudoswap
+    /// @param offer The details of the loan auction offer
+    /// @param signature The signature for the offer
+    /// @param lssvmPair Sudoswap nft-token pair pool.
+    /// @param nftId Id of the NFT the borrower intends to purchase.
+    function purchaseWithFinancingSudoswapSignature(
+        Offer memory offer,
+        bytes memory signature,
+        ILSSVMPair lssvmPair,
+        uint256 nftId
     ) external payable;
 }
