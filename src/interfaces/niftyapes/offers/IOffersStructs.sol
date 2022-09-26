@@ -32,4 +32,11 @@ interface IOffersStructs {
         // offer interest rate per second. (Amount * InterestRate) / MAX-BPS / Duration
         uint96 interestRatePerSecond;
     }
+
+    struct FloorCounter {
+        /// the limit of time a floor offer can be executed
+        uint64 offerLimit;
+        /// the number of times a floor offer has been executed
+        uint64 offerUsageCount;
+    }
 }

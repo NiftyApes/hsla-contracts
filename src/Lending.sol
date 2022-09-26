@@ -208,6 +208,8 @@ contract NiftyApesLending is
                 offerHash,
                 floorTerm
             );
+        } else {
+            require(IOffers(offersContractAddress).getFloorCount(););
         }
         _doExecuteLoan(offer, offer.creator, msg.sender, nftId);
     }

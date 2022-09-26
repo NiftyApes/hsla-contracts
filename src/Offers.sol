@@ -29,6 +29,10 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
     ///      Thus this mapping skips the nftId, see _nftOfferBooks above.
     mapping(address => mapping(bytes32 => Offer)) private _floorOfferBooks;
 
+    mapping(bytes32 => FloorCounter) private _floorOfferLimits;
+
+    mapping(bytes => FloorCounter) private _sigFloorOfferLimits;
+
     /// @dev A mapping to mark a signature as used.
     ///      The mapping allows users to withdraw offers that they made by signature.
     mapping(bytes => bool) private _cancelledOrFinalized;
