@@ -18,7 +18,6 @@ import "./interfaces/seaport/ISeaport.sol";
 import "./interfaces/sudoswap/ILSSVMPairFactoryLike.sol";
 import "./interfaces/sudoswap/ILSSVMPair.sol";
 import "./interfaces/sudoswap/ILSSVMRouter.sol";
-import "forge-std/Test.sol";
 
 /// @notice Extension of NiftApes lending contract to allow for Seaport purchases
 contract NiftyApesPurchaseWithFinancing is
@@ -52,11 +51,11 @@ contract NiftyApesPurchaseWithFinancing is
     /// @inheritdoc IPurchaseWithFinancing
     address public seaportContractAddress;
 
-     /// @inheritdoc IPurchaseWithFinancing
-    address public sudoswapRouterContractAddress;
-
-     /// @inheritdoc IPurchaseWithFinancing
+    /// @inheritdoc IPurchaseWithFinancing
     address public sudoswapFactoryContractAddress;
+
+    /// @inheritdoc IPurchaseWithFinancing
+    address public sudoswapRouterContractAddress;
 
     /// @notice Mutex to selectively enable ETH transfers
     /// @dev    Follows a similar pattern to `Liquidiy.sol`
@@ -72,8 +71,10 @@ contract NiftyApesPurchaseWithFinancing is
     /// @notice The initializer for the NiftyApes protocol.
     ///         Nifty Apes is intended to be deployed behind a proxy amd thus needs to initialize
     ///         its state outsize of a constructor.
-    function initialize(address newSeaportContractAddress) public initializer {
+    function initialize(address newSeaportContractAddress, address newSudoswapFactoryContractAddress, address newSudoswapRouterContractAddress) public initializer {
         seaportContractAddress = newSeaportContractAddress;
+        sudoswapFactoryContractAddress = newSudoswapFactoryContractAddress;
+        sudoswapRouterContractAddress = newSudoswapRouterContractAddress;
 
         OwnableUpgradeable.__Ownable_init();
         PausableUpgradeable.__Pausable_init();

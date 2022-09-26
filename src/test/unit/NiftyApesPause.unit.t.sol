@@ -19,6 +19,8 @@ import "../mock/CEtherMock.sol";
 import "../mock/ERC20Mock.sol";
 import "../mock/ERC721Mock.sol";
 import "../mock/SeaportMock.sol";
+import "../mock/SudoswapFactoryMock.sol";
+import "../mock/SudoswapRouterMock.sol";
 
 contract NiftyApesPauseUnitTest is
     BaseTest,
@@ -32,6 +34,8 @@ contract NiftyApesPauseUnitTest is
     NiftyApesSigLending sigLendingAuction;
     NiftyApesPurchaseWithFinancing purchaseWithFinancing;
     SeaportMock seaportMock;
+    LSSVMPairFactoryMock sudoswapFactoryMock;
+    LSSVMRouterMock sudoswapRouterMock;
     ERC20Mock daiToken;
     CERC20Mock cDAIToken;
     CEtherMock cEtherToken;
@@ -54,9 +58,15 @@ contract NiftyApesPauseUnitTest is
 
     function setUp() public {
         seaportMock = new SeaportMock();
+        sudoswapFactoryMock = new LSSVMPairFactoryMock();
+        sudoswapRouterMock = new LSSVMRouterMock();
 
         purchaseWithFinancing = new NiftyApesPurchaseWithFinancing();
-        purchaseWithFinancing.initialize(address(seaportMock));
+        purchaseWithFinancing.initialize(
+            address(seaportMock),
+            address(sudoswapFactoryMock),
+            address(sudoswapRouterMock)
+        );
 
         liquidityProviders = new NiftyApesLiquidity();
         liquidityProviders.initialize(compContractAddress, address(purchaseWithFinancing));

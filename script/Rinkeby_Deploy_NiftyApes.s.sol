@@ -16,10 +16,12 @@ contract DeployNiftyApesScript is Script {
         NiftyApesPurchaseWithFinancing purchaseWithFinancing;
         address compContractAddress = 0xbbEB7c67fa3cfb40069D19E598713239497A3CA5;
         address seaportContractAddress = 0x00000000006c3852cbEf3e08E8dF289169EdE581;
+        address sudoswapFactoryContractAddress = 0xcB1514FE29db064fa595628E0BFFD10cdf998F33;
+        address sudoswapRouterContractAddress = 0x9ABDe410D7BA62fA11EF37984c0Faf2782FE39B5;
         vm.startBroadcast();
 
         purchaseWithFinancing = new NiftyApesPurchaseWithFinancing();
-        purchaseWithFinancing.initialize(seaportContractAddress);
+        purchaseWithFinancing.initialize(seaportContractAddress, sudoswapFactoryContractAddress, sudoswapRouterContractAddress);
 
         liquidityProviders = new NiftyApesLiquidity();
         liquidityProviders.initialize(compContractAddress, address(purchaseWithFinancing));
