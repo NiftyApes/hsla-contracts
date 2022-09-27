@@ -150,7 +150,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6 ether,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -195,7 +196,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 1 ether,
             duration: 365 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -255,7 +257,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 1 ether,
             duration: 365 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
@@ -317,7 +320,8 @@ contract LendingAuctionUnitTest is
             asset: address(ETH_ADDRESS),
             amount: 1 ether,
             duration: 365 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -375,7 +379,8 @@ contract LendingAuctionUnitTest is
             asset: address(ETH_ADDRESS),
             amount: 1 ether,
             duration: 365 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
@@ -434,7 +439,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6 ether,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -469,7 +475,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 7 ether,
             duration: 3 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
@@ -513,7 +520,8 @@ contract LendingAuctionUnitTest is
             asset: address(0x0000000000000000000000000000000000000005),
             amount: 6,
             duration: 1 days,
-            expiration: 8
+            expiration: 8,
+            floorTermLimit: 1
         });
 
         hevm.expectRevert("00040");
@@ -533,7 +541,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         hevm.expectRevert("00024");
@@ -553,7 +562,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         hevm.expectRevert("00034");
@@ -578,7 +588,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -622,7 +633,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         bytes32 offerHash = offersContract.getOfferHash(offer);
@@ -659,7 +671,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -695,7 +708,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -729,7 +743,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -779,7 +794,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -823,7 +839,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -863,7 +880,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: 8
+            expiration: 8,
+            floorTermLimit: 1
         });
 
         bytes32 offerHash = offersContract.getOfferHash(offer);
@@ -895,7 +913,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 30 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -931,7 +950,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -975,7 +995,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer1);
@@ -993,7 +1014,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer2);
@@ -1038,7 +1060,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -1075,7 +1098,8 @@ contract LendingAuctionUnitTest is
             asset: ETH_ADDRESS,
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -1112,7 +1136,8 @@ contract LendingAuctionUnitTest is
             asset: ETH_ADDRESS,
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         hevm.stopPrank();
@@ -1156,7 +1181,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -1236,7 +1262,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -1313,7 +1340,8 @@ contract LendingAuctionUnitTest is
             asset: ETH_ADDRESS,
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -1363,7 +1391,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -1405,7 +1434,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         hevm.stopPrank();
@@ -1442,7 +1472,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: 8
+            expiration: 8,
+            floorTermLimit: 1
         });
 
         bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
@@ -1475,7 +1506,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: 8
+            expiration: 8,
+            floorTermLimit: 1
         });
 
         bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
@@ -1508,7 +1540,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
@@ -1539,7 +1572,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
@@ -1570,7 +1604,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: 8
+            expiration: 8,
+            floorTermLimit: 1
         });
 
         bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
@@ -1601,7 +1636,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days - 1,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
@@ -1632,7 +1668,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         hevm.stopPrank();
@@ -1664,7 +1701,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 7,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         hevm.stopPrank();
@@ -1695,7 +1733,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         hevm.stopPrank();
@@ -1727,7 +1766,8 @@ contract LendingAuctionUnitTest is
             asset: ETH_ADDRESS,
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         hevm.stopPrank();
@@ -1760,7 +1800,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         hevm.stopPrank();
@@ -1821,7 +1862,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         hevm.stopPrank();
@@ -1882,7 +1924,8 @@ contract LendingAuctionUnitTest is
             asset: ETH_ADDRESS,
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -1928,7 +1971,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         hevm.stopPrank();
@@ -1968,7 +2012,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -2010,7 +2055,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: 8
+            expiration: 8,
+            floorTermLimit: 1
         });
 
         bytes32 offerHash = offersContract.getOfferHash(offer);
@@ -2043,7 +2089,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         mockNft.transferFrom(address(this), SIGNER_1, 1);
@@ -2092,7 +2139,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -2140,7 +2188,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 7,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -2179,7 +2228,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -2218,7 +2268,8 @@ contract LendingAuctionUnitTest is
             asset: ETH_ADDRESS,
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -2257,7 +2308,8 @@ contract LendingAuctionUnitTest is
             asset: ETH_ADDRESS,
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -2293,7 +2345,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         hevm.expectRevert("00014");
@@ -2332,7 +2385,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -2411,7 +2465,8 @@ contract LendingAuctionUnitTest is
             asset: ETH_ADDRESS,
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -2463,7 +2518,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -2507,7 +2563,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         hevm.stopPrank();
@@ -2552,7 +2609,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 7,
-            expiration: 8
+            expiration: 8,
+            floorTermLimit: 1
         });
 
         bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
@@ -2586,7 +2644,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 7,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
@@ -2615,7 +2674,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
@@ -2646,7 +2706,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: 8
+            expiration: 8,
+            floorTermLimit: 1
         });
 
         bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
@@ -2677,7 +2738,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 7,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
@@ -2708,7 +2770,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
@@ -2737,7 +2800,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 7,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         hevm.stopPrank();
@@ -2776,7 +2840,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         hevm.stopPrank();
@@ -2817,7 +2882,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         hevm.stopPrank();
@@ -2886,7 +2952,8 @@ contract LendingAuctionUnitTest is
             asset: ETH_ADDRESS,
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         hevm.stopPrank();
@@ -2938,7 +3005,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         hevm.stopPrank();
@@ -2984,7 +3052,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -3017,7 +3086,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer2);
@@ -3055,7 +3125,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -3079,7 +3150,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
         hevm.stopPrank();
         offersContract.createOffer(offer2);
@@ -3124,7 +3196,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -3157,7 +3230,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer2);
@@ -3195,7 +3269,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -3228,7 +3303,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer2);
@@ -3264,7 +3340,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -3297,7 +3374,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer2);
@@ -3339,7 +3417,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -3372,7 +3451,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer2);
@@ -3413,7 +3493,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -3446,7 +3527,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer2);
@@ -3482,7 +3564,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -3515,7 +3598,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer2);
@@ -3556,7 +3640,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -3589,7 +3674,8 @@ contract LendingAuctionUnitTest is
             asset: ETH_ADDRESS,
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer2);
@@ -3630,7 +3716,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -3663,7 +3750,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer2);
@@ -3703,7 +3791,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -3736,7 +3825,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 3 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer2);
@@ -3806,7 +3896,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -3839,7 +3930,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 3 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer2);
@@ -3909,7 +4001,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -3942,7 +4035,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 3 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer2);
@@ -3984,7 +4078,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6 ether,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -4017,7 +4112,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6 ether,
             duration: 3 days,
-            expiration: uint32(block.timestamp + 200)
+            expiration: uint32(block.timestamp + 200),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer2);
@@ -4057,7 +4153,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6 ether,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -4090,7 +4187,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 7 ether,
             duration: 3 days,
-            expiration: uint32(block.timestamp + 13 hours)
+            expiration: uint32(block.timestamp + 13 hours),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer2);
@@ -4169,7 +4267,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -4202,7 +4301,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
@@ -4237,7 +4337,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -4270,7 +4371,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
@@ -4307,7 +4409,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -4340,7 +4443,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days - 1,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer2);
@@ -4375,7 +4479,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -4408,7 +4513,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
         hevm.stopPrank();
 
@@ -4442,7 +4548,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -4475,7 +4582,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         hevm.stopPrank();
@@ -4510,7 +4618,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -4543,7 +4652,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         hevm.stopPrank();
@@ -4580,7 +4690,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         hevm.stopPrank();
@@ -4616,7 +4727,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -4649,7 +4761,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         hevm.stopPrank();
@@ -4684,7 +4797,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -4717,7 +4831,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         hevm.stopPrank();
@@ -4752,7 +4867,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -4785,7 +4901,8 @@ contract LendingAuctionUnitTest is
             asset: ETH_ADDRESS,
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         hevm.stopPrank();
@@ -4820,7 +4937,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -4853,7 +4971,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         hevm.stopPrank();
@@ -4889,7 +5008,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -4922,7 +5042,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 3 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         hevm.stopPrank();
@@ -4992,7 +5113,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -5025,7 +5147,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 3 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         hevm.stopPrank();
@@ -5094,7 +5217,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -5127,7 +5251,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 3 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         hevm.stopPrank();
@@ -5194,7 +5319,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -5227,7 +5353,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 3 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         hevm.stopPrank();
@@ -5268,7 +5395,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6 ether,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -5301,7 +5429,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6 ether,
             duration: 3 days,
-            expiration: uint32(block.timestamp + 200)
+            expiration: uint32(block.timestamp + 200),
+            floorTermLimit: 1
         });
 
         hevm.stopPrank();
@@ -5338,7 +5467,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6 ether,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -5371,7 +5501,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 7 ether,
             duration: 3 days,
-            expiration: uint32(block.timestamp + 13 hours)
+            expiration: uint32(block.timestamp + 13 hours),
+            floorTermLimit: 1
         });
 
         hevm.stopPrank();
@@ -5447,7 +5578,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -5480,7 +5612,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
@@ -5508,7 +5641,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -5541,7 +5675,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
@@ -5569,7 +5704,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -5595,7 +5731,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         hevm.stopPrank();
@@ -5634,7 +5771,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -5667,7 +5805,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         hevm.stopPrank();
@@ -5699,7 +5838,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -5732,7 +5872,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
@@ -5760,7 +5901,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -5793,7 +5935,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         hevm.stopPrank();
@@ -5829,7 +5972,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -5862,7 +6006,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
@@ -5890,7 +6035,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -5923,7 +6069,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
@@ -5951,7 +6098,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -5984,7 +6132,8 @@ contract LendingAuctionUnitTest is
             asset: ETH_ADDRESS,
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
@@ -6012,7 +6161,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -6045,7 +6195,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
@@ -6075,7 +6226,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -6115,7 +6267,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
@@ -6143,7 +6296,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6 ether,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -6178,7 +6332,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 7 ether,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
@@ -6246,7 +6401,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6 ether,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -6279,7 +6435,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 7 ether,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
@@ -6307,7 +6464,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6 ether,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -6340,7 +6498,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6 ether + 0.015 ether,
             duration: 1 days + 3.7 minutes,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
         hevm.expectEmit(true, true, false, true);
 
@@ -6369,7 +6528,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6 ether,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -6404,7 +6564,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 7 ether,
             duration: 3 days,
-            expiration: uint32(block.timestamp + 200)
+            expiration: uint32(block.timestamp + 200),
+            floorTermLimit: 1
         });
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
@@ -6475,7 +6636,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6 ether,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -6508,7 +6670,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6 ether,
             duration: 3 days,
-            expiration: uint32(block.timestamp + 200)
+            expiration: uint32(block.timestamp + 200),
+            floorTermLimit: 1
         });
 
         hevm.warp(block.timestamp + 100);
@@ -6571,7 +6734,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6 ether,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -6606,7 +6770,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 7 ether,
             duration: 3 days,
-            expiration: uint32(block.timestamp + 200)
+            expiration: uint32(block.timestamp + 200),
+            floorTermLimit: 1
         });
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
@@ -6634,7 +6799,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 8 ether,
             duration: 3 days,
-            expiration: uint32(block.timestamp + 400)
+            expiration: uint32(block.timestamp + 400),
+            floorTermLimit: 1
         });
 
         loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
@@ -6725,7 +6891,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -6766,7 +6933,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -6813,7 +6981,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -6869,7 +7038,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -6917,7 +7087,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -6959,7 +7130,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -7000,7 +7172,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 1 ether,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -7077,7 +7250,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 1 ether,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -7162,7 +7336,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 1 ether,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -7231,7 +7406,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 1 ether,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -7392,7 +7568,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 1 ether,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -7447,7 +7624,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 9 ether,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
@@ -7492,7 +7670,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 9 ether + 1,
             duration: 1 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         // Not updating loanAuction, so this should be obsolete after frontrunning
@@ -7528,7 +7707,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 1 ether,
             duration: 365 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -7577,7 +7757,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 9 ether,
             duration: 365 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
@@ -7634,7 +7815,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 1 ether,
             duration: 365 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -7683,7 +7865,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 9 ether,
             duration: 365 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
@@ -7738,7 +7921,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 1 ether,
             duration: 365 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -7798,7 +7982,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 1 ether,
             duration: 365 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
@@ -8093,7 +8278,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 1 ether,
             duration: 365 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         offersContract.createOffer(offer);
@@ -8153,7 +8339,8 @@ contract LendingAuctionUnitTest is
             asset: address(daiToken),
             amount: 1 ether,
             duration: 365 days,
-            expiration: uint32(block.timestamp + 1)
+            expiration: uint32(block.timestamp + 1),
+            floorTermLimit: 1
         });
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);

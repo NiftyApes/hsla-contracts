@@ -78,6 +78,15 @@ contract NiftyApesSigLending is
         if (!offer.floorTerm) {
             _requireMatchingNftId(offer, nftId);
             IOffers(offersContractAddress).markSignatureUsed(offer, signature);
+        } else {
+            if (
+                IOffers(offersContractAddress).getSigFloorOfferCount(signature) >=
+                offer.floorTermLimit
+            ) {
+                IOffers(offersContractAddress).markSignatureUsed(offer, signature);
+            } else {
+                IOffers(offersContractAddress).incrementSigFloorOfferCount(signature);
+            }
         }
 
         // execute state changes for executeLoanByBid
@@ -122,6 +131,15 @@ contract NiftyApesSigLending is
         if (!offer.floorTerm) {
             _requireMatchingNftId(offer, nftId);
             IOffers(offersContractAddress).markSignatureUsed(offer, signature);
+        } else {
+            if (
+                IOffers(offersContractAddress).getSigFloorOfferCount(signature) >=
+                offer.floorTermLimit
+            ) {
+                IOffers(offersContractAddress).markSignatureUsed(offer, signature);
+            } else {
+                IOffers(offersContractAddress).incrementSigFloorOfferCount(signature);
+            }
         }
 
         ILending(lendingContractAddress).doRefinanceByBorrower(

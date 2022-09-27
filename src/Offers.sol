@@ -29,9 +29,11 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
     ///      Thus this mapping skips the nftId, see _nftOfferBooks above.
     mapping(address => mapping(bytes32 => Offer)) private _floorOfferBooks;
 
-    mapping(bytes32 => FloorCounter) private _floorOfferLimits;
+    /// @dev A mapping for an on chain offerHash to a floor offer counter
+    mapping(bytes32 => uint64) private _floorOfferCounters;
 
-    mapping(bytes => FloorCounter) private _sigFloorOfferLimits;
+    /// @dev A mapping for a signautre offer to a floor offer counter
+    mapping(bytes => uint64) private _sigFloorOfferCounters;
 
     /// @dev A mapping to mark a signature as used.
     ///      The mapping allows users to withdraw offers that they made by signature.
@@ -114,7 +116,8 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
                                 offer.nftId,
                                 offer.asset,
                                 offer.amount,
-                                offer.interestRatePerSecond
+                                offer.interestRatePerSecond,
+                                offer.floorTermLimit
                             )
                         )
                     )
@@ -181,6 +184,28 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
         bool floorTerm
     ) internal view returns (Offer storage) {
         return _getOfferBook(nftContractAddress, nftId, floorTerm)[offerHash];
+    }
+
+    /// @inheritdoc IOffers
+    function getFloorOfferCount(bytes32 offerHash) public view returns (uint64 count) {
+        return _floorOfferCounters[offerHash];
+    }
+
+    /// @inheritdoc IOffers
+    function getSigFloorOfferCount(bytes memory signature) public view returns (uint64 count) {
+        return _sigFloorOfferCounters[signature];
+    }
+
+    /// @inheritdoc IOffers
+    function incrementFloorOfferCount(bytes32 offerHash) public {
+        _requireLendingContract();
+        _floorOfferCounters[offerHash]++;
+    }
+
+    /// @inheritdoc IOffers
+    function incrementSigFloorOfferCount(bytes memory signature) public {
+        _requireSigLendingContract();
+        _sigFloorOfferCounters[signature]++;
     }
 
     /// @inheritdoc IOffers
@@ -295,6 +320,14 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
         if (msg.sender != lendingContractAddress) {
             require(signer == expected, "00024");
         }
+    }
+
+    function _requireLendingContract() internal view {
+        require(msg.sender == lendingContractAddress, "00024");
+    }
+
+    function _requireSigLendingContract() internal view {
+        require(msg.sender == sigLendingContractAddress, "00024");
     }
 
     function _requireOfferDoesntExist(address offerCreator) internal pure {

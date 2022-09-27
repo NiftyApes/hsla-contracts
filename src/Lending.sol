@@ -209,7 +209,18 @@ contract NiftyApesLending is
                 floorTerm
             );
         } else {
-            require(IOffers(offersContractAddress).getFloorCount(););
+            if (
+                IOffers(offersContractAddress).getFloorOfferCount(offerHash) >= offer.floorTermLimit
+            ) {
+                IOffers(offersContractAddress).removeOffer(
+                    nftContractAddress,
+                    nftId,
+                    offerHash,
+                    floorTerm
+                );
+            } else {
+                IOffers(offersContractAddress).incrementFloorOfferCount(offerHash);
+            }
         }
         _doExecuteLoan(offer, offer.creator, msg.sender, nftId);
     }
@@ -307,6 +318,19 @@ contract NiftyApesLending is
                 offerHash,
                 floorTerm
             );
+        } else {
+            if (
+                IOffers(offersContractAddress).getFloorOfferCount(offerHash) >= offer.floorTermLimit
+            ) {
+                IOffers(offersContractAddress).removeOffer(
+                    nftContractAddress,
+                    nftId,
+                    offerHash,
+                    floorTerm
+                );
+            } else {
+                IOffers(offersContractAddress).incrementFloorOfferCount(offerHash);
+            }
         }
 
         _doRefinanceByBorrower(offer, nftId, msg.sender, expectedLastUpdatedTimestamp);

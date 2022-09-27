@@ -50,6 +50,24 @@ interface IOffers is IOffersAdmin, IOffersEvents, IOffersStructs, ILendingStruct
         bool floorTerm
     ) external view returns (Offer memory offer);
 
+    /// @notice Returns a floor offers usage count
+    /// @param offerHash The hash of all parameters in an offer
+    function getFloorOfferCount(bytes32 offerHash) external view returns (uint64 count);
+
+    /// @notice Returns a signature floor offers usage count
+    /// @param signature The signature of the floor offer
+    function getSigFloorOfferCount(bytes memory signature) external view returns (uint64 count);
+
+    /// @notice Allows the lending contract to increment a floor offers usage count
+    ///         Only callable by the sigLending contract
+    /// @param offerHash The hash of all parameters in an offer
+    function incrementFloorOfferCount(bytes32 offerHash) external;
+
+    /// @notice Allows the siglending contract to increment a floor offers usage count
+    ///         Only callable by the sigLending contract
+    /// @param signature The signature of the floor offer
+    function incrementSigFloorOfferCount(bytes memory signature) external;
+
     /// @notice Creates an offer in the on chain offer book
     /// @param offer The details of offer
     function createOffer(Offer calldata offer) external returns (bytes32);

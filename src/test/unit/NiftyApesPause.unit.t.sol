@@ -110,7 +110,8 @@ contract NiftyApesPauseUnitTest is
                 asset: address(daiToken),
                 amount: 6,
                 duration: 7,
-                expiration: 8
+                expiration: 8,
+                floorTermLimit: 1
             });
     }
 

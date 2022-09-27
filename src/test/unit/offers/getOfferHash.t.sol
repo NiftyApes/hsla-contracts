@@ -24,12 +24,13 @@ contract TestGetOfferHash is Test, IOffersEvents, OffersLoansRefinancesFixtures 
             asset: address(0x18669eb6c7dFc21dCdb787fEb4B3F1eBb3172400),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(1657217355)
+            expiration: uint32(1657217355),
+            floorTermLimit: 1
         });
 
         bytes32 functionOfferHash = offers.getOfferHash(offer);
 
-        bytes32 expectedFunctionHash = 0xf4917d87dcc2e648e575f4caa8211e0e9fef194f009ec7927c92c37a22252c5b;
+        bytes32 expectedFunctionHash = 0x0b48eeb215b31c38bd54387016a784d1a7e101bf0b8280df297a8a46466b30ca;
 
         assertEq(functionOfferHash, expectedFunctionHash);
     }
