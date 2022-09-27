@@ -1,28 +1,28 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "../offers/IOffersStructs.sol";
+import "../lending/ILendingStructs.sol";
 
 /// @title Events emitted by the lending part of the protocol.
 interface IPurchaseWithFinancingEvents {
     /// @notice Emitted when a OpenSea new loan is executed
     /// @param nftContractAddress The nft contract address
     /// @param nftId The nft id, this field can be meaningless if the offer is a floor term offer
-    /// @param offer The offer details
+    /// @param loanAuction The loan auction details
     event LoanExecutedSeaport(
         address indexed nftContractAddress,
         uint256 indexed nftId,
-        IOffersStructs.Offer offer
+        ILendingStructs.LoanAuction loanAuction
     );
 
     /// @notice Emitted when a Sudoswap new loan is executed
     /// @param nftContractAddress The nft contract address
     /// @param nftId The nft id, this field can be meaningless if the offer is a floor term offer
-    /// @param offer The offer details
+    /// @param loanAuction TThe loan auction details
     event LoanExecutedSudoswap(
         address indexed nftContractAddress,
         uint256 indexed nftId,
-        IOffersStructs.Offer offer
+        ILendingStructs.LoanAuction loanAuction
     );
 
     /// @notice Emitted when the associated liquidity contract address is changed
@@ -60,6 +60,14 @@ interface IPurchaseWithFinancingEvents {
     /// @notice Emitted when the address for Seaport is changed
     /// @param newSeaportContractAddress The new address of the Seaport Contract
     event SeaportContractAddressUpdated(address newSeaportContractAddress);
+
+    /// @notice Emitted when the address for Sudoswap Factory contract address is changed
+    /// @param newSudoswapFactoryContractAddress The new address of the Sudoswap Factory contract
+    event SudoswapFactoryContractAddressUpdated(address newSudoswapFactoryContractAddress);
+
+    /// @notice Emitted when the address for Sudoswap Router contract address is changed
+    /// @param newSudoswapRouterContractAddress The new address of the Sudoswap Router contract
+    event SudoswapRouterContractAddressUpdated(address newSudoswapRouterContractAddress);
 
     /// @notice Emitted when sanctions checks are paused
     event PurchaseWithFinancingSanctionsPaused();

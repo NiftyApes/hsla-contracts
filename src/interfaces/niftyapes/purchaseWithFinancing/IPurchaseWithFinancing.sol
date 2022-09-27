@@ -48,7 +48,7 @@ interface IPurchaseWithFinancing is
         bytes32 fulfillerConduitKey
     ) external payable;
 
-    /// @notice Allows the PurchaseWithFiancning contract to interact directly with the lending contract
+    /// @notice Allows purchaseWithFinancingSeaport to interact directly with the lending contract
     /// @param offer The details of the loan offer
     /// @param borrower The prospecive borrower on the loan
     /// @param order Seaport parameters the caller is expected to fill out
@@ -72,7 +72,7 @@ interface IPurchaseWithFinancing is
         uint256 nftId
     ) external payable;
 
-    /// @notice Allows a user to borrow ETH to purchase NFTs through Sudoswap.
+    /// @notice Allows purchaseWithFinancingSudoswap to interact directly with the lending contract
     /// @param offer The details of the loan offer
     /// @param borrower The prospecive borrower on the loan
     /// @param lssvmPair Sudoswap nft-token pair pool.

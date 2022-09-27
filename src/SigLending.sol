@@ -142,16 +142,7 @@ contract NiftyApesSigLending is
         ISeaport.Order calldata order,
         bytes32 fulfillerConduitKey
     ) external payable whenNotPaused nonReentrant {
-        address lender = IOffers(offersContractAddress).getOfferSigner(offer, signature);
-
-        _requireOfferCreator(offer, lender);
-        IOffers(offersContractAddress).requireAvailableSignature(signature);
-        IOffers(offersContractAddress).requireSignature65(signature);
-
-        if (!offer.floorTerm) {
-            _requireMatchingNftId(offer, order.parameters.offer[0].identifierOrCriteria);
-            IOffers(offersContractAddress).markSignatureUsed(offer, signature);
-        }
+        _validateAndUseOfferSignature(offer, signature, order.parameters.offer[0].identifierOrCriteria);
 
         IPurchaseWithFinancing(purchaseWithFinancingContractAddress).doPurchaseWithFinancingSeaport{value: msg.value}(
                 offer,
@@ -168,6 +159,21 @@ contract NiftyApesSigLending is
         ILSSVMPair lssvmPair,
         uint256 nftId
     ) external payable whenNotPaused nonReentrant {
+        _validateAndUseOfferSignature(offer, signature, nftId);
+
+        IPurchaseWithFinancing(purchaseWithFinancingContractAddress).doPurchaseWithFinancingSudoswap{value: msg.value}(
+                offer,
+                msg.sender,
+                lssvmPair,
+                nftId
+            );
+    }
+
+    function _validateAndUseOfferSignature(
+        Offer memory offer,
+        bytes memory signature,
+        uint256 nftId
+    ) internal {
         address lender = IOffers(offersContractAddress).getOfferSigner(offer, signature);
 
         _requireOfferCreator(offer, lender);
@@ -178,13 +184,6 @@ contract NiftyApesSigLending is
             _requireMatchingNftId(offer, nftId);
             IOffers(offersContractAddress).markSignatureUsed(offer, signature);
         }
-
-        IPurchaseWithFinancing(purchaseWithFinancingContractAddress).doPurchaseWithFinancingSudoswap{value: msg.value}(
-                offer,
-                msg.sender,
-                lssvmPair,
-                nftId
-            );
     }
 
     function _requireLenderOffer(Offer memory offer) internal pure {
