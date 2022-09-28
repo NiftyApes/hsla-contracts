@@ -133,7 +133,7 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
         // notice conspicuous absence of createOffer here
         approveLending(offer);
-        tryToExecuteLoanByBorrower(offer, "00012");
+        tryToExecuteLoanByBorrower(offer, "00022");
     }
 
     function test_fuzz_cannot_executeLoanByBorrower_if_offer_not_created(
@@ -313,6 +313,7 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         fuzzed.floorTerm = true;
 
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        offer.floorTermLimit = 2;
 
         createOffer(offer, lender1);
 
@@ -357,8 +358,7 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         vm.startPrank(borrower1);
         mockNft.approve(address(lending), 1);
 
-        //results in 00012 error because it points to an empty struct in the mapping, rather than 00022 and having mismatch nftId's
-        vm.expectRevert("00012");
+        vm.expectRevert("00022");
         lending.executeLoanByBorrower(offer1.nftContractAddress, 1, offerHash, offer1.floorTerm);
         vm.stopPrank();
     }

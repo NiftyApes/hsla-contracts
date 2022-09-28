@@ -61,19 +61,17 @@ contract NiftyApesSigLending is
         _unpause();
     }
 
-    // @inheritdoc ISigLending
-    function executeLoanByBorrowerSignature(
+    function _sigOfferNftIdAndCountChecks(
         Offer memory offer,
         bytes memory signature,
         uint256 nftId
-    ) external payable whenNotPaused nonReentrant {
-        address lender = IOffers(offersContractAddress).getOfferSigner(offer, signature);
+    ) internal returns (address signer) {
+        signer = IOffers(offersContractAddress).getOfferSigner(offer, signature);
 
-        _requireOfferCreator(offer, lender);
+        _requireOfferCreator(offer, signer);
         IOffers(offersContractAddress).requireAvailableSignature(signature);
         IOffers(offersContractAddress).requireSignature65(signature);
         IOffers(offersContractAddress).requireMinimumDuration(offer);
-        _requireLenderOffer(offer);
 
         if (!offer.floorTerm) {
             _requireMatchingNftId(offer, nftId);
@@ -87,6 +85,17 @@ contract NiftyApesSigLending is
 
             IOffers(offersContractAddress).incrementSigFloorOfferCount(signature);
         }
+    }
+
+    // @inheritdoc ISigLending
+    function executeLoanByBorrowerSignature(
+        Offer memory offer,
+        bytes memory signature,
+        uint256 nftId
+    ) external payable whenNotPaused nonReentrant {
+        address lender = _sigOfferNftIdAndCountChecks(offer, signature, nftId);
+
+        _requireLenderOffer(offer);
 
         // execute state changes for executeLoanByBid
         ILending(lendingContractAddress).doExecuteLoan(offer, lender, msg.sender, nftId);
@@ -120,25 +129,7 @@ contract NiftyApesSigLending is
         uint256 nftId,
         uint32 expectedLastUpdatedTimestamp
     ) external whenNotPaused nonReentrant {
-        address signer = IOffers(offersContractAddress).getOfferSigner(offer, signature);
-
-        _requireOfferCreator(offer, signer);
-        IOffers(offersContractAddress).requireAvailableSignature(signature);
-        IOffers(offersContractAddress).requireSignature65(signature);
-        IOffers(offersContractAddress).requireMinimumDuration(offer);
-
-        if (!offer.floorTerm) {
-            _requireMatchingNftId(offer, nftId);
-            IOffers(offersContractAddress).markSignatureUsed(offer, signature);
-        } else {
-            require(
-                IOffers(offersContractAddress).getSigFloorOfferCount(signature) <
-                    offer.floorTermLimit,
-                "00051"
-            );
-
-            IOffers(offersContractAddress).incrementSigFloorOfferCount(signature);
-        }
+        _sigOfferNftIdAndCountChecks(offer, signature, nftId);
 
         ILending(lendingContractAddress).doRefinanceByBorrower(
             offer,

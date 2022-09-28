@@ -886,7 +886,7 @@ contract LendingAuctionUnitTest is
 
         bytes32 offerHash = offersContract.getOfferHash(offer);
 
-        hevm.expectRevert("00012");
+        hevm.expectRevert("00022");
 
         lendingAuction.executeLoanByBorrower(
             offer.nftContractAddress,
@@ -1801,7 +1801,7 @@ contract LendingAuctionUnitTest is
             amount: 6,
             duration: 1 days,
             expiration: uint32(block.timestamp + 1),
-            floorTermLimit: 1
+            floorTermLimit: 2
         });
 
         hevm.stopPrank();

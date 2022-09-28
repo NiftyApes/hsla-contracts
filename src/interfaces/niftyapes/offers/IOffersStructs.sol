@@ -32,7 +32,7 @@ interface IOffersStructs {
         // offer interest rate per second. (Amount * InterestRate) / MAX-BPS / Duration
         uint96 interestRatePerSecond;
         // SLOT 5 START
-        // floor offer usage limit, ignored if individual NFT offer
+        // floor offer usage limit, ignored if floorTerm is false
         uint64 floorTermLimit;
     }
 }
