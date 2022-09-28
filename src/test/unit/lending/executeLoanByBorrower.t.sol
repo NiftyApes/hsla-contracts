@@ -473,4 +473,56 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
             defaultFixedFuzzedFieldsForFastUnitTesting
         );
     }
+
+    function test_fuzz_executeLoanByBorrower_floorTermCounter(FuzzedOfferFields memory fuzzed)
+        public
+        validateFuzzedOfferFields(fuzzed)
+    {
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        offer.floorTerm = true;
+        offer.creator = lender1;
+        offer.floorTermLimit = 2;
+
+        vm.startPrank(lender1);
+        bytes32 offerHash = offers.createOffer(offer);
+        vm.stopPrank();
+
+        uint64 count1 = offers.getFloorOfferCount(offerHash);
+        assertEq(count1, 0);
+
+        approveLending(offer);
+        tryToExecuteLoanByBorrower(offer, "should work");
+
+        uint64 count2 = offers.getFloorOfferCount(offerHash);
+        assertEq(count2, 1);
+
+        vm.startPrank(borrower2);
+        mockNft.approve(address(lending), 2);
+        lending.executeLoanByBorrower(offer.nftContractAddress, 2, offerHash, offer.floorTerm);
+        vm.stopPrank();
+    }
+
+    function test_fuzz_cannot_executeLoanByBorrower_floorTermCounter(
+        FuzzedOfferFields memory fuzzed
+    ) public validateFuzzedOfferFields(fuzzed) {
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        offer.floorTerm = true;
+        offer.creator = lender1;
+
+        vm.startPrank(lender1);
+        bytes32 offerHash = offers.createOffer(offer);
+        vm.stopPrank();
+
+        uint64 count1 = offers.getFloorOfferCount(offerHash);
+        assertEq(count1, 0);
+
+        approveLending(offer);
+        tryToExecuteLoanByBorrower(offer, "should work");
+
+        vm.startPrank(borrower2);
+        mockNft.approve(address(lending), 2);
+        vm.expectRevert("00012");
+        lending.executeLoanByBorrower(offer.nftContractAddress, 2, offerHash, offer.floorTerm);
+        vm.stopPrank();
+    }
 }

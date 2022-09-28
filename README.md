@@ -87,7 +87,7 @@ The NiftyApes protocol is made up of four core contracts `Liquidity.sol`, `Offer
 "00009" == "loan expired"
 "00010" == "offer expired"
 "00011" == "offer duration"
-"00012" == "lender offer"
+"00012" == "either not a lender offer or offer does not exist"
 "00013" == "borrower offer"
 "00014" == "floor term"
 "00015" == "fixed term loan"

@@ -80,12 +80,12 @@ contract NiftyApesSigLending is
             IOffers(offersContractAddress).markSignatureUsed(offer, signature);
         } else {
             if (
-                IOffers(offersContractAddress).getSigFloorOfferCount(signature) >=
-                offer.floorTermLimit
+                IOffers(offersContractAddress).getSigFloorOfferCount(signature) <=
+                (offer.floorTermLimit - 1)
             ) {
-                IOffers(offersContractAddress).markSignatureUsed(offer, signature);
-            } else {
                 IOffers(offersContractAddress).incrementSigFloorOfferCount(signature);
+            } else {
+                IOffers(offersContractAddress).markSignatureUsed(offer, signature);
             }
         }
 
@@ -133,12 +133,12 @@ contract NiftyApesSigLending is
             IOffers(offersContractAddress).markSignatureUsed(offer, signature);
         } else {
             if (
-                IOffers(offersContractAddress).getSigFloorOfferCount(signature) >=
-                offer.floorTermLimit
+                IOffers(offersContractAddress).getSigFloorOfferCount(signature) <=
+                (offer.floorTermLimit - 1)
             ) {
-                IOffers(offersContractAddress).markSignatureUsed(offer, signature);
-            } else {
                 IOffers(offersContractAddress).incrementSigFloorOfferCount(signature);
+            } else {
+                IOffers(offersContractAddress).markSignatureUsed(offer, signature);
             }
         }
 

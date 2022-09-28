@@ -199,13 +199,13 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
     /// @inheritdoc IOffers
     function incrementFloorOfferCount(bytes32 offerHash) public {
         _requireLendingContract();
-        _floorOfferCounters[offerHash]++;
+        _floorOfferCounters[offerHash] += 1;
     }
 
     /// @inheritdoc IOffers
     function incrementSigFloorOfferCount(bytes memory signature) public {
         _requireSigLendingContract();
-        _sigFloorOfferCounters[signature]++;
+        _sigFloorOfferCounters[signature] += 1;
     }
 
     /// @inheritdoc IOffers
