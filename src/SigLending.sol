@@ -79,14 +79,13 @@ contract NiftyApesSigLending is
             _requireMatchingNftId(offer, nftId);
             IOffers(offersContractAddress).markSignatureUsed(offer, signature);
         } else {
-            if (
-                IOffers(offersContractAddress).getSigFloorOfferCount(signature) <=
-                (offer.floorTermLimit - 1)
-            ) {
-                IOffers(offersContractAddress).incrementSigFloorOfferCount(signature);
-            } else {
-                IOffers(offersContractAddress).markSignatureUsed(offer, signature);
-            }
+            require(
+                IOffers(offersContractAddress).getSigFloorOfferCount(signature) <
+                    offer.floorTermLimit,
+                "00051"
+            );
+
+            IOffers(offersContractAddress).incrementSigFloorOfferCount(signature);
         }
 
         // execute state changes for executeLoanByBid
@@ -132,14 +131,13 @@ contract NiftyApesSigLending is
             _requireMatchingNftId(offer, nftId);
             IOffers(offersContractAddress).markSignatureUsed(offer, signature);
         } else {
-            if (
-                IOffers(offersContractAddress).getSigFloorOfferCount(signature) <=
-                (offer.floorTermLimit - 1)
-            ) {
-                IOffers(offersContractAddress).incrementSigFloorOfferCount(signature);
-            } else {
-                IOffers(offersContractAddress).markSignatureUsed(offer, signature);
-            }
+            require(
+                IOffers(offersContractAddress).getSigFloorOfferCount(signature) <
+                    offer.floorTermLimit,
+                "00051"
+            );
+
+            IOffers(offersContractAddress).incrementSigFloorOfferCount(signature);
         }
 
         ILending(lendingContractAddress).doRefinanceByBorrower(

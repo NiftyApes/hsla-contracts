@@ -209,19 +209,12 @@ contract NiftyApesLending is
                 floorTerm
             );
         } else {
-            if (
-                IOffers(offersContractAddress).getFloorOfferCount(offerHash) <=
-                (offer.floorTermLimit - 1)
-            ) {
-                IOffers(offersContractAddress).incrementFloorOfferCount(offerHash);
-            } else {
-                IOffers(offersContractAddress).removeOffer(
-                    nftContractAddress,
-                    nftId,
-                    offerHash,
-                    floorTerm
-                );
-            }
+            require(
+                IOffers(offersContractAddress).getFloorOfferCount(offerHash) < offer.floorTermLimit,
+                "00051"
+            );
+
+            IOffers(offersContractAddress).incrementFloorOfferCount(offerHash);
         }
         _doExecuteLoan(offer, offer.creator, msg.sender, nftId);
     }
@@ -320,19 +313,12 @@ contract NiftyApesLending is
                 floorTerm
             );
         } else {
-            if (
-                IOffers(offersContractAddress).getFloorOfferCount(offerHash) <
-                (offer.floorTermLimit - 1)
-            ) {
-                IOffers(offersContractAddress).incrementFloorOfferCount(offerHash);
-            } else {
-                IOffers(offersContractAddress).removeOffer(
-                    nftContractAddress,
-                    nftId,
-                    offerHash,
-                    floorTerm
-                );
-            }
+            require(
+                IOffers(offersContractAddress).getFloorOfferCount(offerHash) < offer.floorTermLimit,
+                "00051"
+            );
+
+            IOffers(offersContractAddress).incrementFloorOfferCount(offerHash);
         }
 
         _doRefinanceByBorrower(offer, nftId, msg.sender, expectedLastUpdatedTimestamp);
