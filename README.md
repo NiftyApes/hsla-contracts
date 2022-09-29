@@ -97,7 +97,7 @@ The NiftyApes protocol is made up of four core contracts `Liquidity.sol`, `Offer
 "00019" == "offer.asset and loanAuction.asset do not match"
 "00020" == "funds overdrawn"
 "00021" == "not nft owner"
-"00022" == "offer nftId mismatch"
+"00022" == "offer nftId mismatch or offer does not exist"
 "00023" == "msg value"
 "00024" == "offer creator"
 "00025" == "not an improvement"
@@ -122,3 +122,4 @@ The NiftyApes protocol is made up of four core contracts `Liquidity.sol`, `Offer
 "00044" == "max casset"
 "00045" == "amount 0"
 "00046" == "offer already exists"
+"00051" == "cannot exceed floor offer limit count"

@@ -22,8 +22,6 @@ contract TestCalculateInterestRatePerSecond is Test, OffersLoansRefinancesFixtur
 
         uint256 IRPS = ((amount * interestBps) / duration) / maxBps;
 
-        console.log("IRPS", IRPS);
-
         assertEq(1653439153439, IRPS);
     }
 
@@ -33,19 +31,7 @@ contract TestCalculateInterestRatePerSecond is Test, OffersLoansRefinancesFixtur
         uint256 duration = 1 weeks;
         uint256 maxBps = 10000;
 
-        console.log("(interestRatePerSecond * duration)", (interestRatePerSecond * duration));
-        console.log(
-            "((interestRatePerSecond * duration) * maxBps)",
-            ((interestRatePerSecond * duration) * maxBps)
-        );
-        console.log(
-            "((interestRatePerSecond * duration) * maxBps) / amount + 1",
-            ((interestRatePerSecond * duration) * maxBps) / amount + 1
-        );
-
         uint256 interestRateResult = (((interestRatePerSecond * duration) * maxBps) / amount + 1);
-
-        console.log("interestRateResult", interestRateResult);
 
         assertEq(10000, interestRateResult);
     }
@@ -64,21 +50,11 @@ contract TestCalculateInterestRatePerSecond is Test, OffersLoansRefinancesFixtur
         vm.assume(duration >= 1 days);
         vm.assume(duration <= ~uint32(0));
 
-        console.log("(amount * interestBps)", (amount * interestBps));
-        console.log("(amount * interestBps) / duration", (amount * interestBps) / maxBps);
-
-        console.log(
-            "((amount * interestBps) / maxBps) / duration",
-            ((amount * interestBps) / maxBps) / duration
-        );
-
         uint256 IRPS = ((amount * interestBps) / maxBps) / duration;
 
         if (IRPS == 0 && interestBps != 0) {
             IRPS = 1;
         }
-
-        console.log("IRPS", IRPS);
 
         uint96 calcResult = lending.calculateInterestPerSecond(amount, interestBps, duration);
 

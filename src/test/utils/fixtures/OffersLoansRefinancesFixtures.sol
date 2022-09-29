@@ -38,6 +38,7 @@ contract OffersLoansRefinancesFixtures is
         bool lenderOffer;
         uint256 nftId;
         address nftContractAddress;
+        uint64 floorTermLimit;
     }
 
     FixedOfferFields internal defaultFixedOfferFields;
@@ -55,7 +56,8 @@ contract OffersLoansRefinancesFixtures is
             creator: lender1,
             lenderOffer: true,
             nftContractAddress: address(mockNft),
-            nftId: 1
+            nftId: 1,
+            floorTermLimit: 1
         });
 
         defaultFixedBorrowerOfferFields = FixedOfferFields({
@@ -63,7 +65,8 @@ contract OffersLoansRefinancesFixtures is
             creator: borrower1,
             lenderOffer: false,
             nftContractAddress: address(mockNft),
-            nftId: 1
+            nftId: 1,
+            floorTermLimit: 1
         });
 
         uint8 randomAsset = 0; // 0 == DAI, 1 == ETH
@@ -135,7 +138,8 @@ contract OffersLoansRefinancesFixtures is
                             : 250000000
                     ),
                 duration: fuzzed.duration,
-                expiration: fuzzed.expiration
+                expiration: fuzzed.expiration,
+                floorTermLimit: fixedFields.floorTermLimit
             });
     }
 
