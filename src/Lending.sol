@@ -1,4 +1,4 @@
-//SPDX-License-Identifier: Unlicensed
+//SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/access/OwnableUpgradeable.sol";
@@ -13,9 +13,13 @@ import "./interfaces/niftyapes/liquidity/ILiquidity.sol";
 import "./interfaces/niftyapes/offers/IOffers.sol";
 import "./interfaces/sanctions/SanctionsList.sol";
 
-import "forge-std/Test.sol";
+/// @title NiftyApes Lending
+/// @custom:version 1.0
+/// @author captnseagraves (captnseagraves.eth)
+/// @custom:contributor dankurka
+/// @custom:contributor 0xAlcibiades (alcibiades.eth)
+/// @custom:contributor zjmiller (zjmiller.eth)
 
-/// @title Implementation of the ILending interface
 contract NiftyApesLending is
     OwnableUpgradeable,
     PausableUpgradeable,
@@ -184,27 +188,14 @@ contract NiftyApesLending is
         bytes32 offerHash,
         bool floorTerm
     ) external payable whenNotPaused nonReentrant {
-        Offer memory offer = IOffers(offersContractAddress).getOffer(
+        Offer memory offer = _offerNftIdAndCountChecks(
             nftContractAddress,
             nftId,
-            offerHash,
-            floorTerm
+            floorTerm,
+            offerHash
         );
 
         _requireLenderOffer(offer);
-
-        // Remove the offer from storage, saving gas
-        // We can only do this for non floor offers since
-        // a floor offer can be used for multiple nfts
-        if (!offer.floorTerm) {
-            _requireMatchingNftId(offer, nftId);
-            IOffers(offersContractAddress).removeOffer(
-                nftContractAddress,
-                nftId,
-                offerHash,
-                floorTerm
-            );
-        }
         _doExecuteLoan(offer, offer.creator, msg.sender, nftId);
     }
 
@@ -274,7 +265,7 @@ contract NiftyApesLending is
 
         ILiquidity(liquidityContractAddress).sendValue(offer.asset, offer.amount, borrower);
 
-        emit LoanExecuted(offer.nftContractAddress, nftId, offer);
+        emit LoanExecuted(offer.nftContractAddress, nftId, loanAuction);
     }
 
     function refinanceByBorrower(
@@ -284,24 +275,12 @@ contract NiftyApesLending is
         bytes32 offerHash,
         uint32 expectedLastUpdatedTimestamp
     ) external whenNotPaused nonReentrant {
-        Offer memory offer = IOffers(offersContractAddress).getOffer(
+        Offer memory offer = _offerNftIdAndCountChecks(
             nftContractAddress,
             nftId,
-            offerHash,
-            floorTerm
+            floorTerm,
+            offerHash
         );
-
-        if (!offer.floorTerm) {
-            _requireMatchingNftId(offer, nftId);
-            // Only removing the offer if its not a floor term offer
-            // Floor term offers can be used for multiple nfts
-            IOffers(offersContractAddress).removeOffer(
-                nftContractAddress,
-                nftId,
-                offerHash,
-                floorTerm
-            );
-        }
 
         _doRefinanceByBorrower(offer, nftId, msg.sender, expectedLastUpdatedTimestamp);
     }
@@ -405,13 +384,13 @@ contract NiftyApesLending is
             loanAuction.slashableLenderInterest = 0;
         }
 
-        emit Refinance(offer.nftContractAddress, nftId, offer);
+        emit Refinance(offer.nftContractAddress, nftId, loanAuction);
 
         emit AmountDrawn(
             offer.nftContractAddress,
             nftId,
             loanAuction.amountDrawn - currentAmountDrawn,
-            loanAuction.amountDrawn
+            loanAuction
         );
     }
 
@@ -476,8 +455,6 @@ contract NiftyApesLending is
         loanAuction.loanEndTimestamp = loanAuction.loanBeginTimestamp + offer.duration;
 
         if (loanAuction.lender == offer.creator) {
-            // If current lender is refinancing the loan they do not need to pay any fees or buy themselves out.
-            // require prospective lender has sufficient available balance to refinance loan
             uint256 additionalTokens = ILiquidity(liquidityContractAddress)
                 .assetAmountToCAssetAmount(offer.asset, offer.amount - loanAuction.amountDrawn);
 
@@ -509,7 +486,6 @@ contract NiftyApesLending is
             }
             // calculate the value to pay out to the current lender, this includes the protocolInterest, which is paid out each refinance,
             // and reimbursed by the borrower at the end of the loan.
-            // this value may double count the currentProtocolInterest, it is paid to the current lender here and paid out to the protocol  on ln 548
             uint256 interestAndPremiumOwedToCurrentLender = uint256(
                 loanAuction.accumulatedLenderInterest
             ) +
@@ -580,7 +556,7 @@ contract NiftyApesLending is
             loanAuction.unpaidProtocolInterest = 0;
         }
 
-        emit Refinance(offer.nftContractAddress, offer.nftId, offer);
+        emit Refinance(offer.nftContractAddress, offer.nftId, loanAuction);
     }
 
     /// @inheritdoc ILending
@@ -649,7 +625,7 @@ contract NiftyApesLending is
             );
         }
 
-        emit AmountDrawn(nftContractAddress, nftId, slashedDrawAmount, loanAuction.amountDrawn);
+        emit AmountDrawn(nftContractAddress, nftId, slashedDrawAmount, loanAuction);
     }
 
     /// @inheritdoc ILending
@@ -741,14 +717,7 @@ contract NiftyApesLending is
         if (repayFull) {
             _transferNft(nftContractAddress, nftId, address(this), loanAuction.nftOwner);
 
-            emit LoanRepaid(
-                loanAuction.lender,
-                loanAuction.nftOwner,
-                nftContractAddress,
-                nftId,
-                loanAuction.asset,
-                paymentAmount
-            );
+            emit LoanRepaid(nftContractAddress, nftId, paymentAmount, loanAuction);
 
             delete _loanAuctions[nftContractAddress][nftId];
         } else {
@@ -785,14 +754,7 @@ contract NiftyApesLending is
                 );
             }
 
-            emit PartialRepayment(
-                loanAuction.lender,
-                loanAuction.nftOwner,
-                nftContractAddress,
-                nftId,
-                loanAuction.asset,
-                paymentAmount
-            );
+            emit PartialRepayment(nftContractAddress, nftId, paymentAmount, loanAuction);
         }
     }
 
@@ -810,13 +772,50 @@ contract NiftyApesLending is
         require(_currentTimestamp32() >= loanAuction.loanEndTimestamp, "00008");
 
         address currentLender = loanAuction.lender;
-        address currentBorrower = loanAuction.nftOwner;
 
         delete _loanAuctions[nftContractAddress][nftId];
 
         _transferNft(nftContractAddress, nftId, address(this), currentLender);
 
-        emit AssetSeized(currentLender, currentBorrower, nftContractAddress, nftId);
+        emit AssetSeized(nftContractAddress, nftId, loanAuction);
+    }
+
+    /// @inheritdoc ILending
+    function ownerOf(address nftContractAddress, uint256 nftId) public view returns (address) {
+        return _loanAuctions[nftContractAddress][nftId].nftOwner;
+    }
+
+    function _offerNftIdAndCountChecks(
+        address nftContractAddress,
+        uint256 nftId,
+        bool floorTerm,
+        bytes32 offerHash
+    ) internal returns (Offer memory) {
+        Offer memory offer = IOffers(offersContractAddress).getOffer(
+            nftContractAddress,
+            nftId,
+            offerHash,
+            floorTerm
+        );
+
+        if (!offer.floorTerm) {
+            _requireMatchingNftId(offer, nftId);
+            IOffers(offersContractAddress).removeOffer(
+                nftContractAddress,
+                nftId,
+                offerHash,
+                floorTerm
+            );
+        } else {
+            require(
+                IOffers(offersContractAddress).getFloorOfferCount(offerHash) < offer.floorTermLimit,
+                "00051"
+            );
+
+            IOffers(offersContractAddress).incrementFloorOfferCount(offerHash);
+        }
+
+        return offer;
     }
 
     function _slashUnsupportedAmount(
@@ -858,11 +857,6 @@ contract NiftyApesLending is
         }
 
         return drawAmount;
-    }
-
-    /// @inheritdoc ILending
-    function ownerOf(address nftContractAddress, uint256 nftId) public view returns (address) {
-        return _loanAuctions[nftContractAddress][nftId].nftOwner;
     }
 
     function _updateInterest(LoanAuction storage loanAuction)
@@ -1132,6 +1126,7 @@ contract NiftyApesLending is
             offer.duration
         );
         loanAuction.slashableLenderInterest = 0;
+        loanAuction.unpaidProtocolInterest = 0;
     }
 
     function _transferNft(

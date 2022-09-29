@@ -65,8 +65,13 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
     function _test_executeLoanByBorrower_events(FuzzedOfferFields memory fuzzed) private {
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
 
-        vm.expectEmit(true, true, true, true);
-        emit LoanExecuted(offer.nftContractAddress, offer.nftId, offer);
+        LoanAuction memory loanAuction = lending.getLoanAuction(
+            offer.nftContractAddress,
+            offer.nftId
+        );
+
+        vm.expectEmit(true, true, false, false);
+        emit LoanExecuted(offer.nftContractAddress, offer.nftId, loanAuction);
 
         createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
     }
@@ -133,7 +138,7 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
         // notice conspicuous absence of createOffer here
         approveLending(offer);
-        tryToExecuteLoanByBorrower(offer, "00012");
+        tryToExecuteLoanByBorrower(offer, "00022");
     }
 
     function test_fuzz_cannot_executeLoanByBorrower_if_offer_not_created(
@@ -313,6 +318,7 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         fuzzed.floorTerm = true;
 
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        offer.floorTermLimit = 2;
 
         createOffer(offer, lender1);
 
@@ -357,8 +363,7 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         vm.startPrank(borrower1);
         mockNft.approve(address(lending), 1);
 
-        //results in 00012 error because it points to an empty struct in the mapping, rather than 00022 and having mismatch nftId's
-        vm.expectRevert("00012");
+        vm.expectRevert("00022");
         lending.executeLoanByBorrower(offer1.nftContractAddress, 1, offerHash, offer1.floorTerm);
         vm.stopPrank();
     }
@@ -472,5 +477,57 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         _test_cannot_executeLoanByBorrower_sanctioned_address_lender(
             defaultFixedFuzzedFieldsForFastUnitTesting
         );
+    }
+
+    function test_fuzz_executeLoanByBorrower_floorTermCounter(FuzzedOfferFields memory fuzzed)
+        public
+        validateFuzzedOfferFields(fuzzed)
+    {
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        offer.floorTerm = true;
+        offer.creator = lender1;
+        offer.floorTermLimit = 2;
+
+        vm.startPrank(lender1);
+        bytes32 offerHash = offers.createOffer(offer);
+        vm.stopPrank();
+
+        uint64 count1 = offers.getFloorOfferCount(offerHash);
+        assertEq(count1, 0);
+
+        approveLending(offer);
+        tryToExecuteLoanByBorrower(offer, "should work");
+
+        uint64 count2 = offers.getFloorOfferCount(offerHash);
+        assertEq(count2, 1);
+
+        vm.startPrank(borrower2);
+        mockNft.approve(address(lending), 2);
+        lending.executeLoanByBorrower(offer.nftContractAddress, 2, offerHash, offer.floorTerm);
+        vm.stopPrank();
+    }
+
+    function test_fuzz_cannot_executeLoanByBorrower_floorTermCounter(
+        FuzzedOfferFields memory fuzzed
+    ) public validateFuzzedOfferFields(fuzzed) {
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        offer.floorTerm = true;
+        offer.creator = lender1;
+
+        vm.startPrank(lender1);
+        bytes32 offerHash = offers.createOffer(offer);
+        vm.stopPrank();
+
+        uint64 count1 = offers.getFloorOfferCount(offerHash);
+        assertEq(count1, 0);
+
+        approveLending(offer);
+        tryToExecuteLoanByBorrower(offer, "should work");
+
+        vm.startPrank(borrower2);
+        mockNft.approve(address(lending), 2);
+        vm.expectRevert("00051");
+        lending.executeLoanByBorrower(offer.nftContractAddress, 2, offerHash, offer.floorTerm);
+        vm.stopPrank();
     }
 }
