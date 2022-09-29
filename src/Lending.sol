@@ -278,7 +278,7 @@ contract NiftyApesLending is
 
         ILiquidity(liquidityContractAddress).sendValue(offer.asset, offer.amount, borrower);
 
-        emit LoanExecuted(offer.nftContractAddress, nftId, offer);
+        emit LoanExecuted(offer.nftContractAddress, nftId, loanAuction);
     }
 
     function refinanceByBorrower(
@@ -409,13 +409,13 @@ contract NiftyApesLending is
             loanAuction.slashableLenderInterest = 0;
         }
 
-        emit Refinance(offer.nftContractAddress, nftId, offer);
+        emit Refinance(offer.nftContractAddress, nftId, loanAuction);
 
         emit AmountDrawn(
             offer.nftContractAddress,
             nftId,
             loanAuction.amountDrawn - currentAmountDrawn,
-            loanAuction.amountDrawn
+            loanAuction
         );
     }
 
@@ -581,7 +581,7 @@ contract NiftyApesLending is
             loanAuction.unpaidProtocolInterest = 0;
         }
 
-        emit Refinance(offer.nftContractAddress, offer.nftId, offer);
+        emit Refinance(offer.nftContractAddress, offer.nftId, loanAuction);
     }
 
     /// @inheritdoc ILending
@@ -650,7 +650,7 @@ contract NiftyApesLending is
             );
         }
 
-        emit AmountDrawn(nftContractAddress, nftId, slashedDrawAmount, loanAuction.amountDrawn);
+        emit AmountDrawn(nftContractAddress, nftId, slashedDrawAmount, loanAuction);
     }
 
     /// @inheritdoc ILending
@@ -734,14 +734,7 @@ contract NiftyApesLending is
         if (repayFull) {
             _transferNft(nftContractAddress, nftId, address(this), loanAuction.nftOwner);
 
-            emit LoanRepaid(
-                loanAuction.lender,
-                loanAuction.nftOwner,
-                nftContractAddress,
-                nftId,
-                loanAuction.asset,
-                paymentAmount
-            );
+            emit LoanRepaid(nftContractAddress, nftId, paymentAmount, loanAuction);
 
             delete _loanAuctions[nftContractAddress][nftId];
         } else {
@@ -778,14 +771,7 @@ contract NiftyApesLending is
                 );
             }
 
-            emit PartialRepayment(
-                loanAuction.lender,
-                loanAuction.nftOwner,
-                nftContractAddress,
-                nftId,
-                loanAuction.asset,
-                paymentAmount
-            );
+            emit PartialRepayment(nftContractAddress, nftId, paymentAmount, loanAuction);
         }
     }
 
@@ -803,13 +789,12 @@ contract NiftyApesLending is
         require(_currentTimestamp32() >= loanAuction.loanEndTimestamp, "00008");
 
         address currentLender = loanAuction.lender;
-        address currentBorrower = loanAuction.nftOwner;
 
         delete _loanAuctions[nftContractAddress][nftId];
 
         _transferNft(nftContractAddress, nftId, address(this), currentLender);
 
-        emit AssetSeized(currentLender, currentBorrower, nftContractAddress, nftId);
+        emit AssetSeized(nftContractAddress, nftId, loanAuction);
     }
 
     function _slashUnsupportedAmount(

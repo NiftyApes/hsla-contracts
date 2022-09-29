@@ -49,14 +49,17 @@ contract TestPartialRepayLoan is Test, OffersLoansRefinancesFixtures {
         if (offer.asset == address(daiToken)) {
             uint256 liquidityBalanceBeforeRepay = cDAIToken.balanceOf(address(liquidity));
 
-            vm.expectEmit(true, true, true, true);
+            LoanAuction memory loanAuction = lending.getLoanAuction(
+                offer.nftContractAddress,
+                offer.nftId
+            );
+
+            vm.expectEmit(true, true, false, false);
             emit PartialRepayment(
-                lender1,
-                borrower1,
-                address(mockNft),
-                1,
-                offer.asset,
-                repaymentAmount
+                offer.nftContractAddress,
+                offer.nftId,
+                repaymentAmount,
+                loanAuction
             );
 
             vm.startPrank(borrower1);
@@ -95,14 +98,17 @@ contract TestPartialRepayLoan is Test, OffersLoansRefinancesFixtures {
         } else {
             uint256 liquidityBalanceBeforeRepay = cEtherToken.balanceOf(address(liquidity));
 
-            vm.expectEmit(true, true, true, true);
+            LoanAuction memory loanAuction = lending.getLoanAuction(
+                offer.nftContractAddress,
+                offer.nftId
+            );
+
+            vm.expectEmit(true, true, false, false);
             emit PartialRepayment(
-                lender1,
-                borrower1,
-                address(mockNft),
-                1,
-                offer.asset,
-                repaymentAmount
+                offer.nftContractAddress,
+                offer.nftId,
+                repaymentAmount,
+                loanAuction
             );
 
             vm.startPrank(borrower1);

@@ -412,19 +412,18 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         // most important part here is the amount repaid, the last argument to the event
         // the amount drawn + 1 hour at initial interest rate + 1 hour at "after draw" interest rate
         // even though the borrower couldn't draw 1000 DAI, they could draw some, so the rate changes
-        vm.expectEmit(true, true, true, true);
+
+        vm.expectEmit(true, true, false, false);
         emit LoanRepaid(
-            loanAuctionAfterDraw.lender,
-            loanAuctionAfterDraw.nftOwner,
             offer.nftContractAddress,
             offer.nftId,
-            loanAuctionAfterDraw.asset,
             loanAuctionAfterDraw.amountDrawn +
                 1 hours *
                 loanAuctionBeforeDraw.interestRatePerSecond +
                 1 hours *
                 loanAuctionAfterDraw.interestRatePerSecond +
-                protocolInterest
+                protocolInterest,
+            loanAuctionAfterDraw
         );
 
         lending.repayLoan(offer.nftContractAddress, offer.nftId);
@@ -640,19 +639,17 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         // most important part here is the amount repaid, the last argument to the event
         // the amount drawn + 1 hour at initial interest rate + 1 hour at "after draw" interest rate
         // even though the borrower couldn't draw 1000 DAI, they could draw some, so the rate changes
-        vm.expectEmit(true, true, true, true);
+        vm.expectEmit(true, true, false, false);
         emit LoanRepaid(
-            loanAuctionAfterDraw.lender,
-            loanAuctionAfterDraw.nftOwner,
             offer.nftContractAddress,
             offer.nftId,
-            loanAuctionAfterDraw.asset,
             loanAuctionAfterDraw.amountDrawn +
                 1 hours *
                 loanAuctionBeforeDraw.interestRatePerSecond +
                 1 hours *
                 loanAuctionAfterDraw.interestRatePerSecond +
-                protocolInterest
+                protocolInterest,
+            loanAuctionAfterDraw
         );
 
         lending.repayLoan(offer.nftContractAddress, offer.nftId);
@@ -684,8 +681,13 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
     function _test_refinanceByLender_events(FuzzedOfferFields memory fuzzed) private {
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
 
-        vm.expectEmit(true, true, true, true);
-        emit LoanExecuted(offer.nftContractAddress, offer.nftId, offer);
+        LoanAuction memory loanAuction = lending.getLoanAuction(
+            offer.nftContractAddress,
+            offer.nftId
+        );
+
+        vm.expectEmit(true, true, false, false);
+        emit LoanExecuted(offer.nftContractAddress, offer.nftId, loanAuction);
 
         createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
     }
