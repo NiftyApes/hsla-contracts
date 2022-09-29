@@ -191,10 +191,7 @@ contract TestRefinanceLoanByBorrowerSignature is
             offer.nftContractAddress,
             offer.nftId,
             (offer.interestRatePerSecond * 0) + interestShortfall,
-            initialAmount +
-                (offer.interestRatePerSecond * 0) +
-                interestShortfall +
-                ((loanAuction.amountDrawn * lending.originationPremiumBps()) / 10_000)
+            loanAuction
         );
 
         vm.startPrank(borrower1);

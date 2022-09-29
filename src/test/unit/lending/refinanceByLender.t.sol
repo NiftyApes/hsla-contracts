@@ -427,8 +427,8 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
                 loanAuctionBeforeDraw.interestRatePerSecond +
                 1 hours *
                 loanAuctionAfterDraw.interestRatePerSecond +
-                protocolInterest +
-                interestDelta
+                protocolInterest,
+            loanAuctionAfterDraw
         );
 
         lending.repayLoan(offer.nftContractAddress, offer.nftId);
@@ -660,8 +660,8 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
                 loanAuctionBeforeDraw.interestRatePerSecond +
                 1 hours *
                 loanAuctionAfterDraw.interestRatePerSecond +
-                protocolInterest +
-                interestDelta
+                protocolInterest,
+            loanAuctionAfterDraw
         );
 
         lending.repayLoan(offer.nftContractAddress, offer.nftId);
