@@ -14,7 +14,7 @@ import "./lib/ECDSABridge.sol";
 /// @title NiftyApes Offers
 /// @custom:version 1.0
 /// @author captnseagraves (captnseagraves.eth)
-/// @custom:contributor dankurka (dankurka.eth)
+/// @custom:contributor dankurka
 /// @custom:contributor 0xAlcibiades (alcibiades.eth)
 /// @custom:contributor zjmiller (zjmiller.eth)
 
