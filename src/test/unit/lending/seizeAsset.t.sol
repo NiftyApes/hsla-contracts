@@ -133,10 +133,20 @@ contract TestSeizeAsset is Test, OffersLoansRefinancesFixtures {
             offer.nftId
         );
 
-        (, uint256 accruedProtocolInterest) = lending.calculateInterestAccrued(
-            defaultFixedOfferFields.nftContractAddress,
-            defaultFixedOfferFields.nftId
-        );
+        (uint256 accruedLenderInterest, uint256 accruedProtocolInterest) = lending
+            .calculateInterestAccrued(
+                defaultFixedOfferFields.nftContractAddress,
+                defaultFixedOfferFields.nftId
+            );
+
+        uint256 interestThreshold = (uint256(loanAuction.amountDrawn) *
+            lending.gasGriefingPremiumBps()) / MAX_BPS;
+
+        uint256 interestDelta = 0;
+
+        if (interestThreshold > accruedLenderInterest) {
+            interestDelta = interestThreshold - accruedLenderInterest;
+        }
 
         uint256 protocolInterest = loanAuction.accumulatedPaidProtocolInterest +
             loanAuction.unpaidProtocolInterest +
@@ -147,7 +157,10 @@ contract TestSeizeAsset is Test, OffersLoansRefinancesFixtures {
         assertEq(lending.ownerOf(offer.nftContractAddress, offer.nftId), address(borrower1));
 
         // borrower repays loan
-        mintDai(borrower1, (offer.interestRatePerSecond * offer.duration) + protocolInterest);
+        mintDai(
+            borrower1,
+            (offer.interestRatePerSecond * offer.duration) + protocolInterest + interestDelta
+        );
 
         vm.startPrank(borrower1);
         if (offer.asset == address(daiToken)) {
@@ -156,12 +169,16 @@ contract TestSeizeAsset is Test, OffersLoansRefinancesFixtures {
         } else {
             vm.deal(
                 borrower1,
-                offer.amount + (offer.interestRatePerSecond * offer.duration) + protocolInterest
+                offer.amount +
+                    (offer.interestRatePerSecond * offer.duration) +
+                    protocolInterest +
+                    interestDelta
             );
             lending.repayLoan{
                 value: offer.amount +
                     (offer.interestRatePerSecond * offer.duration) +
-                    protocolInterest
+                    protocolInterest +
+                    interestDelta
             }(offer.nftContractAddress, offer.nftId);
         }
         vm.stopPrank();

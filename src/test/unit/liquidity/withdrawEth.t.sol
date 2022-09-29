@@ -61,7 +61,6 @@ contract TestWithdrawEth is Test, OffersLoansRefinancesFixtures {
         vm.assume(amount <= address(owner).balance);
 
         uint256 ethBalanceBefore = address(owner).balance;
-        uint256 regenBalanceBefore = address(liquidity.regenCollectiveAddress()).balance;
 
         uint256 balanceBefore = liquidity.getCAssetBalance(owner, address(cEtherToken));
 

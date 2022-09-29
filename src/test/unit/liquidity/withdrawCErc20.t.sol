@@ -28,7 +28,6 @@ contract TestWithdrawCErc20 is Test, OffersLoansRefinancesFixtures {
         daiToken.approve(address(cDAIToken), daiToken.balanceOf(borrower1));
 
         cDAIToken.mint(daiToken.balanceOf(borrower1));
-        uint256 cTokenBalanceAfter = cDAIToken.balanceOf(borrower1);
 
         // avoid `redeemTokens zero` error by providing at least 1 cDAI
         vm.assume(amount >= 100000000);
