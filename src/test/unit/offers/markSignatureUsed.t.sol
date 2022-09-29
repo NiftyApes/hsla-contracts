@@ -28,7 +28,8 @@ contract TestMarkSignatureUsed is Test, BaseTest, IOffersEvents, OffersLoansRefi
             asset: address(0x18669eb6c7dFc21dCdb787fEb4B3F1eBb3172400),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(1657217355)
+            expiration: uint32(1657217355),
+            floorTermLimit: 1
         });
 
         bytes32 offerHash = offers.getOfferHash(offer);
@@ -52,7 +53,8 @@ contract TestMarkSignatureUsed is Test, BaseTest, IOffersEvents, OffersLoansRefi
             asset: address(0x18669eb6c7dFc21dCdb787fEb4B3F1eBb3172400),
             amount: 6,
             duration: 1 days,
-            expiration: uint32(1657217355)
+            expiration: uint32(1657217355),
+            floorTermLimit: 1
         });
 
         bytes32 offerHash = offers.getOfferHash(offer);

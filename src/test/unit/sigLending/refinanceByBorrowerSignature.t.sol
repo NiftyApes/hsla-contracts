@@ -67,13 +67,19 @@ contract TestRefinanceLoanByBorrowerSignature is
         );
         vm.stopPrank();
 
-        loanAuction = lending.getLoanAuction(newOffer.nftContractAddress, newOffer.nftId);
+        LoanAuction memory loanAuction2 = lending.getLoanAuction(
+            newOffer.nftContractAddress,
+            newOffer.nftId
+        );
 
         assertEq(
-            loanAuction.amountDrawn,
-            initialAmount + (offer.interestRatePerSecond * 0) + interestShortfall
+            loanAuction2.amountDrawn,
+            initialAmount +
+                (offer.interestRatePerSecond * 0) +
+                interestShortfall +
+                ((loanAuction.amountDrawn * lending.originationPremiumBps()) / 10_000)
         );
-        assertEq(loanAuction.amount, newOffer.amount);
+        assertEq(loanAuction2.amount, newOffer.amount);
     }
 
     function test_fuzz_refinanceLoanByBorrowerSignature_simplest_case(
@@ -114,8 +120,9 @@ contract TestRefinanceLoanByBorrowerSignature is
             1;
         bytes memory signature = signOffer(lender1_private_key, offer);
 
-        vm.expectEmit(true, true, false, true); // Refinance has 2 indexes
-        emit Refinance(offer.nftContractAddress, offer.nftId, offer);
+        hevm.expectEmit(true, true, false, false);
+
+        emit Refinance(offer.nftContractAddress, offer.nftId, loanAuction);
 
         vm.startPrank(borrower1);
         sigLending.refinanceByBorrowerSignature(
@@ -126,13 +133,19 @@ contract TestRefinanceLoanByBorrowerSignature is
         );
         vm.stopPrank();
 
-        loanAuction = lending.getLoanAuction(newOffer.nftContractAddress, newOffer.nftId);
+        LoanAuction memory loanAuction2 = lending.getLoanAuction(
+            newOffer.nftContractAddress,
+            newOffer.nftId
+        );
 
         assertEq(
-            loanAuction.amountDrawn,
-            initialAmount + (offer.interestRatePerSecond * 0) + interestShortfall
+            loanAuction2.amountDrawn,
+            initialAmount +
+                (offer.interestRatePerSecond * 0) +
+                interestShortfall +
+                ((loanAuction.amountDrawn * lending.originationPremiumBps()) / 10_000)
         );
-        assertEq(loanAuction.amount, newOffer.amount);
+        assertEq(loanAuction2.amount, newOffer.amount);
     }
 
     function test_fuzz_refinanceLoanByBorrowerSignature_emits_refinance(
@@ -173,12 +186,12 @@ contract TestRefinanceLoanByBorrowerSignature is
             1;
         bytes memory signature = signOffer(lender1_private_key, offer);
 
-        vm.expectEmit(true, true, false, true); // Refinance has 2 indexes
+        vm.expectEmit(true, true, false, false); // Refinance has 2 indexes
         emit AmountDrawn(
             offer.nftContractAddress,
             offer.nftId,
             (offer.interestRatePerSecond * 0) + interestShortfall,
-            initialAmount + (offer.interestRatePerSecond * 0) + interestShortfall
+            loanAuction
         );
 
         vm.startPrank(borrower1);
@@ -190,13 +203,19 @@ contract TestRefinanceLoanByBorrowerSignature is
         );
         vm.stopPrank();
 
-        loanAuction = lending.getLoanAuction(newOffer.nftContractAddress, newOffer.nftId);
+        LoanAuction memory loanAuction2 = lending.getLoanAuction(
+            newOffer.nftContractAddress,
+            newOffer.nftId
+        );
 
         assertEq(
-            loanAuction.amountDrawn,
-            initialAmount + (offer.interestRatePerSecond * 0) + interestShortfall
+            loanAuction2.amountDrawn,
+            initialAmount +
+                (offer.interestRatePerSecond * 0) +
+                interestShortfall +
+                ((loanAuction.amountDrawn * lending.originationPremiumBps()) / 10_000)
         );
-        assertEq(loanAuction.amount, newOffer.amount);
+        assertEq(loanAuction2.amount, newOffer.amount);
     }
 
     function test_fuzz_refinanceLoanByBorrowerSignature_emits_amount_drawn(
@@ -249,13 +268,19 @@ contract TestRefinanceLoanByBorrowerSignature is
         );
         vm.stopPrank();
 
-        loanAuction = lending.getLoanAuction(newOffer.nftContractAddress, newOffer.nftId);
+        LoanAuction memory loanAuction2 = lending.getLoanAuction(
+            newOffer.nftContractAddress,
+            newOffer.nftId
+        );
 
         assertEq(
-            loanAuction.amountDrawn,
-            initialAmount + (offer.interestRatePerSecond * 0) + interestShortfall
+            loanAuction2.amountDrawn,
+            initialAmount +
+                (offer.interestRatePerSecond * 0) +
+                interestShortfall +
+                ((loanAuction.amountDrawn * lending.originationPremiumBps()) / 10_000)
         );
-        assertEq(loanAuction.amount, newOffer.amount);
+        assertEq(loanAuction2.amount, newOffer.amount);
     }
 
     function test_fuzz_refinanceLoanByBorrowerSignature_emits_offer_signature_used(
