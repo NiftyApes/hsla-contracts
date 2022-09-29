@@ -648,6 +648,7 @@ contract NiftyApesLending is
         LoanAuction memory loanAuction = _getLoanAuctionInternal(nftContractAddress, nftId);
         // requireExpectedLoanIsActive
         require(loanAuction.loanBeginTimestamp == expectedLoanBeginTimestamp, "00027");
+        _requireIsNotSanctioned(msg.sender);
 
         _repayLoanAmount(nftContractAddress, nftId, true, 0, false);
     }
@@ -670,7 +671,7 @@ contract NiftyApesLending is
     ) internal {
         LoanAuction storage loanAuction = _getLoanAuctionInternal(nftContractAddress, nftId);
 
-        _requireIsNotSanctioned(msg.sender);
+        _requireIsNotSanctioned(loanAuction.nftOwner);
         _requireOpenLoan(loanAuction);
 
         if (checkMsgSender) {
@@ -767,6 +768,7 @@ contract NiftyApesLending is
         LoanAuction storage loanAuction = _getLoanAuctionInternal(nftContractAddress, nftId);
         ILiquidity(liquidityContractAddress).getCAsset(loanAuction.asset); // Ensure asset mapping exists
 
+        _requireIsNotSanctioned(loanAuction.lender);
         _requireOpenLoan(loanAuction);
         // requireLoanExpired
         require(_currentTimestamp32() >= loanAuction.loanEndTimestamp, "00008");
