@@ -53,6 +53,7 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
         fuzzed.expiration = uint32(block.timestamp) + secondsBeforeRefinance + 1;
         fuzzed.amount = uint128(
             offer.amount +
+                ((loanAuction.amountDrawn * lending.originationPremiumBps()) / MAX_BPS) +
                 (offer.interestRatePerSecond * secondsBeforeRefinance) +
                 interestShortfall +
                 protocolInterest +
@@ -64,6 +65,7 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
         // values for unit test
         // newOffer.amount = uint128(
         //     offer.amount +
+        //         ((loanAuction.amountDrawn * lending.originationPremiumBps()) / MAX_BPS) +
         //         (offer.interestRatePerSecond * secondsBeforeRefinance) +
         //         interestShortfall +
         //         protocolInterest +
@@ -85,6 +87,7 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
         assertionsForExecutedRefinance(
             offer,
             loanAuction.amountDrawn,
+            lending.originationPremiumBps(),
             secondsBeforeRefinance,
             interestShortfall,
             beforeRefinanceLenderBalance
@@ -107,6 +110,7 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
     function assertionsForExecutedRefinance(
         Offer memory offer,
         uint256 amountDrawn,
+        uint256 originationPremium,
         uint16 secondsBeforeRefinance,
         uint256 interestShortfall,
         uint256 beforeRefinanceLenderBalance
@@ -116,6 +120,7 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
             assertBetween(
                 beforeRefinanceLenderBalance +
                     amountDrawn +
+                    ((amountDrawn * originationPremium) / MAX_BPS) +
                     (offer.interestRatePerSecond * secondsBeforeRefinance) +
                     interestShortfall,
                 assetBalance(lender1, address(daiToken)),
@@ -125,6 +130,7 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
             assertBetween(
                 beforeRefinanceLenderBalance +
                     amountDrawn +
+                    ((amountDrawn * originationPremium) / MAX_BPS) +
                     (offer.interestRatePerSecond * secondsBeforeRefinance) +
                     interestShortfall,
                 assetBalance(lender1, ETH_ADDRESS),

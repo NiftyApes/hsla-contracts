@@ -28,7 +28,6 @@ contract TestSupplyCErc20 is Test, OffersLoansRefinancesFixtures {
         daiToken.approve(address(cDAIToken), daiToken.balanceOf(borrower1));
 
         cDAIToken.mint(daiToken.balanceOf(borrower1));
-        uint256 cTokenBalanceAfter = cDAIToken.balanceOf(borrower1);
 
         vm.assume(amount > 0);
         vm.assume(amount < cDAIToken.balanceOf(borrower1));

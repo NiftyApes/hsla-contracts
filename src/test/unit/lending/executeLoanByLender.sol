@@ -48,8 +48,13 @@ contract TestExecuteLoanByLender is Test, OffersLoansRefinancesFixtures {
 
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedBorrowerOfferFields);
 
-        vm.expectEmit(true, true, true, true);
-        emit LoanExecuted(offer.nftContractAddress, offer.nftId, offer);
+        LoanAuction memory loanAuction = lending.getLoanAuction(
+            offer.nftContractAddress,
+            offer.nftId
+        );
+
+        vm.expectEmit(true, true, false, false);
+        emit LoanExecuted(offer.nftContractAddress, offer.nftId, loanAuction);
 
         createOfferAndTryToExecuteLoanByLender(offer, "should work");
     }
