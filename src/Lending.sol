@@ -87,7 +87,7 @@ contract NiftyApesLending is
         address newSigLendingContractAddress
     ) public initializer {
         protocolInterestBps = 0;
-        originationPremiumBps = 50;
+        originationPremiumBps = 25;
         gasGriefingPremiumBps = 25;
         termGriefingPremiumBps = 25;
         defaultRefinancePremiumBps = 25;
@@ -333,7 +333,7 @@ contract NiftyApesLending is
         uint256 toLenderUnderlying = loanAuction.amountDrawn +
             loanAuction.accumulatedLenderInterest +
             loanAuction.slashableLenderInterest +
-            loanAuction.accumulatedPaidProtocolInterest;
+            ((uint256(loanAuction.amountDrawn) * originationPremiumBps) / MAX_BPS);
 
         uint256 toProtocolUnderlying = loanAuction.unpaidProtocolInterest;
 
@@ -675,6 +675,14 @@ contract NiftyApesLending is
 
         if (checkMsgSender) {
             require(msg.sender == loanAuction.nftOwner, "00028");
+        }
+
+        uint256 interestThresholdDelta = _checkSufficientInterestAccumulated(loanAuction);
+
+        if (interestThresholdDelta > 0) {
+            loanAuction.accumulatedLenderInterest += SafeCastUpgradeable.toUint128(
+                interestThresholdDelta
+            );
         }
 
         _updateInterest(loanAuction);

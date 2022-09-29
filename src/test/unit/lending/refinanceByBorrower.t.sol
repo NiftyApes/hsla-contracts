@@ -41,7 +41,8 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
             offer.amount +
                 (offer.interestRatePerSecond * secondsBeforeRefinance) +
                 interestShortfall +
-                ((amountDrawn * lending.protocolInterestBps()) / 10_000)
+                ((amountDrawn * lending.protocolInterestBps()) / 10_000) +
+                ((amountDrawn * lending.originationPremiumBps()) / 10_000)
         );
 
         Offer memory newOffer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
@@ -80,7 +81,7 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         fuzzed.duration = fuzzed.duration + 1; // make sure offer is better
         fuzzed.floorTerm = false; // refinance can't be floor term
         fuzzed.expiration = uint32(block.timestamp) + secondsBeforeRefinance + 1;
-        fuzzed.amount = offer.amount * 2;
+        fuzzed.amount = offer.amount * 3;
 
         Offer memory newOffer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
 
@@ -132,7 +133,8 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
                 beforeRefinanceLenderBalance +
                     amountDrawn +
                     (offer.interestRatePerSecond * secondsBeforeRefinance) +
-                    interestShortfall,
+                    interestShortfall +
+                    ((uint256(amountDrawn) * lending.originationPremiumBps()) / MAX_BPS),
                 assetBalance(lender1, address(daiToken)),
                 assetBalancePlusOneCToken(lender1, address(daiToken))
             );
@@ -141,7 +143,8 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
                 beforeRefinanceLenderBalance +
                     amountDrawn +
                     (offer.interestRatePerSecond * secondsBeforeRefinance) +
-                    interestShortfall,
+                    interestShortfall +
+                    ((uint256(amountDrawn) * lending.originationPremiumBps()) / MAX_BPS),
                 assetBalance(lender1, ETH_ADDRESS),
                 assetBalancePlusOneCToken(lender1, ETH_ADDRESS)
             );
