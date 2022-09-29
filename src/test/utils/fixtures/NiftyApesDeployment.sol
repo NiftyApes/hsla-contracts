@@ -8,6 +8,8 @@ import "../../../SigLending.sol";
 import "../../../PurchaseWithFinancing.sol";
 import "./NFTAndERC20Fixtures.sol";
 import "../../mock/SeaportMock.sol";
+import "../../mock/SudoswapFactoryMock.sol";
+import "../../mock/SudoswapRouterMock.sol";
 import "../../../interfaces/seaport/ISeaport.sol";
 
 import "forge-std/Test.sol";
@@ -23,9 +25,13 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
     NiftyApesSigLending sigLending;
     NiftyApesPurchaseWithFinancing purchaseWithFinancing;
     SeaportMock seaportMock;
+    LSSVMPairFactoryMock sudoswapFactoryMock;
+    LSSVMRouterMock sudoswapRouterMock;
 
     address constant ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     address constant SEAPORT_ADDRESS = 0x00000000006c3852cbEf3e08E8dF289169EdE581;
+    address constant SUDOSWAP_FACTORY_ADDRESS = 0xb16c1342E617A5B6E4b631EB114483FDB289c0A4;
+    address constant SUDOSWAP_ROUTER_ADDRESS = 0x2B2e8cDA09bBA9660dCA5cB6233787738Ad68329;
 
     function setUp() public virtual override {
         super.setUp();
@@ -34,11 +40,17 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
 
         if (integration) {
             purchaseWithFinancing = new NiftyApesPurchaseWithFinancing();
-            purchaseWithFinancing.initialize(SEAPORT_ADDRESS);
+            purchaseWithFinancing.initialize(SEAPORT_ADDRESS, SUDOSWAP_FACTORY_ADDRESS, SUDOSWAP_ROUTER_ADDRESS);
         } else {
             seaportMock = new SeaportMock();
+            sudoswapFactoryMock = new LSSVMPairFactoryMock();
+            sudoswapRouterMock = new LSSVMRouterMock();
             purchaseWithFinancing = new NiftyApesPurchaseWithFinancing();
-            purchaseWithFinancing.initialize(address(seaportMock));
+            purchaseWithFinancing.initialize(
+                address(seaportMock),
+                address(sudoswapFactoryMock),
+                address(sudoswapRouterMock)
+            );
         }
 
         liquidity = new NiftyApesLiquidity();

@@ -9,6 +9,7 @@ import "./interfaces/niftyapes/sigLending/ISigLending.sol";
 import "./interfaces/niftyapes/offers/IOffers.sol";
 import "./interfaces/niftyapes/purchaseWithFinancing/IPurchaseWithFinancing.sol";
 import "./interfaces/seaport/ISeaport.sol";
+import "./interfaces/sudoswap/ILSSVMPair.sol";
 
 /// @title Implementation of the ILending interface
 contract NiftyApesSigLending is
@@ -141,6 +142,38 @@ contract NiftyApesSigLending is
         ISeaport.Order calldata order,
         bytes32 fulfillerConduitKey
     ) external payable whenNotPaused nonReentrant {
+        _validateAndUseOfferSignature(offer, signature, order.parameters.offer[0].identifierOrCriteria);
+
+        IPurchaseWithFinancing(purchaseWithFinancingContractAddress).doPurchaseWithFinancingSeaport{value: msg.value}(
+                offer,
+                msg.sender,
+                order,
+                fulfillerConduitKey
+            );
+    }
+
+    // @inheritdoc ISigLending
+    function purchaseWithFinancingSudoswapSignature(
+        Offer memory offer,
+        bytes memory signature,
+        ILSSVMPair lssvmPair,
+        uint256 nftId
+    ) external payable whenNotPaused nonReentrant {
+        _validateAndUseOfferSignature(offer, signature, nftId);
+
+        IPurchaseWithFinancing(purchaseWithFinancingContractAddress).doPurchaseWithFinancingSudoswap{value: msg.value}(
+                offer,
+                msg.sender,
+                lssvmPair,
+                nftId
+            );
+    }
+
+    function _validateAndUseOfferSignature(
+        Offer memory offer,
+        bytes memory signature,
+        uint256 nftId
+    ) internal {
         address lender = IOffers(offersContractAddress).getOfferSigner(offer, signature);
 
         _requireOfferCreator(offer, lender);
@@ -148,18 +181,9 @@ contract NiftyApesSigLending is
         IOffers(offersContractAddress).requireSignature65(signature);
 
         if (!offer.floorTerm) {
-            _requireMatchingNftId(offer, order.parameters.offer[0].identifierOrCriteria);
+            _requireMatchingNftId(offer, nftId);
             IOffers(offersContractAddress).markSignatureUsed(offer, signature);
         }
-
-        IPurchaseWithFinancing(purchaseWithFinancingContractAddress).doPurchaseWithFinancingSeaport(
-                offer,
-                lender,
-                msg.sender,
-                order,
-                msg.value,
-                fulfillerConduitKey
-            );
     }
 
     function _requireLenderOffer(Offer memory offer) internal pure {

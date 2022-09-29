@@ -11,7 +11,7 @@ import "../../../interfaces/seaport/ISeaport.sol";
 import "../../../PurchaseWithFinancing.sol";
 import "forge-std/Test.sol";
 
-contract TestPurchaseWithFinancing is Test, OffersLoansRefinancesFixtures, ERC721HolderUpgradeable {
+contract TestPurchaseWithFinancingSeaport is Test, OffersLoansRefinancesFixtures, ERC721HolderUpgradeable {
     function setUp() public override {
         // pin block to time of writing test to reflect consistent state
         vm.rollFork(15510097);
