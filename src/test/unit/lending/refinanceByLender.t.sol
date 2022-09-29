@@ -753,7 +753,7 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
         // notice conspicuous absence of createOffer here
         approveLending(offer);
-        tryToExecuteLoanByBorrower(offer, "00012");
+        tryToExecuteLoanByBorrower(offer, "00022");
     }
 
     function test_fuzz_cannot_refinanceByLender_if_offer_not_created(
@@ -931,6 +931,8 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         fuzzed.floorTerm = true;
 
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+
+        offer.floorTermLimit = 2;
 
         createOffer(offer, lender1);
 
