@@ -103,7 +103,7 @@ contract NiftyApesFlashClaim is
 
         // execute firewalled external arbitrary functionality
         // function must approve this contract to transferFrom NFT in order to return lending.sol
-        require(receiver.executeOperation(nftContractAddress, nftId), "00052");
+        require(receiver.executeOperation(nftContractAddress, nftId, address(this)), "00052");
 
         // transfer nft back to Lending.sol
         _transferNft(nftContractAddress, nftId, receiverAddress, lendingContractAddress);

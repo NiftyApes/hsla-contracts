@@ -6,8 +6,8 @@ import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 import { IFlashClaimReceiver } from "../interfaces/IFlashClaimReceiver.sol";
 
 /// @title FlashClaimReceiverBase
-/// @author Aave
-/// @notice Base contract to develop a flashloan-receiver contract.
-abstract contract FlashClaimReceiverBase is IFlashClaimReceiver {
+/// @author captnseagaves
+/// @notice Base contract to develop a FlashCaimReceiver contract.
+abstract contract FlashClaimReceiverBase is IFlashClaimReceiver, ERC721HolderUpgradeable {
     // do logic here
 }

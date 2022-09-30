@@ -12,6 +12,11 @@ interface IFlashClaimReceiver {
     ///      before the end of the transaction
     /// @param nftContractAddress The address of the nft collection
     /// @param nftId The id of the specified nft
+    /// @param niftyApesFlashClaimContractAddress The contract address of the NiftyApesFlashClaimContract
     /// @return True if the execution of the operation succeeds, false otherwise
-    function executeOperation(address nftContractAddress, uint256 nftId) external returns (bool);
+    function executeOperation(
+        address nftContractAddress,
+        uint256 nftId,
+        address niftyApesFlashClaimContractAddress
+    ) external returns (bool);
 }
