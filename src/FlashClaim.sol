@@ -102,14 +102,11 @@ contract NiftyApesFlashClaim is
         );
 
         // execute firewalled external arbitrary functionality
-        // function must approve this contract to transferFrom NFT in order to return lending.sol
+        // function must approve this contract to transferFrom NFT in order to return to lending.sol
         require(receiver.executeOperation(nftContractAddress, nftId, address(this)), "00052");
 
-        // transfer nft back to Lending.sol
+        // transfer nft back to Lending.sol and require return occurs
         _transferNft(nftContractAddress, nftId, receiverAddress, lendingContractAddress);
-
-        // explicitly require NFt returned to Lending.sol
-        _requireNftReturned(nftContractAddress, nftId);
 
         // emit event
         emit FlashClaim(nftContractAddress, nftId, receiverAddress);
@@ -135,13 +132,6 @@ contract NiftyApesFlashClaim is
     {
         nftOwner = ILending(lendingContractAddress).ownerOf(nftContractAddress, nftId);
         require(nftOwner == msg.sender, "00021");
-    }
-
-    function _requireNftReturned(address nftContractAddress, uint256 nftId) internal view {
-        require(
-            IERC721Upgradeable(nftContractAddress).ownerOf(nftId) == lendingContractAddress,
-            "00053"
-        );
     }
 
     function _requireIsNotSanctioned(address addressToCheck) internal view {

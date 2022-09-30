@@ -3,7 +3,7 @@ pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
-import { IFlashClaimReceiver } from "../../../flashClaim/interfaces/IFlashClaimReceiver.sol";
+import { IFlashClaimReceiver } from "../../../../flashClaim/interfaces/IFlashClaimReceiver.sol";
 
 import "forge-std/Test.sol";
 
@@ -11,18 +11,15 @@ import "forge-std/Test.sol";
 /// @author captnseagaves
 /// @notice Base contract to develop a FlashClaimReceiver contract.
 
-contract FlashClaimReceiverBase is IFlashClaimReceiver, ERC721HolderUpgradeable {
+contract FlashClaimReceiverBaseNoReturn is IFlashClaimReceiver, ERC721HolderUpgradeable {
     function executeOperation(
         address nftContractAddress,
         uint256 nftId,
         address niftyApesFlashClaimContractAddress
-    ) external returns (bool) {
-        address nftOwner = IERC721Upgradeable(nftContractAddress).ownerOf(nftId);
-
-        console.log("I'm useful! I own this NFT.", nftOwner);
-
-        IERC721Upgradeable(nftContractAddress).approve(niftyApesFlashClaimContractAddress, nftId);
-
+    ) external pure returns (bool) {
+        nftContractAddress;
+        nftId;
+        niftyApesFlashClaimContractAddress;
         return true;
     }
 }

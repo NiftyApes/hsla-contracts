@@ -6,7 +6,8 @@ import "../../../Liquidity.sol";
 import "../../../Offers.sol";
 import "../../../SigLending.sol";
 import "../../../FlashClaim.sol";
-import "./FlashClaimReceiverTest.sol";
+import "./FlashClaimReceivers/FlashClaimReceiverTestHappy.sol";
+import "./FlashClaimReceivers/FlashClaimReceiverTestNoReturn.sol";
 import "./NFTAndERC20Fixtures.sol";
 
 import "forge-std/Test.sol";
@@ -21,7 +22,8 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
     NiftyApesLiquidity liquidity;
     NiftyApesSigLending sigLending;
     NiftyApesFlashClaim flashClaim;
-    FlashClaimReceiverBase flashClaimReceiver;
+    FlashClaimReceiverBaseHappy flashClaimReceiverHappy;
+    FlashClaimReceiverBaseNoReturn flashClaimReceiverNoReturn;
 
     address constant ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
@@ -30,7 +32,8 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
 
         vm.startPrank(owner);
 
-        flashClaimReceiver = new FlashClaimReceiverBase();
+        flashClaimReceiverHappy = new FlashClaimReceiverBaseHappy();
+        flashClaimReceiverNoReturn = new FlashClaimReceiverBaseNoReturn();
 
         flashClaim = new NiftyApesFlashClaim();
         flashClaim.initialize();
