@@ -5,6 +5,7 @@ import "../../../Lending.sol";
 import "../../../Liquidity.sol";
 import "../../../Offers.sol";
 import "../../../SigLending.sol";
+import "../../../FlashClaim.sol";
 import "./NFTAndERC20Fixtures.sol";
 
 import "forge-std/Test.sol";
@@ -18,6 +19,7 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
     NiftyApesOffers offers;
     NiftyApesLiquidity liquidity;
     NiftyApesSigLending sigLending;
+    NiftyApesFlashClaim flashClaim;
 
     address constant ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
@@ -25,6 +27,9 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         super.setUp();
 
         vm.startPrank(owner);
+
+        flashClaim = new NiftyApesFlashClaim();
+        flashClaim.initialize();
 
         liquidity = new NiftyApesLiquidity();
         liquidity.initialize(address(compToken));
@@ -36,7 +41,12 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         sigLending.initialize(address(offers));
 
         lending = new NiftyApesLending();
-        lending.initialize(address(liquidity), address(offers), address(sigLending));
+        lending.initialize(
+            address(liquidity),
+            address(offers),
+            address(sigLending),
+            address(flashClaim)
+        );
 
         sigLending.updateLendingContractAddress(address(lending));
 
@@ -44,6 +54,8 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         offers.updateSigLendingContractAddress(address(sigLending));
 
         liquidity.updateLendingContractAddress(address(lending));
+
+        flashClaim.updateLendingContractAddress(address(lending));
 
         liquidity.setCAssetAddress(ETH_ADDRESS, address(cEtherToken));
         liquidity.setMaxCAssetBalance(address(cEtherToken), ~uint256(0));
@@ -56,6 +68,7 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         if (!integration) {
             liquidity.pauseSanctions();
             lending.pauseSanctions();
+            flashClaim.pauseSanctions();
         }
 
         vm.stopPrank();
