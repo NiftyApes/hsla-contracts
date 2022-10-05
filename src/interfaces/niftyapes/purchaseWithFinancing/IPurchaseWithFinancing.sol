@@ -26,61 +26,38 @@ interface IPurchaseWithFinancing is
     /// @notice Returns the address for the associated sigLending contract
     function sigLendingContractAddress() external view returns (address);
 
-    /// @notice Returns the address for the associated seaport contract
-    function seaportContractAddress() external view returns (address);
-
-    /// @notice Returns the address for the associated sudoswap router
-    function sudoswapRouterContractAddress() external view returns (address);
-
-    /// @notice Returns the address for the associated sudoswap factory
-    function sudoswapFactoryContractAddress() external view returns (address);
-
-    /// @notice Allows a user to borrow ETH to purchase NFTs.
-    /// @param offerHash Hash of the existing offer in NiftyApes on-chain offerBook
-    /// @param floorTerm Determines if this is a floor offer or not.
-    /// @param order Seaport parameters the caller is expected to fill out.
-    /// @param fulfillerConduitKey Seaport conduit key of the fulfiller
-    function purchaseWithFinancingSeaport(
+    /// @notice Allows a user to borrow ETH/Tokens to purchase NFTs with the condition that
+    ///         the purchased NFT is approved to be added as collateral.
+    /// @param  offerHash Hash of the existing offer in NiftyApes on-chain offerBook.
+    /// @param  nftContractAddress Address of the NFT collection to be pruchased
+    /// @param  floorTerm Determines if this is a floor offer or not.
+    /// @param  receiver The address of the external contract that will receive the finance and return the nft.
+    /// @param  borrower The address that will be able to later repay the borrowed funds and unlock the nft.
+    /// @param  data Arbitrary data structure, intended to contain user-defined parameters, to be passed on to the receiver.
+    function borrow(
+        bytes32 offerHash,
         address nftContractAddress,
-        bytes32 offerHash,
+        uint256 nftId,
         bool floorTerm,
-        ISeaport.Order calldata order,
-        bytes32 fulfillerConduitKey
-    ) external payable;
-
-    /// @notice Allows purchaseWithFinancingSeaport to interact directly with the lending contract
-    /// @param offer The details of the loan offer
-    /// @param borrower The prospecive borrower on the loan
-    /// @param order Seaport parameters the caller is expected to fill out
-    /// @param fulfillerConduitKey Seaport conduit key of the fulfiller
-    function doPurchaseWithFinancingSeaport(
-        Offer memory offer,
+        address receiver,
         address borrower,
-        ISeaport.Order calldata order,
-        bytes32 fulfillerConduitKey
+        bytes calldata data
     ) external payable;
 
-    /// @notice Allows a user to borrow ETH to purchase NFTs through Sudoswap.
-    /// @param offerHash Hash of the existing offer in NiftyApes on-chain offerBook.
-    /// @param floorTerm Determines if this is a floor offer or not.
-    /// @param lssvmPair Sudoswap nft-token pair pool.
-    /// @param nftId Id of the NFT the borrower intends to buy.
-    function purchaseWithFinancingSudoswap(
-        bytes32 offerHash,
-        bool floorTerm,
-        ILSSVMPair lssvmPair,
-        uint256 nftId
-    ) external payable;
-
-    /// @notice Allows purchaseWithFinancingSudoswap to interact directly with the lending contract
-    /// @param offer The details of the loan offer
-    /// @param borrower The prospecive borrower on the loan
-    /// @param lssvmPair Sudoswap nft-token pair pool.
-    /// @param nftId Id of the NFT the borrower intends to purchase.
-    function doPurchaseWithFinancingSudoswap(
+    /// @notice Allows a user to borrow ETH/Tokens to purchase NFTs with the condition that
+    ///         the purchased NFT is approved to be added as collateral.
+    /// @param  offer The details of the loan auction offer
+    /// @param  signature The signature for the offer
+    /// @param  nftId Determines if this is a floor offer or not.
+    /// @param  receiver The address of the external contract that will receive the finance and return the nft.
+    /// @param  borrower The address that will be able to later repay the borrowed funds and unlock the nft.
+    /// @param  data Arbitrary data structure, intended to contain user-defined parameters, to be passed on to the receiver.
+    function borrowSignature(
         Offer memory offer,
+        bytes memory signature,
+        uint256 nftId,
+        address receiver,
         address borrower,
-        ILSSVMPair lssvmPair,
-        uint256 nftId
+        bytes calldata data
     ) external payable;
 }

@@ -54,27 +54,14 @@ interface ISigLending is ISigLendingAdmin, ISigLendingEvents, IOffersStructs {
         uint32 expectedLastUpdatedTimestamp
     ) external;
 
-    /// @notice Allows a user to borrow ETH to purchase NFTs
+    /// @notice Allows PurchaseWithFinancing contract to verify and consume offer and its signature 
     /// @param offer The details of the loan auction offer
     /// @param signature The signature for the offer
-    /// @param order Seaport parameters the caller is expected to fill out.
-    /// @param fulfillerConduitKey Seaport conduit key of the fulfiller
-    function purchaseWithFinancingSeaportSignature(
+    /// @param nftId The id of a specified NFT
+    function validateAndUseOfferSignature(
         Offer memory offer,
         bytes memory signature,
-        ISeaport.Order calldata order,
-        bytes32 fulfillerConduitKey
-    ) external payable;
-
-    /// @notice Allows a user to borrow funds to purchase NFTs from Sudoswap
-    /// @param offer The details of the loan auction offer
-    /// @param signature The signature for the offer
-    /// @param lssvmPair Sudoswap nft-token pair pool.
-    /// @param nftId Id of the NFT the borrower intends to purchase.
-    function purchaseWithFinancingSudoswapSignature(
-        Offer memory offer,
-        bytes memory signature,
-        ILSSVMPair lssvmPair,
         uint256 nftId
-    ) external payable;
+    ) external;
+    
 }

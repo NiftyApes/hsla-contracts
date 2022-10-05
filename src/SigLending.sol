@@ -136,44 +136,12 @@ contract NiftyApesSigLending is
     }
 
     // @inheritdoc ISigLending
-    function purchaseWithFinancingSeaportSignature(
-        Offer memory offer,
-        bytes memory signature,
-        ISeaport.Order calldata order,
-        bytes32 fulfillerConduitKey
-    ) external payable whenNotPaused nonReentrant {
-        _validateAndUseOfferSignature(offer, signature, order.parameters.offer[0].identifierOrCriteria);
-
-        IPurchaseWithFinancing(purchaseWithFinancingContractAddress).doPurchaseWithFinancingSeaport{value: msg.value}(
-                offer,
-                msg.sender,
-                order,
-                fulfillerConduitKey
-            );
-    }
-
-    // @inheritdoc ISigLending
-    function purchaseWithFinancingSudoswapSignature(
-        Offer memory offer,
-        bytes memory signature,
-        ILSSVMPair lssvmPair,
-        uint256 nftId
-    ) external payable whenNotPaused nonReentrant {
-        _validateAndUseOfferSignature(offer, signature, nftId);
-
-        IPurchaseWithFinancing(purchaseWithFinancingContractAddress).doPurchaseWithFinancingSudoswap{value: msg.value}(
-                offer,
-                msg.sender,
-                lssvmPair,
-                nftId
-            );
-    }
-
-    function _validateAndUseOfferSignature(
+    function validateAndUseOfferSignature(
         Offer memory offer,
         bytes memory signature,
         uint256 nftId
-    ) internal {
+    ) external whenNotPaused {
+        _requirePurchaseWithFinancingContract();
         address lender = IOffers(offersContractAddress).getOfferSigner(offer, signature);
 
         _requireOfferCreator(offer, lender);
@@ -184,6 +152,10 @@ contract NiftyApesSigLending is
             _requireMatchingNftId(offer, nftId);
             IOffers(offersContractAddress).markSignatureUsed(offer, signature);
         }
+    }
+
+    function _requirePurchaseWithFinancingContract() internal view {
+        require(msg.sender == purchaseWithFinancingContractAddress, "00031");
     }
 
     function _requireLenderOffer(Offer memory offer) internal pure {

@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 
 import "../../utils/fixtures/OffersLoansRefinancesFixtures.sol";
 import "../../../interfaces/niftyapes/offers/IOffersStructs.sol";
-import "../../../PurchaseWithFinancing.sol";
+import "../../../purchaseWithFinancing/PurchaseWithFinancing.sol";
 
 contract TestPurchaseWithFinancingSudoswap is Test, OffersLoansRefinancesFixtures, ERC721HolderUpgradeable {
     function setUp() public override {

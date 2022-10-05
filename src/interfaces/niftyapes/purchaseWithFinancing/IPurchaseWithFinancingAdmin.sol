@@ -15,15 +15,6 @@ interface IPurchaseWithFinancingAdmin {
     /// @notice Updates the associated signature lending contract address
     function updateSigLendingContractAddress(address newSigLendingContractAddress) external;
 
-    /// @notice Updates the associated seaport contract address
-    function updateSeaportContractAddress(address newSeaportContractAddress) external;
-
-    /// @notice Updates the associated sudoswap factory contract address
-    function updateSudoswapFactoryContractAddress(address newSudoswapFactoryContractAddress) external;
-
-    /// @notice Updates the associated sudoswap router contract address
-    function updateSudoswapRouterContractAddress(address newSudoswapRouterContractAddress) external;
-
     /// @notice Pauses sanctions checks
     function pauseSanctions() external;
 
