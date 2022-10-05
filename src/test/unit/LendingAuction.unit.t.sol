@@ -77,11 +77,7 @@ contract LendingAuctionUnitTest is
         sudoswapRouterMock = new LSSVMRouterMock();
 
         purchaseWithFinancing = new NiftyApesPurchaseWithFinancing();
-        purchaseWithFinancing.initialize(
-            address(seaportMock),
-            address(sudoswapFactoryMock),
-            address(sudoswapRouterMock)
-        );
+        purchaseWithFinancing.initialize();
 
         liquidityProviders = new NiftyApesLiquidity();
         liquidityProviders.initialize(compContractAddress, address(purchaseWithFinancing));

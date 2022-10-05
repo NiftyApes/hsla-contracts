@@ -5,7 +5,7 @@ import "../src/Liquidity.sol";
 import "../src/Offers.sol";
 import "../src/SigLending.sol";
 import "../src/Lending.sol";
-import "../src/PurchaseWithFinancing.sol";
+import "../src/purchaseWithFinancing/PurchaseWithFinancing.sol";
 
 contract DeployNiftyApesScript is Script {
     function run() external {
@@ -21,7 +21,7 @@ contract DeployNiftyApesScript is Script {
         vm.startBroadcast();
 
         purchaseWithFinancing = new NiftyApesPurchaseWithFinancing();
-        purchaseWithFinancing.initialize(seaportContractAddress, sudoswapFactoryContractAddress, sudoswapRouterContractAddress);
+        purchaseWithFinancing.initialize();
 
         liquidityProviders = new NiftyApesLiquidity();
         liquidityProviders.initialize(compContractAddress, address(purchaseWithFinancing));

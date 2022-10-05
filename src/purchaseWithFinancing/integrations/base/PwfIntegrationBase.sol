@@ -26,7 +26,7 @@ abstract contract PwfIntegrationBase is
         bytes32 offerHash,
         bool floorTerm,
         uint256 nftId
-    ) internal returns(Offer memory offer) {
+    ) internal view returns(Offer memory offer) {
         // fetch offer
         offer = IOffers(offersContract).getOffer(
             nftContractAddress,
@@ -54,7 +54,7 @@ abstract contract PwfIntegrationBase is
         }
     }
 
-    function _verifySenderAndInitiator(address initiator, address purchaseWithFinancing) internal pure {
+    function _verifySenderAndInitiator(address initiator, address purchaseWithFinancing) internal view {
         require(msg.sender == purchaseWithFinancing, "0052");
         require(initiator == address(this), "0054");
     }

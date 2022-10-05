@@ -4,11 +4,10 @@ import "forge-std/Test.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 
-import "../../utils/fixtures/OffersLoansRefinancesFixtures.sol";
-import "../../../interfaces/niftyapes/offers/IOffersStructs.sol";
-import "../../../purchaseWithFinancing/PurchaseWithFinancing.sol";
+import "../../../utils/fixtures/OffersLoansRefinancesFixtures.sol";
+import "../../../../interfaces/niftyapes/offers/IOffersStructs.sol";
 
-contract TestPurchaseWithFinancingSudoswap is Test, OffersLoansRefinancesFixtures, ERC721HolderUpgradeable {
+contract TestSudoswapPwfIntegration is Test, OffersLoansRefinancesFixtures, ERC721HolderUpgradeable {
     function setUp() public override {
         // pin block to time of writing test to reflect consistent state
         vm.rollFork(15617130);
@@ -124,15 +123,15 @@ contract TestPurchaseWithFinancingSudoswap is Test, OffersLoansRefinancesFixture
         uint256 borrowerPays = (uint256(offer.amount) * 2) - uint256(offer.amount);
 
         if (offer.asset == ETH_ADDRESS) {
-            purchaseWithFinancing.purchaseWithFinancingSudoswap{ value: borrowerPays }(
+            sudoswapPWF.purchaseWithFinancingSudoswap{ value: borrowerPays }(
                 offerHash,
                 offer.floorTerm,
                 lssvmPair,
                 nftId
             );
         } else {
-            daiToken.approve(address(purchaseWithFinancing), borrowerPays);
-            purchaseWithFinancing.purchaseWithFinancingSudoswap(
+            daiToken.approve(address(sudoswapPWF), borrowerPays);
+            sudoswapPWF.purchaseWithFinancingSudoswap(
                 offerHash,
                 offer.floorTerm,
                 lssvmPair,

@@ -94,7 +94,6 @@ contract SeaportPwfIntegration is
     function purchaseWithFinancingSeaport(
         bytes32 offerHash,
         bool floorTerm,
-        uint256 nftId,
         ISeaport.Order calldata order,
         bytes32 fulfillerConduitKey
     ) external payable nonReentrant {
@@ -104,7 +103,7 @@ contract SeaportPwfIntegration is
             order.parameters.offer[0].token,
             offerHash,
             floorTerm,
-            nftId
+            order.parameters.offer[0].identifierOrCriteria
         );
 
         // requireOrderTokenERC721
@@ -129,7 +128,7 @@ contract SeaportPwfIntegration is
         IPurchaseWithFinancing(purchaseWithFinancingContractAddress).borrow(
             offerHash,
             offer.nftContractAddress,
-            nftId,
+            order.parameters.offer[0].identifierOrCriteria,
             floorTerm,
             address(this),
             msg.sender,

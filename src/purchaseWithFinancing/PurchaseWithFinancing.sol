@@ -225,7 +225,7 @@ contract NiftyApesPurchaseWithFinancing is
         _transferNft(
             offer.nftContractAddress,
             nftId,
-            address(this),
+            receiver,
             lendingContractAddress
         );
 

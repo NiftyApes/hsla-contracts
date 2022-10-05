@@ -6,6 +6,8 @@ import "../../../Liquidity.sol";
 import "../../../Offers.sol";
 import "../../../SigLending.sol";
 import "../../../purchaseWithFinancing/PurchaseWithFinancing.sol";
+import "../../../purchaseWithFinancing/integrations/SeaportPwfIntegration.sol";
+import "../../../purchaseWithFinancing/integrations/SudoswapPwfIntegration.sol";
 import "./NFTAndERC20Fixtures.sol";
 import "../../mock/SeaportMock.sol";
 import "../../mock/SudoswapFactoryMock.sol";
@@ -24,6 +26,8 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
     NiftyApesLiquidity liquidity;
     NiftyApesSigLending sigLending;
     NiftyApesPurchaseWithFinancing purchaseWithFinancing;
+    SeaportPwfIntegration seaportPWF;
+    SudoswapPwfIntegration sudoswapPWF;
     SeaportMock seaportMock;
     LSSVMPairFactoryMock sudoswapFactoryMock;
     LSSVMRouterMock sudoswapRouterMock;
@@ -40,17 +44,25 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
 
         if (integration) {
             purchaseWithFinancing = new NiftyApesPurchaseWithFinancing();
-            purchaseWithFinancing.initialize(SEAPORT_ADDRESS, SUDOSWAP_FACTORY_ADDRESS, SUDOSWAP_ROUTER_ADDRESS);
+            purchaseWithFinancing.initialize();
+
+            seaportPWF = new SeaportPwfIntegration();
+            seaportPWF.initialize(address(offers), address(purchaseWithFinancing), SEAPORT_ADDRESS);
+
+            sudoswapPWF = new SudoswapPwfIntegration();
+            sudoswapPWF.initialize(address(offers), address(purchaseWithFinancing), SUDOSWAP_FACTORY_ADDRESS, SUDOSWAP_ROUTER_ADDRESS);
+
         } else {
             seaportMock = new SeaportMock();
             sudoswapFactoryMock = new LSSVMPairFactoryMock();
             sudoswapRouterMock = new LSSVMRouterMock();
             purchaseWithFinancing = new NiftyApesPurchaseWithFinancing();
-            purchaseWithFinancing.initialize(
-                address(seaportMock),
-                address(sudoswapFactoryMock),
-                address(sudoswapRouterMock)
-            );
+            seaportPWF = new SeaportPwfIntegration();
+            sudoswapPWF = new SudoswapPwfIntegration();
+            
+            purchaseWithFinancing.initialize();
+            seaportPWF.initialize(address(offers), address(purchaseWithFinancing), address(seaportMock));
+            sudoswapPWF.initialize(address(offers), address(purchaseWithFinancing), address(sudoswapFactoryMock), address(sudoswapRouterMock));
         }
 
         liquidity = new NiftyApesLiquidity();
@@ -81,6 +93,8 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         purchaseWithFinancing.updateOffersContractAddress(address(offers));
         purchaseWithFinancing.updateLendingContractAddress(address(lending));
         purchaseWithFinancing.updateSigLendingContractAddress(address(sigLending));
+        seaportPWF.updateOffersContractAddress(address(offers));
+        sudoswapPWF.updateOffersContractAddress(address(offers));
 
         liquidity.setCAssetAddress(ETH_ADDRESS, address(cEtherToken));
         liquidity.setMaxCAssetBalance(address(cEtherToken), ~uint256(0));

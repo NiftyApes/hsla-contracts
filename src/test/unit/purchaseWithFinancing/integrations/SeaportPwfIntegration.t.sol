@@ -5,13 +5,11 @@ import "forge-std/console.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 
-import "../../utils/fixtures/OffersLoansRefinancesFixtures.sol";
-import "../../../interfaces/niftyapes/offers/IOffersStructs.sol";
-import "../../../interfaces/seaport/ISeaport.sol";
-import "../../../purchaseWithFinancing/PurchaseWithFinancing.sol";
-import "forge-std/Test.sol";
+import "../../../utils/fixtures/OffersLoansRefinancesFixtures.sol";
+import "../../../../interfaces/niftyapes/offers/IOffersStructs.sol";
+import "../../../../interfaces/seaport/ISeaport.sol";
 
-contract TestPurchaseWithFinancingSeaport is Test, OffersLoansRefinancesFixtures, ERC721HolderUpgradeable {
+contract TestSeaportPwfIntegration is Test, OffersLoansRefinancesFixtures, ERC721HolderUpgradeable {
     function setUp() public override {
         // pin block to time of writing test to reflect consistent state
         vm.rollFork(15510097);
@@ -124,17 +122,15 @@ contract TestPurchaseWithFinancingSeaport is Test, OffersLoansRefinancesFixtures
         uint256 borrowerPays = (uint256(offer.amount) * 2) - uint256(offer.amount);
 
         if (offer.asset == ETH_ADDRESS) {
-            purchaseWithFinancing.purchaseWithFinancingSeaport{ value: borrowerPays }(
-                offer.nftContractAddress,
+            seaportPWF.purchaseWithFinancingSeaport{ value: borrowerPays }(
                 offerHash,
                 offer.floorTerm,
                 order,
                 bytes32(0)
             );
         } else {
-            daiToken.approve(address(purchaseWithFinancing), borrowerPays);
-            purchaseWithFinancing.purchaseWithFinancingSeaport(
-                offer.nftContractAddress,
+            daiToken.approve(address(seaportPWF), borrowerPays);
+            seaportPWF.purchaseWithFinancingSeaport(
                 offerHash,
                 offer.floorTerm,
                 order,
