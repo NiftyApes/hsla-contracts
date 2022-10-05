@@ -126,5 +126,5 @@ The NiftyApes protocol is made up of four core contracts `Liquidity.sol`, `Offer
 "00048" == "seaport fulfillBasicOrder failed"
 "00049" == "not a basic seaport order"
 "00050" == "invalid sudoswap pair pool"
-"00052" == "PurchaseWithFinancingContract: cannot be address(0)"
-"00053" == "PurchaseWithFinancingContrac: receiver.executeOperation() failed"
+"00051" == "PurchaseWithFinancingContract: cannot be address(0)"
+"00052" == "PurchaseWithFinancingContrac: receiver.executeOperation() failed"
