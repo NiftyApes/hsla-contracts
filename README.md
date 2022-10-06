@@ -128,3 +128,4 @@ The NiftyApes protocol is made up of four core contracts `Liquidity.sol`, `Offer
 "00050" == "invalid sudoswap pair pool"
 "00051" == "PurchaseWithFinancingContract: cannot be address(0)"
 "00052" == "PurchaseWithFinancingContrac: receiver.executeOperation() failed"
+"00053" == "Sudoswap Bonding curve error"

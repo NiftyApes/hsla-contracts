@@ -9,6 +9,12 @@ interface ILSSVMRouter {
         uint256[] nftIds;
     }
 
+    enum Error {
+        OK, // No error
+        INVALID_NUMITEMS, // The numItem value is 0
+        SPOT_PRICE_OVERFLOW // The updated spot price doesn't fit into 128 bits
+    }
+
     function swapETHForSpecificNFTs(
         PairSwapSpecific[] calldata swapList,
         address payable ethRecipient,

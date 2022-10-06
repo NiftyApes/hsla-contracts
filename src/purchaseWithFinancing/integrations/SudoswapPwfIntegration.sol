@@ -134,8 +134,9 @@ contract SudoswapPwfIntegration is
         _requireMatchingAsset(offer.asset, purchasingAsset);
 
         // calculate consideration amount
-        ( , , , uint256 considerationAmount, ) = lssvmPair.getBuyNFTQuote(1);
-
+        (ILSSVMPair.Error error, , , uint256 considerationAmount, ) = lssvmPair.getBuyNFTQuote(1);
+        // Require no error
+        require(error == ILSSVMPair.Error.OK, "00053");
         // arrange asset amount from borrower side for the purchase
         _arrangeAssetFromBorrower(msg.sender, offer.asset, offer.amount, considerationAmount);
         
