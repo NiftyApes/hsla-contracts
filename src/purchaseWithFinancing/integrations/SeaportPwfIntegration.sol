@@ -106,18 +106,7 @@ contract SeaportPwfIntegration is
             order.parameters.offer[0].identifierOrCriteria
         );
 
-        // requireOrderTokenERC721
-        require(order.parameters.offer[0].itemType == ISeaport.ItemType.ERC721, "00049");
-        // requireOrderTokenAmount
-        require(order.parameters.offer[0].startAmount == 1, "00049");
-        // requireOrderNotAuction
-        require(
-            order.parameters.consideration[0].startAmount ==
-                order.parameters.consideration[0].endAmount,
-            "00049"
-        );
-
-         _requireMatchingAsset(offer.asset, order.parameters.consideration[0].token);
+        _validateOrder(order, offer);
 
         uint256 considerationAmount = _calculateConsiderationAmount(order);
         // arrange asset amount from borrower side for the purchase
@@ -134,6 +123,45 @@ contract SeaportPwfIntegration is
             msg.sender,
             abi.encode(order, fulfillerConduitKey)
         );
+    }
+
+     function purchaseWithFinancingSeaportSignature(
+        Offer memory offer,
+        bytes memory signature,
+        ISeaport.Order calldata order,
+        bytes32 fulfillerConduitKey
+    ) external payable nonReentrant {
+        _validateOrder(order, offer);
+
+        uint256 considerationAmount = _calculateConsiderationAmount(order);
+        // arrange asset amount from borrower side for the purchase
+        _arrangeAssetFromBorrower(msg.sender, offer.asset, offer.amount, considerationAmount);
+        
+        _ethTransferable = true;
+        // call the PurchaseWithFinancing to take fund from the lender side
+        IPurchaseWithFinancing(purchaseWithFinancingContractAddress).borrowSignature(
+            offer,
+            signature,
+            order.parameters.offer[0].identifierOrCriteria,
+            address(this),
+            msg.sender,
+            abi.encode(order, fulfillerConduitKey)
+        );
+    }
+
+    function _validateOrder(ISeaport.Order memory order, Offer memory offer) internal {
+        // requireOrderTokenERC721
+        require(order.parameters.offer[0].itemType == ISeaport.ItemType.ERC721, "00049");
+        // requireOrderTokenAmount
+        require(order.parameters.offer[0].startAmount == 1, "00049");
+        // requireOrderNotAuction
+        require(
+            order.parameters.consideration[0].startAmount ==
+                order.parameters.consideration[0].endAmount,
+            "00049"
+        );
+
+         _requireMatchingAsset(offer.asset, order.parameters.consideration[0].token);
     }
 
     function executeOperation(

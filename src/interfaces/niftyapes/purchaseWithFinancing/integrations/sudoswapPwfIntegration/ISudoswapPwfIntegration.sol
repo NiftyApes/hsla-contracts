@@ -34,4 +34,16 @@ interface ISudoswapPwfIntegration is
         ILSSVMPair lssvmPair,
         uint256 nftId
     ) external payable;
+
+    /// @notice Allows a user to borrow assets to purchase NFTs on Sudoswap through signature approved offers.
+    /// @param  offer The details of the loan auction offer.
+    /// @param  signature The signature for the offer.
+    /// @param  lssvmPair Sudoswap nft-token pair pool.
+    /// @param  nftId Id of the NFT the borrower intends to buy.
+    function purchaseWithFinancingSudoswapSignature(
+        Offer memory offer,
+        bytes memory signature,
+        ILSSVMPair lssvmPair,
+        uint256 nftId
+    ) external payable;
 }

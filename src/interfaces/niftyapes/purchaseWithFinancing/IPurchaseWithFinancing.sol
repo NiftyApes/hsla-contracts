@@ -42,7 +42,7 @@ interface IPurchaseWithFinancing is
         address receiver,
         address borrower,
         bytes calldata data
-    ) external payable;
+    ) external;
 
     /// @notice Allows a user to borrow ETH/Tokens to purchase NFTs with the condition that
     ///         the purchased NFT is approved to be added as collateral.
@@ -59,5 +59,5 @@ interface IPurchaseWithFinancing is
         address receiver,
         address borrower,
         bytes calldata data
-    ) external payable;
+    ) external;
 }

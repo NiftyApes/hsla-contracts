@@ -144,7 +144,7 @@ contract NiftyApesPurchaseWithFinancing is
         address receiver,
         address borrower,
         bytes calldata data
-    ) external payable whenNotPaused nonReentrant {
+    ) external whenNotPaused nonReentrant {
         Offer memory offer = _fetchAndRemoveNonFloorOffer(
             nftContractAddress,
             offerHash,
@@ -165,7 +165,7 @@ contract NiftyApesPurchaseWithFinancing is
         address receiver,
         address borrower,
         bytes calldata data
-    ) external payable whenNotPaused nonReentrant {
+    ) external whenNotPaused nonReentrant {
         ISigLending(sigLendingContractAddress).validateAndUseOfferSignature(offer, signature, nftId);
         _doBorrow(offer, nftId, receiver, borrower, data);
     }

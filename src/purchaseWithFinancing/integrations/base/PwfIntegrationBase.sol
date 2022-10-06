@@ -55,8 +55,8 @@ abstract contract PwfIntegrationBase is
     }
 
     function _verifySenderAndInitiator(address initiator, address purchaseWithFinancing) internal view {
-        require(msg.sender == purchaseWithFinancing, "0052");
-        require(initiator == address(this), "0054");
+        require(msg.sender == purchaseWithFinancing, "00031");
+        require(initiator == address(this), "00054");
     }
 
     function _requireMatchingAsset(address asset1, address asset2) internal pure {

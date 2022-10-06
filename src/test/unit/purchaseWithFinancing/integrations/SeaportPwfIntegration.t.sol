@@ -18,9 +18,10 @@ contract TestSeaportPwfIntegration is Test, OffersLoansRefinancesFixtures, ERC72
         super.setUp();
     }
 
-    function _test_purchaseWithFinancing_simplest_case(
+    function _test_purchaseWithFinancingSeaport_simplest_case(
         Offer memory offer,
-        ISeaport.Order memory order
+        ISeaport.Order memory order,
+        bool withSignature
     ) private {
         uint256 considerationAmount;
 
@@ -38,11 +39,20 @@ contract TestSeaportPwfIntegration is Test, OffersLoansRefinancesFixtures, ERC72
         offer.amount = uint128(considerationAmount / 2);
         offer.expiration = uint32(block.timestamp + 1);
 
-        (, LoanAuction memory loanAuction) = createOfferAndTryPurchaseWithFinancing(
-            offer,
-            order,
-            "should work"
-        );
+        LoanAuction memory loanAuction;
+        if (!withSignature) {
+            loanAuction = createOfferAndTryPurchaseWithFinancing(
+                offer,
+                order,
+                "should work"
+            );
+        } else {
+            loanAuction = signOfferAndTryPurchaseWithFinancingSignature(
+                offer,
+                order,
+                "should work"
+            );
+        }
 
         // lending contract has NFT
         assertEq(
@@ -56,42 +66,80 @@ contract TestSeaportPwfIntegration is Test, OffersLoansRefinancesFixtures, ERC72
         assertEq(loanAuction.amountDrawn, offer.amount);
     }
 
-    function test_fuzz_PurchaseWithFinancing_simplest_case_ETH(
+    function test_fuzz_PurchaseWithFinancingSeaport_simplest_case_ETH(
         FuzzedOfferFields memory fuzzedOfferData
     ) public validateFuzzedOfferFields(fuzzedOfferData) {
         Offer memory offer = offerStructFromFields(fuzzedOfferData, defaultFixedOfferFields);
         ISeaport.Order memory order = createAndValidateETHOffer();
 
-        _test_purchaseWithFinancing_simplest_case(offer, order);
+        _test_purchaseWithFinancingSeaport_simplest_case(offer, order, false);
     }
 
-    function test_unit_PurchaseWithFinancing_simplest_case_ETH() public {
+    function test_unit_PurchaseWithFinancingSeaport_simplest_case_ETH() public {
         Offer memory offer = offerStructFromFields(
             defaultFixedFuzzedFieldsForFastUnitTesting,
             defaultFixedOfferFields
         );
         ISeaport.Order memory order = createAndValidateETHOffer();
 
-        _test_purchaseWithFinancing_simplest_case(offer, order);
+        _test_purchaseWithFinancingSeaport_simplest_case(offer, order, false);
     }
 
-    function test_fuzz_PurchaseWithFinancing_simplest_case_DAI(
+    function test_fuzz_PurchaseWithFinancingSeaport_simplest_case_DAI(
         FuzzedOfferFields memory fuzzedOfferData
     ) public validateFuzzedOfferFields(fuzzedOfferData) {
         Offer memory offer = offerStructFromFields(fuzzedOfferData, defaultFixedOfferFields);
         ISeaport.Order memory order = createAndValidateDAIOffer();
 
-        _test_purchaseWithFinancing_simplest_case(offer, order);
+        _test_purchaseWithFinancingSeaport_simplest_case(offer, order, false);
     }
 
-    function test_unit_PurchaseWithFinancing_simplest_case_DAI() public {
+    function test_unit_PurchaseWithFinancingSeaport_simplest_case_DAI() public {
         Offer memory offer = offerStructFromFields(
             defaultFixedFuzzedFieldsForFastUnitTesting,
             defaultFixedOfferFields
         );
         ISeaport.Order memory order = createAndValidateDAIOffer();
 
-        _test_purchaseWithFinancing_simplest_case(offer, order);
+        _test_purchaseWithFinancingSeaport_simplest_case(offer, order, false);
+    }
+
+    function test_fuzz_PurchaseWithFinancingSeaportSignature_simplest_case_ETH(
+        FuzzedOfferFields memory fuzzedOfferData
+    ) public validateFuzzedOfferFields(fuzzedOfferData) {
+        Offer memory offer = offerStructFromFields(fuzzedOfferData, defaultFixedOfferFields);
+        ISeaport.Order memory order = createAndValidateETHOffer();
+
+        _test_purchaseWithFinancingSeaport_simplest_case(offer, order, true);
+    }
+
+    function test_unit_PurchaseWithFinancingSeaportSignature_simplest_case_ETH() public {
+        Offer memory offer = offerStructFromFields(
+            defaultFixedFuzzedFieldsForFastUnitTesting,
+            defaultFixedOfferFields
+        );
+        ISeaport.Order memory order = createAndValidateETHOffer();
+
+        _test_purchaseWithFinancingSeaport_simplest_case(offer, order, true);
+    }
+
+    function test_fuzz_PurchaseWithFinancingSeaportSignature_simplest_case_DAI(
+        FuzzedOfferFields memory fuzzedOfferData
+    ) public validateFuzzedOfferFields(fuzzedOfferData) {
+        Offer memory offer = offerStructFromFields(fuzzedOfferData, defaultFixedOfferFields);
+        ISeaport.Order memory order = createAndValidateDAIOffer();
+
+        _test_purchaseWithFinancingSeaport_simplest_case(offer, order, true);
+    }
+
+    function test_unit_PurchaseWithFinancingSeaportSignature_simplest_case_DAI() public {
+        Offer memory offer = offerStructFromFields(
+            defaultFixedFuzzedFieldsForFastUnitTesting,
+            defaultFixedOfferFields
+        );
+        ISeaport.Order memory order = createAndValidateDAIOffer();
+
+        _test_purchaseWithFinancingSeaport_simplest_case(offer, order, true);
     }
 
     //
@@ -101,11 +149,22 @@ contract TestSeaportPwfIntegration is Test, OffersLoansRefinancesFixtures, ERC72
         Offer memory offer,
         ISeaport.Order memory params,
         bytes memory errorCode
-    ) internal returns (Offer memory, LoanAuction memory) {
+    ) internal returns (LoanAuction memory) {
         Offer memory offerCreated = createOffer(offer, lender1);
 
         LoanAuction memory loan = tryPurchaseWithFinancing(offer, params, errorCode);
-        return (offerCreated, loan);
+        return loan;
+    }
+
+    function signOfferAndTryPurchaseWithFinancingSignature(
+        Offer memory offer,
+        ISeaport.Order memory params,
+        bytes memory errorCode
+    ) internal returns (LoanAuction memory) {
+        bytes memory signature = signOffer(lender1_private_key, offer);
+
+        LoanAuction memory loan = tryPurchaseWithFinancingSignature(offer, signature, params, errorCode);
+        return loan;
     }
 
     function tryPurchaseWithFinancing(
@@ -133,6 +192,40 @@ contract TestSeaportPwfIntegration is Test, OffersLoansRefinancesFixtures, ERC72
             seaportPWF.purchaseWithFinancingSeaport(
                 offerHash,
                 offer.floorTerm,
+                order,
+                bytes32(0)
+            );
+        }
+        vm.stopPrank();
+
+        return lending.getLoanAuction(offer.nftContractAddress, offer.nftId);
+    }
+
+    function tryPurchaseWithFinancingSignature(
+        Offer memory offer,
+        bytes memory signature,
+        ISeaport.Order memory order,
+        bytes memory errorCode
+    ) internal returns (LoanAuction memory) {
+        vm.startPrank(borrower1);
+
+        if (bytes16(errorCode) != bytes16("should work")) {
+            vm.expectRevert(errorCode);
+        }
+        uint256 borrowerPays = (uint256(offer.amount) * 2) - uint256(offer.amount);
+
+        if (offer.asset == ETH_ADDRESS) {
+            seaportPWF.purchaseWithFinancingSeaportSignature{ value: borrowerPays }(
+                offer,
+                signature,
+                order,
+                bytes32(0)
+            );
+        } else {
+            daiToken.approve(address(seaportPWF), borrowerPays);
+            seaportPWF.purchaseWithFinancingSeaportSignature(
+                offer,
+                signature,
                 order,
                 bytes32(0)
             );
