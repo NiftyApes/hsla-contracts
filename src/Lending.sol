@@ -777,11 +777,11 @@ contract NiftyApesLending is
 
         address currentLender = loanAuction.lender;
 
+        emit AssetSeized(nftContractAddress, nftId, loanAuction);
+
         delete _loanAuctions[nftContractAddress][nftId];
 
         _transferNft(nftContractAddress, nftId, address(this), currentLender);
-
-        emit AssetSeized(nftContractAddress, nftId, loanAuction);
     }
 
     /// @inheritdoc ILending
