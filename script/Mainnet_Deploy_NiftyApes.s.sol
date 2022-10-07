@@ -13,7 +13,7 @@ contract DeployNiftyApesScript is Script {
         NiftyApesLiquidity liquidityProviders;
         NiftyApesSigLending sigLendingAuction;
         address compContractAddress = 0xc00e94Cb662C3520282E6f5717214004A7f26888;
-        address goerliMultisigAddress = 0x213dE8CcA7C414C0DE08F456F9c4a2Abc4104028;
+        address mainnetMultisigAddress = 0xbe9B799D066A51F77d353Fc72e832f3803789362;
 
         vm.startBroadcast();
 
@@ -40,26 +40,36 @@ contract DeployNiftyApesScript is Script {
 
         sigLendingAuction.updateLendingContractAddress(address(lendingAuction));
 
-        // Goerli Addresses
-        address daiToken = 0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60;
-        address cDAIToken = 0x822397d9a55d0fefd20F5c4bCaB33C5F65bd28Eb;
+        // Mainnet Addresses
+        address daiToken = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
+        address cDAIToken = 0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643;
         address ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
-        address cEtherToken = 0x20572e4c090f15667cF7378e16FaD2eA0e2f3EfF;
+        address cEtherToken = 0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5;
 
         // DAI
         liquidityProviders.setCAssetAddress(daiToken, cDAIToken);
 
+        uint256 cDAIAmount = liquidityProviders.assetAmountToCAssetAmount(
+            daiToken,
+            ~uint128(0) - 1
+        );
+
+        liquidityProviders.setMaxCAssetBalance(cDAIToken, cDAIAmount);
+
         // ETH
         liquidityProviders.setCAssetAddress(ETH_ADDRESS, cEtherToken);
 
-        // pauseSanctions for Goerli as Chainalysis contacts doent exists there
-        liquidityProviders.pauseSanctions();
-        lendingAuction.pauseSanctions();
+        uint256 cEtherAmount = liquidityProviders.assetAmountToCAssetAmount(
+            ETH_ADDRESS,
+            ~uint128(0) - 1
+        );
 
-        liquidityProviders.transferOwnership(goerliMultisigAddress);
-        lendingAuction.transferOwnership(goerliMultisigAddress);
-        offersContract.transferOwnership(goerliMultisigAddress);
-        sigLendingAuction.transferOwnership(goerliMultisigAddress);
+        liquidityProviders.setMaxCAssetBalance(cEtherToken, cEtherAmount);
+
+        liquidityProviders.transferOwnership(mainnetMultisigAddress);
+        lendingAuction.transferOwnership(mainnetMultisigAddress);
+        offersContract.transferOwnership(mainnetMultisigAddress);
+        sigLendingAuction.transferOwnership(mainnetMultisigAddress);
 
         vm.stopBroadcast();
     }
