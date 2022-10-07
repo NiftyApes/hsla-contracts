@@ -57,11 +57,9 @@ interface ISigLending is ISigLendingAdmin, ISigLendingEvents, IOffersStructs {
     /// @notice Allows PurchaseWithFinancing contract to verify and consume offer and its signature 
     /// @param offer The details of the loan auction offer
     /// @param signature The signature for the offer
-    /// @param nftId The id of a specified NFT
     function validateAndUseOfferSignature(
         Offer memory offer,
-        bytes memory signature,
-        uint256 nftId
+        bytes memory signature
     ) external;
     
 }

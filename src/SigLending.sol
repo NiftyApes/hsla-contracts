@@ -138,8 +138,7 @@ contract NiftyApesSigLending is
     // @inheritdoc ISigLending
     function validateAndUseOfferSignature(
         Offer memory offer,
-        bytes memory signature,
-        uint256 nftId
+        bytes memory signature
     ) external whenNotPaused {
         _requirePurchaseWithFinancingContract();
         address lender = IOffers(offersContractAddress).getOfferSigner(offer, signature);
@@ -149,7 +148,6 @@ contract NiftyApesSigLending is
         IOffers(offersContractAddress).requireSignature65(signature);
 
         if (!offer.floorTerm) {
-            _requireMatchingNftId(offer, nftId);
             IOffers(offersContractAddress).markSignatureUsed(offer, signature);
         }
     }

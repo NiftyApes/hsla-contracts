@@ -151,9 +151,6 @@ contract NiftyApesPurchaseWithFinancing is
             floorTerm,
             nftId
         );
-        if (!floorTerm) {
-            _requireMatchingNftId(offer, nftId);
-        }
         _doBorrow(offer, nftId, receiver, borrower, data);
     }
 
@@ -166,7 +163,7 @@ contract NiftyApesPurchaseWithFinancing is
         address borrower,
         bytes calldata data
     ) external whenNotPaused nonReentrant {
-        ISigLending(sigLendingContractAddress).validateAndUseOfferSignature(offer, signature, nftId);
+        ISigLending(sigLendingContractAddress).validateAndUseOfferSignature(offer, signature);
         _doBorrow(offer, nftId, receiver, borrower, data);
     }
 
@@ -185,6 +182,9 @@ contract NiftyApesPurchaseWithFinancing is
         _requireLenderOffer(offer);
         _requireOfferNotExpired(offer);
         _requireMinDurationForOffer(offer);
+        if (!offer.floorTerm) {
+            _requireMatchingNftId(offer, nftId);
+        }
         
         LoanAuction memory loanAuction = ILending(lendingContractAddress).getLoanAuction(
             offer.nftContractAddress,
