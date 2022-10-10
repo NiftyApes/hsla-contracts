@@ -1,4 +1,4 @@
-//SPDX-License-Identifier: Unlicensed
+//SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/access/OwnableUpgradeable.sol";
@@ -11,7 +11,13 @@ import "./interfaces/niftyapes/offers/IOffers.sol";
 import "./interfaces/niftyapes/liquidity/ILiquidity.sol";
 import "./lib/ECDSABridge.sol";
 
-/// @title Implementation of the IOffers interface
+/// @title NiftyApes Offers
+/// @custom:version 1.0
+/// @author captnseagraves (captnseagraves.eth)
+/// @custom:contributor dankurka
+/// @custom:contributor 0xAlcibiades (alcibiades.eth)
+/// @custom:contributor zjmiller (zjmiller.eth)
+
 contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgradeable, IOffers {
     /// @dev A mapping for a NFT to an Offer
     ///      The mapping has to be broken into three parts since an NFT is denominated by its address (first part)
@@ -22,6 +28,12 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
     ///      Floor offers are different from offers on a specific NFT since they are valid on any NFT fro the same address.
     ///      Thus this mapping skips the nftId, see _nftOfferBooks above.
     mapping(address => mapping(bytes32 => Offer)) private _floorOfferBooks;
+
+    /// @dev A mapping for an on chain offerHash to a floor offer counter
+    mapping(bytes32 => uint64) private _floorOfferCounters;
+
+    /// @dev A mapping for a signautre offer to a floor offer counter
+    mapping(bytes => uint64) private _sigFloorOfferCounters;
 
     /// @dev A mapping to mark a signature as used.
     ///      The mapping allows users to withdraw offers that they made by signature.
@@ -111,7 +123,8 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
                                 offer.nftId,
                                 offer.asset,
                                 offer.amount,
-                                offer.interestRatePerSecond
+                                offer.interestRatePerSecond,
+                                offer.floorTermLimit
                             )
                         )
                     )
@@ -178,6 +191,28 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
         bool floorTerm
     ) internal view returns (Offer storage) {
         return _getOfferBook(nftContractAddress, nftId, floorTerm)[offerHash];
+    }
+
+    /// @inheritdoc IOffers
+    function getFloorOfferCount(bytes32 offerHash) public view returns (uint64 count) {
+        return _floorOfferCounters[offerHash];
+    }
+
+    /// @inheritdoc IOffers
+    function getSigFloorOfferCount(bytes memory signature) public view returns (uint64 count) {
+        return _sigFloorOfferCounters[signature];
+    }
+
+    /// @inheritdoc IOffers
+    function incrementFloorOfferCount(bytes32 offerHash) public {
+        _requireLendingContract();
+        _floorOfferCounters[offerHash] += 1;
+    }
+
+    /// @inheritdoc IOffers
+    function incrementSigFloorOfferCount(bytes memory signature) public {
+        _requireSigLendingContract();
+        _sigFloorOfferCounters[signature] += 1;
     }
 
     /// @inheritdoc IOffers
@@ -293,6 +328,14 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
                 require(signer == expected, "00024");
             }
         }
+    }
+
+    function _requireLendingContract() internal view {
+        require(msg.sender == lendingContractAddress, "00024");
+    }
+
+    function _requireSigLendingContract() internal view {
+        require(msg.sender == sigLendingContractAddress, "00024");
     }
 
     function _requireOfferDoesntExist(address offerCreator) internal pure {
