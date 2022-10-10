@@ -4,14 +4,15 @@ pragma solidity 0.8.13;
 import "@openzeppelin/contracts/token/ERC721/IERC721Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20Upgradeable.sol";
-import "../../../interfaces/niftyapes/offers/IOffers.sol";
-import "../IFinanceReceiver.sol";
+import "../../interfaces/niftyapes/offers/IOffers.sol";
+import "../interfaces/IPurchaseWithFinancingReceiver.sol";
 
 /// @title PwfIntegrationBase
 /// @author zishansami102
+/// @custom:contributor captnseagraves (captnseagraves.eth)
 /// @notice Base contract to integrate any nft marketplace with PurchaseWithFinancing
 abstract contract PwfIntegrationBase is
-    IFinanceReceiver,
+    IPurchaseWithFinancingReceiver,
     IOffersStructs 
 {
     using AddressUpgradeable for address payable;

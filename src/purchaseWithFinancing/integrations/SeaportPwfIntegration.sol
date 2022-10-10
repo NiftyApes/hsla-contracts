@@ -5,9 +5,9 @@ import "@openzeppelin/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
-import "../../interfaces/niftyapes/purchaseWithFinancing/integrations/SeaportPwfIntegration/ISeaportPwfIntegration.sol";
-import "./base/PwfIntegrationBase.sol";
-import "../PurchaseWithFinancing.sol";
+import "../../interfaces/niftyapes/pwfIntegrations/SeaportPwfIntegration/ISeaportPwfIntegration.sol";
+import "../base/PwfIntegrationBase.sol";
+import "../../PurchaseWithFinancing.sol";
 
 /// @notice Integration of Seaport to PurchaseWithFinancing to allow purchase of NFT with financing
 contract SeaportPwfIntegration is
@@ -149,21 +149,6 @@ contract SeaportPwfIntegration is
         );
     }
 
-    function _validateOrder(ISeaport.Order memory order, Offer memory offer) internal {
-        // requireOrderTokenERC721
-        require(order.parameters.offer[0].itemType == ISeaport.ItemType.ERC721, "00049");
-        // requireOrderTokenAmount
-        require(order.parameters.offer[0].startAmount == 1, "00049");
-        // requireOrderNotAuction
-        require(
-            order.parameters.consideration[0].startAmount ==
-                order.parameters.consideration[0].endAmount,
-            "00049"
-        );
-
-         _requireMatchingAsset(offer.asset, order.parameters.consideration[0].token);
-    }
-
     function executeOperation(
         address nftContractAddress,
         uint256 nftId,
@@ -204,6 +189,21 @@ contract SeaportPwfIntegration is
         // approve the purchaseWithFinancing contract for the purchased nft
         IERC721Upgradeable(nftContractAddress).approve(purchaseWithFinancingContractAddress, nftId);
         return true;
+    }
+
+    function _validateOrder(ISeaport.Order memory order, Offer memory offer) internal {
+        // requireOrderTokenERC721
+        require(order.parameters.offer[0].itemType == ISeaport.ItemType.ERC721, "00049");
+        // requireOrderTokenAmount
+        require(order.parameters.offer[0].startAmount == 1, "00049");
+        // requireOrderNotAuction
+        require(
+            order.parameters.consideration[0].startAmount ==
+                order.parameters.consideration[0].endAmount,
+            "00049"
+        );
+
+         _requireMatchingAsset(offer.asset, order.parameters.consideration[0].token);
     }
 
     function _calculateConsiderationAmount(ISeaport.Order memory order) internal pure returns(uint256 considerationAmount) {

@@ -5,7 +5,7 @@ import "../../../Lending.sol";
 import "../../../Liquidity.sol";
 import "../../../Offers.sol";
 import "../../../SigLending.sol";
-import "../../../purchaseWithFinancing/PurchaseWithFinancing.sol";
+import "../../../PurchaseWithFinancing.sol";
 import "../../../purchaseWithFinancing/integrations/SeaportPwfIntegration.sol";
 import "../../../purchaseWithFinancing/integrations/SudoswapPwfIntegration.sol";
 import "./NFTAndERC20Fixtures.sol";

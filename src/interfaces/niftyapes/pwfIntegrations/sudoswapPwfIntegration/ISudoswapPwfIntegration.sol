@@ -3,8 +3,8 @@ pragma solidity 0.8.13;
 
 import "./ISudoswapPwfIntegrationAdmin.sol";
 import "./ISudoswapPwfIntegrationEvents.sol";
-import "../../../offers/IOffersStructs.sol";
-import "../../../../sudoswap/ILSSVMPair.sol";
+import "../../offers/IOffersStructs.sol";
+import "../../../sudoswap/ILSSVMPair.sol";
 
 interface ISudoswapPwfIntegration is
     ISudoswapPwfIntegrationAdmin,

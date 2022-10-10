@@ -1,23 +1,21 @@
-//SPDX-License-Identifier: Unlicensed
+//SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuardUpgradeable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20Upgradeable.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 import "@openzeppelin/contracts/utils/math/SafeCastUpgradeable.sol";
-import "../interfaces/niftyapes/purchaseWithFinancing/IPurchaseWithFinancing.sol";
-import "../interfaces/niftyapes/lending/ILending.sol";
-import "../interfaces/niftyapes/sigLending/ISigLending.sol";
-import "./integrations/IFinanceReceiver.sol";
-import "../interfaces/niftyapes/liquidity/ILiquidity.sol";
-import "../interfaces/niftyapes/offers/IOffers.sol";
-import "../interfaces/sanctions/SanctionsList.sol";
+import "./interfaces/niftyapes/purchaseWithFinancing/IPurchaseWithFinancing.sol";
+import "./interfaces/niftyapes/lending/ILending.sol";
+import "./interfaces/niftyapes/sigLending/ISigLending.sol";
+import "./interfaces/niftyapes/liquidity/ILiquidity.sol";
+import "./interfaces/niftyapes/offers/IOffers.sol";
+import "./interfaces/sanctions/SanctionsList.sol";
+import "./purchaseWithFinancing/interfaces/IPurchaseWithFinancingReceiver.sol";
 
-/// @notice Extension of NiftApes lending contract to allow for Seaport purchases
+/// @notice Extension of NiftApes lending contract to allow purchase of NFTs with lending offer funds
 contract NiftyApesPurchaseWithFinancing is
     OwnableUpgradeable,
     PausableUpgradeable,
@@ -25,9 +23,6 @@ contract NiftyApesPurchaseWithFinancing is
     ERC721HolderUpgradeable,
     IPurchaseWithFinancing
 {
-    using SafeERC20Upgradeable for IERC20Upgradeable;
-    using AddressUpgradeable for address payable;
-
     /// @dev Internal address used for for ETH
     address private constant ETH_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
 
@@ -214,7 +209,7 @@ contract NiftyApesPurchaseWithFinancing is
         ILiquidity(liquidityContractAddress).sendValue(offer.asset, offer.amount, receiver);
 
         // execute opreation on receiver contract
-        require(IFinanceReceiver(receiver).executeOperation(
+        require(IPurchaseWithFinancingReceiver(receiver).executeOperation(
             offer.nftContractAddress,
             nftId,
             msg.sender,

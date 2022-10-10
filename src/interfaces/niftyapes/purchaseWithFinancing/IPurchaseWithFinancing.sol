@@ -30,6 +30,7 @@ interface IPurchaseWithFinancing is
     ///         the purchased NFT is approved to be added as collateral.
     /// @param  offerHash Hash of the existing offer in NiftyApes on-chain offerBook.
     /// @param  nftContractAddress Address of the NFT collection to be pruchased
+    /// @param  nftId Token id of the NFT user intends to provide as collateral
     /// @param  floorTerm Determines if this is a floor offer or not.
     /// @param  receiver The address of the external contract that will receive the finance and return the nft.
     /// @param  borrower The address that will be able to later repay the borrowed funds and unlock the nft.
@@ -48,7 +49,7 @@ interface IPurchaseWithFinancing is
     ///         the purchased NFT is approved to be added as collateral.
     /// @param  offer The details of the loan auction offer
     /// @param  signature The signature for the offer
-    /// @param  nftId Determines if this is a floor offer or not.
+    /// @param  nftId Token id of the NFT user intends to provide as collateral
     /// @param  receiver The address of the external contract that will receive the finance and return the nft.
     /// @param  borrower The address that will be able to later repay the borrowed funds and unlock the nft.
     /// @param  data Arbitrary data structure, intended to contain user-defined parameters, to be passed on to the receiver.

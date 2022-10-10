@@ -5,9 +5,9 @@ import "../lending/ILendingStructs.sol";
 
 /// @title Events emitted by the lending part of the protocol.
 interface IPurchaseWithFinancingEvents {
-    /// @notice Emitted when a new loan is executed for purchase of NFT
+    /// @notice Emitted when a new loan is executed for the purchase of an NFT
     /// @param nftContractAddress The nft contract address
-    /// @param nftId The nft id, this field can be meaningless if the offer is a floor term offer
+    /// @param nftId The tokenId of the NFT which was put as collateral
     /// @param financeReceiver The contract which receives finance for the purchase
     /// @param loanAuction The loan details
     event LoanExecutedForPurchase(

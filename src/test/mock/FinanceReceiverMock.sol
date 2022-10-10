@@ -3,9 +3,9 @@ pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
-import "../../purchaseWithFinancing/integrations/IFinanceReceiver.sol";
+import "../../purchaseWithFinancing/interfaces/IPurchaseWithFinancingReceiver.sol";
 
-contract FinanceReceiverMock is IFinanceReceiver, ERC721HolderUpgradeable {
+contract FinanceReceiverMock is IPurchaseWithFinancingReceiver, ERC721HolderUpgradeable {
     function executeOperation(
         address nftContractAddress,
         uint256 nftId,

@@ -5,7 +5,7 @@ import "../src/Liquidity.sol";
 import "../src/Offers.sol";
 import "../src/SigLending.sol";
 import "../src/Lending.sol";
-import "../src/purchaseWithFinancing/PurchaseWithFinancing.sol";
+import "../src/PurchaseWithFinancing.sol";
 
 contract DeployNiftyApesScript is Script {
     function run() external {

@@ -3,8 +3,8 @@ pragma solidity 0.8.13;
 
 import "./ISeaportPwfIntegrationAdmin.sol";
 import "./ISeaportPwfIntegrationEvents.sol";
-import "../../../offers/IOffersStructs.sol";
-import "../../../../seaport/ISeaport.sol";
+import "../../offers/IOffersStructs.sol";
+import "../../../seaport/ISeaport.sol";
 
 interface ISeaportPwfIntegration is
     ISeaportPwfIntegrationAdmin,

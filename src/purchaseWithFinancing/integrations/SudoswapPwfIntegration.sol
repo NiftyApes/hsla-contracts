@@ -5,12 +5,12 @@ import "@openzeppelin/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
-import "../../interfaces/niftyapes/purchaseWithFinancing/integrations/sudoswapPwfIntegration/ISudoswapPwfIntegration.sol";
+import "../../interfaces/niftyapes/pwfIntegrations/sudoswapPwfIntegration/ISudoswapPwfIntegration.sol";
 import "../../interfaces/sudoswap/ILSSVMPairFactoryLike.sol";
 import "../../interfaces/sudoswap/ILSSVMPair.sol";
 import "../../interfaces/sudoswap/ILSSVMRouter.sol";
-import "./base/PwfIntegrationBase.sol";
-import "../PurchaseWithFinancing.sol";
+import "../base/PwfIntegrationBase.sol";
+import "../../PurchaseWithFinancing.sol";
 
 /// @notice Integration of Sudoswap to PurchaseWithFinancing to allow purchase of NFT with financing
 contract SudoswapPwfIntegration is
@@ -37,7 +37,7 @@ contract SudoswapPwfIntegration is
     address public sudoswapRouterContractAddress;
 
     /// @notice Mutex to selectively enable ETH transfers
-    /// @dev    Follows a similar pattern to `Liquidiy.sol`
+    /// @dev    Follows a similar pattern to `Liquidity.sol`
     bool internal _ethTransferable = false;
 
     /// @dev This empty reserved space is put in place to allow future versions to add new
@@ -165,30 +165,6 @@ contract SudoswapPwfIntegration is
         );
     }
 
-    function _validatePairAndGetConsideration(
-        Offer memory offer,
-        ILSSVMPair lssvmPair
-    ) internal returns(uint256) {
-        // verify pair provided is a valid clone of sudoswap factory pair template
-        ILSSVMPairFactoryLike.PairVariant pairVariant = lssvmPair.pairVariant();
-        require(ILSSVMPairFactoryLike(sudoswapFactoryContractAddress).isPair(address(lssvmPair), pairVariant), "00050");
-
-        // fetch purchasing asset address
-        address purchasingAsset;
-        if (pairVariant == ILSSVMPairFactoryLike.PairVariant.ENUMERABLE_ERC20 || pairVariant == ILSSVMPairFactoryLike.PairVariant.MISSING_ENUMERABLE_ERC20) {
-            purchasingAsset = address(lssvmPair.token());
-        }
-        _requireMatchingAsset(offer.asset, purchasingAsset);
-
-        // calculate consideration amount
-        (ILSSVMPair.Error error, , , uint256 considerationAmount, ) = lssvmPair.getBuyNFTQuote(1);
-        // Require no error
-        require(error == ILSSVMPair.Error.OK, "00053");
-        return considerationAmount;
-        
-        
-    }
-
     function executeOperation(
         address nftContractAddress,
         uint256 nftId,
@@ -232,6 +208,28 @@ contract SudoswapPwfIntegration is
         // approve the purchaseWithFinancing contract for the purchased nft
         IERC721Upgradeable(nftContractAddress).approve(purchaseWithFinancingContractAddress, nftId);
         return true;
+    }
+
+    function _validatePairAndGetConsideration(
+        Offer memory offer,
+        ILSSVMPair lssvmPair
+    ) internal returns(uint256) {
+        // verify pair provided is a valid clone of sudoswap factory pair template
+        ILSSVMPairFactoryLike.PairVariant pairVariant = lssvmPair.pairVariant();
+        require(ILSSVMPairFactoryLike(sudoswapFactoryContractAddress).isPair(address(lssvmPair), pairVariant), "00050");
+
+        // fetch purchasing asset address
+        address purchasingAsset;
+        if (pairVariant == ILSSVMPairFactoryLike.PairVariant.ENUMERABLE_ERC20 || pairVariant == ILSSVMPairFactoryLike.PairVariant.MISSING_ENUMERABLE_ERC20) {
+            purchasingAsset = address(lssvmPair.token());
+        }
+        _requireMatchingAsset(offer.asset, purchasingAsset);
+
+        // calculate consideration amount
+        (ILSSVMPair.Error error, , , uint256 considerationAmount, ) = lssvmPair.getBuyNFTQuote(1);
+        // Require no error
+        require(error == ILSSVMPair.Error.OK, "00053");
+        return considerationAmount;
     }
 
     function _requireEthTransferable() internal view {

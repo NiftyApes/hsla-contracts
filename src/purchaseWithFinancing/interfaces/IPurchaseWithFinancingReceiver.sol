@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-/// @title IFinanceReceiver
-/// @author zishansami102
+/// @title IPurchaseWithFinancingReceiver
+/// @author zishansami102 (zishansami.eth)
 /// @notice Defines the basic interface of a finance receiver contract using `PurchaseWithFinancing.borrow()`
 /// @dev Implement this interface to integrate PurchaseWithFinancing to any nft marketplace
 
-interface IFinanceReceiver {
+interface IPurchaseWithFinancingReceiver {
     /// @notice Executes an operation after receiving the lending amount from an existing offer on NiftyApes
     /// @dev Ensure that the contract approves the return of the purchased nft to the PurchaseWithFinancing contract
     ///      before the end of the transaction
