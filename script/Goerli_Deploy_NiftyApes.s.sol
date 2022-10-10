@@ -41,8 +41,8 @@ contract DeployNiftyApesScript is Script {
         sigLendingAuction.updateLendingContractAddress(address(lendingAuction));
 
         // Goerli Addresses
-        address daiToken = 0x73967c6a0904aA032C103b4104747E88c566B1A2;
-        address cDAIToken = 0x92f44bE965c47ce72D13d40ea45637A8f92C0a28;
+        address daiToken = 0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60;
+        address cDAIToken = 0x822397d9a55d0fefd20F5c4bCaB33C5F65bd28Eb;
         address ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
         address cEtherToken = 0x20572e4c090f15667cF7378e16FaD2eA0e2f3EfF;
 
