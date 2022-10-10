@@ -90,7 +90,7 @@ contract NiftyApesSigLending is
             require(
                 IOffers(offersContractAddress).getSigFloorOfferCount(signature) <
                     offer.floorTermLimit,
-                "00051"
+                "00055"
             );
 
             IOffers(offersContractAddress).incrementSigFloorOfferCount(signature);

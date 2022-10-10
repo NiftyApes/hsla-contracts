@@ -818,7 +818,7 @@ contract NiftyApesLending is
         } else {
             require(
                 IOffers(offersContractAddress).getFloorOfferCount(offerHash) < offer.floorTermLimit,
-                "00051"
+                "00055"
             );
 
             IOffers(offersContractAddress).incrementFloorOfferCount(offerHash);

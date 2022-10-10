@@ -526,7 +526,7 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
 
         vm.startPrank(borrower2);
         mockNft.approve(address(lending), 2);
-        vm.expectRevert("00051");
+        vm.expectRevert("00055");
         lending.executeLoanByBorrower(offer.nftContractAddress, 2, offerHash, offer.floorTerm);
         vm.stopPrank();
     }

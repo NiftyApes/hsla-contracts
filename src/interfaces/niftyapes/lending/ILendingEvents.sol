@@ -15,16 +15,6 @@ interface ILendingEvents {
         ILendingStructs.LoanAuction loanAuction
     );
 
-    /// @notice Emitted when a OpenSea new loan is executed
-    /// @param nftContractAddress The nft contract address
-    /// @param nftId The nft id, this field can be meaningless if the offer is a floor term offer
-    /// @param offer The offer details
-    event LoanExecutedForOpenSea(
-        address indexed nftContractAddress,
-        uint256 indexed nftId,
-        IOffersStructs.Offer offer
-    );
-
     /// @notice Emitted when a loan is refinanced
     /// @param nftContractAddress The nft contract address
     /// @param nftId The nft id
