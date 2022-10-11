@@ -10,6 +10,10 @@ import "../base/PwfIntegrationBase.sol";
 import "../../PurchaseWithFinancing.sol";
 
 /// @notice Integration of Seaport to PurchaseWithFinancing to allow purchase of NFT with financing
+/// @title SeaportPwfIntegration
+/// @author captnseagraves (captnseagraves.eth)
+/// @custom:contributor zishansami102 (zishansami.eth)
+/// @custom:contributor jyturley
 contract SeaportPwfIntegration is
     OwnableUpgradeable,
     ReentrancyGuardUpgradeable,

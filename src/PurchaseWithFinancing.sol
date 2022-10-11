@@ -16,6 +16,11 @@ import "./interfaces/sanctions/SanctionsList.sol";
 import "./purchaseWithFinancing/interfaces/IPurchaseWithFinancingReceiver.sol";
 
 /// @notice Extension of NiftApes lending contract to allow purchase of NFTs with lending offer funds
+/// @title NiftyApesPurchaseWithFinancing
+/// @custom:version 1.0
+/// @author captnseagraves (captnseagraves.eth)
+/// @custom:contributor zishansami102 (zishansami.eth)
+/// @custom:contributor jyturley
 contract NiftyApesPurchaseWithFinancing is
     OwnableUpgradeable,
     PausableUpgradeable,
