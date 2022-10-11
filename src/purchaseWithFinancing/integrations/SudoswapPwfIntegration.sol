@@ -13,6 +13,10 @@ import "../base/PwfIntegrationBase.sol";
 import "../../PurchaseWithFinancing.sol";
 
 /// @notice Integration of Sudoswap to PurchaseWithFinancing to allow purchase of NFT with financing
+/// @title SudoswapPwfIntegration
+/// @custom:version 1.0
+/// @author zishansami102 (zishansami.eth)
+/// @custom:contributor captnseagraves (captnseagraves.eth)
 contract SudoswapPwfIntegration is
     OwnableUpgradeable,
     ReentrancyGuardUpgradeable,
