@@ -1,14 +1,14 @@
 # H-01: Value leaks due to fee-on-transfers on some ERC20 tokens is not being considered
 
 ## Vulnerability details
-Some ERC20 tokens, such as USDT[contract code](https://etherscan.io/token/0xdac17f958d2ee523a2206206994597c13d831ec7#code), allow for charging a fee any time transfer() or transferFrom() is called. If a contract does not allow for amounts to change after transfers, subsequent transfer operations based on the original amount will revert() due to the contract having an insufficient balance. 
+Some ERC20 tokens, such as USDT[(contract code)](https://etherscan.io/token/0xdac17f958d2ee523a2206206994597c13d831ec7#code), allow for charging a fee any time transfer() or transferFrom() is called. If a contract does not allow for amounts to change after transfers, subsequent transfer operations based on the original amount will revert() due to the contract having an insufficient balance. 
 And even if a token is currently not charging a fee, a future upgrade to the token may institute one.
 
 ## Impact
 instance #1
 Link: https://github.com/NiftyApes/contracts/blob/main/src/Liquidity.sol#L469-L478
 ```solidity
-contracts/gateway/L1GraphTokenGateway.sol
+src/Liquidity.sol
 
 469:        underlying.safeTransferFrom(from, address(this), amount);
 478:        require(cToken.mint(amount) == 0, "00037");
@@ -18,7 +18,7 @@ contracts/gateway/L1GraphTokenGateway.sol
 instance #2
 Link: https://github.com/NiftyApes/contracts/blob/main/src/Liquidity.sol#L454
 ```solidity
-contracts/gateway/L1GraphTokenGateway.sol
+src/Liquidity.sol
 
 454:            IERC20Upgradeable(asset).safeTransfer(to, amount);
 
