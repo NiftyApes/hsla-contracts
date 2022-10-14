@@ -62,8 +62,14 @@ contract TestExecuteLoanByBorrowerSignature is Test, OffersLoansRefinancesFixtur
         vm.startPrank(borrower1);
         mockNft.approve(address(lending), offer.nftId);
 
-        vm.expectEmit(true, true, false, true); // LoanExecuted has 2 indexes
-        emit LoanExecuted(offer.nftContractAddress, offer.nftId, offer);
+        LoanAuction memory loanAuction = lending.getLoanAuction(
+            offer.nftContractAddress,
+            offer.nftId
+        );
+
+        hevm.expectEmit(true, false, false, false);
+
+        emit LoanExecuted(offer.nftContractAddress, offer.nftId, loanAuction);
 
         sigLending.executeLoanByBorrowerSignature(offer, signature, 1);
         vm.stopPrank();
