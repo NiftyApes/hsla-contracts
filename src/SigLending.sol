@@ -162,6 +162,14 @@ contract NiftyApesSigLending is
 
         if (!offer.floorTerm) {
             IOffers(offersContractAddress).markSignatureUsed(offer, signature);
+        } else {
+            require(
+                IOffers(offersContractAddress).getSigFloorOfferCount(signature) <
+                    offer.floorTermLimit,
+                "00051"
+            );
+
+            IOffers(offersContractAddress).incrementSigFloorOfferCount(signature);
         }
     }
 

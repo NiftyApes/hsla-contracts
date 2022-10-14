@@ -1,15 +1,20 @@
-//SPDX-License-Identifier: Unlicensed
+//SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
-import "../../interfaces/niftyapes/pwfIntegrations/SeaportPwfIntegration/ISeaportPwfIntegration.sol";
+import "../../interfaces/pwfIntegrations/SeaportPwfIntegration/ISeaportPwfIntegration.sol";
 import "../base/PwfIntegrationBase.sol";
 import "../../PurchaseWithFinancing.sol";
 
 /// @notice Integration of Seaport to PurchaseWithFinancing to allow purchase of NFT with financing
+/// @title SeaportPwfIntegration
+/// @custom:version 1.0
+/// @author captnseagraves (captnseagraves.eth)
+/// @custom:contributor zishansami102 (zishansami.eth)
+/// @custom:contributor jyturley
 contract SeaportPwfIntegration is
     OwnableUpgradeable,
     ReentrancyGuardUpgradeable,
@@ -66,7 +71,7 @@ contract SeaportPwfIntegration is
 
     /// @inheritdoc ISeaportPwfIntegrationAdmin
     function updatePurchaseWithFinancingContractAddress(address newPurchaseWithFinancingContractAddress) external onlyOwner {
-        require(address(newPurchaseWithFinancingContractAddress) != address(0), "00051");
+        require(address(newPurchaseWithFinancingContractAddress) != address(0), "00055");
         emit SeaportPwfIntegrationXPurchaseWithFinancingContractAddressUpdated(
             purchaseWithFinancingContractAddress,
             newPurchaseWithFinancingContractAddress

@@ -3,7 +3,7 @@ pragma solidity 0.8.13;
 
 import "../lending/ILendingStructs.sol";
 
-/// @title Events emitted by the lending part of the protocol.
+/// @title Events emitted by the financing part of the protocol.
 interface IPurchaseWithFinancingEvents {
     /// @notice Emitted when a new loan is executed for the purchase of an NFT
     /// @param nftContractAddress The nft contract address

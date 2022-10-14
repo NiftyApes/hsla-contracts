@@ -16,6 +16,11 @@ import "./interfaces/sanctions/SanctionsList.sol";
 import "./purchaseWithFinancing/interfaces/IPurchaseWithFinancingReceiver.sol";
 
 /// @notice Extension of NiftApes lending contract to allow purchase of NFTs with lending offer funds
+/// @title NiftyApes PurchaseWithFinancing
+/// @custom:version 1.0
+/// @author captnseagraves (captnseagraves.eth)
+/// @custom:contributor zishansami102 (zishansami.eth)
+/// @custom:contributor jyturley
 contract NiftyApesPurchaseWithFinancing is
     OwnableUpgradeable,
     PausableUpgradeable,
@@ -264,6 +269,13 @@ contract NiftyApesPurchaseWithFinancing is
                 offerHash,
                 floorTerm
             );
+        } else {
+            require(
+                IOffers(offersContractAddress).getFloorOfferCount(offerHash) < offer.floorTermLimit,
+                "00051"
+            );
+
+            IOffers(offersContractAddress).incrementFloorOfferCount(offerHash);
         }
     }
 

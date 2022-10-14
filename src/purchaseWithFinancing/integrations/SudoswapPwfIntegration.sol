@@ -1,11 +1,11 @@
-//SPDX-License-Identifier: Unlicensed
+//SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
-import "../../interfaces/niftyapes/pwfIntegrations/sudoswapPwfIntegration/ISudoswapPwfIntegration.sol";
+import "../../interfaces/pwfIntegrations/sudoswapPwfIntegration/ISudoswapPwfIntegration.sol";
 import "../../interfaces/sudoswap/ILSSVMPairFactoryLike.sol";
 import "../../interfaces/sudoswap/ILSSVMPair.sol";
 import "../../interfaces/sudoswap/ILSSVMRouter.sol";
@@ -13,6 +13,10 @@ import "../base/PwfIntegrationBase.sol";
 import "../../PurchaseWithFinancing.sol";
 
 /// @notice Integration of Sudoswap to PurchaseWithFinancing to allow purchase of NFT with financing
+/// @title SudoswapPwfIntegration
+/// @custom:version 1.0
+/// @author zishansami102 (zishansami.eth)
+/// @custom:contributor captnseagraves (captnseagraves.eth)
 contract SudoswapPwfIntegration is
     OwnableUpgradeable,
     ReentrancyGuardUpgradeable,
@@ -74,7 +78,7 @@ contract SudoswapPwfIntegration is
 
     /// @inheritdoc ISudoswapPwfIntegrationAdmin
     function updatePurchaseWithFinancingContractAddress(address newPurchaseWithFinancingContractAddress) external onlyOwner {
-        require(address(newPurchaseWithFinancingContractAddress) != address(0), "00051");
+        require(address(newPurchaseWithFinancingContractAddress) != address(0), "00055");
         emit SudoswapPwfIntegrationXPurchaseWithFinancingContractAddressUpdated(
             purchaseWithFinancingContractAddress,
             newPurchaseWithFinancingContractAddress

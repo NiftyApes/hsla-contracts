@@ -205,7 +205,7 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
 
     /// @inheritdoc IOffers
     function incrementFloorOfferCount(bytes32 offerHash) public {
-        _requireLendingContract();
+        _requireExpectedContract();
         _floorOfferCounters[offerHash] += 1;
     }
 
@@ -334,8 +334,8 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
         }
     }
 
-    function _requireLendingContract() internal view {
-        require(msg.sender == lendingContractAddress, "00024");
+    function _requireExpectedContract() internal view {
+        require(msg.sender == lendingContractAddress || msg.sender == purchaseWithFinancingContractAddress, "00024");
     }
 
     function _requireSigLendingContract() internal view {

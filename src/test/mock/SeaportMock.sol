@@ -18,31 +18,6 @@ contract SeaportMock is ISeaport {
         mockNft.approve(purchaseWithFinancingContract, 1);
     }
 
-    function fulfillBasicOrder(BasicOrderParameters calldata parameters)
-        external
-        payable
-        returns (bool fulfilled)
-    {
-        require(parameters.considerationToken == address(0), "Must use ETH");
-        require(parameters.considerationIdentifier != 0, "Invalid NFT ID");
-
-        uint256 testNFTPrice = 100 ether;
-        if (msg.value != testNFTPrice) {
-            console.log("bad price");
-            return false;
-        }
-
-        uint256 testTokenId = 1;
-        if (parameters.considerationIdentifier != testTokenId) {
-            console.log("bad tokenId");
-            return false;
-        }
-
-        console.log("transferring token");
-        mockNft.safeTransferFrom(address(this), msg.sender, testTokenId);
-        return true;
-    }
-
     function fulfillOrder(Order calldata order, bytes32 fulfillerConduitKey)
         external
         payable

@@ -7,10 +7,11 @@ import "@openzeppelin/contracts/token/ERC20/IERC20Upgradeable.sol";
 import "../../interfaces/niftyapes/offers/IOffers.sol";
 import "../interfaces/IPurchaseWithFinancingReceiver.sol";
 
-/// @title PwfIntegrationBase
-/// @author zishansami102
-/// @custom:contributor captnseagraves (captnseagraves.eth)
 /// @notice Base contract to integrate any nft marketplace with PurchaseWithFinancing
+/// @title NiftyApes PwfIntegrationBase
+/// @custom:version 1.0
+/// @author zishansami102 (zishansami.eth)
+/// @custom:contributor captnseagraves (captnseagraves.eth)
 abstract contract PwfIntegrationBase is
     IPurchaseWithFinancingReceiver,
     IOffersStructs 

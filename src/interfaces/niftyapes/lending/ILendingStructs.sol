@@ -28,7 +28,7 @@ interface ILendingStructs {
         bool lenderRefi;
         // cumulative interest of varying rates paid by new lenders to buy out the loan auction
         uint128 accumulatedLenderInterest;
-        // 32 unused bytes in slot 1isValidSignatureisValidSignature
+        // 32 unused bytes in slot 1
         // SLOT 2 START
         // cumulative interest of varying rates accrued by the protocol. Paid by lenders upon refinance, repaid by borrower at the end of the loan.
         uint128 accumulatedPaidProtocolInterest;
