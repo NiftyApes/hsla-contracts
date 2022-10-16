@@ -10,7 +10,7 @@ import "../../../../interfaces/niftyapes/offers/IOffersStructs.sol";
 contract TestSudoswapPwfIntegration is Test, OffersLoansRefinancesFixtures, ERC721HolderUpgradeable {
     function setUp() public override {
         // pin block to time of writing test to reflect consistent state
-        vm.rollFork(15617130);
+        vm.rollFork(15727117);
 
         super.setUp();
     }
@@ -18,12 +18,12 @@ contract TestSudoswapPwfIntegration is Test, OffersLoansRefinancesFixtures, ERC7
     function _test_purchaseWithFinancingSudoswap_simplest_case(
         Offer memory offer,
         ILSSVMPair lssvmPair,
-        uint256 nftId,
+        uint256[] memory nftIds,
         bool withSignature
     ) private {
         address nftContractAddress = address(lssvmPair.nft());
         offer.nftContractAddress = nftContractAddress;
-        offer.nftId = nftId;
+        offer.nftId = nftIds[0];
 
         ILSSVMPairFactoryLike.PairVariant pairVariant = lssvmPair.pairVariant();
         if (pairVariant == ILSSVMPairFactoryLike.PairVariant.ENUMERABLE_ERC20 || pairVariant == ILSSVMPairFactoryLike.PairVariant.MISSING_ENUMERABLE_ERC20) {
@@ -32,47 +32,53 @@ contract TestSudoswapPwfIntegration is Test, OffersLoansRefinancesFixtures, ERC7
             offer.asset = ETH_ADDRESS;
         }
 
-        uint256 considerationAmount;
-        ( , , , considerationAmount, ) = lssvmPair.getBuyNFTQuote(1);
-        offer.amount = uint128(considerationAmount / 2);
+        ( , , , uint256 totalConsiderationAmount, ) = lssvmPair.getBuyNFTQuote(nftIds.length);
+        offer.amount = uint128(totalConsiderationAmount / (nftIds.length * 2));
         offer.expiration = uint32(block.timestamp + 1);
+        if (nftIds.length > 1) {
+            offer.floorTerm = true;
+            offer.floorTermLimit = 2;
+        }
 
-        LoanAuction memory loanAuction;
         if (!withSignature) {
-            loanAuction = createOfferAndTryPurchaseWithFinancing(
+            createOfferAndTryPurchaseWithFinancing(
                 offer,
                 lssvmPair,
-                nftId,
+                nftIds,
                 "should work"
             );
         } else {
-            loanAuction = signOfferAndTryPurchaseWithFinancingSignature(
+            signOfferAndTryPurchaseWithFinancingSignature(
                 offer,
                 lssvmPair,
-                nftId,
+                nftIds,
                 "should work"
             );
         }
 
-        // lending contract has NFT
-        assertEq(
-            IERC721Upgradeable(offer.nftContractAddress).ownerOf(nftId),
-            address(lending)
-        );
-        // loan auction exists
-        assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
-        // loan auction exists
-        assertEq(loanAuction.nftOwner, borrower1);
-        assertEq(loanAuction.amountDrawn, offer.amount);
+        for (uint256 i; i < nftIds.length; i++) {
+            LoanAuction memory loanAuction = lending.getLoanAuction(offer.nftContractAddress, nftIds[i]);
+            // lending contract has NFT
+            assertEq(
+                IERC721Upgradeable(offer.nftContractAddress).ownerOf(nftIds[i]),
+                address(lending)
+            );
+            // loan auction exists
+            assertEq(loanAuction.lastUpdatedTimestamp, block.timestamp);
+            // loan auction exists
+            assertEq(loanAuction.nftOwner, borrower1);
+            assertEq(loanAuction.amountDrawn, offer.amount);
+        }
+        
     }
 
     function test_fuzz_PurchaseWithSudoswap_simplest_case_ETH(
         FuzzedOfferFields memory fuzzedOfferData
     ) public validateFuzzedOfferFields(fuzzedOfferData) {
         Offer memory offer = offerStructFromFields(fuzzedOfferData, defaultFixedOfferFields);
-        (ILSSVMPair lssvmPair, uint256 nftId) = createAndValidateLssvmPairWithETH();
+        (ILSSVMPair lssvmPair, uint256[] memory nftIds) = createAndValidateLssvmPairWithETH(1);
 
-        _test_purchaseWithFinancingSudoswap_simplest_case(offer, lssvmPair, nftId, false);
+        _test_purchaseWithFinancingSudoswap_simplest_case(offer, lssvmPair, nftIds, false);
     }
 
     function test_unit_PurchaseWithFinancingSudoswap_simplest_case_ETH() public {
@@ -80,18 +86,18 @@ contract TestSudoswapPwfIntegration is Test, OffersLoansRefinancesFixtures, ERC7
             defaultFixedFuzzedFieldsForFastUnitTesting,
             defaultFixedOfferFields
         );
-        (ILSSVMPair lssvmPair, uint256 nftId) = createAndValidateLssvmPairWithETH();
+        (ILSSVMPair lssvmPair, uint256[] memory nftIds) = createAndValidateLssvmPairWithETH(1);
 
-        _test_purchaseWithFinancingSudoswap_simplest_case(offer, lssvmPair, nftId, false);
+        _test_purchaseWithFinancingSudoswap_simplest_case(offer, lssvmPair, nftIds, false);
     }
 
     function test_fuzz_PurchaseWithFinancingSudoswap_simplest_case_DAI(
         FuzzedOfferFields memory fuzzedOfferData
     ) public validateFuzzedOfferFields(fuzzedOfferData) {
         Offer memory offer = offerStructFromFields(fuzzedOfferData, defaultFixedOfferFields);
-    (ILSSVMPair lssvmPair, uint256 nftId) = createAndValidateLssvmPairWithDAI();
+    (ILSSVMPair lssvmPair, uint256[] memory nftIds) = createAndValidateLssvmPairWithDAI(1);
 
-    _test_purchaseWithFinancingSudoswap_simplest_case(offer, lssvmPair, nftId, false);
+    _test_purchaseWithFinancingSudoswap_simplest_case(offer, lssvmPair, nftIds, false);
     }
 
     function test_unit_PurchaseWithFinancingSudoswap_simplest_case_DAI() public {
@@ -99,18 +105,18 @@ contract TestSudoswapPwfIntegration is Test, OffersLoansRefinancesFixtures, ERC7
             defaultFixedFuzzedFieldsForFastUnitTesting,
             defaultFixedOfferFields
         );
-        (ILSSVMPair lssvmPair, uint256 nftId) = createAndValidateLssvmPairWithDAI();
+        (ILSSVMPair lssvmPair, uint256[] memory nftIds) = createAndValidateLssvmPairWithDAI(1);
 
-        _test_purchaseWithFinancingSudoswap_simplest_case(offer, lssvmPair, nftId, false);
+        _test_purchaseWithFinancingSudoswap_simplest_case(offer, lssvmPair, nftIds, false);
     }
 
     function test_fuzz_PurchaseWithFinancingSudoswapSignature_simplest_case_ETH(
         FuzzedOfferFields memory fuzzedOfferData
     ) public validateFuzzedOfferFields(fuzzedOfferData) {
         Offer memory offer = offerStructFromFields(fuzzedOfferData, defaultFixedOfferFields);
-        (ILSSVMPair lssvmPair, uint256 nftId) = createAndValidateLssvmPairWithETH();
+        (ILSSVMPair lssvmPair, uint256[] memory nftIds) = createAndValidateLssvmPairWithETH(1);
 
-        _test_purchaseWithFinancingSudoswap_simplest_case(offer, lssvmPair, nftId, true);
+        _test_purchaseWithFinancingSudoswap_simplest_case(offer, lssvmPair, nftIds, true);
     }
 
     function test_unit_PurchaseWithFinancingSudoswapSignature_simplest_case_ETH() public {
@@ -118,18 +124,18 @@ contract TestSudoswapPwfIntegration is Test, OffersLoansRefinancesFixtures, ERC7
             defaultFixedFuzzedFieldsForFastUnitTesting,
             defaultFixedOfferFields
         );
-        (ILSSVMPair lssvmPair, uint256 nftId) = createAndValidateLssvmPairWithETH();
+        (ILSSVMPair lssvmPair, uint256[] memory nftIds) = createAndValidateLssvmPairWithETH(1);
 
-        _test_purchaseWithFinancingSudoswap_simplest_case(offer, lssvmPair, nftId, true);
+        _test_purchaseWithFinancingSudoswap_simplest_case(offer, lssvmPair, nftIds, true);
     }
 
     function test_fuzz_PurchaseWithFinancingSudoswapSignature_simplest_case_DAI(
         FuzzedOfferFields memory fuzzedOfferData
     ) public validateFuzzedOfferFields(fuzzedOfferData) {
         Offer memory offer = offerStructFromFields(fuzzedOfferData, defaultFixedOfferFields);
-    (ILSSVMPair lssvmPair, uint256 nftId) = createAndValidateLssvmPairWithDAI();
+    (ILSSVMPair lssvmPair, uint256[] memory nftIds) = createAndValidateLssvmPairWithDAI(1);
 
-    _test_purchaseWithFinancingSudoswap_simplest_case(offer, lssvmPair, nftId, true);
+    _test_purchaseWithFinancingSudoswap_simplest_case(offer, lssvmPair, nftIds, true);
     }
 
     function test_unit_PurchaseWithFinancingSudoswapSignature_simplest_case_DAI() public {
@@ -137,9 +143,85 @@ contract TestSudoswapPwfIntegration is Test, OffersLoansRefinancesFixtures, ERC7
             defaultFixedFuzzedFieldsForFastUnitTesting,
             defaultFixedOfferFields
         );
-        (ILSSVMPair lssvmPair, uint256 nftId) = createAndValidateLssvmPairWithDAI();
+        (ILSSVMPair lssvmPair, uint256[] memory nftIds) = createAndValidateLssvmPairWithDAI(1);
 
-        _test_purchaseWithFinancingSudoswap_simplest_case(offer, lssvmPair, nftId, true);
+        _test_purchaseWithFinancingSudoswap_simplest_case(offer, lssvmPair, nftIds, true);
+    }
+
+    function test_fuzz_PurchaseWithSudoswap_TwoNFTs_ETH(
+        FuzzedOfferFields memory fuzzedOfferData
+    ) public validateFuzzedOfferFields(fuzzedOfferData) {
+        Offer memory offer = offerStructFromFields(fuzzedOfferData, defaultFixedOfferFields);
+        (ILSSVMPair lssvmPair, uint256[] memory nftIds) = createAndValidateLssvmPairWithETH(2);
+
+        _test_purchaseWithFinancingSudoswap_simplest_case(offer, lssvmPair, nftIds, false);
+    }
+
+    function test_unit_PurchaseWithFinancingSudoswap_TwoNFTs_ETH() public {
+        Offer memory offer = offerStructFromFields(
+            defaultFixedFuzzedFieldsForFastUnitTesting,
+            defaultFixedOfferFields
+        );
+        (ILSSVMPair lssvmPair, uint256[] memory nftIds) = createAndValidateLssvmPairWithETH(2);
+
+        _test_purchaseWithFinancingSudoswap_simplest_case(offer, lssvmPair, nftIds, false);
+    }
+
+    function test_fuzz_PurchaseWithFinancingSudoswap_TwoNFTs_DAI(
+        FuzzedOfferFields memory fuzzedOfferData
+    ) public validateFuzzedOfferFields(fuzzedOfferData) {
+        Offer memory offer = offerStructFromFields(fuzzedOfferData, defaultFixedOfferFields);
+    (ILSSVMPair lssvmPair, uint256[] memory nftIds) = createAndValidateLssvmPairWithDAI(2);
+
+    _test_purchaseWithFinancingSudoswap_simplest_case(offer, lssvmPair, nftIds, false);
+    }
+
+    function test_unit_PurchaseWithFinancingSudoswap_TwoNFTs_DAI() public {
+        Offer memory offer = offerStructFromFields(
+            defaultFixedFuzzedFieldsForFastUnitTesting,
+            defaultFixedOfferFields
+        );
+        (ILSSVMPair lssvmPair, uint256[] memory nftIds) = createAndValidateLssvmPairWithDAI(2);
+
+        _test_purchaseWithFinancingSudoswap_simplest_case(offer, lssvmPair, nftIds, false);
+    }
+
+    function test_fuzz_PurchaseWithFinancingSudoswapSignature_TwoNFTs_ETH(
+        FuzzedOfferFields memory fuzzedOfferData
+    ) public validateFuzzedOfferFields(fuzzedOfferData) {
+        Offer memory offer = offerStructFromFields(fuzzedOfferData, defaultFixedOfferFields);
+        (ILSSVMPair lssvmPair, uint256[] memory nftIds) = createAndValidateLssvmPairWithETH(2);
+
+        _test_purchaseWithFinancingSudoswap_simplest_case(offer, lssvmPair, nftIds, true);
+    }
+
+    function test_unit_PurchaseWithFinancingSudoswapSignature_TwoNFTs_ETH() public {
+        Offer memory offer = offerStructFromFields(
+            defaultFixedFuzzedFieldsForFastUnitTesting,
+            defaultFixedOfferFields
+        );
+        (ILSSVMPair lssvmPair, uint256[] memory nftIds) = createAndValidateLssvmPairWithETH(2);
+
+        _test_purchaseWithFinancingSudoswap_simplest_case(offer, lssvmPair, nftIds, true);
+    }
+
+    function test_fuzz_PurchaseWithFinancingSudoswapSignature_TwoNFTs_DAI(
+        FuzzedOfferFields memory fuzzedOfferData
+    ) public validateFuzzedOfferFields(fuzzedOfferData) {
+        Offer memory offer = offerStructFromFields(fuzzedOfferData, defaultFixedOfferFields);
+    (ILSSVMPair lssvmPair, uint256[] memory nftIds) = createAndValidateLssvmPairWithDAI(2);
+
+    _test_purchaseWithFinancingSudoswap_simplest_case(offer, lssvmPair, nftIds, true);
+    }
+
+    function test_unit_PurchaseWithFinancingSudoswapSignature_TwoNFTs_DAI() public {
+        Offer memory offer = offerStructFromFields(
+            defaultFixedFuzzedFieldsForFastUnitTesting,
+            defaultFixedOfferFields
+        );
+        (ILSSVMPair lssvmPair, uint256[] memory nftIds) = createAndValidateLssvmPairWithDAI(2);
+
+        _test_purchaseWithFinancingSudoswap_simplest_case(offer, lssvmPair, nftIds, true);
     }
 
 
@@ -149,47 +231,44 @@ contract TestSudoswapPwfIntegration is Test, OffersLoansRefinancesFixtures, ERC7
     function createOfferAndTryPurchaseWithFinancing(
         Offer memory offer,
         ILSSVMPair lssvmPair,
-        uint256 nftId,
+        uint256[] memory nftIds,
         bytes memory errorCode
-    ) internal returns (LoanAuction memory) {
+    ) internal {
         Offer memory offerCreated = createOffer(offer, lender1);
-
-        LoanAuction memory loan = tryPurchaseWithFinancing(offer, lssvmPair, nftId, errorCode);
-        return loan;
+        tryPurchaseWithFinancing(offer, lssvmPair, nftIds, errorCode);
     }
 
     function signOfferAndTryPurchaseWithFinancingSignature(
         Offer memory offer,
         ILSSVMPair lssvmPair,
-        uint256 nftId,
+        uint256[] memory nftIds,
         bytes memory errorCode
-    ) internal returns (LoanAuction memory) {
+    ) internal {
         bytes memory signature = signOffer(lender1_private_key, offer);
-
-        LoanAuction memory loan = tryPurchaseWithFinancingSignature(offer, signature, lssvmPair, nftId, errorCode);
-        return loan;
+        tryPurchaseWithFinancingSignature(offer, signature, lssvmPair, nftIds, errorCode);
     }
 
     function tryPurchaseWithFinancing(
         Offer memory offer,
         ILSSVMPair lssvmPair,
-        uint256 nftId,
+        uint256[] memory nftIds,
         bytes memory errorCode
-    ) internal returns (LoanAuction memory) {
+    ) internal {
         vm.startPrank(borrower1);
         bytes32 offerHash = offers.getOfferHash(offer);
 
         if (bytes16(errorCode) != bytes16("should work")) {
             vm.expectRevert(errorCode);
         }
-        uint256 borrowerPays = (uint256(offer.amount) * 2) - uint256(offer.amount);
+        ( , , , uint256 totalConsiderationAmount, ) = lssvmPair.getBuyNFTQuote(nftIds.length);
+        uint256 borrowerPays = totalConsiderationAmount - (uint256(offer.amount) * nftIds.length );
 
         if (offer.asset == ETH_ADDRESS) {
             sudoswapPWF.purchaseWithFinancingSudoswap{ value: borrowerPays }(
                 offerHash,
                 offer.floorTerm,
                 lssvmPair,
-                nftId
+                nftIds
             );
         } else {
             daiToken.approve(address(sudoswapPWF), borrowerPays);
@@ -197,34 +276,33 @@ contract TestSudoswapPwfIntegration is Test, OffersLoansRefinancesFixtures, ERC7
                 offerHash,
                 offer.floorTerm,
                 lssvmPair,
-                nftId
+                nftIds
             );
         }
         vm.stopPrank();
-
-        return lending.getLoanAuction(offer.nftContractAddress, nftId);
     }
 
     function tryPurchaseWithFinancingSignature(
         Offer memory offer,
         bytes memory signature,
         ILSSVMPair lssvmPair,
-        uint256 nftId,
+        uint256[] memory nftIds,
         bytes memory errorCode
-    ) internal returns (LoanAuction memory) {
+    ) internal {
         vm.startPrank(borrower1);
 
         if (bytes16(errorCode) != bytes16("should work")) {
             vm.expectRevert(errorCode);
         }
-        uint256 borrowerPays = (uint256(offer.amount) * 2) - uint256(offer.amount);
+        ( , , , uint256 totalConsiderationAmount, ) = lssvmPair.getBuyNFTQuote(nftIds.length);
+        uint256 borrowerPays =  totalConsiderationAmount - (uint256(offer.amount) * nftIds.length );
 
         if (offer.asset == ETH_ADDRESS) {
             sudoswapPWF.purchaseWithFinancingSudoswapSignature{ value: borrowerPays }(
                 offer,
                 signature,
                 lssvmPair,
-                nftId
+                nftIds
             );
         } else {
             daiToken.approve(address(sudoswapPWF), borrowerPays);
@@ -232,44 +310,65 @@ contract TestSudoswapPwfIntegration is Test, OffersLoansRefinancesFixtures, ERC7
                 offer,
                 signature,
                 lssvmPair,
-                nftId
+                nftIds
             );
         }
         vm.stopPrank();
-
-        return lending.getLoanAuction(offer.nftContractAddress, nftId);
     }
 
-    function createAndValidateLssvmPairWithETH() public returns (ILSSVMPair, uint256) {
-        (ILSSVMPair lssvmPair, uint256 nftId) = ethPudgyLssvmPair();
+    function createAndValidateLssvmPairWithETH(uint256 numOfNfts) public returns (ILSSVMPair, uint256[] memory) {
+        (ILSSVMPair lssvmPair, uint256[] memory nftIds) = ethPudgyLssvmPair(numOfNfts);
         // validate that pool holds the nft with the given Id
-        assertEq(ERC721Mock(address(lssvmPair.nft())).ownerOf(nftId), address(lssvmPair));
-
-        return (lssvmPair, nftId);
+        for (uint256 i = 0; i < nftIds.length; ++i) {
+            assertEq(ERC721Mock(address(lssvmPair.nft())).ownerOf(nftIds[i]), address(lssvmPair));
+        }
+        return (lssvmPair, nftIds);
     }
 
-    function createAndValidateLssvmPairWithDAI() public returns (ILSSVMPair, uint256) {
-        (ILSSVMPair lssvmPair, uint256 nftId) = daiPudgyLssvmPair();
-        // validate that pool holds the nft with the given Id
-        assertEq(ERC721Mock(address(lssvmPair.nft())).ownerOf(nftId), address(lssvmPair));
-        return (lssvmPair, nftId);
+    function createAndValidateLssvmPairWithDAI(uint256 numOfNfts) public returns (ILSSVMPair, uint256[] memory) {
+        (ILSSVMPair lssvmPair, uint256[] memory nftIds) = daiPudgyLssvmPair(numOfNfts);
+        // validate that pool holds the nfts with the given Ids
+        for (uint256 i = 0; i < nftIds.length; ++i) {
+            assertEq(ERC721Mock(address(lssvmPair.nft())).ownerOf(nftIds[i]), address(lssvmPair));
+        }
+        
+        return (lssvmPair, nftIds);
     }
 
-    function ethPudgyLssvmPair() internal pure returns (ILSSVMPair, uint256) {
+    function ethPudgyLssvmPair(uint256 numOfNfts) internal pure returns (ILSSVMPair, uint256[] memory) {
         ILSSVMPair lssvmPair = ILSSVMPair(0x451018623F2EA29A625Ac5e051720eEAc2b0E765); // ETH-PUDGY_PENGUIN pair pool on Sudoswap
-        uint256 nftId = 3338;
-        return (lssvmPair, nftId);
+        uint256[] memory nftIds;
+        if (numOfNfts > 1) {
+            nftIds = new uint256[](2);
+            nftIds[0] = 3338;
+            nftIds[1] = 3794;
+        } else {
+            nftIds = new uint256[](1);
+            nftIds[0] = 3338;
+        }
+        
+        return (lssvmPair, nftIds);
     }
 
-    function daiPudgyLssvmPair() internal returns (ILSSVMPair, uint256) {
+    function daiPudgyLssvmPair(uint256 numOfNfts) internal returns (ILSSVMPair, uint256[] memory) {
         address _PUDGY_PENGUIN_CONTRACT_ADDRESS = 0xBd3531dA5CF5857e7CfAA92426877b022e612cf8;
-        address _PUDGY1_OWNER = 0x2cbC202392C0F0C846Bf028777a5e9B4e49D9FaC;
+        address _PUDGY1_OWNER = 0x451018623F2EA29A625Ac5e051720eEAc2b0E765;
         vm.prank(borrower1);
-        daiToken.transfer(_PUDGY1_OWNER, 1);
-
+        daiToken.transfer(_PUDGY1_OWNER, 2);
         vm.startPrank(_PUDGY1_OWNER);
-        uint256[] memory nftIds = new uint256[](1);
-        nftIds[0] = 1;
+        uint256[] memory nftIds;
+        if (numOfNfts > 1) {
+            nftIds = new uint256[](2);
+            nftIds[0] = 3338;
+            nftIds[1] = 3794;
+            ERC721Mock(_PUDGY_PENGUIN_CONTRACT_ADDRESS).approve(SUDOSWAP_FACTORY_ADDRESS, nftIds[0]);
+            ERC721Mock(_PUDGY_PENGUIN_CONTRACT_ADDRESS).approve(SUDOSWAP_FACTORY_ADDRESS, nftIds[1]);
+        } else {
+            nftIds = new uint256[](1);
+            nftIds[0] = 3338;
+            ERC721Mock(_PUDGY_PENGUIN_CONTRACT_ADDRESS).approve(SUDOSWAP_FACTORY_ADDRESS, nftIds[0]);
+        }
+
         ILSSVMPairFactoryLike.CreateERC20PairParams memory params =  ILSSVMPairFactoryLike.CreateERC20PairParams(
             address(daiToken),
             _PUDGY_PENGUIN_CONTRACT_ADDRESS,
@@ -280,12 +379,12 @@ contract TestSudoswapPwfIntegration is Test, OffersLoansRefinancesFixtures, ERC7
             1,
             uint128(10 gwei),
             nftIds,
-            1
+            2
         );
         daiToken.approve(SUDOSWAP_FACTORY_ADDRESS, params.initialTokenBalance);
-        ERC721Mock(_PUDGY_PENGUIN_CONTRACT_ADDRESS).approve(SUDOSWAP_FACTORY_ADDRESS, nftIds[0]);
+        
         ILSSVMPair lssvmPair = ILSSVMPairFactoryLike(SUDOSWAP_FACTORY_ADDRESS).createPairERC20(params);
         vm.stopPrank();
-        return (lssvmPair, 1);
+        return (lssvmPair, nftIds);
     }
 }
