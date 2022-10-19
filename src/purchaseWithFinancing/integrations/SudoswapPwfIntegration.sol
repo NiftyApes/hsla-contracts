@@ -13,10 +13,6 @@ import "../base/PwfIntegrationBase.sol";
 import "../../PurchaseWithFinancing.sol";
 
 /// @notice Integration of Sudoswap to PurchaseWithFinancing to allow purchase of NFT with financing
-/// @title SudoswapPwfIntegration
-/// @custom:version 1.0
-/// @author zishansami102 (zishansami.eth)
-/// @custom:contributor captnseagraves (captnseagraves.eth)
 contract SudoswapPwfIntegration is
     OwnableUpgradeable,
     ReentrancyGuardUpgradeable,
@@ -113,34 +109,45 @@ contract SudoswapPwfIntegration is
         bytes32 offerHash,
         bool floorTerm,
         ILSSVMPair lssvmPair,
-        uint256 nftId
+        uint256[] memory nftIds
     ) external payable nonReentrant {
+        uint256 numOfNfts = nftIds.length;
+        if (numOfNfts > 1) {
+            require(floorTerm, "00056");
+        }
         // fetch nft contract address
         address nftContractAddress = address(lssvmPair.nft());
-
         Offer memory offer = _fetchOffer(
             offersContractAddress,
             nftContractAddress,
             offerHash,
             floorTerm,
-            nftId
+            nftIds[0]
         );
-
-        uint256 considerationAmount = _validatePairAndGetConsideration(offer, lssvmPair);
-        // arrange asset amount from borrower side for the purchase
-        _arrangeAssetFromBorrower(msg.sender, offer.asset, offer.amount, considerationAmount);
         
-        _ethTransferable = true;
+        _validateSudoswapPair(offer, lssvmPair);
+        uint256 totalConsiderationAmount = _getConsiderationAmount(lssvmPair, numOfNfts);
+        // arrange asset amount from borrower side for the purchase
+        _arrangeAssetFromBorrower(msg.sender, offer.asset, offer.amount * numOfNfts, totalConsiderationAmount);
+        
+        
         // call the PurchaseWithFinancing to take fund from the lender side
-        IPurchaseWithFinancing(purchaseWithFinancingContractAddress).borrow(
-            offerHash,
-            nftContractAddress,
-            nftId,
-            floorTerm,
-            address(this),
-            msg.sender,
-            abi.encode(lssvmPair, offer.asset, considerationAmount)
-        );
+        for (uint256 i; i < numOfNfts;) {
+            _ethTransferable = true;
+            IPurchaseWithFinancing(purchaseWithFinancingContractAddress).borrow(
+                offerHash,
+                nftContractAddress,
+                nftIds[i],
+                floorTerm,
+                address(this),
+                msg.sender,
+                abi.encode(lssvmPair, offer.asset)
+            );
+            unchecked {
+                ++i;
+            }
+        }
+        
     }
 
     /// @inheritdoc ISudoswapPwfIntegration
@@ -148,25 +155,32 @@ contract SudoswapPwfIntegration is
         Offer memory offer,
         bytes memory signature,
         ILSSVMPair lssvmPair,
-        uint256 nftId
+        uint256[] memory nftIds
     ) external payable nonReentrant {
-        // fetch nft contract address
-        address nftContractAddress = address(lssvmPair.nft());
+        uint256 numOfNfts = nftIds.length;
+        if (numOfNfts > 1) {
+            require(offer.floorTerm, "00056");
+        }
 
-        uint256 considerationAmount = _validatePairAndGetConsideration(offer, lssvmPair);
-        // arrange asset amount from borrower side for the purchase
-        _arrangeAssetFromBorrower(msg.sender, offer.asset, offer.amount, considerationAmount);
-        
-        _ethTransferable = true;
+        _validateSudoswapPair(offer, lssvmPair);
+        uint256 totalConsiderationAmount = _getConsiderationAmount(lssvmPair, numOfNfts);
+        _arrangeAssetFromBorrower(msg.sender, offer.asset, offer.amount * numOfNfts, totalConsiderationAmount);
+
         // call the PurchaseWithFinancing to take fund from the lender side
-        IPurchaseWithFinancing(purchaseWithFinancingContractAddress).borrowSignature(
-            offer,
-            signature,
-            nftId,
-            address(this),
-            msg.sender,
-            abi.encode(lssvmPair, offer.asset, considerationAmount)
-        );
+        for (uint256 i; i < numOfNfts;) {
+            _ethTransferable = true;
+            IPurchaseWithFinancing(purchaseWithFinancingContractAddress).borrowSignature(
+                offer,
+                signature,
+                nftIds[i],
+                address(this),
+                msg.sender,
+                abi.encode(lssvmPair, offer.asset)
+            );
+            unchecked {
+                ++i;
+            }
+        }
     }
 
     function executeOperation(
@@ -179,7 +193,8 @@ contract SudoswapPwfIntegration is
         _verifySenderAndInitiator(initiator, purchaseWithFinancingContractAddress);
 
         // decode data
-        (ILSSVMPair lssvmPair, address purchasingAsset, uint256 considerationAmount) = abi.decode(data, (ILSSVMPair, address, uint256));
+        (ILSSVMPair lssvmPair, address purchasingAsset) = abi.decode(data, (ILSSVMPair, address));
+        uint256 considerationAmount = _getConsiderationAmount(lssvmPair, 1);
 
         // Purchase the NFT
         uint256[] memory nftIds = new uint256[](1);
@@ -214,10 +229,10 @@ contract SudoswapPwfIntegration is
         return true;
     }
 
-    function _validatePairAndGetConsideration(
+    function _validateSudoswapPair(
         Offer memory offer,
         ILSSVMPair lssvmPair
-    ) internal returns(uint256) {
+    ) internal {
         // verify pair provided is a valid clone of sudoswap factory pair template
         ILSSVMPairFactoryLike.PairVariant pairVariant = lssvmPair.pairVariant();
         require(ILSSVMPairFactoryLike(sudoswapFactoryContractAddress).isPair(address(lssvmPair), pairVariant), "00050");
@@ -228,9 +243,14 @@ contract SudoswapPwfIntegration is
             purchasingAsset = address(lssvmPair.token());
         }
         _requireMatchingAsset(offer.asset, purchasingAsset);
+    }
 
+    function _getConsiderationAmount(
+        ILSSVMPair lssvmPair,
+        uint256 numOfNfts
+    ) internal returns (uint256) {
         // calculate consideration amount
-        (ILSSVMPair.Error error, , , uint256 considerationAmount, ) = lssvmPair.getBuyNFTQuote(1);
+        (ILSSVMPair.Error error, , , uint256 considerationAmount, ) = lssvmPair.getBuyNFTQuote(numOfNfts);
         // Require no error
         require(error == ILSSVMPair.Error.OK, "00053");
         return considerationAmount;
