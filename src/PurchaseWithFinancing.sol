@@ -163,7 +163,7 @@ contract NiftyApesPurchaseWithFinancing is
         address borrower,
         bytes calldata data
     ) external whenNotPaused nonReentrant {
-        ISigLending(sigLendingContractAddress).validateAndUseOfferSignature(offer, signature);
+        ISigLending(sigLendingContractAddress).validateAndUseOfferSignaturePWF(offer, signature);
         _doBorrow(offer, nftId, receiver, borrower, data);
     }
 
@@ -203,7 +203,7 @@ contract NiftyApesPurchaseWithFinancing is
         ILiquidity(liquidityContractAddress).withdrawCBalance(offer.creator, cAsset, cTokensBurned);
 
         // initiate a loan between lender and borrower
-        ILending(lendingContractAddress).createLoan(
+        ILending(lendingContractAddress).createLoanPWF(
             offer,
             nftId,
             offer.creator,

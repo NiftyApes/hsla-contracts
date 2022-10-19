@@ -58,7 +58,7 @@ interface ISigLending is ISigLendingAdmin, ISigLendingEvents, IOffersStructs {
     /// @dev Only callable by the purchaseWithFinancing contract
     /// @param offer The details of the loan auction offer
     /// @param signature The signature for the offer
-    function validateAndUseOfferSignature(
+    function validateAndUseOfferSignaturePWF(
         Offer memory offer,
         bytes memory signature
     ) external;

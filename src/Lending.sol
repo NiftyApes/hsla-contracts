@@ -1117,7 +1117,7 @@ contract NiftyApesLending is
     }
 
     /// @inheritdoc ILending
-    function createLoan(
+    function createLoanPWF(
         Offer memory offer,
         uint256 nftId,
         address lender,

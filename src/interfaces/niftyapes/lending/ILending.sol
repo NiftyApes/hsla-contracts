@@ -275,7 +275,7 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     /// @param nftId The id of the specified NFT
     /// @param lender the address of the lender in the loan auction
     /// @param borrower the address of the borrower in the loan auction
-    function createLoan(
+    function createLoanPWF(
         Offer memory offer,
         uint256 nftId,
         address lender,
