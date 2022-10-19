@@ -900,24 +900,6 @@ contract NiftyApesLending is
     }
 
     /// @inheritdoc ILending
-    function updateInterestFlashSell(address nftContractAddress, uint256 nftId)
-        external
-    {
-        _requireFlashSellContract();
-
-        LoanAuction storage loanAuction = _getLoanAuctionInternal(nftContractAddress, nftId);
-        _requireOpenLoan(loanAuction);
-        uint256 interestThresholdDelta = _checkSufficientInterestAccumulated(loanAuction);
-
-        if (interestThresholdDelta > 0) {
-            loanAuction.accumulatedLenderInterest += SafeCastUpgradeable.toUint128(
-                interestThresholdDelta
-            );
-        }
-        _updateInterest(loanAuction);
-    }
-
-    /// @inheritdoc ILending
     function calculateInterestAccrued(address nftContractAddress, uint256 nftId)
         public
         view

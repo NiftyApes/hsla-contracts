@@ -293,10 +293,4 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         address from,
         address to
     ) external;
-
-    /// @notice Updates the interest values of the an active loan on the given NFT. Only callable by FlashSell.
-    /// @param nftContractAddress The address of the NFT collection
-    /// @param nftId The id of the specified NFT
-    function updateInterestFlashSell(address nftContractAddress, uint256 nftId)
-        external;
 }

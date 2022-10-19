@@ -3,7 +3,7 @@ pragma solidity 0.8.13;
 
 /// @title IFlashSellReceiver
 /// @author zishansami102 (zishansami.eth)
-/// @notice Defines the basic interface of a FlashSell Receiver contract using `FlashSell.borrow()`
+/// @notice Defines the basic interface of a FlashSell Receiver contract using `FlashSell.borrowNFTForSale()`
 /// @dev Implement this interface to integrate FlashSell to any nft marketplace
 
 interface IFlashSellReceiver {

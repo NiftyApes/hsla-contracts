@@ -96,11 +96,6 @@ contract NiftyApesFlashSell is
         _requireIsNotSanctioned(msg.sender);
         _requireIsNotSanctioned(nftOwner);
 
-        ILending(lendingContractAddress).updateInterestFlashSell
-            (nftContractAddress,
-            nftId
-        );
-
         LoanAuction memory loanAuction = ILending(lendingContractAddress).getLoanAuction(
             nftContractAddress,
             nftId
@@ -118,19 +113,19 @@ contract NiftyApesFlashSell is
         if (loanAuction.asset != ETH_ADDRESS) {
             loanAsset = loanAuction.asset;
         }
-        uint256 totalLoanPaymentAmount = _calculateTotalLoanPaymentAmount(loanAuction);
+        uint256 totalLoanPaymentAmount = _calculateTotalLoanPaymentAmount(loanAuction, nftContractAddress, nftId);
 
         uint256 assetBalanceBefore = _getAssetBalance(loanAuction.asset);
         _ethTransferable = true;
         // execute firewalled external arbitrary functionality
-        // function must approve this contract to pull enough funds required to close the loan
+        // function must send correct funds required to close the loan
         require(IFlashSellReceiver(receiver).executeOperation(nftContractAddress, nftId, loanAsset, totalLoanPaymentAmount, msg.sender, data), "00052");
         
         _ethTransferable = false;
         uint256 assetBalanceAfter = _getAssetBalance(loanAuction.asset);
 
         // Check assets amount recieved is equal to total loan amount required to close the loan
-        require(assetBalanceAfter - assetBalanceBefore == totalLoanPaymentAmount, "00057");
+        _requireCorrectFundsSent(assetBalanceAfter - assetBalanceBefore, totalLoanPaymentAmount);
 
         if (loanAuction.asset == ETH_ADDRESS) {
             ILending(lendingContractAddress).repayLoanForAccountFlashSell{value: totalLoanPaymentAmount}(
@@ -168,6 +163,10 @@ contract NiftyApesFlashSell is
         require(nftOwner == msg.sender, "00021");
     }
 
+    function _requireCorrectFundsSent(uint256 balanceReceived, uint256 balanceRequired) internal {
+        require(balanceReceived == balanceRequired, "00057");
+    }
+
     function _requireIsNotSanctioned(address addressToCheck) internal view {
         if (!_sanctionsPause) {
             SanctionsList sanctionsList = SanctionsList(SANCTIONS_CONTRACT);
@@ -176,12 +175,32 @@ contract NiftyApesFlashSell is
         }
     }
 
-    function _calculateTotalLoanPaymentAmount(LoanAuction memory loanAuction) internal pure returns(uint256) {
+
+    function _calculateTotalLoanPaymentAmount(
+        LoanAuction memory loanAuction,
+        address nftContractAddress,
+        uint256 nftId
+        ) internal view returns(uint256) {
+        uint256 interestThresholdDelta = 
+            ILending(lendingContractAddress).checkSufficientInterestAccumulated(
+                nftContractAddress,
+                nftId
+            );
+
+        (uint256 lenderInterest, uint256 protocolInterest) = 
+            ILending(lendingContractAddress).calculateInterestAccrued(
+                nftContractAddress,
+                nftId
+            );
+
         return uint256(loanAuction.accumulatedLenderInterest) +
                 loanAuction.accumulatedPaidProtocolInterest +
                 loanAuction.unpaidProtocolInterest +
                 loanAuction.slashableLenderInterest +
-                loanAuction.amountDrawn;
+                loanAuction.amountDrawn +
+                interestThresholdDelta +
+                lenderInterest +
+                protocolInterest;
     } 
 
     function _getAssetBalance(address asset) internal view returns(uint256) {
