@@ -17,6 +17,9 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     /// @notice Returns the address for the associated signature lending contract
     function sigLendingContractAddress() external view returns (address);
 
+    /// @notice Returns the address for the associated flashSell contract
+    function flashSellContractAddress() external view returns (address);
+
     /// @notice Returns the fee that computes protocol interest
     ///         This fee is the basis points in order to calculate interest per second
     function protocolInterestBps() external view returns (uint16);
@@ -175,6 +178,18 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         uint32 expectedLoanBeginTimestamp
     ) external payable;
 
+    /// @notice Repay and close the borrower's loan without the NFT present, callable only by FlashSell contract.
+    ///         This function is similar to repayLoanForAccount except that it is only meant to be called by FlashSell contract.
+    ///         It assumes that the NFT has already been transferred to be used for sale.
+    /// @param nftContractAddress The address of the NFT collection
+    /// @param nftId The id of the specified NFT
+    /// @param expectedLoanBeginTimestamp `LoanAuction.expectedLoanBeginTimestamp` to reassure that the loan is correct and active.
+    function repayLoanForAccountFlashSell(
+        address nftContractAddress,
+        uint256 nftId,
+        uint32 expectedLoanBeginTimestamp
+    ) external payable;
+
     /// @notice Repay part of an open loan.
     ///         Repaying part of a loan will lower the remaining interest accumulated
     /// @param nftContractAddress The address of the NFT collection
@@ -265,4 +280,23 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         address nftOwner,
         uint32 expectedLastUpdatedTimestamp
     ) external;
+
+    /// @notice Function only callable by the NiftyApesFlashSell contract
+    ///         Allows FlashSell contract to transfer an NFT directly
+    /// @param nftContractAddress The address of the nft collection
+    /// @param nftId The id of the specified NFT
+    /// @param from The address to transfer the NFT from
+    /// @param to The address to transfer the NFT to
+    function transferNft(
+        address nftContractAddress,
+        uint256 nftId,
+        address from,
+        address to
+    ) external;
+
+    /// @notice Updates the interest values of the an active loan on the given NFT. Only callable by FlashSell.
+    /// @param nftContractAddress The address of the NFT collection
+    /// @param nftId The id of the specified NFT
+    function updateInterestFlashSell(address nftContractAddress, uint256 nftId)
+        external;
 }

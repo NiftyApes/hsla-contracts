@@ -57,6 +57,9 @@ contract NiftyApesLending is
     address public sigLendingContractAddress;
 
     /// @inheritdoc ILending
+    address public flashSellContractAddress;
+
+    /// @inheritdoc ILending
     uint16 public protocolInterestBps;
 
     /// @inheritdoc ILending
@@ -638,7 +641,9 @@ contract NiftyApesLending is
         whenNotPaused
         nonReentrant
     {
+        LoanAuction memory loanAuction = _getLoanAuctionInternal(nftContractAddress, nftId);
         _repayLoanAmount(nftContractAddress, nftId, true, 0, true);
+        _transferNft(nftContractAddress, nftId, address(this), loanAuction.nftOwner);
     }
 
     /// @inheritdoc ILending
@@ -651,6 +656,21 @@ contract NiftyApesLending is
         // requireExpectedLoanIsActive
         require(loanAuction.loanBeginTimestamp == expectedLoanBeginTimestamp, "00027");
         _requireIsNotSanctioned(msg.sender);
+
+        _repayLoanAmount(nftContractAddress, nftId, true, 0, false);
+        _transferNft(nftContractAddress, nftId, address(this), loanAuction.nftOwner);
+    }
+
+    /// @inheritdoc ILending
+    function repayLoanForAccountFlashSell(
+        address nftContractAddress,
+        uint256 nftId,
+        uint32 expectedLoanBeginTimestamp
+    ) external payable override whenNotPaused nonReentrant {
+        _requireFlashSellContract();
+        LoanAuction memory loanAuction = _getLoanAuctionInternal(nftContractAddress, nftId);
+        // requireExpectedLoanIsActive
+        require(loanAuction.loanBeginTimestamp == expectedLoanBeginTimestamp, "00027");
 
         _repayLoanAmount(nftContractAddress, nftId, true, 0, false);
     }
@@ -718,8 +738,6 @@ contract NiftyApesLending is
         _payoutCTokenBalances(loanAuction, cAsset, cTokensMinted, paymentAmount, repayFull);
 
         if (repayFull) {
-            _transferNft(nftContractAddress, nftId, address(this), loanAuction.nftOwner);
-
             emit LoanRepaid(nftContractAddress, nftId, paymentAmount, loanAuction);
 
             delete _loanAuctions[nftContractAddress][nftId];
@@ -879,6 +897,24 @@ contract NiftyApesLending is
 
         loanAuction.unpaidProtocolInterest += SafeCastUpgradeable.toUint128(protocolInterest);
         loanAuction.lastUpdatedTimestamp = _currentTimestamp32();
+    }
+
+    /// @inheritdoc ILending
+    function updateInterestFlashSell(address nftContractAddress, uint256 nftId)
+        external
+    {
+        _requireFlashSellContract();
+
+        LoanAuction storage loanAuction = _getLoanAuctionInternal(nftContractAddress, nftId);
+        _requireOpenLoan(loanAuction);
+        uint256 interestThresholdDelta = _checkSufficientInterestAccumulated(loanAuction);
+
+        if (interestThresholdDelta > 0) {
+            loanAuction.accumulatedLenderInterest += SafeCastUpgradeable.toUint128(
+                interestThresholdDelta
+            );
+        }
+        _updateInterest(loanAuction);
     }
 
     /// @inheritdoc ILending
@@ -1067,6 +1103,10 @@ contract NiftyApesLending is
         require(msg.sender == sigLendingContractAddress, "00031");
     }
 
+    function _requireFlashSellContract() internal view {
+        require(msg.sender == flashSellContractAddress, "00031");
+    }
+
     function _requireOfferParity(LoanAuction storage loanAuction, Offer memory offer)
         internal
         view
@@ -1142,6 +1182,17 @@ contract NiftyApesLending is
         address to
     ) internal {
         IERC721Upgradeable(nftContractAddress).safeTransferFrom(from, to, nftId);
+    }
+
+    /// @inheritdoc ILending
+    function transferNft(
+        address nftContractAddress,
+        uint256 nftId,
+        address from,
+        address to
+    ) external whenNotPaused nonReentrant {
+        _requireFlashSellContract();
+        _transferNft(nftContractAddress, nftId, from, to);
     }
 
     function _payoutCTokenBalances(
