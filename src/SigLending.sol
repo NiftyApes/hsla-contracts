@@ -149,7 +149,7 @@ contract NiftyApesSigLending is
     }
 
     // @inheritdoc ISigLending
-    function validateAndUseOfferSignature(
+    function validateAndUseOfferSignaturePWF(
         Offer memory offer,
         bytes memory signature
     ) external whenNotPaused {
