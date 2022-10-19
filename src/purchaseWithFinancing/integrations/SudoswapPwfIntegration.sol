@@ -1,4 +1,4 @@
-//SPDX-License-Identifier: Unlicensed
+//SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/access/OwnableUpgradeable.sol";
@@ -74,7 +74,7 @@ contract SudoswapPwfIntegration is
 
     /// @inheritdoc ISudoswapPwfIntegrationAdmin
     function updatePurchaseWithFinancingContractAddress(address newPurchaseWithFinancingContractAddress) external onlyOwner {
-        require(address(newPurchaseWithFinancingContractAddress) != address(0), "00051");
+        require(address(newPurchaseWithFinancingContractAddress) != address(0), "00055");
         emit SudoswapPwfIntegrationXPurchaseWithFinancingContractAddressUpdated(
             purchaseWithFinancingContractAddress,
             newPurchaseWithFinancingContractAddress
