@@ -9,6 +9,7 @@ import "../../Lending.sol";
 import "../../Liquidity.sol";
 import "../../Offers.sol";
 import "../../SigLending.sol";
+import "../../FlashClaim.sol";
 import "../../interfaces/niftyapes/lending/ILendingEvents.sol";
 import "../../interfaces/niftyapes/offers/IOffersEvents.sol";
 
@@ -32,6 +33,7 @@ contract LendingAuctionUnitTest is
     NiftyApesOffers offersContract;
     NiftyApesLiquidity liquidityProviders;
     NiftyApesSigLending sigLendingAuction;
+    NiftyApesFlashClaim flashClaim;
     ERC20Mock daiToken;
     CERC20Mock cDAIToken;
     CEtherMock cEtherToken;
@@ -64,6 +66,9 @@ contract LendingAuctionUnitTest is
     function setUp() public {
         hevm.startPrank(OWNER);
 
+        flashClaim = new NiftyApesFlashClaim();
+        flashClaim.initialize();
+
         liquidityProviders = new NiftyApesLiquidity();
         liquidityProviders.initialize(compContractAddress);
 
@@ -77,7 +82,8 @@ contract LendingAuctionUnitTest is
         lendingAuction.initialize(
             address(liquidityProviders),
             address(offersContract),
-            address(sigLendingAuction)
+            address(sigLendingAuction),
+            address(flashClaim)
         );
 
         liquidityProviders.updateLendingContractAddress(address(lendingAuction));
@@ -86,6 +92,8 @@ contract LendingAuctionUnitTest is
         offersContract.updateSigLendingContractAddress(address(sigLendingAuction));
 
         sigLendingAuction.updateLendingContractAddress(address(lendingAuction));
+
+        flashClaim.updateLendingContractAddress(address(lendingAuction));
 
         if (block.number == 1) {
             lendingAuction.pauseSanctions();
