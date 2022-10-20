@@ -127,6 +127,7 @@ contract NiftyApesSigLending is
         Offer memory offer,
         bytes memory signature,
         uint256 nftId,
+        bool rollover,
         uint32 expectedLastUpdatedTimestamp
     ) external whenNotPaused nonReentrant {
         _sigOfferNftIdAndCountChecks(offer, signature, nftId);
@@ -135,6 +136,7 @@ contract NiftyApesSigLending is
             offer,
             nftId,
             msg.sender,
+            rollover,
             expectedLastUpdatedTimestamp
         );
     }

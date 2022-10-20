@@ -42,10 +42,14 @@ interface ISigLending is ISigLendingAdmin, ISigLendingEvents, IOffersStructs {
     /// @param offer The details of the loan auction offer
     /// @param signature The signature for the offer
     /// @param nftId The id of a specified NFT
+    /// @param rollover If true loan duration starts over based on offer duration
+    ///        if false duration is extended by delta of current duration and offer duration
+    /// @param expectedLastUpdatedTimestamp The expected last updated timestamp of the loan. Prevents front running of the refinance
     function refinanceByBorrowerSignature(
         Offer calldata offer,
         bytes memory signature,
         uint256 nftId,
+        bool rollover,
         uint32 expectedLastUpdatedTimestamp
     ) external;
 }

@@ -3118,6 +3118,7 @@ contract LendingAuctionUnitTest is
             address(mockNft),
             1,
             true,
+            false,
             offerHash2,
             uint32(block.timestamp)
         );
@@ -3188,6 +3189,7 @@ contract LendingAuctionUnitTest is
         lendingAuction.refinanceByBorrower(
             address(mockNft),
             1,
+            false,
             false,
             offerHash2,
             uint32(block.timestamp)
@@ -3262,6 +3264,7 @@ contract LendingAuctionUnitTest is
             address(mockNft),
             3,
             false,
+            false,
             offerHash2,
             uint32(block.timestamp)
         );
@@ -3332,6 +3335,7 @@ contract LendingAuctionUnitTest is
         lendingAuction.refinanceByBorrower(
             address(mockNft),
             2,
+            false,
             false,
             offerHash2,
             uint32(block.timestamp)
@@ -3410,6 +3414,7 @@ contract LendingAuctionUnitTest is
             address(mockNft),
             2,
             true,
+            false,
             offerHash2,
             uint32(block.timestamp)
         );
@@ -3486,6 +3491,7 @@ contract LendingAuctionUnitTest is
             address(mockNft),
             1,
             true,
+            false,
             offerHash2,
             uint32(block.timestamp)
         );
@@ -3556,6 +3562,7 @@ contract LendingAuctionUnitTest is
         lendingAuction.refinanceByBorrower(
             address(mockNft),
             1,
+            false,
             false,
             offerHash2,
             uint32(block.timestamp)
@@ -3633,6 +3640,7 @@ contract LendingAuctionUnitTest is
             address(mockNft),
             1,
             false,
+            false,
             offerHash2,
             uint32(block.timestamp)
         );
@@ -3709,6 +3717,7 @@ contract LendingAuctionUnitTest is
             address(mockNft),
             1,
             false,
+            false,
             offerHash2,
             uint32(block.timestamp)
         );
@@ -3784,6 +3793,7 @@ contract LendingAuctionUnitTest is
             address(mockNft),
             1,
             true,
+            false,
             offerHash2,
             uint32(block.timestamp - 2)
         );
@@ -3855,6 +3865,7 @@ contract LendingAuctionUnitTest is
             address(mockNft),
             1,
             true,
+            false,
             offerHash2,
             uint32(block.timestamp)
         );
@@ -3960,6 +3971,7 @@ contract LendingAuctionUnitTest is
             address(mockNft),
             1,
             true,
+            false,
             offerHash2,
             uint32(block.timestamp)
         );
@@ -4073,6 +4085,7 @@ contract LendingAuctionUnitTest is
             address(mockNft),
             1,
             true,
+            false,
             offerHash2,
             uint32(block.timestamp)
         );
@@ -4148,6 +4161,7 @@ contract LendingAuctionUnitTest is
             address(mockNft),
             1,
             true,
+            false,
             offerHash2,
             uint32(block.timestamp - 100)
         );
@@ -4221,6 +4235,7 @@ contract LendingAuctionUnitTest is
             address(mockNft),
             1,
             true,
+            false,
             offerHash2,
             uint32(block.timestamp - 12 hours)
         );
@@ -4333,6 +4348,7 @@ contract LendingAuctionUnitTest is
             offer2,
             signature,
             1,
+            false,
             uint32(block.timestamp)
         );
     }
@@ -4405,6 +4421,7 @@ contract LendingAuctionUnitTest is
             offer2,
             signature,
             1,
+            false,
             uint32(block.timestamp)
         );
     }
@@ -4475,6 +4492,7 @@ contract LendingAuctionUnitTest is
             offer2,
             signature,
             1,
+            false,
             uint32(block.timestamp)
         );
     }
@@ -4544,6 +4562,7 @@ contract LendingAuctionUnitTest is
             offer2,
             signature,
             1,
+            false,
             uint32(block.timestamp)
         );
     }
@@ -4614,6 +4633,7 @@ contract LendingAuctionUnitTest is
             offer2,
             signature,
             1,
+            false,
             uint32(block.timestamp)
         );
     }
@@ -4686,6 +4706,7 @@ contract LendingAuctionUnitTest is
             offer2,
             signature,
             1,
+            false,
             uint32(block.timestamp)
         );
     }
@@ -4723,6 +4744,7 @@ contract LendingAuctionUnitTest is
             offer2,
             signature,
             1,
+            false,
             uint32(block.timestamp)
         );
     }
@@ -4793,6 +4815,7 @@ contract LendingAuctionUnitTest is
             offer2,
             signature,
             1,
+            false,
             uint32(block.timestamp)
         );
     }
@@ -4863,6 +4886,7 @@ contract LendingAuctionUnitTest is
             offer2,
             signature,
             1,
+            false,
             uint32(block.timestamp)
         );
     }
@@ -4933,6 +4957,7 @@ contract LendingAuctionUnitTest is
             offer2,
             signature,
             1,
+            false,
             uint32(block.timestamp)
         );
     }
@@ -5004,6 +5029,7 @@ contract LendingAuctionUnitTest is
             offer2,
             signature,
             1,
+            false,
             uint32(block.timestamp - 2)
         );
     }
@@ -5072,6 +5098,7 @@ contract LendingAuctionUnitTest is
             offer2,
             signature,
             1,
+            false,
             uint32(block.timestamp)
         );
 
@@ -5177,6 +5204,7 @@ contract LendingAuctionUnitTest is
             offer2,
             signature,
             1,
+            false,
             uint32(block.timestamp)
         );
 
@@ -5281,6 +5309,7 @@ contract LendingAuctionUnitTest is
             offer2,
             signature,
             1,
+            false,
             uint32(block.timestamp)
         );
 
@@ -5393,6 +5422,7 @@ contract LendingAuctionUnitTest is
             offer2,
             signature,
             1,
+            false,
             uint32(block.timestamp)
         );
     }
@@ -5465,6 +5495,7 @@ contract LendingAuctionUnitTest is
             offer2,
             signature,
             1,
+            false,
             uint32(block.timestamp - 100)
         );
     }
@@ -5535,6 +5566,7 @@ contract LendingAuctionUnitTest is
             offer2,
             signature,
             1,
+            false,
             uint32(block.timestamp - 12 hours)
         );
 

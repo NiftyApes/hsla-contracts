@@ -109,12 +109,16 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     ///         Borrowers can refinance at any time even after loan default as long as their NFT collateral has not been seized
     /// @param nftContractAddress The address of the NFT collection
     /// @param nftId The id of the specified NFT
-    /// @param floorTerm Indicates whether this is a floor or individual NFT offer.
-    /// @param offerHash The hash of all parameters in an offer. This is used as the unique identifier of an offer.
+    /// @param floorTerm Indicates whether this is a floor or individual NFT offer
+    /// @param rollover If true loan duration starts over based on offer duration
+    ///        if false duration is extended by delta of current duration and offer duration
+    /// @param offerHash The hash of all parameters in an offer. This is used as the unique identifier of an offer
+    /// @param expectedLastUpdatedTimestamp The expected last updated timestamp of the loan. Prevents front running of the refinance
     function refinanceByBorrower(
         address nftContractAddress,
         uint256 nftId,
         bool floorTerm,
+        bool rollover,
         bytes32 offerHash,
         uint32 expectedLastUpdatedTimestamp
     ) external;
@@ -262,10 +266,14 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     /// @param offer The details of the loan auction offer
     /// @param nftId The id of the specified NFT
     /// @param nftOwner owner of the nft in the lending.sol lendingAuction
+    /// @param rollover If true loan duration starts over based on offer duration
+    ///        if false duration is extended by delta of current duration and offer duration
+    /// @param expectedLastUpdatedTimestamp The expected last updated timestamp of the loan. Prevents front running of the refinance
     function doRefinanceByBorrower(
         Offer memory offer,
         uint256 nftId,
         address nftOwner,
+        bool rollover,
         uint32 expectedLastUpdatedTimestamp
     ) external;
 

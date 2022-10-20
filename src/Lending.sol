@@ -278,6 +278,7 @@ contract NiftyApesLending is
         address nftContractAddress,
         uint256 nftId,
         bool floorTerm,
+        bool rollover,
         bytes32 offerHash,
         uint32 expectedLastUpdatedTimestamp
     ) external whenNotPaused nonReentrant {
@@ -288,23 +289,25 @@ contract NiftyApesLending is
             offerHash
         );
 
-        _doRefinanceByBorrower(offer, nftId, msg.sender, expectedLastUpdatedTimestamp);
+        _doRefinanceByBorrower(offer, nftId, msg.sender, rollover, expectedLastUpdatedTimestamp);
     }
 
     function doRefinanceByBorrower(
         Offer memory offer,
         uint256 nftId,
         address nftOwner,
+        bool rollover,
         uint32 expectedLastUpdatedTimestamp
     ) external whenNotPaused nonReentrant {
         _requireSigLendingContract();
-        _doRefinanceByBorrower(offer, nftId, nftOwner, expectedLastUpdatedTimestamp);
+        _doRefinanceByBorrower(offer, nftId, nftOwner, rollover, expectedLastUpdatedTimestamp);
     }
 
     function _doRefinanceByBorrower(
         Offer memory offer,
         uint256 nftId,
         address nftOwner,
+        bool rollover,
         uint32 expectedLastUpdatedTimestamp
     ) internal {
         LoanAuction storage loanAuction = _getLoanAuctionInternal(offer.nftContractAddress, nftId);
@@ -376,7 +379,11 @@ contract NiftyApesLending is
         loanAuction.lender = offer.creator;
         loanAuction.amount = offer.amount;
         loanAuction.interestRatePerSecond = offer.interestRatePerSecond;
-        loanAuction.loanEndTimestamp = loanAuction.loanBeginTimestamp + offer.duration;
+        if (rollover) {
+            loanAuction.loanEndTimestamp = _currentTimestamp32() + offer.duration;
+        } else {
+            loanAuction.loanEndTimestamp = loanAuction.loanBeginTimestamp + offer.duration;
+        }
         loanAuction.amountDrawn = SafeCastUpgradeable.toUint128(
             toLenderUnderlying + toProtocolUnderlying
         );
@@ -485,7 +492,7 @@ contract NiftyApesLending is
                 protocolPremiumInCtokens
             );
         } else {
-            // If refinance is done by a new lender and refinacneByLender was the last action to occur, add slashableInterest to accumulated interest
+            // If refinance is done by a new lender and refinanceByLender was the last action to occur, add slashableInterest to accumulated interest
             if (loanAuction.slashableLenderInterest > 0) {
                 loanAuction.accumulatedLenderInterest += loanAuction.slashableLenderInterest;
                 loanAuction.slashableLenderInterest = 0;
@@ -1021,7 +1028,7 @@ contract NiftyApesLending is
     }
 
     function _requireOfferNotExpired(Offer memory offer) internal view {
-        require(offer.expiration > SafeCastUpgradeable.toUint32(block.timestamp), "00010");
+        require(offer.expiration > _currentTimestamp32(), "00010");
     }
 
     function _requireMinDurationForOffer(Offer memory offer) internal pure {

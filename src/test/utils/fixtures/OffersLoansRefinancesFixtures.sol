@@ -244,6 +244,7 @@ contract OffersLoansRefinancesFixtures is
             newOffer.nftContractAddress,
             newOffer.nftId,
             newOffer.floorTerm,
+            false,
             offerHash,
             lending.getLoanAuction(address(mockNft), 1).lastUpdatedTimestamp
         );

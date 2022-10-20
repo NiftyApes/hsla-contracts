@@ -196,6 +196,7 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
             newOffer.nftContractAddress,
             newOffer.nftId,
             newOffer.floorTerm,
+            false,
             offerHash,
             lending.getLoanAuction(address(mockNft), 1).lastUpdatedTimestamp
         );
@@ -253,6 +254,7 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
             newOffer.nftContractAddress,
             newOffer.nftId,
             newOffer.floorTerm,
+            false,
             offerHash,
             lending.getLoanAuction(address(mockNft), 1).lastUpdatedTimestamp
         );
@@ -304,6 +306,7 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
             newOffer.nftContractAddress,
             newOffer.nftId,
             newOffer.floorTerm,
+            false,
             offerHash,
             (loanAuction.lastUpdatedTimestamp - 100)
         );
@@ -348,6 +351,7 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
             newOffer.nftContractAddress,
             newOffer.nftId,
             newOffer.floorTerm,
+            false,
             offerHash,
             loanAuction.lastUpdatedTimestamp
         );
@@ -408,6 +412,7 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
     //         newOffer.nftContractAddress,
     //         newOffer.nftId,
     //         newOffer.floorTerm,
+    //         false,
     //         offerHash2,
     //         lending.getLoanAuction(address(mockNft), 3).lastUpdatedTimestamp
     //     );

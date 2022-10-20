@@ -63,6 +63,7 @@ contract TestRefinanceLoanByBorrowerSignature is
             newOffer,
             signature,
             newOffer.nftId,
+            false,
             loanAuction.lastUpdatedTimestamp
         );
         vm.stopPrank();
@@ -129,6 +130,7 @@ contract TestRefinanceLoanByBorrowerSignature is
             newOffer,
             signature,
             newOffer.nftId,
+            false,
             loanAuction.lastUpdatedTimestamp
         );
         vm.stopPrank();
@@ -199,6 +201,7 @@ contract TestRefinanceLoanByBorrowerSignature is
             newOffer,
             signature,
             newOffer.nftId,
+            false,
             loanAuction.lastUpdatedTimestamp
         );
         vm.stopPrank();
@@ -264,6 +267,7 @@ contract TestRefinanceLoanByBorrowerSignature is
             newOffer,
             signature,
             newOffer.nftId,
+            false,
             loanAuction.lastUpdatedTimestamp
         );
         vm.stopPrank();

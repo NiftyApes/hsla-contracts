@@ -253,6 +253,7 @@ contract NiftyApesPauseUnitTest is
             address(0),
             1,
             false,
+            false,
             bytes32(0),
             uint32(block.timestamp)
         );
@@ -261,7 +262,13 @@ contract NiftyApesPauseUnitTest is
     function testCannotRefinanceByBorrowerSignature_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        sigLendingAuction.refinanceByBorrowerSignature(getOffer(), "", 1, uint32(block.timestamp));
+        sigLendingAuction.refinanceByBorrowerSignature(
+            getOffer(),
+            "",
+            1,
+            false,
+            uint32(block.timestamp)
+        );
     }
 
     function testCannotRefinanceByLender_paused() public {
