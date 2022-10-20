@@ -1148,11 +1148,10 @@ contract NiftyApesLending is
     function transferNft(
         address nftContractAddress,
         uint256 nftId,
-        address from,
         address to
     ) external whenNotPaused nonReentrant {
         _requireFlashClaimContract();
-        _transferNft(nftContractAddress, nftId, from, to);
+        _transferNft(nftContractAddress, nftId, address(this), to);
     }
 
     function _transferNft(

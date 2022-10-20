@@ -273,12 +273,10 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     ///         Allows FlashClaim contract to transfer an NFT directly
     /// @param nftContractAddress The address of the nft collection
     /// @param nftId The id of the specified NFT
-    /// @param from The address to transfer the NFT from
     /// @param to The address to transfer the NFT to
     function transferNft(
         address nftContractAddress,
         uint256 nftId,
-        address from,
         address to
     ) external;
 }

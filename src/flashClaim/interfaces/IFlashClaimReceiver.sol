@@ -10,13 +10,15 @@ interface IFlashClaimReceiver {
     /// @notice Executes an operation after receiving the flash claimed nft
     /// @dev Ensure that the contract approves the return of the nft to the NiftyApes flashClaim contract
     ///      before the end of the transaction
+    /// @param initiator The initiator of the flashClaim
     /// @param nftContractAddress The address of the nft collection
     /// @param nftId The id of the specified nft
-    /// @param niftyApesFlashClaimContractAddress The contract address of the NiftyApesFlashClaimContract
+    /// @param data Arbitrary data structure, intended to contain user-defined parameters
     /// @return True if the execution of the operation succeeds, false otherwise
     function executeOperation(
+        address initiator,
         address nftContractAddress,
         uint256 nftId,
-        address niftyApesFlashClaimContractAddress
+        bytes calldata data
     ) external returns (bool);
 }

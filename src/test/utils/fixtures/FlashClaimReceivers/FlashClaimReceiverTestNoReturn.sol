@@ -7,19 +7,17 @@ import { IFlashClaimReceiver } from "../../../../flashClaim/interfaces/IFlashCla
 
 import "forge-std/Test.sol";
 
-/// @title FlashClaimReceiverBase
-/// @author captnseagaves
-/// @notice Base contract to develop a FlashClaimReceiver contract.
-
 contract FlashClaimReceiverBaseNoReturn is IFlashClaimReceiver, ERC721HolderUpgradeable {
     function executeOperation(
+        address initiator,
         address nftContractAddress,
         uint256 nftId,
-        address niftyApesFlashClaimContractAddress
+        bytes calldata data
     ) external pure returns (bool) {
+        initiator;
         nftContractAddress;
         nftId;
-        niftyApesFlashClaimContractAddress;
+        data;
         return true;
     }
 }

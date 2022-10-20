@@ -11,12 +11,14 @@ interface IFlashClaim is IFlashClaimAdmin, IFlashClaimEvents {
     function lendingContractAddress() external view returns (address);
 
     /// @notice Removes an offer from the on-chain offer book
+    /// @param receiver The address of the external contract that will receive and return the nft
     /// @param nftContractAddress The address of the NFT collection
     /// @param nftId The id of the specified NFT
-    /// @param receiverAddress The address of the external contract that will receive and return the nft
+    /// @param data Arbitrary data structure, intended to contain user-defined parameters
     function flashClaim(
+        address receiver,
         address nftContractAddress,
         uint256 nftId,
-        address receiverAddress
+        bytes calldata data
     ) external;
 }

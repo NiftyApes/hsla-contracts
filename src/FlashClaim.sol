@@ -82,9 +82,10 @@ contract NiftyApesFlashClaim is
 
     /// @inheritdoc IFlashClaim
     function flashClaim(
+        address receiverAddress,
         address nftContractAddress,
         uint256 nftId,
-        address receiverAddress
+        bytes calldata data
     ) external whenNotPaused nonReentrant {
         address nftOwner = _requireNftOwner(nftContractAddress, nftId);
         _requireIsNotSanctioned(msg.sender);
@@ -94,16 +95,11 @@ contract NiftyApesFlashClaim is
         IFlashClaimReceiver receiver = IFlashClaimReceiver(receiverAddress);
 
         // transfer NFT
-        ILending(lendingContractAddress).transferNft(
-            nftContractAddress,
-            nftId,
-            lendingContractAddress,
-            receiverAddress
-        );
+        ILending(lendingContractAddress).transferNft(nftContractAddress, nftId, receiverAddress);
 
         // execute firewalled external arbitrary functionality
         // function must approve this contract to transferFrom NFT in order to return to lending.sol
-        require(receiver.executeOperation(nftContractAddress, nftId, address(this)), "00052");
+        require(receiver.executeOperation(msg.sender, nftContractAddress, nftId, data), "00052");
 
         // transfer nft back to Lending.sol and require return occurs
         _transferNft(nftContractAddress, nftId, receiverAddress, lendingContractAddress);

@@ -7,22 +7,28 @@ import { IFlashClaimReceiver } from "../../../../flashClaim/interfaces/IFlashCla
 
 import "forge-std/Test.sol";
 
-/// @title FlashClaimReceiverBase
-/// @author captnseagaves
-/// @notice Base contract to develop a FlashClaimReceiver contract.
-
 contract FlashClaimReceiverBaseHappy is IFlashClaimReceiver, ERC721HolderUpgradeable {
+    address public flashClaim;
+
+    function updateFlashClaimContractAddress(address newFlashClaimContractAddress) external {
+        flashClaim = newFlashClaimContractAddress;
+    }
+
     function executeOperation(
+        address initiator,
         address nftContractAddress,
         uint256 nftId,
-        address niftyApesFlashClaimContractAddress
+        bytes calldata data
     ) external returns (bool) {
+        initiator;
+        data;
+
         address nftOwner = IERC721Upgradeable(nftContractAddress).ownerOf(nftId);
 
         console.log("I'm useful! I own this NFT.", nftOwner);
         console.log("This proves I own this NFT.", address(this));
 
-        IERC721Upgradeable(nftContractAddress).approve(niftyApesFlashClaimContractAddress, nftId);
+        IERC721Upgradeable(nftContractAddress).approve(address(flashClaim), nftId);
 
         return true;
     }

@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 import "../../utils/fixtures/OffersLoansRefinancesFixtures.sol";
 import "../../../interfaces/niftyapes/lending/ILendingEvents.sol";
 
-contract TestLendingRenounceOwnership is Test, ILendingEvents, OffersLoansRefinancesFixtures {
+contract TestFlashClaim is Test, ILendingEvents, OffersLoansRefinancesFixtures {
     function setUp() public override {
         super.setUp();
     }
@@ -19,9 +19,10 @@ contract TestLendingRenounceOwnership is Test, ILendingEvents, OffersLoansRefina
 
         vm.startPrank(borrower1);
         flashClaim.flashClaim(
+            address(flashClaimReceiverHappy),
             offer.nftContractAddress,
             offer.nftId,
-            address(flashClaimReceiverHappy)
+            bytes("")
         );
         vm.stopPrank();
 
@@ -42,10 +43,12 @@ contract TestLendingRenounceOwnership is Test, ILendingEvents, OffersLoansRefina
 
         vm.startPrank(borrower2);
         vm.expectRevert("00021");
+
         flashClaim.flashClaim(
+            address(flashClaimReceiverNoReturn),
             offer.nftContractAddress,
             offer.nftId,
-            address(flashClaimReceiverHappy)
+            bytes("")
         );
         vm.stopPrank();
     }
@@ -63,9 +66,10 @@ contract TestLendingRenounceOwnership is Test, ILendingEvents, OffersLoansRefina
         vm.startPrank(borrower1);
         vm.expectRevert("ERC721: caller is not token owner or approved");
         flashClaim.flashClaim(
+            address(flashClaimReceiverNoReturn),
             offer.nftContractAddress,
             offer.nftId,
-            address(flashClaimReceiverNoReturn)
+            bytes("")
         );
         vm.stopPrank();
     }
