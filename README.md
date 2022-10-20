@@ -123,4 +123,4 @@ The NiftyApes protocol is made up of four core contracts `Liquidity.sol`, `Offer
 "00045" == "amount 0"
 "00046" == "offer already exists"
 "00051" == "cannot exceed floor offer limit count"
-"00052" == "flashClaim operation failed"
+"00058" == "flashClaim operation failed"
