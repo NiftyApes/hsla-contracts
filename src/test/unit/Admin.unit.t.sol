@@ -8,6 +8,7 @@ import "../../Lending.sol";
 import "../../Liquidity.sol";
 import "../../Offers.sol";
 import "../../SigLending.sol";
+import "../../FlashClaim.sol";
 import "../../interfaces/niftyapes/lending/ILendingEvents.sol";
 import "../../interfaces/niftyapes/liquidity/ILiquidityEvents.sol";
 import "../common/BaseTest.sol";
@@ -20,6 +21,7 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
     NiftyApesOffers offersContract;
     NiftyApesLiquidity liquidityProviders;
     NiftyApesSigLending sigLendingAuction;
+    NiftyApesFlashClaim flashClaim;
     ERC20Mock daiToken;
     CERC20Mock cDAIToken;
     CEtherMock cEtherToken;
@@ -34,6 +36,9 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
     }
 
     function setUp() public {
+        flashClaim = new NiftyApesFlashClaim();
+        flashClaim.initialize();
+
         liquidityProviders = new NiftyApesLiquidity();
         liquidityProviders.initialize(compContractAddress);
 
@@ -47,7 +52,8 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
         niftyApes.initialize(
             address(liquidityProviders),
             address(offersContract),
-            address(sigLendingAuction)
+            address(sigLendingAuction),
+            address(flashClaim)
         );
 
         daiToken = new ERC20Mock();
