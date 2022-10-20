@@ -5,18 +5,16 @@ import "@openzeppelin/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Upgradeable.sol";
-import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 import "./interfaces/niftyapes/lending/ILending.sol";
 import "./interfaces/sanctions/SanctionsList.sol";
 import "./interfaces/niftyapes/flashClaim/IFlashClaim.sol";
 import "./flashClaim/interfaces/IFlashClaimReceiver.sol";
 
-/// @notice Extension of NiftApes lending contract to allow for flash claims of NFTs
+/// @notice Extension of NiftyApes lending contract to allow for flash claims of NFTs
 contract NiftyApesFlashClaim is
     OwnableUpgradeable,
     PausableUpgradeable,
     ReentrancyGuardUpgradeable,
-    ERC721HolderUpgradeable,
     IFlashClaim
 {
     using AddressUpgradeable for address payable;
@@ -28,7 +26,7 @@ contract NiftyApesFlashClaim is
     address public lendingContractAddress;
 
     /// @notice Mutex to selectively enable ETH transfers
-    /// @dev    Follows a similar pattern to `Liquidiy.sol`
+    /// @dev    Follows a similar pattern to `Liquidity.sol`
     bool internal _ethTransferable = false;
 
     /// @dev The status of sanctions checks. Can be set to false if oracle becomes malicious.
@@ -39,7 +37,7 @@ contract NiftyApesFlashClaim is
     uint256[500] private __gap;
 
     /// @notice The initializer for the NiftyApes protocol.
-    ///         Nifty Apes is intended to be deployed behind a proxy amd thus needs to initialize
+    ///         Nifty Apes is intended to be deployed behind a proxy and thus needs to initialize
     ///         its state outsize of a constructor.
     function initialize() public initializer {
         OwnableUpgradeable.__Ownable_init();

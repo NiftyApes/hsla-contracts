@@ -8,8 +8,8 @@ pragma solidity 0.8.13;
 
 interface IFlashClaimReceiver {
     /// @notice Executes an operation after receiving the flash claimed nft
-    /// @dev Ensure that the contract approves the return of the nft to the NiftyApes flashClaim contract
-    ///      before the end of the transaction
+    /// @dev Ensure that the contract approves the FlashClaim contract to transferFrom
+    ///      the NFT back to the Lending contract before the end of the transaction
     /// @param initiator The initiator of the flashClaim
     /// @param nftContractAddress The address of the nft collection
     /// @param nftId The id of the specified nft
