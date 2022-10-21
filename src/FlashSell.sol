@@ -163,7 +163,7 @@ contract NiftyApesFlashSell is
         require(nftOwner == msg.sender, "00021");
     }
 
-    function _requireCorrectFundsSent(uint256 balanceReceived, uint256 balanceRequired) internal {
+    function _requireCorrectFundsSent(uint256 balanceReceived, uint256 balanceRequired) internal pure {
         require(balanceReceived == balanceRequired, "00057");
     }
 

@@ -9,6 +9,7 @@ import "../../Lending.sol";
 import "../../Liquidity.sol";
 import "../../Offers.sol";
 import "../../SigLending.sol";
+import "../../FlashSell.sol";
 import "../../interfaces/niftyapes/lending/ILendingStructs.sol";
 import "../../interfaces/niftyapes/offers/IOffersStructs.sol";
 
@@ -28,6 +29,7 @@ contract NiftyApesPauseUnitTest is
     NiftyApesOffers offersContract;
     NiftyApesLiquidity liquidityProviders;
     NiftyApesSigLending sigLendingAuction;
+    NiftyApesFlashSell flashSell;
     ERC20Mock daiToken;
     CERC20Mock cDAIToken;
     CEtherMock cEtherToken;
@@ -58,11 +60,15 @@ contract NiftyApesPauseUnitTest is
         sigLendingAuction = new NiftyApesSigLending();
         sigLendingAuction.initialize(address(offersContract));
 
+        flashSell = new NiftyApesFlashSell();
+        flashSell.initialize();
+
         lendingAuction = new NiftyApesLending();
         lendingAuction.initialize(
             address(liquidityProviders),
             address(offersContract),
-            address(sigLendingAuction)
+            address(sigLendingAuction),
+            address(flashSell)
         );
 
         offersContract.updateLendingContractAddress(address(lendingAuction));
@@ -84,6 +90,7 @@ contract NiftyApesPauseUnitTest is
         liquidityProviders.pause();
         offersContract.pause();
         sigLendingAuction.pause();
+        flashSell.pause();
 
         acceptEth = true;
 

@@ -87,7 +87,8 @@ contract NiftyApesLending is
     function initialize(
         address newLiquidityContractAddress,
         address newOffersContractAddress,
-        address newSigLendingContractAddress
+        address newSigLendingContractAddress,
+        address newFlashSellContractAddress
     ) public initializer {
         protocolInterestBps = 0;
         originationPremiumBps = 25;
@@ -98,6 +99,7 @@ contract NiftyApesLending is
         liquidityContractAddress = newLiquidityContractAddress;
         offersContractAddress = newOffersContractAddress;
         sigLendingContractAddress = newSigLendingContractAddress;
+        flashSellContractAddress = newFlashSellContractAddress;
 
         OwnableUpgradeable.__Ownable_init();
         PausableUpgradeable.__Pausable_init();

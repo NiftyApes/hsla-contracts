@@ -5,6 +5,7 @@ import "../../../Lending.sol";
 import "../../../Liquidity.sol";
 import "../../../Offers.sol";
 import "../../../SigLending.sol";
+import "../../../FlashSell.sol";
 import "./NFTAndERC20Fixtures.sol";
 
 import "forge-std/Test.sol";
@@ -18,6 +19,7 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
     NiftyApesOffers offers;
     NiftyApesLiquidity liquidity;
     NiftyApesSigLending sigLending;
+    NiftyApesFlashSell flashSell;
 
     address constant ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
@@ -35,8 +37,11 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         sigLending = new NiftyApesSigLending();
         sigLending.initialize(address(offers));
 
+        flashSell = new NiftyApesFlashSell();
+        flashSell.initialize();
+
         lending = new NiftyApesLending();
-        lending.initialize(address(liquidity), address(offers), address(sigLending));
+        lending.initialize(address(liquidity), address(offers), address(sigLending), address(flashSell));
 
         sigLending.updateLendingContractAddress(address(lending));
 
@@ -44,6 +49,8 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         offers.updateSigLendingContractAddress(address(sigLending));
 
         liquidity.updateLendingContractAddress(address(lending));
+
+        flashSell.updateLendingContractAddress(address(lending));
 
         liquidity.setCAssetAddress(ETH_ADDRESS, address(cEtherToken));
         liquidity.setMaxCAssetBalance(address(cEtherToken), ~uint256(0));
@@ -56,6 +63,7 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         if (!integration) {
             liquidity.pauseSanctions();
             lending.pauseSanctions();
+            flashSell.pauseSanctions();
         }
 
         vm.stopPrank();

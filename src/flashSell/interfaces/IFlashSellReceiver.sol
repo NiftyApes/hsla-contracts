@@ -13,7 +13,7 @@ interface IFlashSellReceiver {
     /// @param nftContractAddress The address of the nft collection
     /// @param nftId The id of the specified nft
     /// @param loanAsset The address of the asset token required to close the loan
-    /// @param amount The asset amount required to close the loan to be sent to NiftyApesFlashSell contract
+    /// @param loanAmount The asset amount required to close the loan to be sent to NiftyApesFlashSell contract
     /// @param initiator The address which initiated this call to FlashSell contract
     /// @param data generic data input to be used for the sale of the NFT
     /// @return True if the execution of the operation succeeds, false otherwise
@@ -21,7 +21,7 @@ interface IFlashSellReceiver {
         address nftContractAddress,
         uint256 nftId,
         address loanAsset,
-        uint256 amount,
+        uint256 loanAmount,
         address initiator,
         bytes calldata data
     ) external payable returns (bool);
