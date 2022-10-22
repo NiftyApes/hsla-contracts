@@ -21,6 +21,14 @@ interface IFlashSellEvents {
         address newLendingContractAddress
     );
 
+    /// @notice Emitted when the associated liquidity contract address is changed
+    /// @param oldLiquidityContractAddress The old liquidity contract address
+    /// @param newLiquidityContractAddress The new liquidity contract address
+    event FlashSellXLiquidityContractAddressUpdated(
+        address oldLiquidityContractAddress,
+        address newLiquidityContractAddress
+    );
+
     /// @notice Emitted when sanctions checks are paused
     event FlashSellSanctionsPaused();
 

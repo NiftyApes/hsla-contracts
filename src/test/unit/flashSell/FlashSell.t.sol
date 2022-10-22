@@ -65,6 +65,22 @@ contract TestFlashSell is Test, ILendingStructs, OffersLoansRefinancesFixtures {
         _test_unit_flashSell_simplest_case(fixedForSpeed);
     }
 
+    function test_fuzz_flashSell_simplest_case_ETH(FuzzedOfferFields memory fuzzedOfferData) public validateFuzzedOfferFields(fuzzedOfferData) {
+        fuzzedOfferData.randomAsset = 1;
+        _test_unit_flashSell_simplest_case(fuzzedOfferData);
+    }
+
+    function test_unit_flashSell_simplest_case_DAI() public {
+        FuzzedOfferFields memory fixedForSpeed = defaultFixedFuzzedFieldsForFastUnitTesting;
+        fixedForSpeed.randomAsset = 0;
+        _test_unit_flashSell_simplest_case(fixedForSpeed);
+    }
+
+    function test_fuzz_flashSell_simplest_case_DAI(FuzzedOfferFields memory fuzzedOfferData) public validateFuzzedOfferFields(fuzzedOfferData) {
+        fuzzedOfferData.randomAsset = 0;
+        _test_unit_flashSell_simplest_case(fuzzedOfferData);
+    }
+
     function _test_unit_cannot_flashSell_notNftOwner(FuzzedOfferFields memory fuzzed) private {
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
         createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
@@ -124,13 +140,15 @@ contract TestFlashSell is Test, ILendingStructs, OffersLoansRefinancesFixtures {
         FlashSellReceiverMock flashSellReceiverMock = new FlashSellReceiverMock();
         flashSellReceiverMock.updateHappyState(happyState);
 
-        vm.startPrank(borrower1);
+        
         if (loan.asset == ETH_ADDRESS) {
+            vm.startPrank(borrower1);
             payable(address(flashSellReceiverMock)).sendValue(_calculateTotalLoanPaymentAmount(nftContractAddress, nftId, loan));
+            vm.stopPrank();
         } else {
-            IERC20Upgradeable(loan.asset).safeTransfer(address(flashSellReceiverMock), _calculateTotalLoanPaymentAmount(nftContractAddress, nftId, loan));
+            mintDai(address(flashSellReceiverMock), _calculateTotalLoanPaymentAmount(nftContractAddress, nftId, loan));
         }
-        vm.stopPrank();
+        
 
         return flashSellReceiverMock;
     }

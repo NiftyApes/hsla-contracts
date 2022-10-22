@@ -6,6 +6,9 @@ interface IFlashSellAdmin {
     /// @notice Updates the associated lending contract address
     function updateLendingContractAddress(address newLendingContractAddress) external;
 
+    /// @notice Updates the associated liquidity contract address
+    function updateLiquidityContractAddress(address newLiquidityContractAddress) external;
+
     /// @notice Pauses sanctions checks
     function pauseSanctions() external;
 

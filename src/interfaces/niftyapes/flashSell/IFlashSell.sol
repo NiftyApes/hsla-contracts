@@ -13,6 +13,9 @@ interface IFlashSell is
     /// @notice Returns the address for the associated lending contract
     function lendingContractAddress() external view returns (address);
 
+    /// @notice Returns the address for the associated liquidity contract
+    function liquidityContractAddress() external view returns (address);
+
     /// @notice Allows a borrower to borrow its locked NFT for sale to external NFT marketplace with the condition that
     ///         the total loan asset amount required to close the loan is sent to the FlashSell contract within the same transaction.
     /// @param  nftContractAddress Address of the NFT collection

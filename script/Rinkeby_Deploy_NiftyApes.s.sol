@@ -5,6 +5,7 @@ import "../src/Liquidity.sol";
 import "../src/Offers.sol";
 import "../src/SigLending.sol";
 import "../src/Lending.sol";
+import "../src/FlashSell.sol";
 
 contract DeployNiftyApesScript is Script {
     function run() external {
@@ -12,6 +13,7 @@ contract DeployNiftyApesScript is Script {
         NiftyApesOffers offersContract;
         NiftyApesLiquidity liquidityProviders;
         NiftyApesSigLending sigLendingAuction;
+        NiftyApesFlashSell flashSell;
         address compContractAddress = 0xbbEB7c67fa3cfb40069D19E598713239497A3CA5;
         vm.startBroadcast();
 
@@ -24,11 +26,15 @@ contract DeployNiftyApesScript is Script {
         sigLendingAuction = new NiftyApesSigLending();
         sigLendingAuction.initialize(address(offersContract));
 
+        flashSell = new NiftyApesFlashSell();
+        flashSell.initialize();
+
         lendingAuction = new NiftyApesLending();
         lendingAuction.initialize(
             address(liquidityProviders),
             address(offersContract),
-            address(sigLendingAuction)
+            address(sigLendingAuction),
+            address(flashSell)
         );
 
         liquidityProviders.updateLendingContractAddress(address(lendingAuction));
@@ -37,6 +43,9 @@ contract DeployNiftyApesScript is Script {
         offersContract.updateSigLendingContractAddress(address(sigLendingAuction));
 
         sigLendingAuction.updateLendingContractAddress(address(lendingAuction));
+
+        flashSell.updateLendingContractAddress(address(lendingAuction));
+        flashSell.updateLiquidityContractAddress(address(liquidityProviders));
 
         // Rinkeby Addresses
         address daiToken = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
@@ -61,6 +70,7 @@ contract DeployNiftyApesScript is Script {
         // pauseSanctions for Rinkeby as Chainalysis contacts doent exists there
         liquidityProviders.pauseSanctions();
         lendingAuction.pauseSanctions();
+        flashSell.pauseSanctions();
 
         vm.stopBroadcast();
     }

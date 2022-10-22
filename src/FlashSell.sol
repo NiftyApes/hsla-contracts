@@ -33,6 +33,9 @@ contract NiftyApesFlashSell is
     /// @inheritdoc IFlashSell
     address public lendingContractAddress;
 
+    /// @inheritdoc IFlashSell
+    address public liquidityContractAddress;
+
     /// @notice Mutex to selectively enable ETH transfers
     /// @dev    Follows a similar pattern to `Liquidiy.sol`
     bool internal _ethTransferable = false;
@@ -61,6 +64,16 @@ contract NiftyApesFlashSell is
             newLendingContractAddress
         );
         lendingContractAddress = newLendingContractAddress;
+    }
+
+    /// @inheritdoc IFlashSellAdmin
+    function updateLiquidityContractAddress(address newLiquidityContractAddress) external onlyOwner {
+        require(address(newLiquidityContractAddress) != address(0), "00035");
+        emit FlashSellXLiquidityContractAddressUpdated(
+            liquidityContractAddress,
+            newLiquidityContractAddress
+        );
+        liquidityContractAddress = newLiquidityContractAddress;
     }
 
     /// @inheritdoc IFlashSellAdmin
@@ -135,11 +148,11 @@ contract NiftyApesFlashSell is
             );
         } else {
             IERC20Upgradeable assetToken = IERC20Upgradeable(loanAuction.asset);
-            uint256 allowance = assetToken.allowance(address(this), lendingContractAddress);
+            uint256 allowance = assetToken.allowance(address(this), liquidityContractAddress);
             if (allowance > 0) {
-                assetToken.safeDecreaseAllowance(lendingContractAddress, allowance);
+                assetToken.safeDecreaseAllowance(liquidityContractAddress, allowance);
             }
-            assetToken.safeIncreaseAllowance(lendingContractAddress, totalLoanPaymentAmount);
+            assetToken.safeIncreaseAllowance(liquidityContractAddress, totalLoanPaymentAmount);
             ILending(lendingContractAddress).repayLoanForAccountFlashSell(
                 nftContractAddress,
                 nftId,
