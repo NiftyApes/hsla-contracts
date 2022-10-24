@@ -5,8 +5,6 @@ import "./IFlashPurchaseAdmin.sol";
 import "./IFlashPurchaseEvents.sol";
 import "../offers/IOffersStructs.sol";
 import "../lending/ILendingStructs.sol";
-import "../../seaport/ISeaport.sol";
-import "../../sudoswap/ILSSVMPair.sol";
 
 interface IFlashPurchase is
     IFlashPurchaseAdmin,
