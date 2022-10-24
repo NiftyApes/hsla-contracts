@@ -17,6 +17,9 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     /// @notice Returns the address for the associated signature lending contract
     function sigLendingContractAddress() external view returns (address);
 
+    /// @notice Returns the address for the associated flashClaim contract
+    function flashClaimContractAddress() external view returns (address);
+
     /// @notice Returns the address for the associated purchase with financing contract
     function purchaseWithFinancingContractAddress() external view returns (address);
 
@@ -267,6 +270,17 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         uint256 nftId,
         address nftOwner,
         uint32 expectedLastUpdatedTimestamp
+    ) external;
+
+    /// @notice Function only callable by the NiftyApesFlashClaim contract
+    ///         Allows FlashClaim contract to transfer an NFT directly
+    /// @param nftContractAddress The address of the nft collection
+    /// @param nftId The id of the specified NFT
+    /// @param to The address to transfer the NFT to
+    function transferNft(
+        address nftContractAddress,
+        uint256 nftId,
+        address to
     ) external;
 
     /// @notice Function only callable by the NiftyApesPurchaseWithFinancing contract

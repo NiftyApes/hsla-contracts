@@ -132,4 +132,4 @@ The NiftyApes protocol is made up of four core contracts `Liquidity.sol`, `Offer
 "00054" == "invalid initiator"
 "00055" == "PurchaseWithFinancingContract: cannot be address(0)"
 "00056" == "multiple NFT purchase not allowed for non floor offer"
-
+"00058" == "flashClaim operation failed"

@@ -8,6 +8,7 @@ import "../../Lending.sol";
 import "../../Liquidity.sol";
 import "../../Offers.sol";
 import "../../SigLending.sol";
+import "../../FlashClaim.sol";
 import "../../PurchaseWithFinancing.sol";
 import "../../interfaces/niftyapes/lending/ILendingEvents.sol";
 import "../../interfaces/niftyapes/liquidity/ILiquidityEvents.sol";
@@ -24,6 +25,7 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
     NiftyApesOffers offersContract;
     NiftyApesLiquidity liquidityProviders;
     NiftyApesSigLending sigLendingAuction;
+    NiftyApesFlashClaim flashClaim;
     NiftyApesPurchaseWithFinancing purchaseWithFinancing;
     SeaportMock seaportMock;
     LSSVMPairFactoryMock sudoswapFactoryMock;
@@ -42,6 +44,9 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
     }
 
     function setUp() public {
+        flashClaim = new NiftyApesFlashClaim();
+        flashClaim.initialize();
+
         seaportMock = new SeaportMock();
         sudoswapFactoryMock = new LSSVMPairFactoryMock();
         sudoswapRouterMock = new LSSVMRouterMock();
@@ -63,6 +68,7 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
             address(liquidityProviders),
             address(offersContract),
             address(sigLendingAuction),
+            address(flashClaim),
             address(purchaseWithFinancing)
         );
 

@@ -9,6 +9,7 @@ import "../../Lending.sol";
 import "../../Liquidity.sol";
 import "../../Offers.sol";
 import "../../SigLending.sol";
+import "../../FlashClaim.sol";
 import "../../PurchaseWithFinancing.sol";
 import "../../interfaces/niftyapes/lending/ILendingStructs.sol";
 import "../../interfaces/niftyapes/offers/IOffersStructs.sol";
@@ -32,6 +33,7 @@ contract NiftyApesPauseUnitTest is
     NiftyApesOffers offersContract;
     NiftyApesLiquidity liquidityProviders;
     NiftyApesSigLending sigLendingAuction;
+    NiftyApesFlashClaim flashClaim;
     NiftyApesPurchaseWithFinancing purchaseWithFinancing;
     SeaportMock seaportMock;
     LSSVMPairFactoryMock sudoswapFactoryMock;
@@ -57,6 +59,9 @@ contract NiftyApesPauseUnitTest is
     }
 
     function setUp() public {
+        flashClaim = new NiftyApesFlashClaim();
+        flashClaim.initialize();
+
         seaportMock = new SeaportMock();
         sudoswapFactoryMock = new LSSVMPairFactoryMock();
         sudoswapRouterMock = new LSSVMRouterMock();
@@ -78,6 +83,7 @@ contract NiftyApesPauseUnitTest is
             address(liquidityProviders),
             address(offersContract),
             address(sigLendingAuction),
+            address(flashClaim),
             address(purchaseWithFinancing)
         );
 
@@ -100,6 +106,7 @@ contract NiftyApesPauseUnitTest is
         liquidityProviders.pause();
         offersContract.pause();
         sigLendingAuction.pause();
+        flashClaim.pause();
 
         acceptEth = true;
 

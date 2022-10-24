@@ -5,6 +5,9 @@ import "../../../Lending.sol";
 import "../../../Liquidity.sol";
 import "../../../Offers.sol";
 import "../../../SigLending.sol";
+import "../../../FlashClaim.sol";
+import "./FlashClaimReceivers/FlashClaimReceiverTestHappy.sol";
+import "./FlashClaimReceivers/FlashClaimReceiverTestNoReturn.sol";
 import "../../../PurchaseWithFinancing.sol";
 import "../../../purchaseWithFinancing/integrations/SeaportPwfIntegration.sol";
 import "../../../purchaseWithFinancing/integrations/SudoswapPwfIntegration.sol";
@@ -25,6 +28,9 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
     NiftyApesOffers offers;
     NiftyApesLiquidity liquidity;
     NiftyApesSigLending sigLending;
+    NiftyApesFlashClaim flashClaim;
+    FlashClaimReceiverBaseHappy flashClaimReceiverHappy;
+    FlashClaimReceiverBaseNoReturn flashClaimReceiverNoReturn;
     NiftyApesPurchaseWithFinancing purchaseWithFinancing;
     SeaportPwfIntegration seaportPWF;
     SudoswapPwfIntegration sudoswapPWF;
@@ -41,6 +47,12 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         super.setUp();
 
         vm.startPrank(owner);
+
+        flashClaimReceiverHappy = new FlashClaimReceiverBaseHappy();
+        flashClaimReceiverNoReturn = new FlashClaimReceiverBaseNoReturn();
+
+        flashClaim = new NiftyApesFlashClaim();
+        flashClaim.initialize();
 
         if (integration) {
             purchaseWithFinancing = new NiftyApesPurchaseWithFinancing();
@@ -59,7 +71,7 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
             purchaseWithFinancing = new NiftyApesPurchaseWithFinancing();
             seaportPWF = new SeaportPwfIntegration();
             sudoswapPWF = new SudoswapPwfIntegration();
-            
+
             purchaseWithFinancing.initialize();
             seaportPWF.initialize(address(offers), address(purchaseWithFinancing), address(seaportMock));
             sudoswapPWF.initialize(address(offers), address(purchaseWithFinancing), address(sudoswapFactoryMock), address(sudoswapRouterMock));
@@ -79,6 +91,7 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
             address(liquidity),
             address(offers),
             address(sigLending),
+            address(flashClaim),
             address(purchaseWithFinancing)
         );
 
@@ -88,6 +101,8 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         offers.updateSigLendingContractAddress(address(sigLending));
 
         liquidity.updateLendingContractAddress(address(lending));
+
+        flashClaim.updateLendingContractAddress(address(lending));
 
         purchaseWithFinancing.updateLiquidityContractAddress(address(liquidity));
         purchaseWithFinancing.updateOffersContractAddress(address(offers));
@@ -102,11 +117,14 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         liquidity.setCAssetAddress(address(daiToken), address(cDAIToken));
         liquidity.setMaxCAssetBalance(address(cDAIToken), ~uint256(0));
 
+        flashClaimReceiverHappy.updateFlashClaimContractAddress(address(flashClaim));
+
         lending.updateProtocolInterestBps(100);
 
         if (!integration) {
             liquidity.pauseSanctions();
             lending.pauseSanctions();
+            flashClaim.pauseSanctions();
         }
 
         vm.stopPrank();

@@ -9,6 +9,7 @@ import "../../Lending.sol";
 import "../../Liquidity.sol";
 import "../../Offers.sol";
 import "../../SigLending.sol";
+import "../../FlashClaim.sol";
 import "../../PurchaseWithFinancing.sol";
 import "../../interfaces/niftyapes/lending/ILendingEvents.sol";
 import "../../interfaces/niftyapes/offers/IOffersEvents.sol";
@@ -36,6 +37,7 @@ contract LendingAuctionUnitTest is
     NiftyApesOffers offersContract;
     NiftyApesLiquidity liquidityProviders;
     NiftyApesSigLending sigLendingAuction;
+    NiftyApesFlashClaim flashClaim;
     NiftyApesPurchaseWithFinancing purchaseWithFinancing;
     SeaportMock seaportMock;
     LSSVMPairFactoryMock sudoswapFactoryMock;
@@ -72,6 +74,9 @@ contract LendingAuctionUnitTest is
     function setUp() public {
         hevm.startPrank(OWNER);
 
+        flashClaim = new NiftyApesFlashClaim();
+        flashClaim.initialize();
+
         seaportMock = new SeaportMock();
         sudoswapFactoryMock = new LSSVMPairFactoryMock();
         sudoswapRouterMock = new LSSVMRouterMock();
@@ -93,6 +98,7 @@ contract LendingAuctionUnitTest is
             address(liquidityProviders),
             address(offersContract),
             address(sigLendingAuction),
+            address(flashClaim),
             address(purchaseWithFinancing)
         );
 
@@ -102,6 +108,8 @@ contract LendingAuctionUnitTest is
         offersContract.updateSigLendingContractAddress(address(sigLendingAuction));
 
         sigLendingAuction.updateLendingContractAddress(address(lendingAuction));
+
+        flashClaim.updateLendingContractAddress(address(lendingAuction));
 
         if (block.number == 1) {
             lendingAuction.pauseSanctions();
