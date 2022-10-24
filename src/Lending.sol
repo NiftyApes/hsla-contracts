@@ -60,6 +60,9 @@ contract NiftyApesLending is
     address public flashClaimContractAddress;
 
     /// @inheritdoc ILending
+    address public flashPurchaseContractAddress;
+
+    /// @inheritdoc ILending
     uint16 public protocolInterestBps;
 
     /// @inheritdoc ILending
@@ -88,7 +91,8 @@ contract NiftyApesLending is
         address newLiquidityContractAddress,
         address newOffersContractAddress,
         address newSigLendingContractAddress,
-        address newFlashClaimContractAddress
+        address newFlashClaimContractAddress,
+        address newFlashPurchaseAddress
     ) public initializer {
         protocolInterestBps = 0;
         originationPremiumBps = 25;
@@ -100,6 +104,7 @@ contract NiftyApesLending is
         offersContractAddress = newOffersContractAddress;
         sigLendingContractAddress = newSigLendingContractAddress;
         flashClaimContractAddress = newFlashClaimContractAddress;
+        flashPurchaseContractAddress = newFlashPurchaseAddress;
 
         OwnableUpgradeable.__Ownable_init();
         PausableUpgradeable.__Pausable_init();
@@ -1076,6 +1081,10 @@ contract NiftyApesLending is
         require(msg.sender == flashClaimContractAddress, "00031");
     }
 
+    function _requireFlashPurchaseContract() internal view {
+        require(msg.sender == flashPurchaseContractAddress, "00031");
+    }
+
     function _requireOfferParity(LoanAuction storage loanAuction, Offer memory offer)
         internal
         view
@@ -1114,6 +1123,18 @@ contract NiftyApesLending is
         }
 
         revert("00025");
+    }
+
+    /// @inheritdoc ILending
+    function createLoanFlashPurchase(
+        Offer memory offer,
+        uint256 nftId,
+        address lender,
+        address borrower
+    ) external {
+        LoanAuction storage loanAuction = _getLoanAuctionInternal(offer.nftContractAddress, nftId);
+        _requireFlashPurchaseContract();
+        _createLoan(loanAuction, offer, lender, borrower);
     }
 
     function _createLoan(
