@@ -5,34 +5,34 @@ import "@openzeppelin/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
-import "../../interfaces/pwfIntegrations/SeaportPwfIntegration/ISeaportPwfIntegration.sol";
-import "../base/PwfIntegrationBase.sol";
-import "../../PurchaseWithFinancing.sol";
+import "../../interfaces/flashPurchaseIntegrations/SeaportFlashPurchaseIntegration/ISeaportFlashPurchaseIntegration.sol";
+import "../base/FlashPurchaseIntegrationBase.sol";
+import "../../FlashPurchase.sol";
 
-/// @notice Integration of Seaport to PurchaseWithFinancing to allow purchase of NFT with financing
-/// @title SeaportPwfIntegration
+/// @notice Integration of Seaport to FlashPurchase to allow purchase of NFT with financing
+/// @title SeaportFlashPurchaseIntegration
 /// @custom:version 1.0
 /// @author captnseagraves (captnseagraves.eth)
 /// @custom:contributor zishansami102 (zishansami.eth)
 /// @custom:contributor jyturley
-contract SeaportPwfIntegration is
+contract SeaportFlashPurchaseIntegration is
     OwnableUpgradeable,
     ReentrancyGuardUpgradeable,
     ERC721HolderUpgradeable,
     PausableUpgradeable,
-    PwfIntegrationBase,
-    ISeaportPwfIntegration
+    FlashPurchaseIntegrationBase,
+    ISeaportFlashPurchaseIntegration
 {   
     using AddressUpgradeable for address payable;
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
-    /// @inheritdoc ISeaportPwfIntegration
+    /// @inheritdoc ISeaportFlashPurchaseIntegration
     address public offersContractAddress;
 
-    /// @inheritdoc ISeaportPwfIntegration
-    address public purchaseWithFinancingContractAddress;
+    /// @inheritdoc ISeaportFlashPurchaseIntegration
+    address public flashPurchaseContractAddress;
 
-    /// @inheritdoc ISeaportPwfIntegration
+    /// @inheritdoc ISeaportFlashPurchaseIntegration
     address public seaportContractAddress;
 
     /// @notice Mutex to selectively enable ETH transfers
@@ -46,10 +46,10 @@ contract SeaportPwfIntegration is
     /// @notice The initializer for the marketplace integration contract.
     function initialize(
         address newOffersContractAddress,
-        address newPurchaseWithFinancingContractAddress,
+        address newFlashPurchaseContractAddress,
         address newSeaportContractAddress
     ) public initializer {
-        purchaseWithFinancingContractAddress = newPurchaseWithFinancingContractAddress;
+        flashPurchaseContractAddress = newFlashPurchaseContractAddress;
         offersContractAddress = newOffersContractAddress;
         seaportContractAddress = newSeaportContractAddress;
 
@@ -59,44 +59,44 @@ contract SeaportPwfIntegration is
         ERC721HolderUpgradeable.__ERC721Holder_init();
     }
 
-    /// @inheritdoc ISeaportPwfIntegrationAdmin
+    /// @inheritdoc ISeaportFlashPurchaseIntegrationAdmin
     function updateOffersContractAddress(address newOffersContractAddress) external onlyOwner {
         require(address(newOffersContractAddress) != address(0), "00035");
-        emit SeaportPwfIntegrationXOffersContractAddressUpdated(
+        emit SeaportFlashPurchaseIntegrationXOffersContractAddressUpdated(
             offersContractAddress,
             newOffersContractAddress
         );
         offersContractAddress = newOffersContractAddress;
     }
 
-    /// @inheritdoc ISeaportPwfIntegrationAdmin
-    function updatePurchaseWithFinancingContractAddress(address newPurchaseWithFinancingContractAddress) external onlyOwner {
-        require(address(newPurchaseWithFinancingContractAddress) != address(0), "00055");
-        emit SeaportPwfIntegrationXPurchaseWithFinancingContractAddressUpdated(
-            purchaseWithFinancingContractAddress,
-            newPurchaseWithFinancingContractAddress
+    /// @inheritdoc ISeaportFlashPurchaseIntegrationAdmin
+    function updateFlashPurchaseContractAddress(address newFlashPurchaseContractAddress) external onlyOwner {
+        require(address(newFlashPurchaseContractAddress) != address(0), "00055");
+        emit SeaportFlashPurchaseIntegrationXFlashPurchaseContractAddressUpdated(
+            flashPurchaseContractAddress,
+            newFlashPurchaseContractAddress
         );
-        purchaseWithFinancingContractAddress = newPurchaseWithFinancingContractAddress;
+        flashPurchaseContractAddress = newFlashPurchaseContractAddress;
     }
 
-    /// @inheritdoc ISeaportPwfIntegrationAdmin
+    /// @inheritdoc ISeaportFlashPurchaseIntegrationAdmin
     function updateSeaportContractAddress(address newSeaportContractAddress) external onlyOwner {
         emit SeaportContractAddressUpdated(newSeaportContractAddress);
         seaportContractAddress = newSeaportContractAddress;
     }
 
-    /// @inheritdoc ISeaportPwfIntegrationAdmin
+    /// @inheritdoc ISeaportFlashPurchaseIntegrationAdmin
     function pause() external onlyOwner {
         _pause();
     }
 
-    /// @inheritdoc ISeaportPwfIntegrationAdmin
+    /// @inheritdoc ISeaportFlashPurchaseIntegrationAdmin
     function unpause() external onlyOwner {
         _unpause();
     }
 
-    /// @inheritdoc ISeaportPwfIntegration
-    function purchaseWithFinancingSeaport(
+    /// @inheritdoc ISeaportFlashPurchaseIntegration
+    function flashPurchaseSeaport(
         bytes32 offerHash,
         bool floorTerm,
         ISeaport.Order calldata order,
@@ -118,8 +118,8 @@ contract SeaportPwfIntegration is
         _arrangeAssetFromBorrower(msg.sender, offer.asset, offer.amount, considerationAmount);
         
         _ethTransferable = true;
-        // call the PurchaseWithFinancing to take fund from the lender side
-        IPurchaseWithFinancing(purchaseWithFinancingContractAddress).borrow(
+        // call the FlashPurchase to take fund from the lender side
+        IFlashPurchase(flashPurchaseContractAddress).borrow(
             offerHash,
             offer.nftContractAddress,
             order.parameters.offer[0].identifierOrCriteria,
@@ -130,7 +130,7 @@ contract SeaportPwfIntegration is
         );
     }
 
-     function purchaseWithFinancingSeaportSignature(
+     function flashPurchaseSeaportSignature(
         Offer memory offer,
         bytes memory signature,
         ISeaport.Order calldata order,
@@ -143,8 +143,8 @@ contract SeaportPwfIntegration is
         _arrangeAssetFromBorrower(msg.sender, offer.asset, offer.amount, considerationAmount);
         
         _ethTransferable = true;
-        // call the PurchaseWithFinancing to take fund from the lender side
-        IPurchaseWithFinancing(purchaseWithFinancingContractAddress).borrowSignature(
+        // call the FlashPurchase to take fund from the lender side
+        IFlashPurchase(flashPurchaseContractAddress).borrowSignature(
             offer,
             signature,
             order.parameters.offer[0].identifierOrCriteria,
@@ -161,7 +161,7 @@ contract SeaportPwfIntegration is
         bytes calldata data
     ) external payable override returns (bool) {
         _ethTransferable = false;
-        _verifySenderAndInitiator(initiator, purchaseWithFinancingContractAddress);
+        _verifySenderAndInitiator(initiator, flashPurchaseContractAddress);
 
         // decode data
         (ISeaport.Order memory order, bytes32 fulfillerConduitKey) = abi.decode(data, (ISeaport.Order, bytes32));
@@ -191,8 +191,8 @@ contract SeaportPwfIntegration is
             );
         }
 
-        // approve the purchaseWithFinancing contract for the purchased nft
-        IERC721Upgradeable(nftContractAddress).approve(purchaseWithFinancingContractAddress, nftId);
+        // approve the flashPurchase contract for the purchased nft
+        IERC721Upgradeable(nftContractAddress).approve(flashPurchaseContractAddress, nftId);
         return true;
     }
 

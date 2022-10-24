@@ -60,7 +60,7 @@ contract NiftyApesLending is
     address public flashClaimContractAddress;
 
     /// @inheritdoc ILending
-    address public purchaseWithFinancingContractAddress;
+    address public flashPurchaseContractAddress;
 
     /// @inheritdoc ILending
     uint16 public protocolInterestBps;
@@ -92,7 +92,7 @@ contract NiftyApesLending is
         address newOffersContractAddress,
         address newSigLendingContractAddress,
         address newFlashClaimContractAddress,
-        address newPurchaseWithFinancingAddress
+        address newFlashPurchaseAddress
     ) public initializer {
         protocolInterestBps = 0;
         originationPremiumBps = 25;
@@ -104,7 +104,7 @@ contract NiftyApesLending is
         offersContractAddress = newOffersContractAddress;
         sigLendingContractAddress = newSigLendingContractAddress;
         flashClaimContractAddress = newFlashClaimContractAddress;
-        purchaseWithFinancingContractAddress = newPurchaseWithFinancingAddress;
+        flashPurchaseContractAddress = newFlashPurchaseAddress;
 
         OwnableUpgradeable.__Ownable_init();
         PausableUpgradeable.__Pausable_init();
@@ -1081,8 +1081,8 @@ contract NiftyApesLending is
         require(msg.sender == flashClaimContractAddress, "00031");
     }
 
-    function _requirePurchaseWithFinancingContract() internal view {
-        require(msg.sender == purchaseWithFinancingContractAddress, "00031");
+    function _requireFlashPurchaseContract() internal view {
+        require(msg.sender == flashPurchaseContractAddress, "00031");
     }
 
     function _requireOfferParity(LoanAuction storage loanAuction, Offer memory offer)
@@ -1126,14 +1126,14 @@ contract NiftyApesLending is
     }
 
     /// @inheritdoc ILending
-    function createLoanPWF(
+    function createLoanFlashPurchase(
         Offer memory offer,
         uint256 nftId,
         address lender,
         address borrower
     ) external {
         LoanAuction storage loanAuction = _getLoanAuctionInternal(offer.nftContractAddress, nftId);
-        _requirePurchaseWithFinancingContract();
+        _requireFlashPurchaseContract();
         _createLoan(loanAuction, offer, lender, borrower);
     }
 

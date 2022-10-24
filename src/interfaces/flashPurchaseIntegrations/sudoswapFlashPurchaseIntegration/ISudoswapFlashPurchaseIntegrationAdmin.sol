@@ -1,13 +1,13 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-/// @title SudoswapPwfIntegration interface for the admin role.
-interface ISudoswapPwfIntegrationAdmin {
+/// @title SudoswapFlashPurchaseIntegration interface for the admin role.
+interface ISudoswapFlashPurchaseIntegrationAdmin {
     /// @notice Updates the associated offers contract address
     function updateOffersContractAddress(address newOffersContractAddress) external;
 
     /// @notice Updates the associated offers contract address
-    function updatePurchaseWithFinancingContractAddress(address newPurchaseWithFinancingContractAddress) external;
+    function updateFlashPurchaseContractAddress(address newFlashPurchaseContractAddress) external;
 
     /// @notice Updates the associated sudoswap factory contract address
     function updateSudoswapFactoryContractAddress(address newSudoswapFactoryContractAddress) external;

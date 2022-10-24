@@ -14,8 +14,8 @@ contract SeaportMock is ISeaport {
         mockNft.safeMint(address(this), 1);
     }
 
-    function approve(address purchaseWithFinancingContract) external {
-        mockNft.approve(purchaseWithFinancingContract, 1);
+    function approve(address flashPurchaseContract) external {
+        mockNft.approve(flashPurchaseContract, 1);
     }
 
     function fulfillOrder(Order calldata order, bytes32 fulfillerConduitKey)

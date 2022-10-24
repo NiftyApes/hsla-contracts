@@ -1,13 +1,13 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-/// @title SeaportPwfIntegration interface for the admin role.
-interface ISeaportPwfIntegrationAdmin {
+/// @title SeaportFlashPurchaseIntegration interface for the admin role.
+interface ISeaportFlashPurchaseIntegrationAdmin {
     /// @notice Updates the associated offers contract address
     function updateOffersContractAddress(address newOffersContractAddress) external;
 
     /// @notice Updates the associated offers contract address
-    function updatePurchaseWithFinancingContractAddress(address newPurchaseWithFinancingContractAddress) external;
+    function updateFlashPurchaseContractAddress(address newFlashPurchaseContractAddress) external;
 
     /// @notice Updates the associated seaport contract address
     function updateSeaportContractAddress(address newSeaportContractAddress) external;

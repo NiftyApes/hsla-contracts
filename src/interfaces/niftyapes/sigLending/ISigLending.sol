@@ -17,7 +17,7 @@ interface ISigLending is ISigLendingAdmin, ISigLendingEvents, IOffersStructs {
     function lendingContractAddress() external view returns (address);
 
     /// @notice Returns the address for the associated purchase with financing contract
-    function purchaseWithFinancingContractAddress() external view returns (address);
+    function flashPurchaseContractAddress() external view returns (address);
 
     /// @notice Start a loan as the borrower using a signed offer.
     ///         The caller of this method has to be the current owner of the NFT
@@ -54,11 +54,11 @@ interface ISigLending is ISigLendingAdmin, ISigLendingEvents, IOffersStructs {
         uint32 expectedLastUpdatedTimestamp
     ) external;
 
-    /// @notice Allows PurchaseWithFinancing contract to verify and consume offer and its signature 
-    /// @dev Only callable by the purchaseWithFinancing contract
+    /// @notice Allows FlashPurchase contract to verify and consume offer and its signature 
+    /// @dev Only callable by the flashPurchase contract
     /// @param offer The details of the loan auction offer
     /// @param signature The signature for the offer
-    function validateAndUseOfferSignaturePWF(
+    function validateAndUseOfferSignatureFlashPurchase(
         Offer memory offer,
         bytes memory signature
     ) external;

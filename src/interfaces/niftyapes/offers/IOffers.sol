@@ -19,7 +19,7 @@ interface IOffers is IOffersAdmin, IOffersEvents, IOffersStructs, ILendingStruct
     function liquidityContractAddress() external view returns (address);
 
     /// @notice Returns the address for the associated purchase with financing contract
-    function purchaseWithFinancingContractAddress() external view returns (address);
+    function flashPurchaseContractAddress() external view returns (address);
 
     /// @notice Returns an EIP712 standard compatible hash for a given offer
     ///         This hash can be signed to create a valid offer.

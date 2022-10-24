@@ -21,7 +21,7 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     function flashClaimContractAddress() external view returns (address);
 
     /// @notice Returns the address for the associated purchase with financing contract
-    function purchaseWithFinancingContractAddress() external view returns (address);
+    function flashPurchaseContractAddress() external view returns (address);
 
     /// @notice Returns the fee that computes protocol interest
     ///         This fee is the basis points in order to calculate interest per second
@@ -283,13 +283,13 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         address to
     ) external;
 
-    /// @notice Function only callable by the NiftyApesPurchaseWithFinancing contract
-    ///         Allows PurchaseWithFinacning.sol to create a loan
+    /// @notice Function only callable by the NiftyApesFlashPurchase contract
+    ///         Allows FlashPurchase.sol to create a loan
     /// @param offer The details of the loan auction offer
     /// @param nftId The id of the specified NFT
     /// @param lender the address of the lender in the loan auction
     /// @param borrower the address of the borrower in the loan auction
-    function createLoanPWF(
+    function createLoanFlashPurchase(
         Offer memory offer,
         uint256 nftId,
         address lender,

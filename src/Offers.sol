@@ -49,7 +49,7 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
     address public liquidityContractAddress;
 
     /// @inheritdoc IOffers
-    address public purchaseWithFinancingContractAddress;
+    address public flashPurchaseContractAddress;
 
     /// @dev This empty reserved space is put in place to allow future versions to add new
     /// variables without shifting storage.
@@ -60,12 +60,12 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
     ///         its state outside of a constructor.
     function initialize(
         address newliquidityContractAddress,
-        address newPurchaseWithFinancingContractAddress
+        address newFlashPurchaseContractAddress
     ) public initializer {
         EIP712Upgradeable.__EIP712_init("NiftyApes_Offers", "0.0.1");
 
         liquidityContractAddress = newliquidityContractAddress;
-        purchaseWithFinancingContractAddress = newPurchaseWithFinancingContractAddress;
+        flashPurchaseContractAddress = newFlashPurchaseContractAddress;
 
         OwnableUpgradeable.__Ownable_init();
         PausableUpgradeable.__Pausable_init();
@@ -328,14 +328,14 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
         view
     {
         if (msg.sender != lendingContractAddress) {
-            if (msg.sender != purchaseWithFinancingContractAddress) {
+            if (msg.sender != flashPurchaseContractAddress) {
                 require(signer == expected, "00024");
             }
         }
     }
 
     function _requireExpectedContract() internal view {
-        require(msg.sender == lendingContractAddress || msg.sender == purchaseWithFinancingContractAddress, "00024");
+        require(msg.sender == lendingContractAddress || msg.sender == flashPurchaseContractAddress, "00024");
     }
 
     function _requireSigLendingContract() internal view {

@@ -7,26 +7,26 @@ import "@openzeppelin/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 import "@openzeppelin/contracts/utils/math/SafeCastUpgradeable.sol";
-import "./interfaces/niftyapes/purchaseWithFinancing/IPurchaseWithFinancing.sol";
+import "./interfaces/niftyapes/flashPurchase/IFlashPurchase.sol";
 import "./interfaces/niftyapes/lending/ILending.sol";
 import "./interfaces/niftyapes/sigLending/ISigLending.sol";
 import "./interfaces/niftyapes/liquidity/ILiquidity.sol";
 import "./interfaces/niftyapes/offers/IOffers.sol";
 import "./interfaces/sanctions/SanctionsList.sol";
-import "./purchaseWithFinancing/interfaces/IPurchaseWithFinancingReceiver.sol";
+import "./flashPurchase/interfaces/IFlashPurchaseReceiver.sol";
 
 /// @notice Extension of NiftApes lending contract to allow purchase of NFTs with lending offer funds
-/// @title NiftyApes PurchaseWithFinancing
+/// @title NiftyApes FlashPurchase
 /// @custom:version 1.0
 /// @author captnseagraves (captnseagraves.eth)
 /// @custom:contributor zishansami102 (zishansami.eth)
 /// @custom:contributor jyturley
-contract NiftyApesPurchaseWithFinancing is
+contract NiftyApesFlashPurchase is
     OwnableUpgradeable,
     PausableUpgradeable,
     ReentrancyGuardUpgradeable,
     ERC721HolderUpgradeable,
-    IPurchaseWithFinancing
+    IFlashPurchase
 {
     /// @dev Internal address used for for ETH
     address private constant ETH_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
@@ -34,16 +34,16 @@ contract NiftyApesPurchaseWithFinancing is
     /// @dev Internal constant address for the Chainalysis OFAC sanctions oracle
     address private constant SANCTIONS_CONTRACT = 0x40C57923924B5c5c5455c48D93317139ADDaC8fb;
 
-    /// @inheritdoc IPurchaseWithFinancing
+    /// @inheritdoc IFlashPurchase
     address public offersContractAddress;
 
-    /// @inheritdoc IPurchaseWithFinancing
+    /// @inheritdoc IFlashPurchase
     address public liquidityContractAddress;
 
-    /// @inheritdoc IPurchaseWithFinancing
+    /// @inheritdoc IFlashPurchase
     address public lendingContractAddress;
 
-    /// @inheritdoc IPurchaseWithFinancing
+    /// @inheritdoc IFlashPurchase
     address public sigLendingContractAddress;
 
     /// @notice Mutex to selectively enable ETH transfers
@@ -67,75 +67,75 @@ contract NiftyApesPurchaseWithFinancing is
         ERC721HolderUpgradeable.__ERC721Holder_init();
     }
 
-    /// @inheritdoc IPurchaseWithFinancingAdmin
+    /// @inheritdoc IFlashPurchaseAdmin
     function updateLiquidityContractAddress(address newLiquidityContractAddress)
         external
         onlyOwner
     {
         require(address(newLiquidityContractAddress) != address(0), "00035");
-        emit PurchaseWithFinancingXLiquidityContractAddressUpdated(
+        emit FlashPurchaseXLiquidityContractAddressUpdated(
             liquidityContractAddress,
             newLiquidityContractAddress
         );
         liquidityContractAddress = newLiquidityContractAddress;
     }
 
-    /// @inheritdoc IPurchaseWithFinancingAdmin
+    /// @inheritdoc IFlashPurchaseAdmin
     function updateOffersContractAddress(address newOffersContractAddress) external onlyOwner {
         require(address(newOffersContractAddress) != address(0), "00035");
-        emit PurchaseWithFinancingXOffersContractAddressUpdated(
+        emit FlashPurchaseXOffersContractAddressUpdated(
             offersContractAddress,
             newOffersContractAddress
         );
         offersContractAddress = newOffersContractAddress;
     }
 
-    /// @inheritdoc IPurchaseWithFinancingAdmin
+    /// @inheritdoc IFlashPurchaseAdmin
     function updateLendingContractAddress(address newLendingContractAddress) external onlyOwner {
         require(address(newLendingContractAddress) != address(0), "00035");
-        emit PurchaseWithFinancingXLendingContractAddressUpdated(
+        emit FlashPurchaseXLendingContractAddressUpdated(
             lendingContractAddress,
             newLendingContractAddress
         );
         lendingContractAddress = newLendingContractAddress;
     }
 
-    /// @inheritdoc IPurchaseWithFinancingAdmin
+    /// @inheritdoc IFlashPurchaseAdmin
     function updateSigLendingContractAddress(address newSigLendingContractAddress)
         external
         onlyOwner
     {
         require(address(newSigLendingContractAddress) != address(0), "00035");
-        emit PurchaseWithFinancingXSigLendingContractAddressUpdated(
+        emit FlashPurchaseXSigLendingContractAddressUpdated(
             sigLendingContractAddress,
             newSigLendingContractAddress
         );
         sigLendingContractAddress = newSigLendingContractAddress;
     }
 
-    /// @inheritdoc IPurchaseWithFinancingAdmin
+    /// @inheritdoc IFlashPurchaseAdmin
     function pauseSanctions() external onlyOwner {
         _sanctionsPause = true;
-        emit PurchaseWithFinancingSanctionsPaused();
+        emit FlashPurchaseSanctionsPaused();
     }
 
-    /// @inheritdoc IPurchaseWithFinancingAdmin
+    /// @inheritdoc IFlashPurchaseAdmin
     function unpauseSanctions() external onlyOwner {
         _sanctionsPause = false;
-        emit PurchaseWithFinancingSanctionsUnpaused();
+        emit FlashPurchaseSanctionsUnpaused();
     }
 
-    /// @inheritdoc IPurchaseWithFinancingAdmin
+    /// @inheritdoc IFlashPurchaseAdmin
     function pause() external onlyOwner {
         _pause();
     }
 
-    /// @inheritdoc IPurchaseWithFinancingAdmin
+    /// @inheritdoc IFlashPurchaseAdmin
     function unpause() external onlyOwner {
         _unpause();
     }
 
-    /// @inheritdoc IPurchaseWithFinancing
+    /// @inheritdoc IFlashPurchase
     function borrow(
         bytes32 offerHash,
         address nftContractAddress,
@@ -154,7 +154,7 @@ contract NiftyApesPurchaseWithFinancing is
         _doBorrow(offer, nftId, receiver, borrower, data);
     }
 
-    /// @inheritdoc IPurchaseWithFinancing
+    /// @inheritdoc IFlashPurchase
     function borrowSignature(
         Offer memory offer,
         bytes memory signature,
@@ -163,7 +163,7 @@ contract NiftyApesPurchaseWithFinancing is
         address borrower,
         bytes calldata data
     ) external whenNotPaused nonReentrant {
-        ISigLending(sigLendingContractAddress).validateAndUseOfferSignaturePWF(offer, signature);
+        ISigLending(sigLendingContractAddress).validateAndUseOfferSignatureFlashPurchase(offer, signature);
         _doBorrow(offer, nftId, receiver, borrower, data);
     }
 
@@ -203,7 +203,7 @@ contract NiftyApesPurchaseWithFinancing is
         ILiquidity(liquidityContractAddress).withdrawCBalance(offer.creator, cAsset, cTokensBurned);
 
         // initiate a loan between lender and borrower
-        ILending(lendingContractAddress).createLoanPWF(
+        ILending(lendingContractAddress).createLoanFlashPurchase(
             offer,
             nftId,
             offer.creator,
@@ -214,7 +214,7 @@ contract NiftyApesPurchaseWithFinancing is
         ILiquidity(liquidityContractAddress).sendValue(offer.asset, offer.amount, receiver);
 
         // execute opreation on receiver contract
-        require(IPurchaseWithFinancingReceiver(receiver).executeOperation(
+        require(IFlashPurchaseReceiver(receiver).executeOperation(
             offer.nftContractAddress,
             nftId,
             msg.sender,

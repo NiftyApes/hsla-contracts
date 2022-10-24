@@ -1,16 +1,16 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "./IPurchaseWithFinancingAdmin.sol";
-import "./IPurchaseWithFinancingEvents.sol";
+import "./IFlashPurchaseAdmin.sol";
+import "./IFlashPurchaseEvents.sol";
 import "../offers/IOffersStructs.sol";
 import "../lending/ILendingStructs.sol";
 import "../../seaport/ISeaport.sol";
 import "../../sudoswap/ILSSVMPair.sol";
 
-interface IPurchaseWithFinancing is
-    IPurchaseWithFinancingAdmin,
-    IPurchaseWithFinancingEvents,
+interface IFlashPurchase is
+    IFlashPurchaseAdmin,
+    IFlashPurchaseEvents,
     IOffersStructs,
     ILendingStructs
 {

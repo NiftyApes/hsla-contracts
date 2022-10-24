@@ -1,21 +1,21 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "./ISeaportPwfIntegrationAdmin.sol";
-import "./ISeaportPwfIntegrationEvents.sol";
+import "./ISeaportFlashPurchaseIntegrationAdmin.sol";
+import "./ISeaportFlashPurchaseIntegrationEvents.sol";
 import "../../niftyapes/offers/IOffersStructs.sol";
 import "../../seaport/ISeaport.sol";
 
-interface ISeaportPwfIntegration is
-    ISeaportPwfIntegrationAdmin,
-    ISeaportPwfIntegrationEvents,
+interface ISeaportFlashPurchaseIntegration is
+    ISeaportFlashPurchaseIntegrationAdmin,
+    ISeaportFlashPurchaseIntegrationEvents,
     IOffersStructs
 {
     /// @notice Returns the address for the associated offers contract
     function offersContractAddress() external view returns (address);
 
     /// @notice Returns the address for the associated offers contract
-    function purchaseWithFinancingContractAddress() external view returns (address);
+    function flashPurchaseContractAddress() external view returns (address);
 
     /// @notice Returns the address for the associated seaport contract
     function seaportContractAddress() external view returns (address);
@@ -25,7 +25,7 @@ interface ISeaportPwfIntegration is
     /// @param floorTerm Determines if this is a floor offer or not.
     /// @param order Seaport parameters the caller is expected to fill out.
     /// @param fulfillerConduitKey Seaport conduit key of the fulfiller.
-    function purchaseWithFinancingSeaport(
+    function flashPurchaseSeaport(
         bytes32 offerHash,
         bool floorTerm,
         ISeaport.Order calldata order,
@@ -37,7 +37,7 @@ interface ISeaportPwfIntegration is
     /// @param  signature The signature for the offer.
     /// @param  order Seaport parameters the caller is expected to fill out.
     /// @param  fulfillerConduitKey Seaport conduit key of the fulfiller.
-    function purchaseWithFinancingSeaportSignature(
+    function flashPurchaseSeaportSignature(
         Offer memory offer,
         bytes memory signature,
         ISeaport.Order calldata order,

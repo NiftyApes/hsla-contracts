@@ -10,7 +10,7 @@ import "../../Liquidity.sol";
 import "../../Offers.sol";
 import "../../SigLending.sol";
 import "../../FlashClaim.sol";
-import "../../PurchaseWithFinancing.sol";
+import "../../FlashPurchase.sol";
 import "../../interfaces/niftyapes/lending/ILendingStructs.sol";
 import "../../interfaces/niftyapes/offers/IOffersStructs.sol";
 
@@ -34,7 +34,7 @@ contract NiftyApesPauseUnitTest is
     NiftyApesLiquidity liquidityProviders;
     NiftyApesSigLending sigLendingAuction;
     NiftyApesFlashClaim flashClaim;
-    NiftyApesPurchaseWithFinancing purchaseWithFinancing;
+    NiftyApesFlashPurchase flashPurchase;
     SeaportMock seaportMock;
     LSSVMPairFactoryMock sudoswapFactoryMock;
     LSSVMRouterMock sudoswapRouterMock;
@@ -66,17 +66,17 @@ contract NiftyApesPauseUnitTest is
         sudoswapFactoryMock = new LSSVMPairFactoryMock();
         sudoswapRouterMock = new LSSVMRouterMock();
 
-        purchaseWithFinancing = new NiftyApesPurchaseWithFinancing();
-        purchaseWithFinancing.initialize();
+        flashPurchase = new NiftyApesFlashPurchase();
+        flashPurchase.initialize();
 
         liquidityProviders = new NiftyApesLiquidity();
-        liquidityProviders.initialize(compContractAddress, address(purchaseWithFinancing));
+        liquidityProviders.initialize(compContractAddress, address(flashPurchase));
 
         offersContract = new NiftyApesOffers();
-        offersContract.initialize(address(liquidityProviders), address(purchaseWithFinancing));
+        offersContract.initialize(address(liquidityProviders), address(flashPurchase));
 
         sigLendingAuction = new NiftyApesSigLending();
-        sigLendingAuction.initialize(address(offersContract), address(purchaseWithFinancing));
+        sigLendingAuction.initialize(address(offersContract), address(flashPurchase));
 
         lendingAuction = new NiftyApesLending();
         lendingAuction.initialize(
@@ -84,7 +84,7 @@ contract NiftyApesPauseUnitTest is
             address(offersContract),
             address(sigLendingAuction),
             address(flashClaim),
-            address(purchaseWithFinancing)
+            address(flashPurchase)
         );
 
         offersContract.updateLendingContractAddress(address(lendingAuction));

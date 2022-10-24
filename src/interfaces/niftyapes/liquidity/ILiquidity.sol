@@ -18,7 +18,7 @@ interface ILiquidity is ILiquidityAdmin, ILiquidityEvents {
     function lendingContractAddress() external view returns (address);
 
     /// @notice Returns the address for the associated purchase with financing contract
-    function purchaseWithFinancingContractAddress() external view returns (address);
+    function flashPurchaseContractAddress() external view returns (address);
 
     /// @notice Returns the basis points of revenue sent to the Regen Collective
     ///         denominated in basis points, parts of 10_000

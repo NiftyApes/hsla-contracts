@@ -5,15 +5,15 @@ import "@openzeppelin/contracts/token/ERC721/IERC721Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20Upgradeable.sol";
 import "../../interfaces/niftyapes/offers/IOffers.sol";
-import "../interfaces/IPurchaseWithFinancingReceiver.sol";
+import "../interfaces/IFlashPurchaseReceiver.sol";
 
-/// @notice Base contract to integrate any nft marketplace with PurchaseWithFinancing
-/// @title NiftyApes PwfIntegrationBase
+/// @notice Base contract to integrate any nft marketplace with FlashPurchase
+/// @title NiftyApes FlashPurchaseIntegrationBase
 /// @custom:version 1.0
 /// @author zishansami102 (zishansami.eth)
 /// @custom:contributor captnseagraves (captnseagraves.eth)
-abstract contract PwfIntegrationBase is
-    IPurchaseWithFinancingReceiver,
+abstract contract FlashPurchaseIntegrationBase is
+    IFlashPurchaseReceiver,
     IOffersStructs 
 {
     using AddressUpgradeable for address payable;
@@ -56,8 +56,8 @@ abstract contract PwfIntegrationBase is
         }
     }
 
-    function _verifySenderAndInitiator(address initiator, address purchaseWithFinancing) internal view {
-        require(msg.sender == purchaseWithFinancing, "00031");
+    function _verifySenderAndInitiator(address initiator, address flashPurchase) internal view {
+        require(msg.sender == flashPurchase, "00031");
         require(initiator == address(this), "00054");
     }
 

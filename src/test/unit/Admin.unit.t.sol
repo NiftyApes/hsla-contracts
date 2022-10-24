@@ -9,7 +9,7 @@ import "../../Liquidity.sol";
 import "../../Offers.sol";
 import "../../SigLending.sol";
 import "../../FlashClaim.sol";
-import "../../PurchaseWithFinancing.sol";
+import "../../FlashPurchase.sol";
 import "../../interfaces/niftyapes/lending/ILendingEvents.sol";
 import "../../interfaces/niftyapes/liquidity/ILiquidityEvents.sol";
 import "../common/BaseTest.sol";
@@ -26,7 +26,7 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
     NiftyApesLiquidity liquidityProviders;
     NiftyApesSigLending sigLendingAuction;
     NiftyApesFlashClaim flashClaim;
-    NiftyApesPurchaseWithFinancing purchaseWithFinancing;
+    NiftyApesFlashPurchase flashPurchase;
     SeaportMock seaportMock;
     LSSVMPairFactoryMock sudoswapFactoryMock;
     LSSVMRouterMock sudoswapRouterMock;
@@ -51,17 +51,17 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
         sudoswapFactoryMock = new LSSVMPairFactoryMock();
         sudoswapRouterMock = new LSSVMRouterMock();
 
-        purchaseWithFinancing = new NiftyApesPurchaseWithFinancing();
-        purchaseWithFinancing.initialize();
+        flashPurchase = new NiftyApesFlashPurchase();
+        flashPurchase.initialize();
 
         liquidityProviders = new NiftyApesLiquidity();
-        liquidityProviders.initialize(compContractAddress, address(purchaseWithFinancing));
+        liquidityProviders.initialize(compContractAddress, address(flashPurchase));
 
         offersContract = new NiftyApesOffers();
-        offersContract.initialize(address(liquidityProviders), address(purchaseWithFinancing));
+        offersContract.initialize(address(liquidityProviders), address(flashPurchase));
 
         sigLendingAuction = new NiftyApesSigLending();
-        sigLendingAuction.initialize(address(offersContract), address(purchaseWithFinancing));
+        sigLendingAuction.initialize(address(offersContract), address(flashPurchase));
 
         niftyApes = new NiftyApesLending();
         niftyApes.initialize(
@@ -69,7 +69,7 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
             address(offersContract),
             address(sigLendingAuction),
             address(flashClaim),
-            address(purchaseWithFinancing)
+            address(flashPurchase)
         );
 
         daiToken = new ERC20Mock();

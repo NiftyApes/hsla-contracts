@@ -9,7 +9,7 @@ import "../../../utils/fixtures/OffersLoansRefinancesFixtures.sol";
 import "../../../../interfaces/niftyapes/offers/IOffersStructs.sol";
 import "../../../../interfaces/seaport/ISeaport.sol";
 
-contract TestSeaportPwfIntegration is Test, OffersLoansRefinancesFixtures, ERC721HolderUpgradeable {
+contract TestSeaportFlashPurchaseIntegration is Test, OffersLoansRefinancesFixtures, ERC721HolderUpgradeable {
     function setUp() public override {
         // pin block to time of writing test to reflect consistent state
         vm.rollFork(15510097);
@@ -18,7 +18,7 @@ contract TestSeaportPwfIntegration is Test, OffersLoansRefinancesFixtures, ERC72
         super.setUp();
     }
 
-    function _test_purchaseWithFinancingSeaport_simplest_case(
+    function _test_flashPurchaseSeaport_simplest_case(
         Offer memory offer,
         ISeaport.Order memory order,
         bool withSignature
@@ -41,13 +41,13 @@ contract TestSeaportPwfIntegration is Test, OffersLoansRefinancesFixtures, ERC72
 
         LoanAuction memory loanAuction;
         if (!withSignature) {
-            loanAuction = createOfferAndTryPurchaseWithFinancing(
+            loanAuction = createOfferAndTryFlashPurchase(
                 offer,
                 order,
                 "should work"
             );
         } else {
-            loanAuction = signOfferAndTryPurchaseWithFinancingSignature(
+            loanAuction = signOfferAndTryFlashPurchaseSignature(
                 offer,
                 order,
                 "should work"
@@ -66,108 +66,108 @@ contract TestSeaportPwfIntegration is Test, OffersLoansRefinancesFixtures, ERC72
         assertEq(loanAuction.amountDrawn, offer.amount);
     }
 
-    function test_fuzz_PurchaseWithFinancingSeaport_simplest_case_ETH(
+    function test_fuzz_FlashPurchaseSeaport_simplest_case_ETH(
         FuzzedOfferFields memory fuzzedOfferData
     ) public validateFuzzedOfferFields(fuzzedOfferData) {
         Offer memory offer = offerStructFromFields(fuzzedOfferData, defaultFixedOfferFields);
         ISeaport.Order memory order = createAndValidateETHOffer();
 
-        _test_purchaseWithFinancingSeaport_simplest_case(offer, order, false);
+        _test_flashPurchaseSeaport_simplest_case(offer, order, false);
     }
 
-    function test_unit_PurchaseWithFinancingSeaport_simplest_case_ETH() public {
+    function test_unit_FlashPurchaseSeaport_simplest_case_ETH() public {
         Offer memory offer = offerStructFromFields(
             defaultFixedFuzzedFieldsForFastUnitTesting,
             defaultFixedOfferFields
         );
         ISeaport.Order memory order = createAndValidateETHOffer();
 
-        _test_purchaseWithFinancingSeaport_simplest_case(offer, order, false);
+        _test_flashPurchaseSeaport_simplest_case(offer, order, false);
     }
 
-    function test_fuzz_PurchaseWithFinancingSeaport_simplest_case_DAI(
+    function test_fuzz_FlashPurchaseSeaport_simplest_case_DAI(
         FuzzedOfferFields memory fuzzedOfferData
     ) public validateFuzzedOfferFields(fuzzedOfferData) {
         Offer memory offer = offerStructFromFields(fuzzedOfferData, defaultFixedOfferFields);
         ISeaport.Order memory order = createAndValidateDAIOffer();
 
-        _test_purchaseWithFinancingSeaport_simplest_case(offer, order, false);
+        _test_flashPurchaseSeaport_simplest_case(offer, order, false);
     }
 
-    function test_unit_PurchaseWithFinancingSeaport_simplest_case_DAI() public {
+    function test_unit_FlashPurchaseSeaport_simplest_case_DAI() public {
         Offer memory offer = offerStructFromFields(
             defaultFixedFuzzedFieldsForFastUnitTesting,
             defaultFixedOfferFields
         );
         ISeaport.Order memory order = createAndValidateDAIOffer();
 
-        _test_purchaseWithFinancingSeaport_simplest_case(offer, order, false);
+        _test_flashPurchaseSeaport_simplest_case(offer, order, false);
     }
 
-    function test_fuzz_PurchaseWithFinancingSeaportSignature_simplest_case_ETH(
+    function test_fuzz_FlashPurchaseSeaportSignature_simplest_case_ETH(
         FuzzedOfferFields memory fuzzedOfferData
     ) public validateFuzzedOfferFields(fuzzedOfferData) {
         Offer memory offer = offerStructFromFields(fuzzedOfferData, defaultFixedOfferFields);
         ISeaport.Order memory order = createAndValidateETHOffer();
 
-        _test_purchaseWithFinancingSeaport_simplest_case(offer, order, true);
+        _test_flashPurchaseSeaport_simplest_case(offer, order, true);
     }
 
-    function test_unit_PurchaseWithFinancingSeaportSignature_simplest_case_ETH() public {
+    function test_unit_FlashPurchaseSeaportSignature_simplest_case_ETH() public {
         Offer memory offer = offerStructFromFields(
             defaultFixedFuzzedFieldsForFastUnitTesting,
             defaultFixedOfferFields
         );
         ISeaport.Order memory order = createAndValidateETHOffer();
 
-        _test_purchaseWithFinancingSeaport_simplest_case(offer, order, true);
+        _test_flashPurchaseSeaport_simplest_case(offer, order, true);
     }
 
-    function test_fuzz_PurchaseWithFinancingSeaportSignature_simplest_case_DAI(
+    function test_fuzz_FlashPurchaseSeaportSignature_simplest_case_DAI(
         FuzzedOfferFields memory fuzzedOfferData
     ) public validateFuzzedOfferFields(fuzzedOfferData) {
         Offer memory offer = offerStructFromFields(fuzzedOfferData, defaultFixedOfferFields);
         ISeaport.Order memory order = createAndValidateDAIOffer();
 
-        _test_purchaseWithFinancingSeaport_simplest_case(offer, order, true);
+        _test_flashPurchaseSeaport_simplest_case(offer, order, true);
     }
 
-    function test_unit_PurchaseWithFinancingSeaportSignature_simplest_case_DAI() public {
+    function test_unit_FlashPurchaseSeaportSignature_simplest_case_DAI() public {
         Offer memory offer = offerStructFromFields(
             defaultFixedFuzzedFieldsForFastUnitTesting,
             defaultFixedOfferFields
         );
         ISeaport.Order memory order = createAndValidateDAIOffer();
 
-        _test_purchaseWithFinancingSeaport_simplest_case(offer, order, true);
+        _test_flashPurchaseSeaport_simplest_case(offer, order, true);
     }
 
     //
     // HELPERS
     //
-    function createOfferAndTryPurchaseWithFinancing(
+    function createOfferAndTryFlashPurchase(
         Offer memory offer,
         ISeaport.Order memory params,
         bytes memory errorCode
     ) internal returns (LoanAuction memory) {
         Offer memory offerCreated = createOffer(offer, lender1);
 
-        LoanAuction memory loan = tryPurchaseWithFinancing(offer, params, errorCode);
+        LoanAuction memory loan = tryFlashPurchase(offer, params, errorCode);
         return loan;
     }
 
-    function signOfferAndTryPurchaseWithFinancingSignature(
+    function signOfferAndTryFlashPurchaseSignature(
         Offer memory offer,
         ISeaport.Order memory params,
         bytes memory errorCode
     ) internal returns (LoanAuction memory) {
         bytes memory signature = signOffer(lender1_private_key, offer);
 
-        LoanAuction memory loan = tryPurchaseWithFinancingSignature(offer, signature, params, errorCode);
+        LoanAuction memory loan = tryFlashPurchaseSignature(offer, signature, params, errorCode);
         return loan;
     }
 
-    function tryPurchaseWithFinancing(
+    function tryFlashPurchase(
         Offer memory offer,
         ISeaport.Order memory order,
         bytes memory errorCode
@@ -181,15 +181,15 @@ contract TestSeaportPwfIntegration is Test, OffersLoansRefinancesFixtures, ERC72
         uint256 borrowerPays = (uint256(offer.amount) * 2) - uint256(offer.amount);
 
         if (offer.asset == ETH_ADDRESS) {
-            seaportPWF.purchaseWithFinancingSeaport{ value: borrowerPays }(
+            seaportFlashPurchase.flashPurchaseSeaport{ value: borrowerPays }(
                 offerHash,
                 offer.floorTerm,
                 order,
                 bytes32(0)
             );
         } else {
-            daiToken.approve(address(seaportPWF), borrowerPays);
-            seaportPWF.purchaseWithFinancingSeaport(
+            daiToken.approve(address(seaportFlashPurchase), borrowerPays);
+            seaportFlashPurchase.flashPurchaseSeaport(
                 offerHash,
                 offer.floorTerm,
                 order,
@@ -201,7 +201,7 @@ contract TestSeaportPwfIntegration is Test, OffersLoansRefinancesFixtures, ERC72
         return lending.getLoanAuction(offer.nftContractAddress, offer.nftId);
     }
 
-    function tryPurchaseWithFinancingSignature(
+    function tryFlashPurchaseSignature(
         Offer memory offer,
         bytes memory signature,
         ISeaport.Order memory order,
@@ -215,15 +215,15 @@ contract TestSeaportPwfIntegration is Test, OffersLoansRefinancesFixtures, ERC72
         uint256 borrowerPays = (uint256(offer.amount) * 2) - uint256(offer.amount);
 
         if (offer.asset == ETH_ADDRESS) {
-            seaportPWF.purchaseWithFinancingSeaportSignature{ value: borrowerPays }(
+            seaportFlashPurchase.flashPurchaseSeaportSignature{ value: borrowerPays }(
                 offer,
                 signature,
                 order,
                 bytes32(0)
             );
         } else {
-            daiToken.approve(address(seaportPWF), borrowerPays);
-            seaportPWF.purchaseWithFinancingSeaportSignature(
+            daiToken.approve(address(seaportFlashPurchase), borrowerPays);
+            seaportFlashPurchase.flashPurchaseSeaportSignature(
                 offer,
                 signature,
                 order,

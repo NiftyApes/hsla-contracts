@@ -53,7 +53,7 @@ contract NiftyApesLiquidity is
     address public lendingContractAddress;
 
     /// @inheritdoc ILiquidity
-    address public purchaseWithFinancingContractAddress;
+    address public flashPurchaseContractAddress;
 
     /// @inheritdoc ILiquidity
     uint16 public regenCollectiveBpsOfRevenue;
@@ -79,12 +79,12 @@ contract NiftyApesLiquidity is
     ///         its state outside of a constructor.
     function initialize(
         address newCompContractAddress,
-        address newPurchaseWithFinancingContractAddress
+        address newFlashPurchaseContractAddress
     ) public initializer {
         regenCollectiveBpsOfRevenue = 100;
         regenCollectiveAddress = address(0x252de94Ae0F07fb19112297F299f8c9Cc10E28a6);
         compContractAddress = newCompContractAddress;
-        purchaseWithFinancingContractAddress = newPurchaseWithFinancingContractAddress;
+        flashPurchaseContractAddress = newFlashPurchaseContractAddress;
 
         OwnableUpgradeable.__Ownable_init();
         PausableUpgradeable.__Pausable_init();
@@ -373,7 +373,7 @@ contract NiftyApesLiquidity is
     }
 
     function _requireExpectedContract() internal view {
-        if (msg.sender != purchaseWithFinancingContractAddress) {
+        if (msg.sender != flashPurchaseContractAddress) {
             require(msg.sender == lendingContractAddress, "00031");
         }
     }

@@ -2,7 +2,7 @@
 pragma solidity 0.8.13;
 
 /// @title NiftyApes interface for the admin role.
-interface IPurchaseWithFinancingAdmin {
+interface IFlashPurchaseAdmin {
     /// @notice Updates the associated liquidity contract address
     function updateLiquidityContractAddress(address newLiquidityContractAddress) external;
 

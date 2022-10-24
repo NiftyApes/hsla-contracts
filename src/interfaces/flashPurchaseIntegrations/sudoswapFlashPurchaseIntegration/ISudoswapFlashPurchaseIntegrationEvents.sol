@@ -1,22 +1,22 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-/// @title Events emitted by the SudoswapPwfIntegration.
-interface ISudoswapPwfIntegrationEvents {
+/// @title Events emitted by the SudoswapFlashPurchaseIntegration.
+interface ISudoswapFlashPurchaseIntegrationEvents {
     /// @notice Emitted when the associated offers contract address is changed
     /// @param oldOffersContractAddress The old offers contract address
     /// @param newOffersContractAddress The new offers contract address
-    event SudoswapPwfIntegrationXOffersContractAddressUpdated(
+    event SudoswapFlashPurchaseIntegrationXOffersContractAddressUpdated(
         address oldOffersContractAddress,
         address newOffersContractAddress
     );
 
-    /// @notice Emitted when the associated PurchaseWithFinancing contract address is changed
-    /// @param oldPurchaseWithFinancingContractAddress The old PurchaseWithFinancing contract address
-    /// @param newPurchaseWithFinancingContractAddress The new PurchaseWithFinancing contract address
-    event SudoswapPwfIntegrationXPurchaseWithFinancingContractAddressUpdated(
-        address oldPurchaseWithFinancingContractAddress,
-        address newPurchaseWithFinancingContractAddress
+    /// @notice Emitted when the associated FlashPurchase contract address is changed
+    /// @param oldFlashPurchaseContractAddress The old FlashPurchase contract address
+    /// @param newFlashPurchaseContractAddress The new FlashPurchase contract address
+    event SudoswapFlashPurchaseIntegrationXFlashPurchaseContractAddressUpdated(
+        address oldFlashPurchaseContractAddress,
+        address newFlashPurchaseContractAddress
     );
 
     /// @notice Emitted when the address for Sudoswap Factory contract address is changed

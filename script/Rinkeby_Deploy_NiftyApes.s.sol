@@ -6,7 +6,7 @@ import "../src/Offers.sol";
 import "../src/SigLending.sol";
 import "../src/Lending.sol";
 import "../src/FlashClaim.sol";
-import "../src/PurchaseWithFinancing.sol";
+import "../src/FlashPurchase.sol";
 
 contract DeployNiftyApesScript is Script {
     function run() external {
@@ -15,7 +15,7 @@ contract DeployNiftyApesScript is Script {
         NiftyApesLiquidity liquidityProviders;
         NiftyApesSigLending sigLendingAuction;
         NiftyApesFlashClaim flashClaim;
-        NiftyApesPurchaseWithFinancing purchaseWithFinancing;
+        NiftyApesFlashPurchase flashPurchase;
         address compContractAddress = 0xbbEB7c67fa3cfb40069D19E598713239497A3CA5;
         address seaportContractAddress = 0x00000000006c3852cbEf3e08E8dF289169EdE581;
         address sudoswapFactoryContractAddress = 0xcB1514FE29db064fa595628E0BFFD10cdf998F33;
@@ -25,17 +25,17 @@ contract DeployNiftyApesScript is Script {
         flashClaim = new NiftyApesFlashClaim();
         flashClaim.initialize();
 
-        purchaseWithFinancing = new NiftyApesPurchaseWithFinancing();
-        purchaseWithFinancing.initialize();
+        flashPurchase = new NiftyApesFlashPurchase();
+        flashPurchase.initialize();
 
         liquidityProviders = new NiftyApesLiquidity();
-        liquidityProviders.initialize(compContractAddress, address(purchaseWithFinancing));
+        liquidityProviders.initialize(compContractAddress, address(flashPurchase));
 
         offersContract = new NiftyApesOffers();
-        offersContract.initialize(address(liquidityProviders), address(purchaseWithFinancing));
+        offersContract.initialize(address(liquidityProviders), address(flashPurchase));
 
         sigLendingAuction = new NiftyApesSigLending();
-        sigLendingAuction.initialize(address(offersContract), address(purchaseWithFinancing));
+        sigLendingAuction.initialize(address(offersContract), address(flashPurchase));
 
         lendingAuction = new NiftyApesLending();
         lendingAuction.initialize(
@@ -43,7 +43,7 @@ contract DeployNiftyApesScript is Script {
             address(offersContract),
             address(sigLendingAuction),
             address(flashClaim),
-            address(purchaseWithFinancing)
+            address(flashPurchase)
         );
 
         liquidityProviders.updateLendingContractAddress(address(lendingAuction));
@@ -55,10 +55,10 @@ contract DeployNiftyApesScript is Script {
 
         flashClaim.updateLendingContractAddress(address(lendingAuction));
 
-        purchaseWithFinancing.updateLiquidityContractAddress(address(liquidityProviders));
-        purchaseWithFinancing.updateOffersContractAddress(address(offersContract));
-        purchaseWithFinancing.updateLendingContractAddress(address(lendingAuction));
-        purchaseWithFinancing.updateSigLendingContractAddress(address(sigLendingAuction));
+        flashPurchase.updateLiquidityContractAddress(address(liquidityProviders));
+        flashPurchase.updateOffersContractAddress(address(offersContract));
+        flashPurchase.updateLendingContractAddress(address(lendingAuction));
+        flashPurchase.updateSigLendingContractAddress(address(sigLendingAuction));
 
         // Rinkeby Addresses
         address daiToken = 0x6B175474E89094C44Da98b954EedeAC495271d0F;

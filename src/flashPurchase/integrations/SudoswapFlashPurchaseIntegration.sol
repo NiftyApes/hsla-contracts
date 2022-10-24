@@ -5,35 +5,35 @@ import "@openzeppelin/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
-import "../../interfaces/pwfIntegrations/sudoswapPwfIntegration/ISudoswapPwfIntegration.sol";
+import "../../interfaces/flashPurchaseIntegrations/sudoswapFlashPurchaseIntegration/ISudoswapFlashPurchaseIntegration.sol";
 import "../../interfaces/sudoswap/ILSSVMPairFactoryLike.sol";
 import "../../interfaces/sudoswap/ILSSVMPair.sol";
 import "../../interfaces/sudoswap/ILSSVMRouter.sol";
-import "../base/PwfIntegrationBase.sol";
-import "../../PurchaseWithFinancing.sol";
+import "../base/FlashPurchaseIntegrationBase.sol";
+import "../../FlashPurchase.sol";
 
-/// @notice Integration of Sudoswap to PurchaseWithFinancing to allow purchase of NFT with financing
-contract SudoswapPwfIntegration is
+/// @notice Integration of Sudoswap to FlashPurchase to allow purchase of NFT with financing
+contract SudoswapFlashPurchaseIntegration is
     OwnableUpgradeable,
     ReentrancyGuardUpgradeable,
     ERC721HolderUpgradeable,
     PausableUpgradeable,
-    PwfIntegrationBase,
-    ISudoswapPwfIntegration
+    FlashPurchaseIntegrationBase,
+    ISudoswapFlashPurchaseIntegration
 {
     using AddressUpgradeable for address payable;
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
-    /// @inheritdoc ISudoswapPwfIntegration
+    /// @inheritdoc ISudoswapFlashPurchaseIntegration
     address public offersContractAddress;
 
-    /// @inheritdoc ISudoswapPwfIntegration
-    address public purchaseWithFinancingContractAddress;
+    /// @inheritdoc ISudoswapFlashPurchaseIntegration
+    address public flashPurchaseContractAddress;
 
-    /// @inheritdoc ISudoswapPwfIntegration
+    /// @inheritdoc ISudoswapFlashPurchaseIntegration
     address public sudoswapFactoryContractAddress;
     
-    /// @inheritdoc ISudoswapPwfIntegration
+    /// @inheritdoc ISudoswapFlashPurchaseIntegration
     address public sudoswapRouterContractAddress;
 
     /// @notice Mutex to selectively enable ETH transfers
@@ -47,11 +47,11 @@ contract SudoswapPwfIntegration is
     /// @notice The initializer for the marketplace integration contract.
     function initialize(
         address newOffersContractAddress,
-        address newPurchaseWithFinancingContractAddress,
+        address newFlashPurchaseContractAddress,
         address newSudoswapFactoryContractAddress,
         address newSudoswapRouterContractAddress
     ) public initializer {
-        purchaseWithFinancingContractAddress = newPurchaseWithFinancingContractAddress;
+        flashPurchaseContractAddress = newFlashPurchaseContractAddress;
         offersContractAddress = newOffersContractAddress;
         sudoswapFactoryContractAddress = newSudoswapFactoryContractAddress;
         sudoswapRouterContractAddress = newSudoswapRouterContractAddress;
@@ -62,50 +62,50 @@ contract SudoswapPwfIntegration is
         ERC721HolderUpgradeable.__ERC721Holder_init();
     }
 
-    /// @inheritdoc ISudoswapPwfIntegrationAdmin
+    /// @inheritdoc ISudoswapFlashPurchaseIntegrationAdmin
     function updateOffersContractAddress(address newOffersContractAddress) external onlyOwner {
         require(address(newOffersContractAddress) != address(0), "00035");
-        emit SudoswapPwfIntegrationXOffersContractAddressUpdated(
+        emit SudoswapFlashPurchaseIntegrationXOffersContractAddressUpdated(
             offersContractAddress,
             newOffersContractAddress
         );
         offersContractAddress = newOffersContractAddress;
     }
 
-    /// @inheritdoc ISudoswapPwfIntegrationAdmin
-    function updatePurchaseWithFinancingContractAddress(address newPurchaseWithFinancingContractAddress) external onlyOwner {
-        require(address(newPurchaseWithFinancingContractAddress) != address(0), "00055");
-        emit SudoswapPwfIntegrationXPurchaseWithFinancingContractAddressUpdated(
-            purchaseWithFinancingContractAddress,
-            newPurchaseWithFinancingContractAddress
+    /// @inheritdoc ISudoswapFlashPurchaseIntegrationAdmin
+    function updateFlashPurchaseContractAddress(address newFlashPurchaseContractAddress) external onlyOwner {
+        require(address(newFlashPurchaseContractAddress) != address(0), "00055");
+        emit SudoswapFlashPurchaseIntegrationXFlashPurchaseContractAddressUpdated(
+            flashPurchaseContractAddress,
+            newFlashPurchaseContractAddress
         );
-        purchaseWithFinancingContractAddress = newPurchaseWithFinancingContractAddress;
+        flashPurchaseContractAddress = newFlashPurchaseContractAddress;
     }
 
-    /// @inheritdoc ISudoswapPwfIntegrationAdmin
+    /// @inheritdoc ISudoswapFlashPurchaseIntegrationAdmin
     function updateSudoswapFactoryContractAddress(address newSudoswapFactoryContractAddress) external onlyOwner {
         emit SudoswapFactoryContractAddressUpdated(newSudoswapFactoryContractAddress);
         sudoswapFactoryContractAddress = newSudoswapFactoryContractAddress;
     }
 
-    /// @inheritdoc ISudoswapPwfIntegrationAdmin
+    /// @inheritdoc ISudoswapFlashPurchaseIntegrationAdmin
     function updateSudoswapRouterContractAddress(address newSudoswapRouterContractAddress) external onlyOwner {
         emit SudoswapRouterContractAddressUpdated(newSudoswapRouterContractAddress);
         sudoswapRouterContractAddress = newSudoswapRouterContractAddress;
     }
 
-    /// @inheritdoc ISudoswapPwfIntegrationAdmin
+    /// @inheritdoc ISudoswapFlashPurchaseIntegrationAdmin
     function pause() external onlyOwner {
         _pause();
     }
 
-    /// @inheritdoc ISudoswapPwfIntegrationAdmin
+    /// @inheritdoc ISudoswapFlashPurchaseIntegrationAdmin
     function unpause() external onlyOwner {
         _unpause();
     }
 
-    /// @inheritdoc ISudoswapPwfIntegration
-    function purchaseWithFinancingSudoswap(
+    /// @inheritdoc ISudoswapFlashPurchaseIntegration
+    function flashPurchaseSudoswap(
         bytes32 offerHash,
         bool floorTerm,
         ILSSVMPair lssvmPair,
@@ -131,10 +131,10 @@ contract SudoswapPwfIntegration is
         _arrangeAssetFromBorrower(msg.sender, offer.asset, offer.amount * numOfNfts, totalConsiderationAmount);
         
         
-        // call the PurchaseWithFinancing to take fund from the lender side
+        // call the FlashPurchase to take fund from the lender side
         for (uint256 i; i < numOfNfts;) {
             _ethTransferable = true;
-            IPurchaseWithFinancing(purchaseWithFinancingContractAddress).borrow(
+            IFlashPurchase(flashPurchaseContractAddress).borrow(
                 offerHash,
                 nftContractAddress,
                 nftIds[i],
@@ -150,8 +150,8 @@ contract SudoswapPwfIntegration is
         
     }
 
-    /// @inheritdoc ISudoswapPwfIntegration
-    function purchaseWithFinancingSudoswapSignature(
+    /// @inheritdoc ISudoswapFlashPurchaseIntegration
+    function flashPurchaseSudoswapSignature(
         Offer memory offer,
         bytes memory signature,
         ILSSVMPair lssvmPair,
@@ -166,10 +166,10 @@ contract SudoswapPwfIntegration is
         uint256 totalConsiderationAmount = _getConsiderationAmount(lssvmPair, numOfNfts);
         _arrangeAssetFromBorrower(msg.sender, offer.asset, offer.amount * numOfNfts, totalConsiderationAmount);
 
-        // call the PurchaseWithFinancing to take fund from the lender side
+        // call the FlashPurchase to take fund from the lender side
         for (uint256 i; i < numOfNfts;) {
             _ethTransferable = true;
-            IPurchaseWithFinancing(purchaseWithFinancingContractAddress).borrowSignature(
+            IFlashPurchase(flashPurchaseContractAddress).borrowSignature(
                 offer,
                 signature,
                 nftIds[i],
@@ -190,7 +190,7 @@ contract SudoswapPwfIntegration is
         bytes calldata data
     ) external payable override returns (bool) {
         _ethTransferable = false;
-        _verifySenderAndInitiator(initiator, purchaseWithFinancingContractAddress);
+        _verifySenderAndInitiator(initiator, flashPurchaseContractAddress);
 
         // decode data
         (ILSSVMPair lssvmPair, address purchasingAsset) = abi.decode(data, (ILSSVMPair, address));
@@ -224,8 +224,8 @@ contract SudoswapPwfIntegration is
             );
         }
 
-        // approve the purchaseWithFinancing contract for the purchased nft
-        IERC721Upgradeable(nftContractAddress).approve(purchaseWithFinancingContractAddress, nftId);
+        // approve the flashPurchase contract for the purchased nft
+        IERC721Upgradeable(nftContractAddress).approve(flashPurchaseContractAddress, nftId);
         return true;
     }
 

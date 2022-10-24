@@ -1,21 +1,21 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "./ISudoswapPwfIntegrationAdmin.sol";
-import "./ISudoswapPwfIntegrationEvents.sol";
+import "./ISudoswapFlashPurchaseIntegrationAdmin.sol";
+import "./ISudoswapFlashPurchaseIntegrationEvents.sol";
 import "../../niftyapes/offers/IOffersStructs.sol";
 import "../../sudoswap/ILSSVMPair.sol";
 
-interface ISudoswapPwfIntegration is
-    ISudoswapPwfIntegrationAdmin,
-    ISudoswapPwfIntegrationEvents,
+interface ISudoswapFlashPurchaseIntegration is
+    ISudoswapFlashPurchaseIntegrationAdmin,
+    ISudoswapFlashPurchaseIntegrationEvents,
     IOffersStructs
 {
     /// @notice Returns the address for the associated offers contract
     function offersContractAddress() external view returns (address);
 
     /// @notice Returns the address for the associated offers contract
-    function purchaseWithFinancingContractAddress() external view returns (address);
+    function flashPurchaseContractAddress() external view returns (address);
 
     /// @notice Returns the address for the associated sudoswap router
     function sudoswapRouterContractAddress() external view returns (address);
@@ -23,12 +23,12 @@ interface ISudoswapPwfIntegration is
     /// @notice Returns the address for the associated sudoswap factory
     function sudoswapFactoryContractAddress() external view returns (address);
 
-    /// @notice Allows a user to borrow ETH using PurchaseWithFinance and purchase NFTs through Sudoswap.
+    /// @notice Allows a user to borrow ETH using FlashPurchaseFinance and purchase NFTs through Sudoswap.
     /// @param offerHash Hash of the existing offer in NiftyApes on-chain offerBook.
     /// @param floorTerm Determines if this is a floor offer or not.
     /// @param lssvmPair Sudoswap nft-token pair pool.
     /// @param nftIds Ids of the NFT the borrower intends to buy.
-    function purchaseWithFinancingSudoswap(
+    function flashPurchaseSudoswap(
         bytes32 offerHash,
         bool floorTerm,
         ILSSVMPair lssvmPair,
@@ -40,7 +40,7 @@ interface ISudoswapPwfIntegration is
     /// @param  signature The signature for the offer.
     /// @param  lssvmPair Sudoswap nft-token pair pool.
     /// @param nftIds Ids of the NFT the borrower intends to buy.
-    function purchaseWithFinancingSudoswapSignature(
+    function flashPurchaseSudoswapSignature(
         Offer memory offer,
         bytes memory signature,
         ILSSVMPair lssvmPair,

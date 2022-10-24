@@ -6,9 +6,9 @@ import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 
 import "../../utils/fixtures/OffersLoansRefinancesFixtures.sol";
 import "../../../interfaces/niftyapes/offers/IOffersStructs.sol";
-import "../../mock/FinanceReceiverMock.sol";
+import "../../mock/FlashPurchaseReceiverMock.sol";
 
-contract TestPurchaseWithFinancing is Test, OffersLoansRefinancesFixtures, ERC721HolderUpgradeable {
+contract TestFlashPurchase is Test, OffersLoansRefinancesFixtures, ERC721HolderUpgradeable {
     function setUp() public override {
         // pin block to time of writing test to reflect consistent state
         vm.rollFork(15617130);
@@ -16,7 +16,7 @@ contract TestPurchaseWithFinancing is Test, OffersLoansRefinancesFixtures, ERC72
         super.setUp();
     }
 
-    function _test_purchaseWithFinancing_borrow_simplest_case(
+    function _test_flashPurchase_borrow_simplest_case(
         Offer memory offer,
         address nftContractAddress,
         uint256 nftId,
@@ -33,14 +33,14 @@ contract TestPurchaseWithFinancing is Test, OffersLoansRefinancesFixtures, ERC72
         offer.expiration = uint32(block.timestamp + 1);
         LoanAuction memory loanAuction;
         if (!withSignature) {
-            loanAuction = createOfferAndTryBorrowingWithPWF(
+            loanAuction = createOfferAndTryBorrowingWithFlashPurchase(
                 offer,
                 nftId,
                 receiver,
                 "should work"
             );
         } else {
-            loanAuction = signOfferAndTryBorrowingWithPWF(
+            loanAuction = signOfferAndTryBorrowingWithFlashPurchase(
                 offer,
                 nftId,
                 receiver,
@@ -73,86 +73,86 @@ contract TestPurchaseWithFinancing is Test, OffersLoansRefinancesFixtures, ERC72
         }
     }
 
-    function test_fuzz_purchaseWithFinancing_borrow_simplest_case_ETH(
+    function test_fuzz_flashPurchase_borrow_simplest_case_ETH(
         FuzzedOfferFields memory fuzzedOfferData
     ) public validateFuzzedOfferFields(fuzzedOfferData) {
         Offer memory offer = offerStructFromFields(fuzzedOfferData, defaultFixedOfferFields);
         (address nftContractAddress, uint256 nftId, address receiver) = createReceiverWithOfferNFT();
 
-        _test_purchaseWithFinancing_borrow_simplest_case(offer, nftContractAddress, nftId, receiver, ETH_ADDRESS, false);
+        _test_flashPurchase_borrow_simplest_case(offer, nftContractAddress, nftId, receiver, ETH_ADDRESS, false);
     }
 
-    function test_unit_purchaseWithFinancing_borrow_simplest_case_ETH() public {
+    function test_unit_flashPurchase_borrow_simplest_case_ETH() public {
         Offer memory offer = offerStructFromFields(
             defaultFixedFuzzedFieldsForFastUnitTesting,
             defaultFixedOfferFields
         );
         (address nftContractAddress, uint256 nftId, address receiver) = createReceiverWithOfferNFT();
 
-        _test_purchaseWithFinancing_borrow_simplest_case(offer, nftContractAddress, nftId, receiver, ETH_ADDRESS, false);
+        _test_flashPurchase_borrow_simplest_case(offer, nftContractAddress, nftId, receiver, ETH_ADDRESS, false);
     }
 
-    function test_fuzz_purchaseWithFinancing_borrow_simplest_case_DAI(
-        FuzzedOfferFields memory fuzzedOfferData
-    ) public validateFuzzedOfferFields(fuzzedOfferData) {
-        Offer memory offer = offerStructFromFields(fuzzedOfferData, defaultFixedOfferFields);
-    (address nftContractAddress, uint256 nftId, address receiver) = createReceiverWithOfferNFT();
-
-        _test_purchaseWithFinancing_borrow_simplest_case(offer, nftContractAddress, nftId, receiver, address(daiToken), false);
-    }
-
-    function test_unit_purchaseWithFinancing_borrow_simplest_case_DAI() public {
-        Offer memory offer = offerStructFromFields(
-            defaultFixedFuzzedFieldsForFastUnitTesting,
-            defaultFixedOfferFields
-        );
-        (address nftContractAddress, uint256 nftId, address receiver) = createReceiverWithOfferNFT();
-
-        _test_purchaseWithFinancing_borrow_simplest_case(offer, nftContractAddress, nftId, receiver, address(daiToken), false);
-    }
-
-    function test_fuzz_purchaseWithFinancing_borrowSignature_simplest_case_ETH(
-        FuzzedOfferFields memory fuzzedOfferData
-    ) public validateFuzzedOfferFields(fuzzedOfferData) {
-        Offer memory offer = offerStructFromFields(fuzzedOfferData, defaultFixedOfferFields);
-        (address nftContractAddress, uint256 nftId, address receiver) = createReceiverWithOfferNFT();
-
-        _test_purchaseWithFinancing_borrow_simplest_case(offer, nftContractAddress, nftId, receiver, ETH_ADDRESS, true);
-    }
-
-    function test_unit_purchaseWithFinancing_borrowSignature_simplest_case_ETH() public {
-        Offer memory offer = offerStructFromFields(
-            defaultFixedFuzzedFieldsForFastUnitTesting,
-            defaultFixedOfferFields
-        );
-        (address nftContractAddress, uint256 nftId, address receiver) = createReceiverWithOfferNFT();
-
-        _test_purchaseWithFinancing_borrow_simplest_case(offer, nftContractAddress, nftId, receiver, ETH_ADDRESS, true);
-    }
-
-    function test_fuzz_purchaseWithFinancing_borrowSignature_simplest_case_DAI(
+    function test_fuzz_flashPurchase_borrow_simplest_case_DAI(
         FuzzedOfferFields memory fuzzedOfferData
     ) public validateFuzzedOfferFields(fuzzedOfferData) {
         Offer memory offer = offerStructFromFields(fuzzedOfferData, defaultFixedOfferFields);
     (address nftContractAddress, uint256 nftId, address receiver) = createReceiverWithOfferNFT();
 
-        _test_purchaseWithFinancing_borrow_simplest_case(offer, nftContractAddress, nftId, receiver, address(daiToken), true);
+        _test_flashPurchase_borrow_simplest_case(offer, nftContractAddress, nftId, receiver, address(daiToken), false);
     }
 
-    function test_unit_purchaseWithFinancing_borrowSignature_simplest_case_DAI() public {
+    function test_unit_flashPurchase_borrow_simplest_case_DAI() public {
         Offer memory offer = offerStructFromFields(
             defaultFixedFuzzedFieldsForFastUnitTesting,
             defaultFixedOfferFields
         );
         (address nftContractAddress, uint256 nftId, address receiver) = createReceiverWithOfferNFT();
 
-        _test_purchaseWithFinancing_borrow_simplest_case(offer, nftContractAddress, nftId, receiver, address(daiToken), true);
+        _test_flashPurchase_borrow_simplest_case(offer, nftContractAddress, nftId, receiver, address(daiToken), false);
+    }
+
+    function test_fuzz_flashPurchase_borrowSignature_simplest_case_ETH(
+        FuzzedOfferFields memory fuzzedOfferData
+    ) public validateFuzzedOfferFields(fuzzedOfferData) {
+        Offer memory offer = offerStructFromFields(fuzzedOfferData, defaultFixedOfferFields);
+        (address nftContractAddress, uint256 nftId, address receiver) = createReceiverWithOfferNFT();
+
+        _test_flashPurchase_borrow_simplest_case(offer, nftContractAddress, nftId, receiver, ETH_ADDRESS, true);
+    }
+
+    function test_unit_flashPurchase_borrowSignature_simplest_case_ETH() public {
+        Offer memory offer = offerStructFromFields(
+            defaultFixedFuzzedFieldsForFastUnitTesting,
+            defaultFixedOfferFields
+        );
+        (address nftContractAddress, uint256 nftId, address receiver) = createReceiverWithOfferNFT();
+
+        _test_flashPurchase_borrow_simplest_case(offer, nftContractAddress, nftId, receiver, ETH_ADDRESS, true);
+    }
+
+    function test_fuzz_flashPurchase_borrowSignature_simplest_case_DAI(
+        FuzzedOfferFields memory fuzzedOfferData
+    ) public validateFuzzedOfferFields(fuzzedOfferData) {
+        Offer memory offer = offerStructFromFields(fuzzedOfferData, defaultFixedOfferFields);
+    (address nftContractAddress, uint256 nftId, address receiver) = createReceiverWithOfferNFT();
+
+        _test_flashPurchase_borrow_simplest_case(offer, nftContractAddress, nftId, receiver, address(daiToken), true);
+    }
+
+    function test_unit_flashPurchase_borrowSignature_simplest_case_DAI() public {
+        Offer memory offer = offerStructFromFields(
+            defaultFixedFuzzedFieldsForFastUnitTesting,
+            defaultFixedOfferFields
+        );
+        (address nftContractAddress, uint256 nftId, address receiver) = createReceiverWithOfferNFT();
+
+        _test_flashPurchase_borrow_simplest_case(offer, nftContractAddress, nftId, receiver, address(daiToken), true);
     }
 
     //
     // HELPERS
     //
-    function createOfferAndTryBorrowingWithPWF(
+    function createOfferAndTryBorrowingWithFlashPurchase(
         Offer memory offer,
         uint256 nftId,
         address receiver,
@@ -160,11 +160,11 @@ contract TestPurchaseWithFinancing is Test, OffersLoansRefinancesFixtures, ERC72
     ) internal returns (LoanAuction memory) {
         Offer memory offerCreated = createOffer(offer, lender1);
 
-        LoanAuction memory loan = tryBorrowingWithPWF(offer, nftId, receiver, errorCode);
+        LoanAuction memory loan = tryBorrowingWithFlashPurchase(offer, nftId, receiver, errorCode);
         return loan;
     }
 
-    function signOfferAndTryBorrowingWithPWF(
+    function signOfferAndTryBorrowingWithFlashPurchase(
         Offer memory offer,
         uint256 nftId,
         address receiver,
@@ -172,11 +172,11 @@ contract TestPurchaseWithFinancing is Test, OffersLoansRefinancesFixtures, ERC72
     ) internal returns (LoanAuction memory) {
         bytes memory signature = signOffer(lender1_private_key, offer);
 
-        LoanAuction memory loan = tryBorrowingWithSignaturePWF(offer, signature, nftId, receiver, errorCode);
+        LoanAuction memory loan = tryBorrowingWithSignatureFlashPurchase(offer, signature, nftId, receiver, errorCode);
         return loan;
     }
 
-    function tryBorrowingWithPWF(
+    function tryBorrowingWithFlashPurchase(
         Offer memory offer,
         uint256 nftId,
         address receiver,
@@ -188,7 +188,7 @@ contract TestPurchaseWithFinancing is Test, OffersLoansRefinancesFixtures, ERC72
         if (bytes16(errorCode) != bytes16("should work")) {
             vm.expectRevert(errorCode);
         }
-        purchaseWithFinancing.borrow(
+        flashPurchase.borrow(
             offerHash,
             offer.nftContractAddress,
             nftId,
@@ -202,7 +202,7 @@ contract TestPurchaseWithFinancing is Test, OffersLoansRefinancesFixtures, ERC72
         return lending.getLoanAuction(offer.nftContractAddress, nftId);
     }
 
-    function tryBorrowingWithSignaturePWF(
+    function tryBorrowingWithSignatureFlashPurchase(
         Offer memory offer,
         bytes memory signature,
         uint256 nftId,
@@ -214,7 +214,7 @@ contract TestPurchaseWithFinancing is Test, OffersLoansRefinancesFixtures, ERC72
             vm.expectRevert(errorCode);
         }
 
-        purchaseWithFinancing.borrowSignature(
+        flashPurchase.borrowSignature(
             offer,
             signature,
             nftId,
@@ -228,7 +228,7 @@ contract TestPurchaseWithFinancing is Test, OffersLoansRefinancesFixtures, ERC72
     }
 
     function createReceiverWithOfferNFT() public returns (address, uint256, address) {
-        address receiver = address(new FinanceReceiverMock());
+        address receiver = address(new FlashPurchaseReceiverMock());
         
         address _PUDGY_PENGUIN_CONTRACT_ADDRESS = 0xBd3531dA5CF5857e7CfAA92426877b022e612cf8;
         address _PUDGY1_OWNER = 0x2cbC202392C0F0C846Bf028777a5e9B4e49D9FaC;

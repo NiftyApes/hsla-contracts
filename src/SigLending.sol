@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "./interfaces/niftyapes/lending/ILending.sol";
 import "./interfaces/niftyapes/sigLending/ISigLending.sol";
 import "./interfaces/niftyapes/offers/IOffers.sol";
-import "./interfaces/niftyapes/purchaseWithFinancing/IPurchaseWithFinancing.sol";
+import "./interfaces/niftyapes/flashPurchase/IFlashPurchase.sol";
 import "./interfaces/seaport/ISeaport.sol";
 import "./interfaces/sudoswap/ILSSVMPair.sol";
 
@@ -31,7 +31,7 @@ contract NiftyApesSigLending is
     address public lendingContractAddress;
 
     /// @inheritdoc ISigLending
-    address public purchaseWithFinancingContractAddress;
+    address public flashPurchaseContractAddress;
 
     /// @dev This empty reserved space is put in place to allow future versions to add new
     /// variables without shifting storage.
@@ -42,10 +42,10 @@ contract NiftyApesSigLending is
     ///         its state outsize of a constructor.
     function initialize(
         address newOffersContractAddress,
-        address newPurchaseWithFinancingContractAddress
+        address newFlashPurchaseContractAddress
     ) public initializer {
         offersContractAddress = newOffersContractAddress;
-        purchaseWithFinancingContractAddress = newPurchaseWithFinancingContractAddress;
+        flashPurchaseContractAddress = newFlashPurchaseContractAddress;
 
         OwnableUpgradeable.__Ownable_init();
         PausableUpgradeable.__Pausable_init();
@@ -149,11 +149,11 @@ contract NiftyApesSigLending is
     }
 
     // @inheritdoc ISigLending
-    function validateAndUseOfferSignaturePWF(
+    function validateAndUseOfferSignatureFlashPurchase(
         Offer memory offer,
         bytes memory signature
     ) external whenNotPaused {
-        _requirePurchaseWithFinancingContract();
+        _requireFlashPurchaseContract();
         address lender = IOffers(offersContractAddress).getOfferSigner(offer, signature);
 
         _requireOfferCreator(offer, lender);
@@ -173,8 +173,8 @@ contract NiftyApesSigLending is
         }
     }
 
-    function _requirePurchaseWithFinancingContract() internal view {
-        require(msg.sender == purchaseWithFinancingContractAddress, "00031");
+    function _requireFlashPurchaseContract() internal view {
+        require(msg.sender == flashPurchaseContractAddress, "00031");
     }
 
     function _requireLenderOffer(Offer memory offer) internal pure {
