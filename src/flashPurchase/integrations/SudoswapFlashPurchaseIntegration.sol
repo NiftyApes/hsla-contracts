@@ -134,7 +134,7 @@ contract SudoswapFlashPurchaseIntegration is
         // call the FlashPurchase to take fund from the lender side
         for (uint256 i; i < numOfNfts;) {
             _ethTransferable = true;
-            IFlashPurchase(flashPurchaseContractAddress).borrow(
+            IFlashPurchase(flashPurchaseContractAddress).borrowFundsForPurchase(
                 offerHash,
                 nftContractAddress,
                 nftIds[i],

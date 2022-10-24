@@ -119,7 +119,7 @@ contract SeaportFlashPurchaseIntegration is
         
         _ethTransferable = true;
         // call the FlashPurchase to take fund from the lender side
-        IFlashPurchase(flashPurchaseContractAddress).borrow(
+        IFlashPurchase(flashPurchaseContractAddress).borrowFundsForPurchase(
             offerHash,
             offer.nftContractAddress,
             order.parameters.offer[0].identifierOrCriteria,

@@ -35,7 +35,7 @@ interface IFlashPurchase is
     /// @param  receiver The address of the external contract that will receive the finance and return the nft.
     /// @param  borrower The address that will be able to later repay the borrowed funds and unlock the nft.
     /// @param  data Arbitrary data structure, intended to contain user-defined parameters, to be passed on to the receiver.
-    function borrow(
+    function borrowFundsForPurchase(
         bytes32 offerHash,
         address nftContractAddress,
         uint256 nftId,

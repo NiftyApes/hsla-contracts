@@ -3,7 +3,7 @@ pragma solidity 0.8.13;
 
 /// @title IFlashPurchaseReceiver
 /// @author zishansami102 (zishansami.eth)
-/// @notice Defines the basic interface of a finance receiver contract using `FlashPurchase.borrow()`
+/// @notice Defines the basic interface of a finance receiver contract using `FlashPurchase.borrowFundsForPurchase()`
 /// @dev Implement this interface to integrate FlashPurchase to any nft marketplace
 
 interface IFlashPurchaseReceiver {

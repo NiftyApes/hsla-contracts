@@ -136,7 +136,7 @@ contract NiftyApesFlashPurchase is
     }
 
     /// @inheritdoc IFlashPurchase
-    function borrow(
+    function borrowFundsForPurchase(
         bytes32 offerHash,
         address nftContractAddress,
         uint256 nftId,

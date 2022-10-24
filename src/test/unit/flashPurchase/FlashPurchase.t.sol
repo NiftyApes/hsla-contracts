@@ -188,7 +188,7 @@ contract TestFlashPurchase is Test, OffersLoansRefinancesFixtures, ERC721HolderU
         if (bytes16(errorCode) != bytes16("should work")) {
             vm.expectRevert(errorCode);
         }
-        flashPurchase.borrow(
+        flashPurchase.borrowFundsForPurchase(
             offerHash,
             offer.nftContractAddress,
             nftId,
