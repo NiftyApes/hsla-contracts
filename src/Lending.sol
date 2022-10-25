@@ -57,6 +57,12 @@ contract NiftyApesLending is
     address public sigLendingContractAddress;
 
     /// @inheritdoc ILending
+    address public flashClaimContractAddress;
+
+    /// @inheritdoc ILending
+    address public flashPurchaseContractAddress;
+
+    /// @inheritdoc ILending
     address public flashSellContractAddress;
 
     /// @inheritdoc ILending
@@ -88,6 +94,8 @@ contract NiftyApesLending is
         address newLiquidityContractAddress,
         address newOffersContractAddress,
         address newSigLendingContractAddress,
+        address newFlashClaimContractAddress,
+        address newFlashPurchaseAddress,
         address newFlashSellContractAddress
     ) public initializer {
         protocolInterestBps = 0;
@@ -99,6 +107,8 @@ contract NiftyApesLending is
         liquidityContractAddress = newLiquidityContractAddress;
         offersContractAddress = newOffersContractAddress;
         sigLendingContractAddress = newSigLendingContractAddress;
+        flashClaimContractAddress = newFlashClaimContractAddress;
+        flashPurchaseContractAddress = newFlashPurchaseAddress;
         flashSellContractAddress = newFlashSellContractAddress;
 
         OwnableUpgradeable.__Ownable_init();
@@ -1087,6 +1097,14 @@ contract NiftyApesLending is
         require(msg.sender == sigLendingContractAddress, "00031");
     }
 
+    function _requireFlashClaimContract() internal view {
+        require(msg.sender == flashClaimContractAddress, "00031");
+    }
+
+    function _requireFlashPurchaseContract() internal view {
+        require(msg.sender == flashPurchaseContractAddress, "00031");
+    }
+
     function _requireFlashSellContract() internal view {
         require(msg.sender == flashSellContractAddress, "00031");
     }
@@ -1131,6 +1149,18 @@ contract NiftyApesLending is
         revert("00025");
     }
 
+    /// @inheritdoc ILending
+    function createLoanFlashPurchase(
+        Offer memory offer,
+        uint256 nftId,
+        address lender,
+        address borrower
+    ) external {
+        LoanAuction storage loanAuction = _getLoanAuctionInternal(offer.nftContractAddress, nftId);
+        _requireFlashPurchaseContract();
+        _createLoan(loanAuction, offer, lender, borrower);
+    }
+
     function _createLoan(
         LoanAuction storage loanAuction,
         Offer memory offer,
@@ -1159,6 +1189,16 @@ contract NiftyApesLending is
         loanAuction.unpaidProtocolInterest = 0;
     }
 
+    /// @inheritdoc ILending
+    function transferNft(
+        address nftContractAddress,
+        uint256 nftId,
+        address to
+    ) external whenNotPaused nonReentrant {
+        _requireFlashClaimContract();
+        _transferNft(nftContractAddress, nftId, address(this), to);
+    }
+
     function _transferNft(
         address nftContractAddress,
         uint256 nftId,
@@ -1166,17 +1206,6 @@ contract NiftyApesLending is
         address to
     ) internal {
         IERC721Upgradeable(nftContractAddress).safeTransferFrom(from, to, nftId);
-    }
-
-    /// @inheritdoc ILending
-    function transferNft(
-        address nftContractAddress,
-        uint256 nftId,
-        address from,
-        address to
-    ) external whenNotPaused nonReentrant {
-        _requireFlashSellContract();
-        _transferNft(nftContractAddress, nftId, from, to);
     }
 
     function _payoutCTokenBalances(

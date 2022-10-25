@@ -9,6 +9,8 @@ import "../../Lending.sol";
 import "../../Liquidity.sol";
 import "../../Offers.sol";
 import "../../SigLending.sol";
+import "../../FlashClaim.sol";
+import "../../FlashPurchase.sol";
 import "../../FlashSell.sol";
 import "../../interfaces/niftyapes/lending/ILendingStructs.sol";
 import "../../interfaces/niftyapes/offers/IOffersStructs.sol";
@@ -18,6 +20,9 @@ import "../mock/CERC20Mock.sol";
 import "../mock/CEtherMock.sol";
 import "../mock/ERC20Mock.sol";
 import "../mock/ERC721Mock.sol";
+import "../mock/SeaportMock.sol";
+import "../mock/SudoswapFactoryMock.sol";
+import "../mock/SudoswapRouterMock.sol";
 
 contract NiftyApesPauseUnitTest is
     BaseTest,
@@ -29,6 +34,11 @@ contract NiftyApesPauseUnitTest is
     NiftyApesOffers offersContract;
     NiftyApesLiquidity liquidityProviders;
     NiftyApesSigLending sigLendingAuction;
+    NiftyApesFlashClaim flashClaim;
+    NiftyApesFlashPurchase flashPurchase;
+    SeaportMock seaportMock;
+    LSSVMPairFactoryMock sudoswapFactoryMock;
+    LSSVMRouterMock sudoswapRouterMock;
     NiftyApesFlashSell flashSell;
     ERC20Mock daiToken;
     CERC20Mock cDAIToken;
@@ -51,14 +61,24 @@ contract NiftyApesPauseUnitTest is
     }
 
     function setUp() public {
+        flashClaim = new NiftyApesFlashClaim();
+        flashClaim.initialize();
+
+        seaportMock = new SeaportMock();
+        sudoswapFactoryMock = new LSSVMPairFactoryMock();
+        sudoswapRouterMock = new LSSVMRouterMock();
+
+        flashPurchase = new NiftyApesFlashPurchase();
+        flashPurchase.initialize();
+
         liquidityProviders = new NiftyApesLiquidity();
-        liquidityProviders.initialize(compContractAddress);
+        liquidityProviders.initialize(compContractAddress, address(flashPurchase));
 
         offersContract = new NiftyApesOffers();
-        offersContract.initialize(address(liquidityProviders));
+        offersContract.initialize(address(liquidityProviders), address(flashPurchase));
 
         sigLendingAuction = new NiftyApesSigLending();
-        sigLendingAuction.initialize(address(offersContract));
+        sigLendingAuction.initialize(address(offersContract), address(flashPurchase));
 
         flashSell = new NiftyApesFlashSell();
         flashSell.initialize();
@@ -68,6 +88,8 @@ contract NiftyApesPauseUnitTest is
             address(liquidityProviders),
             address(offersContract),
             address(sigLendingAuction),
+            address(flashClaim),
+            address(flashPurchase),
             address(flashSell)
         );
 
@@ -90,6 +112,7 @@ contract NiftyApesPauseUnitTest is
         liquidityProviders.pause();
         offersContract.pause();
         sigLendingAuction.pause();
+        flashClaim.pause();
         flashSell.pause();
 
         acceptEth = true;

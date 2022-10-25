@@ -17,6 +17,12 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     /// @notice Returns the address for the associated signature lending contract
     function sigLendingContractAddress() external view returns (address);
 
+    /// @notice Returns the address for the associated flashClaim contract
+    function flashClaimContractAddress() external view returns (address);
+
+    /// @notice Returns the address for the associated purchase with financing contract
+    function flashPurchaseContractAddress() external view returns (address);
+
     /// @notice Returns the address for the associated flashSell contract
     function flashSellContractAddress() external view returns (address);
 
@@ -281,16 +287,27 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         uint32 expectedLastUpdatedTimestamp
     ) external;
 
-    /// @notice Function only callable by the NiftyApesFlashSell contract
-    ///         Allows FlashSell contract to transfer an NFT directly
+    /// @notice Function only callable by the FlashClaim and FlashSell contract
+    ///         Allows the contracts to transfer an NFT directly
     /// @param nftContractAddress The address of the nft collection
     /// @param nftId The id of the specified NFT
-    /// @param from The address to transfer the NFT from
     /// @param to The address to transfer the NFT to
     function transferNft(
         address nftContractAddress,
         uint256 nftId,
-        address from,
         address to
+    ) external;
+
+    /// @notice Function only callable by the NiftyApesFlashPurchase contract
+    ///         Allows FlashPurchase.sol to create a loan
+    /// @param offer The details of the loan auction offer
+    /// @param nftId The id of the specified NFT
+    /// @param lender the address of the lender in the loan auction
+    /// @param borrower the address of the borrower in the loan auction
+    function createLoanFlashPurchase(
+        Offer memory offer,
+        uint256 nftId,
+        address lender,
+        address borrower
     ) external;
 }

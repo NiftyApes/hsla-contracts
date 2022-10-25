@@ -5,6 +5,8 @@ import "../src/Liquidity.sol";
 import "../src/Offers.sol";
 import "../src/SigLending.sol";
 import "../src/Lending.sol";
+import "../src/FlashClaim.sol";
+import "../src/FlashPurchase.sol";
 import "../src/FlashSell.sol";
 
 contract DeployNiftyApesScript is Script {
@@ -13,18 +15,29 @@ contract DeployNiftyApesScript is Script {
         NiftyApesOffers offersContract;
         NiftyApesLiquidity liquidityProviders;
         NiftyApesSigLending sigLendingAuction;
+        NiftyApesFlashClaim flashClaim;
+        NiftyApesFlashPurchase flashPurchase;
         NiftyApesFlashSell flashSell;
         address compContractAddress = 0xbbEB7c67fa3cfb40069D19E598713239497A3CA5;
+        address seaportContractAddress = 0x00000000006c3852cbEf3e08E8dF289169EdE581;
+        address sudoswapFactoryContractAddress = 0xcB1514FE29db064fa595628E0BFFD10cdf998F33;
+        address sudoswapRouterContractAddress = 0x9ABDe410D7BA62fA11EF37984c0Faf2782FE39B5;
         vm.startBroadcast();
 
+        flashClaim = new NiftyApesFlashClaim();
+        flashClaim.initialize();
+
+        flashPurchase = new NiftyApesFlashPurchase();
+        flashPurchase.initialize();
+
         liquidityProviders = new NiftyApesLiquidity();
-        liquidityProviders.initialize(compContractAddress);
+        liquidityProviders.initialize(compContractAddress, address(flashPurchase));
 
         offersContract = new NiftyApesOffers();
-        offersContract.initialize(address(liquidityProviders));
+        offersContract.initialize(address(liquidityProviders), address(flashPurchase));
 
         sigLendingAuction = new NiftyApesSigLending();
-        sigLendingAuction.initialize(address(offersContract));
+        sigLendingAuction.initialize(address(offersContract), address(flashPurchase));
 
         flashSell = new NiftyApesFlashSell();
         flashSell.initialize();
@@ -34,6 +47,8 @@ contract DeployNiftyApesScript is Script {
             address(liquidityProviders),
             address(offersContract),
             address(sigLendingAuction),
+            address(flashClaim),
+            address(flashPurchase),
             address(flashSell)
         );
 
@@ -43,6 +58,13 @@ contract DeployNiftyApesScript is Script {
         offersContract.updateSigLendingContractAddress(address(sigLendingAuction));
 
         sigLendingAuction.updateLendingContractAddress(address(lendingAuction));
+
+        flashClaim.updateLendingContractAddress(address(lendingAuction));
+
+        flashPurchase.updateLiquidityContractAddress(address(liquidityProviders));
+        flashPurchase.updateOffersContractAddress(address(offersContract));
+        flashPurchase.updateLendingContractAddress(address(lendingAuction));
+        flashPurchase.updateSigLendingContractAddress(address(sigLendingAuction));
 
         flashSell.updateLendingContractAddress(address(lendingAuction));
         flashSell.updateLiquidityContractAddress(address(liquidityProviders));
@@ -70,6 +92,7 @@ contract DeployNiftyApesScript is Script {
         // pauseSanctions for Rinkeby as Chainalysis contacts doent exists there
         liquidityProviders.pauseSanctions();
         lendingAuction.pauseSanctions();
+        flashClaim.pauseSanctions();
         flashSell.pauseSanctions();
 
         vm.stopBroadcast();

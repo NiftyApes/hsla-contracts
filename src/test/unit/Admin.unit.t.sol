@@ -8,6 +8,8 @@ import "../../Lending.sol";
 import "../../Liquidity.sol";
 import "../../Offers.sol";
 import "../../SigLending.sol";
+import "../../FlashClaim.sol";
+import "../../FlashPurchase.sol";
 import "../../FlashSell.sol";
 import "../../interfaces/niftyapes/lending/ILendingEvents.sol";
 import "../../interfaces/niftyapes/liquidity/ILiquidityEvents.sol";
@@ -15,12 +17,20 @@ import "../common/BaseTest.sol";
 import "../mock/CERC20Mock.sol";
 import "../mock/CEtherMock.sol";
 import "../mock/ERC20Mock.sol";
+import "../mock/SeaportMock.sol";
+import "../mock/SudoswapFactoryMock.sol";
+import "../mock/SudoswapRouterMock.sol";
 
 contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
     NiftyApesLending niftyApes;
     NiftyApesOffers offersContract;
     NiftyApesLiquidity liquidityProviders;
     NiftyApesSigLending sigLendingAuction;
+    NiftyApesFlashClaim flashClaim;
+    NiftyApesFlashPurchase flashPurchase;
+    SeaportMock seaportMock;
+    LSSVMPairFactoryMock sudoswapFactoryMock;
+    LSSVMRouterMock sudoswapRouterMock;
     NiftyApesFlashSell flashSell;
     ERC20Mock daiToken;
     CERC20Mock cDAIToken;
@@ -36,14 +46,24 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
     }
 
     function setUp() public {
+        flashClaim = new NiftyApesFlashClaim();
+        flashClaim.initialize();
+
+        seaportMock = new SeaportMock();
+        sudoswapFactoryMock = new LSSVMPairFactoryMock();
+        sudoswapRouterMock = new LSSVMRouterMock();
+
+        flashPurchase = new NiftyApesFlashPurchase();
+        flashPurchase.initialize();
+
         liquidityProviders = new NiftyApesLiquidity();
-        liquidityProviders.initialize(compContractAddress);
+        liquidityProviders.initialize(compContractAddress, address(flashPurchase));
 
         offersContract = new NiftyApesOffers();
-        offersContract.initialize(address(liquidityProviders));
+        offersContract.initialize(address(liquidityProviders), address(flashPurchase));
 
         sigLendingAuction = new NiftyApesSigLending();
-        sigLendingAuction.initialize(address(offersContract));
+        sigLendingAuction.initialize(address(offersContract), address(flashPurchase));
 
         flashSell = new NiftyApesFlashSell();
         flashSell.initialize();
@@ -53,6 +73,8 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
             address(liquidityProviders),
             address(offersContract),
             address(sigLendingAuction),
+            address(flashClaim),
+            address(flashPurchase),
             address(flashSell)
         );
 
