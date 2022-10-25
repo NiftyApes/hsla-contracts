@@ -1097,8 +1097,8 @@ contract NiftyApesLending is
         require(msg.sender == sigLendingContractAddress, "00031");
     }
 
-    function _requireFlashClaimContract() internal view {
-        require(msg.sender == flashClaimContractAddress, "00031");
+    function _requireExpectedContract() internal view {
+        require(msg.sender == flashClaimContractAddress || msg.sender == flashSellContractAddress, "00031");
     }
 
     function _requireFlashPurchaseContract() internal view {
@@ -1195,7 +1195,7 @@ contract NiftyApesLending is
         uint256 nftId,
         address to
     ) external whenNotPaused nonReentrant {
-        _requireFlashClaimContract();
+        _requireExpectedContract();
         _transferNft(nftContractAddress, nftId, address(this), to);
     }
 

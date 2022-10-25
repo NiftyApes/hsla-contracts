@@ -78,16 +78,8 @@ contract DeployNiftyApesScript is Script {
         // DAI
         liquidityProviders.setCAssetAddress(daiToken, cDAIToken);
 
-        uint256 cDAIAmount = liquidityProviders.assetAmountToCAssetAmount(daiToken, 500000);
-
-        liquidityProviders.setMaxCAssetBalance(cDAIToken, cDAIAmount);
-
         // ETH
         liquidityProviders.setCAssetAddress(ETH_ADDRESS, cEtherToken);
-
-        uint256 cEtherAmount = liquidityProviders.assetAmountToCAssetAmount(ETH_ADDRESS, 500);
-
-        liquidityProviders.setMaxCAssetBalance(cEtherToken, cEtherAmount);
 
         // pauseSanctions for Rinkeby as Chainalysis contacts doent exists there
         liquidityProviders.pauseSanctions();

@@ -118,7 +118,6 @@ contract NiftyApesFlashSell is
         ILending(lendingContractAddress).transferNft(
             nftContractAddress,
             nftId,
-            lendingContractAddress,
             receiver
         );
 
