@@ -172,22 +172,26 @@ contract TestSeaportFlashPurchaseIntegration is Test, OffersLoansRefinancesFixtu
         ISeaport.Order memory order,
         bytes memory errorCode
     ) internal returns (LoanAuction memory) {
-        vm.startPrank(borrower1);
+        
         bytes32 offerHash = offers.getOfferHash(offer);
 
         if (bytes16(errorCode) != bytes16("should work")) {
             vm.expectRevert(errorCode);
         }
         uint256 borrowerPays = (uint256(offer.amount) * 2) - uint256(offer.amount);
-
+        
         if (offer.asset == ETH_ADDRESS) {
+            vm.startPrank(borrower1);
             seaportFlashPurchase.flashPurchaseSeaport{ value: borrowerPays }(
                 offerHash,
                 offer.floorTerm,
                 order,
                 bytes32(0)
             );
+            vm.stopPrank();
         } else {
+            mintDai(borrower1, borrowerPays);
+            vm.startPrank(borrower1);
             daiToken.approve(address(seaportFlashPurchase), borrowerPays);
             seaportFlashPurchase.flashPurchaseSeaport(
                 offerHash,
@@ -195,8 +199,9 @@ contract TestSeaportFlashPurchaseIntegration is Test, OffersLoansRefinancesFixtu
                 order,
                 bytes32(0)
             );
+            vm.stopPrank();
         }
-        vm.stopPrank();
+        
 
         return lending.getLoanAuction(offer.nftContractAddress, offer.nftId);
     }
@@ -207,21 +212,23 @@ contract TestSeaportFlashPurchaseIntegration is Test, OffersLoansRefinancesFixtu
         ISeaport.Order memory order,
         bytes memory errorCode
     ) internal returns (LoanAuction memory) {
-        vm.startPrank(borrower1);
-
         if (bytes16(errorCode) != bytes16("should work")) {
             vm.expectRevert(errorCode);
         }
         uint256 borrowerPays = (uint256(offer.amount) * 2) - uint256(offer.amount);
 
         if (offer.asset == ETH_ADDRESS) {
+            vm.startPrank(borrower1);
             seaportFlashPurchase.flashPurchaseSeaportSignature{ value: borrowerPays }(
                 offer,
                 signature,
                 order,
                 bytes32(0)
             );
+            vm.stopPrank();
         } else {
+            mintDai(borrower1, borrowerPays);
+            vm.startPrank(borrower1);
             daiToken.approve(address(seaportFlashPurchase), borrowerPays);
             seaportFlashPurchase.flashPurchaseSeaportSignature(
                 offer,
@@ -229,8 +236,8 @@ contract TestSeaportFlashPurchaseIntegration is Test, OffersLoansRefinancesFixtu
                 order,
                 bytes32(0)
             );
+            vm.stopPrank();
         }
-        vm.stopPrank();
 
         return lending.getLoanAuction(offer.nftContractAddress, offer.nftId);
     }
