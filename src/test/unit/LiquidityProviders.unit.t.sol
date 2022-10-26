@@ -31,7 +31,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
 
     function setUp() public {
         liquidityProviders = new NiftyApesLiquidity();
-        liquidityProviders.initialize(compContractAddress);
+        liquidityProviders.initialize(compContractAddress, compContractAddress); // add comp twice, second address not utilized in these tests
 
         daiToken = new ERC20Mock();
         daiToken.initialize("USD Coin", "DAI");
@@ -120,10 +120,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         uint256 cTokensMinted = liquidityProviders.supplyErc20(address(daiToken), 1);
         assertEq(cTokensMinted, 0.5 ether);
 
-        assertEq(
-            liquidityProviders.getCAssetBalance(address(this), address(cDAIToken)),
-            0.5 ether
-        );
+        assertEq(liquidityProviders.getCAssetBalance(address(this), address(cDAIToken)), 0.5 ether);
 
         assertEq(cDAIToken.balanceOf(address(liquidityProviders)), 0.5 ether);
     }
@@ -398,10 +395,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
         assertEq(cDAIToken.balanceOf(address(liquidityProviders)), 0);
 
         assertEq(cDAIToken.balanceOf(address(this)), 99 ether);
-        assertEq(
-            cDAIToken.balanceOf(address(0x252de94Ae0F07fb19112297F299f8c9Cc10E28a6)),
-            1 ether
-        );
+        assertEq(cDAIToken.balanceOf(address(0x252de94Ae0F07fb19112297F299f8c9Cc10E28a6)), 1 ether);
     }
 
     function testWithdrawCErc20_works() public {

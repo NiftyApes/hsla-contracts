@@ -48,6 +48,9 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
     /// @inheritdoc IOffers
     address public liquidityContractAddress;
 
+    /// @inheritdoc IOffers
+    address public flashPurchaseContractAddress;
+
     /// @dev This empty reserved space is put in place to allow future versions to add new
     /// variables without shifting storage.
     uint256[500] private __gap;
@@ -55,10 +58,14 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
     /// @notice The initializer for the NiftyApes protocol.
     ///         NiftyApes is intended to be deployed behind a proxy and thus needs to initialize
     ///         its state outside of a constructor.
-    function initialize(address newliquidityContractAddress) public initializer {
+    function initialize(
+        address newliquidityContractAddress,
+        address newFlashPurchaseContractAddress
+    ) public initializer {
         EIP712Upgradeable.__EIP712_init("NiftyApes_Offers", "0.0.1");
 
         liquidityContractAddress = newliquidityContractAddress;
+        flashPurchaseContractAddress = newFlashPurchaseContractAddress;
 
         OwnableUpgradeable.__Ownable_init();
         PausableUpgradeable.__Pausable_init();
@@ -198,7 +205,7 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
 
     /// @inheritdoc IOffers
     function incrementFloorOfferCount(bytes32 offerHash) public {
-        _requireLendingContract();
+        _requireExpectedContract();
         _floorOfferCounters[offerHash] += 1;
     }
 
@@ -257,7 +264,7 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
 
         Offer storage offer = offerBook[offerHash];
 
-        _requireOfferCreatorOrLendingContract(offer.creator, msg.sender);
+        _requireOfferCreatorOrExpectedContract(offer.creator, msg.sender);
 
         emit OfferRemoved(offer.creator, offer.nftContractAddress, nftId, offer, offerHash);
 
@@ -316,14 +323,19 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
         require(signer == expected, "00024");
     }
 
-    function _requireOfferCreatorOrLendingContract(address signer, address expected) internal view {
+    function _requireOfferCreatorOrExpectedContract(address signer, address expected)
+        internal
+        view
+    {
         if (msg.sender != lendingContractAddress) {
-            require(signer == expected, "00024");
+            if (msg.sender != flashPurchaseContractAddress) {
+                require(signer == expected, "00024");
+            }
         }
     }
 
-    function _requireLendingContract() internal view {
-        require(msg.sender == lendingContractAddress, "00024");
+    function _requireExpectedContract() internal view {
+        require(msg.sender == lendingContractAddress || msg.sender == flashPurchaseContractAddress, "00024");
     }
 
     function _requireSigLendingContract() internal view {

@@ -58,12 +58,13 @@ contract NFTAndERC20Fixtures is Test, UsersFixtures {
             daiToken.transfer(whaleCombiner, daiWhale2Balance);
             vm.stopPrank();
 
-            uint256 amtToEachLender = daiToken.balanceOf(whaleCombiner) / 3;
+            uint256 amtToEachLender = daiToken.balanceOf(whaleCombiner) / 4;
 
             vm.startPrank(whaleCombiner);
             daiToken.transfer(lender1, amtToEachLender);
             daiToken.transfer(lender2, amtToEachLender);
             daiToken.transfer(lender3, amtToEachLender);
+            daiToken.transfer(borrower1, amtToEachLender);
             vm.stopPrank();
         } else {
             daiToken = new ERC20Mock();

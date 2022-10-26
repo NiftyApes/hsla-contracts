@@ -7,6 +7,9 @@ import "@openzeppelin/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "./interfaces/niftyapes/lending/ILending.sol";
 import "./interfaces/niftyapes/sigLending/ISigLending.sol";
 import "./interfaces/niftyapes/offers/IOffers.sol";
+import "./interfaces/niftyapes/flashPurchase/IFlashPurchase.sol";
+import "./interfaces/seaport/ISeaport.sol";
+import "./interfaces/sudoswap/ILSSVMPair.sol";
 
 /// @title NiftyApes Signature Lending
 /// @custom:version 1.0
@@ -27,6 +30,9 @@ contract NiftyApesSigLending is
     /// @inheritdoc ISigLending
     address public lendingContractAddress;
 
+    /// @inheritdoc ISigLending
+    address public flashPurchaseContractAddress;
+
     /// @dev This empty reserved space is put in place to allow future versions to add new
     /// variables without shifting storage.
     uint256[500] private __gap;
@@ -34,8 +40,12 @@ contract NiftyApesSigLending is
     /// @notice The initializer for the NiftyApes protocol.
     ///         Nifty Apes is intended to be deployed behind a proxy amd thus needs to initialize
     ///         its state outsize of a constructor.
-    function initialize(address newOffersContractAddress) public initializer {
+    function initialize(
+        address newOffersContractAddress,
+        address newFlashPurchaseContractAddress
+    ) public initializer {
         offersContractAddress = newOffersContractAddress;
+        flashPurchaseContractAddress = newFlashPurchaseContractAddress;
 
         OwnableUpgradeable.__Ownable_init();
         PausableUpgradeable.__Pausable_init();
@@ -97,7 +107,6 @@ contract NiftyApesSigLending is
 
         _requireLenderOffer(offer);
 
-        // execute state changes for executeLoanByBid
         ILending(lendingContractAddress).doExecuteLoan(offer, lender, msg.sender, nftId);
     }
 
@@ -137,6 +146,35 @@ contract NiftyApesSigLending is
             msg.sender,
             expectedLastUpdatedTimestamp
         );
+    }
+
+    // @inheritdoc ISigLending
+    function validateAndUseOfferSignatureFlashPurchase(
+        Offer memory offer,
+        bytes memory signature
+    ) external whenNotPaused {
+        _requireFlashPurchaseContract();
+        address lender = IOffers(offersContractAddress).getOfferSigner(offer, signature);
+
+        _requireOfferCreator(offer, lender);
+        IOffers(offersContractAddress).requireAvailableSignature(signature);
+        IOffers(offersContractAddress).requireSignature65(signature);
+
+        if (!offer.floorTerm) {
+            IOffers(offersContractAddress).markSignatureUsed(offer, signature);
+        } else {
+            require(
+                IOffers(offersContractAddress).getSigFloorOfferCount(signature) <
+                    offer.floorTermLimit,
+                "00051"
+            );
+
+            IOffers(offersContractAddress).incrementSigFloorOfferCount(signature);
+        }
+    }
+
+    function _requireFlashPurchaseContract() internal view {
+        require(msg.sender == flashPurchaseContractAddress, "00031");
     }
 
     function _requireLenderOffer(Offer memory offer) internal pure {
