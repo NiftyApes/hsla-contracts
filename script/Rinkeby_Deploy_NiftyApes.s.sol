@@ -7,6 +7,7 @@ import "../src/SigLending.sol";
 import "../src/Lending.sol";
 import "../src/FlashClaim.sol";
 import "../src/FlashPurchase.sol";
+import "../src/FlashSell.sol";
 
 contract DeployNiftyApesScript is Script {
     function run() external {
@@ -16,6 +17,7 @@ contract DeployNiftyApesScript is Script {
         NiftyApesSigLending sigLendingAuction;
         NiftyApesFlashClaim flashClaim;
         NiftyApesFlashPurchase flashPurchase;
+        NiftyApesFlashSell flashSell;
         address compContractAddress = 0xbbEB7c67fa3cfb40069D19E598713239497A3CA5;
         vm.startBroadcast();
 
@@ -34,13 +36,17 @@ contract DeployNiftyApesScript is Script {
         sigLendingAuction = new NiftyApesSigLending();
         sigLendingAuction.initialize(address(offersContract), address(flashPurchase));
 
+        flashSell = new NiftyApesFlashSell();
+        flashSell.initialize();
+
         lendingAuction = new NiftyApesLending();
         lendingAuction.initialize(
             address(liquidityProviders),
             address(offersContract),
             address(sigLendingAuction),
             address(flashClaim),
-            address(flashPurchase)
+            address(flashPurchase),
+            address(flashSell)
         );
 
         liquidityProviders.updateLendingContractAddress(address(lendingAuction));
@@ -57,6 +63,9 @@ contract DeployNiftyApesScript is Script {
         flashPurchase.updateLendingContractAddress(address(lendingAuction));
         flashPurchase.updateSigLendingContractAddress(address(sigLendingAuction));
 
+        flashSell.updateLendingContractAddress(address(lendingAuction));
+        flashSell.updateLiquidityContractAddress(address(liquidityProviders));
+
         // Rinkeby Addresses
         address daiToken = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
         address cDAIToken = 0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643;
@@ -66,21 +75,14 @@ contract DeployNiftyApesScript is Script {
         // DAI
         liquidityProviders.setCAssetAddress(daiToken, cDAIToken);
 
-        uint256 cDAIAmount = liquidityProviders.assetAmountToCAssetAmount(daiToken, 500000);
-
-        liquidityProviders.setMaxCAssetBalance(cDAIToken, cDAIAmount);
-
         // ETH
         liquidityProviders.setCAssetAddress(ETH_ADDRESS, cEtherToken);
-
-        uint256 cEtherAmount = liquidityProviders.assetAmountToCAssetAmount(ETH_ADDRESS, 500);
-
-        liquidityProviders.setMaxCAssetBalance(cEtherToken, cEtherAmount);
 
         // pauseSanctions for Rinkeby as Chainalysis contacts doent exists there
         liquidityProviders.pauseSanctions();
         lendingAuction.pauseSanctions();
         flashClaim.pauseSanctions();
+        flashSell.pauseSanctions();
 
         vm.stopBroadcast();
     }

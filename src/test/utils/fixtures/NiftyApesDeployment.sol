@@ -11,6 +11,7 @@ import "./FlashClaimReceivers/FlashClaimReceiverTestNoReturn.sol";
 import "../../../FlashPurchase.sol";
 import "../../../flashPurchase/integrations/SeaportFlashPurchaseIntegration.sol";
 import "../../../flashPurchase/integrations/SudoswapFlashPurchaseIntegration.sol";
+import "../../../FlashSell.sol";
 import "./NFTAndERC20Fixtures.sol";
 import "../../../interfaces/seaport/ISeaport.sol";
 
@@ -31,6 +32,7 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
     NiftyApesFlashPurchase flashPurchase;
     SeaportFlashPurchaseIntegration seaportFlashPurchase;
     SudoswapFlashPurchaseIntegration sudoswapFlashPurchase;
+    NiftyApesFlashSell flashSell;
 
     address constant ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     address constant SEAPORT_ADDRESS = 0x00000000006c3852cbEf3e08E8dF289169EdE581;
@@ -72,13 +74,17 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         sigLending = new NiftyApesSigLending();
         sigLending.initialize(address(offers), address(flashPurchase));
 
+        flashSell = new NiftyApesFlashSell();
+        flashSell.initialize();
+
         lending = new NiftyApesLending();
         lending.initialize(
             address(liquidity),
             address(offers),
             address(sigLending),
             address(flashClaim),
-            address(flashPurchase)
+            address(flashPurchase),
+            address(flashSell)
         );
 
         flashPurchase.initialize();
@@ -99,6 +105,9 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         seaportFlashPurchase.updateOffersContractAddress(address(offers));
         sudoswapFlashPurchase.updateOffersContractAddress(address(offers));
 
+        flashSell.updateLendingContractAddress(address(lending));
+        flashSell.updateLiquidityContractAddress(address(liquidity));
+
         liquidity.setCAssetAddress(ETH_ADDRESS, address(cEtherToken));
         liquidity.setMaxCAssetBalance(address(cEtherToken), ~uint256(0));
 
@@ -113,6 +122,7 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
             liquidity.pauseSanctions();
             lending.pauseSanctions();
             flashClaim.pauseSanctions();
+            flashSell.pauseSanctions();
         }
 
         vm.stopPrank();
