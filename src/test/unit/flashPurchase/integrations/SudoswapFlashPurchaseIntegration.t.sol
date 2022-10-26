@@ -234,7 +234,7 @@ contract TestSudoswapFlashPurchaseIntegration is Test, OffersLoansRefinancesFixt
         uint256[] memory nftIds,
         bytes memory errorCode
     ) internal {
-        Offer memory offerCreated = createOffer(offer, lender1);
+        createOffer(offer, lender1);
         tryFlashPurchase(offer, lssvmPair, nftIds, errorCode);
     }
 

@@ -12,9 +12,6 @@ import "../../../FlashPurchase.sol";
 import "../../../flashPurchase/integrations/SeaportFlashPurchaseIntegration.sol";
 import "../../../flashPurchase/integrations/SudoswapFlashPurchaseIntegration.sol";
 import "./NFTAndERC20Fixtures.sol";
-import "../../mock/SeaportMock.sol";
-import "../../mock/SudoswapFactoryMock.sol";
-import "../../mock/SudoswapRouterMock.sol";
 import "../../../interfaces/seaport/ISeaport.sol";
 
 import "forge-std/Test.sol";
@@ -34,9 +31,6 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
     NiftyApesFlashPurchase flashPurchase;
     SeaportFlashPurchaseIntegration seaportFlashPurchase;
     SudoswapFlashPurchaseIntegration sudoswapFlashPurchase;
-    SeaportMock seaportMock;
-    LSSVMPairFactoryMock sudoswapFactoryMock;
-    LSSVMRouterMock sudoswapRouterMock;
 
     address constant ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     address constant SEAPORT_ADDRESS = 0x00000000006c3852cbEf3e08E8dF289169EdE581;
@@ -56,7 +50,6 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
 
         if (integration) {
             flashPurchase = new NiftyApesFlashPurchase();
-            flashPurchase.initialize();
 
             seaportFlashPurchase = new SeaportFlashPurchaseIntegration();
             seaportFlashPurchase.initialize(address(offers), address(flashPurchase), SEAPORT_ADDRESS);
@@ -65,16 +58,9 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
             sudoswapFlashPurchase.initialize(address(offers), address(flashPurchase), SUDOSWAP_FACTORY_ADDRESS, SUDOSWAP_ROUTER_ADDRESS);
 
         } else {
-            seaportMock = new SeaportMock();
-            sudoswapFactoryMock = new LSSVMPairFactoryMock();
-            sudoswapRouterMock = new LSSVMRouterMock();
             flashPurchase = new NiftyApesFlashPurchase();
             seaportFlashPurchase = new SeaportFlashPurchaseIntegration();
             sudoswapFlashPurchase = new SudoswapFlashPurchaseIntegration();
-
-            flashPurchase.initialize();
-            seaportFlashPurchase.initialize(address(offers), address(flashPurchase), address(seaportMock));
-            sudoswapFlashPurchase.initialize(address(offers), address(flashPurchase), address(sudoswapFactoryMock), address(sudoswapRouterMock));
         }
 
         liquidity = new NiftyApesLiquidity();
@@ -94,6 +80,8 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
             address(flashClaim),
             address(flashPurchase)
         );
+
+        flashPurchase.initialize();
 
         sigLending.updateLendingContractAddress(address(lending));
 

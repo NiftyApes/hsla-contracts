@@ -150,7 +150,7 @@ contract TestSeaportFlashPurchaseIntegration is Test, OffersLoansRefinancesFixtu
         ISeaport.Order memory params,
         bytes memory errorCode
     ) internal returns (LoanAuction memory) {
-        Offer memory offerCreated = createOffer(offer, lender1);
+        createOffer(offer, lender1);
 
         LoanAuction memory loan = tryFlashPurchase(offer, params, errorCode);
         return loan;
