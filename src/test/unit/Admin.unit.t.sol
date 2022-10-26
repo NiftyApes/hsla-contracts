@@ -9,16 +9,12 @@ import "../../Liquidity.sol";
 import "../../Offers.sol";
 import "../../SigLending.sol";
 import "../../FlashClaim.sol";
-import "../../FlashPurchase.sol";
 import "../../interfaces/niftyapes/lending/ILendingEvents.sol";
 import "../../interfaces/niftyapes/liquidity/ILiquidityEvents.sol";
 import "../common/BaseTest.sol";
 import "../mock/CERC20Mock.sol";
 import "../mock/CEtherMock.sol";
 import "../mock/ERC20Mock.sol";
-import "../mock/SeaportMock.sol";
-import "../mock/SudoswapFactoryMock.sol";
-import "../mock/SudoswapRouterMock.sol";
 
 contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
     NiftyApesLending niftyApes;
@@ -26,10 +22,6 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
     NiftyApesLiquidity liquidityProviders;
     NiftyApesSigLending sigLendingAuction;
     NiftyApesFlashClaim flashClaim;
-    NiftyApesFlashPurchase flashPurchase;
-    SeaportMock seaportMock;
-    LSSVMPairFactoryMock sudoswapFactoryMock;
-    LSSVMRouterMock sudoswapRouterMock;
     ERC20Mock daiToken;
     CERC20Mock cDAIToken;
     CEtherMock cEtherToken;
@@ -47,29 +39,21 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
         flashClaim = new NiftyApesFlashClaim();
         flashClaim.initialize();
 
-        seaportMock = new SeaportMock();
-        sudoswapFactoryMock = new LSSVMPairFactoryMock();
-        sudoswapRouterMock = new LSSVMRouterMock();
-
-        flashPurchase = new NiftyApesFlashPurchase();
-        flashPurchase.initialize();
-
         liquidityProviders = new NiftyApesLiquidity();
-        liquidityProviders.initialize(compContractAddress, address(flashPurchase));
+        liquidityProviders.initialize(compContractAddress);
 
         offersContract = new NiftyApesOffers();
-        offersContract.initialize(address(liquidityProviders), address(flashPurchase));
+        offersContract.initialize(address(liquidityProviders));
 
         sigLendingAuction = new NiftyApesSigLending();
-        sigLendingAuction.initialize(address(offersContract), address(flashPurchase));
+        sigLendingAuction.initialize(address(offersContract));
 
         niftyApes = new NiftyApesLending();
         niftyApes.initialize(
             address(liquidityProviders),
             address(offersContract),
             address(sigLendingAuction),
-            address(flashClaim),
-            address(flashPurchase)
+            address(flashClaim)
         );
 
         daiToken = new ERC20Mock();
