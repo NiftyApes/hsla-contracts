@@ -196,7 +196,7 @@ contract SeaportFlashPurchaseIntegration is
         return true;
     }
 
-    function _validateOrder(ISeaport.Order memory order, Offer memory offer) internal {
+    function _validateOrder(ISeaport.Order memory order, Offer memory offer) internal pure {
         // requireOrderTokenERC721
         require(order.parameters.offer[0].itemType == ISeaport.ItemType.ERC721, "00049");
         // requireOrderTokenAmount

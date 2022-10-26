@@ -234,7 +234,7 @@ contract TestSudoswapFlashPurchaseIntegration is Test, OffersLoansRefinancesFixt
         uint256[] memory nftIds,
         bytes memory errorCode
     ) internal {
-        Offer memory offerCreated = createOffer(offer, lender1);
+        createOffer(offer, lender1);
         tryFlashPurchase(offer, lssvmPair, nftIds, errorCode);
     }
 
@@ -254,7 +254,6 @@ contract TestSudoswapFlashPurchaseIntegration is Test, OffersLoansRefinancesFixt
         uint256[] memory nftIds,
         bytes memory errorCode
     ) internal {
-        vm.startPrank(borrower1);
         bytes32 offerHash = offers.getOfferHash(offer);
 
         if (bytes16(errorCode) != bytes16("should work")) {
@@ -264,13 +263,17 @@ contract TestSudoswapFlashPurchaseIntegration is Test, OffersLoansRefinancesFixt
         uint256 borrowerPays = totalConsiderationAmount - (uint256(offer.amount) * nftIds.length );
 
         if (offer.asset == ETH_ADDRESS) {
+            vm.startPrank(borrower1);
             sudoswapFlashPurchase.flashPurchaseSudoswap{ value: borrowerPays }(
                 offerHash,
                 offer.floorTerm,
                 lssvmPair,
                 nftIds
             );
+            vm.stopPrank();
         } else {
+            mintDai(borrower1, borrowerPays);
+            vm.startPrank(borrower1);
             daiToken.approve(address(sudoswapFlashPurchase), borrowerPays);
             sudoswapFlashPurchase.flashPurchaseSudoswap(
                 offerHash,
@@ -278,8 +281,8 @@ contract TestSudoswapFlashPurchaseIntegration is Test, OffersLoansRefinancesFixt
                 lssvmPair,
                 nftIds
             );
+            vm.stopPrank();
         }
-        vm.stopPrank();
     }
 
     function tryFlashPurchaseSignature(
@@ -289,8 +292,6 @@ contract TestSudoswapFlashPurchaseIntegration is Test, OffersLoansRefinancesFixt
         uint256[] memory nftIds,
         bytes memory errorCode
     ) internal {
-        vm.startPrank(borrower1);
-
         if (bytes16(errorCode) != bytes16("should work")) {
             vm.expectRevert(errorCode);
         }
@@ -298,13 +299,17 @@ contract TestSudoswapFlashPurchaseIntegration is Test, OffersLoansRefinancesFixt
         uint256 borrowerPays =  totalConsiderationAmount - (uint256(offer.amount) * nftIds.length );
 
         if (offer.asset == ETH_ADDRESS) {
+            vm.startPrank(borrower1);
             sudoswapFlashPurchase.flashPurchaseSudoswapSignature{ value: borrowerPays }(
                 offer,
                 signature,
                 lssvmPair,
                 nftIds
             );
+            vm.stopPrank();
         } else {
+            mintDai(borrower1, borrowerPays);
+            vm.startPrank(borrower1);
             daiToken.approve(address(sudoswapFlashPurchase), borrowerPays);
             sudoswapFlashPurchase.flashPurchaseSudoswapSignature(
                 offer,
@@ -312,8 +317,8 @@ contract TestSudoswapFlashPurchaseIntegration is Test, OffersLoansRefinancesFixt
                 lssvmPair,
                 nftIds
             );
+            vm.stopPrank();
         }
-        vm.stopPrank();
     }
 
     function createAndValidateLssvmPairWithETH(uint256 numOfNfts) public returns (ILSSVMPair, uint256[] memory) {
@@ -353,8 +358,7 @@ contract TestSudoswapFlashPurchaseIntegration is Test, OffersLoansRefinancesFixt
     function daiPudgyLssvmPair(uint256 numOfNfts) internal returns (ILSSVMPair, uint256[] memory) {
         address _PUDGY_PENGUIN_CONTRACT_ADDRESS = 0xBd3531dA5CF5857e7CfAA92426877b022e612cf8;
         address _PUDGY1_OWNER = 0x451018623F2EA29A625Ac5e051720eEAc2b0E765;
-        vm.prank(borrower1);
-        daiToken.transfer(_PUDGY1_OWNER, 2);
+        mintDai(_PUDGY1_OWNER, 2);
         vm.startPrank(_PUDGY1_OWNER);
         uint256[] memory nftIds;
         if (numOfNfts > 1) {

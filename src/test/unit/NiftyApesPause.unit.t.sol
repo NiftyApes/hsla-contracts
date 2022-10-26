@@ -19,9 +19,6 @@ import "../mock/CERC20Mock.sol";
 import "../mock/CEtherMock.sol";
 import "../mock/ERC20Mock.sol";
 import "../mock/ERC721Mock.sol";
-import "../mock/SeaportMock.sol";
-import "../mock/SudoswapFactoryMock.sol";
-import "../mock/SudoswapRouterMock.sol";
 
 contract NiftyApesPauseUnitTest is
     BaseTest,
@@ -35,9 +32,6 @@ contract NiftyApesPauseUnitTest is
     NiftyApesSigLending sigLendingAuction;
     NiftyApesFlashClaim flashClaim;
     NiftyApesFlashPurchase flashPurchase;
-    SeaportMock seaportMock;
-    LSSVMPairFactoryMock sudoswapFactoryMock;
-    LSSVMRouterMock sudoswapRouterMock;
     ERC20Mock daiToken;
     CERC20Mock cDAIToken;
     CEtherMock cEtherToken;
@@ -61,10 +55,6 @@ contract NiftyApesPauseUnitTest is
     function setUp() public {
         flashClaim = new NiftyApesFlashClaim();
         flashClaim.initialize();
-
-        seaportMock = new SeaportMock();
-        sudoswapFactoryMock = new LSSVMPairFactoryMock();
-        sudoswapRouterMock = new LSSVMRouterMock();
 
         flashPurchase = new NiftyApesFlashPurchase();
         flashPurchase.initialize();

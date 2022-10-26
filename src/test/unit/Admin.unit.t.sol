@@ -16,9 +16,6 @@ import "../common/BaseTest.sol";
 import "../mock/CERC20Mock.sol";
 import "../mock/CEtherMock.sol";
 import "../mock/ERC20Mock.sol";
-import "../mock/SeaportMock.sol";
-import "../mock/SudoswapFactoryMock.sol";
-import "../mock/SudoswapRouterMock.sol";
 
 contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
     NiftyApesLending niftyApes;
@@ -27,9 +24,6 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
     NiftyApesSigLending sigLendingAuction;
     NiftyApesFlashClaim flashClaim;
     NiftyApesFlashPurchase flashPurchase;
-    SeaportMock seaportMock;
-    LSSVMPairFactoryMock sudoswapFactoryMock;
-    LSSVMRouterMock sudoswapRouterMock;
     ERC20Mock daiToken;
     CERC20Mock cDAIToken;
     CEtherMock cEtherToken;
@@ -46,10 +40,6 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
     function setUp() public {
         flashClaim = new NiftyApesFlashClaim();
         flashClaim.initialize();
-
-        seaportMock = new SeaportMock();
-        sudoswapFactoryMock = new LSSVMPairFactoryMock();
-        sudoswapRouterMock = new LSSVMRouterMock();
 
         flashPurchase = new NiftyApesFlashPurchase();
         flashPurchase.initialize();
