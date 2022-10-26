@@ -376,7 +376,8 @@ contract NiftyApesLending is
         loanAuction.lender = offer.creator;
         loanAuction.amount = offer.amount;
         loanAuction.interestRatePerSecond = offer.interestRatePerSecond;
-        loanAuction.loanEndTimestamp = loanAuction.loanBeginTimestamp + offer.duration;
+        loanAuction.loanEndTimestamp = _currentTimestamp32() + offer.duration;
+        loanAuction.loanBeginTimestamp = _currentTimestamp32();
         loanAuction.amountDrawn = SafeCastUpgradeable.toUint128(
             toLenderUnderlying + toProtocolUnderlying
         );
