@@ -158,7 +158,7 @@ contract TestFlashPurchase is Test, OffersLoansRefinancesFixtures, ERC721HolderU
         address receiver,
         bytes memory errorCode
     ) internal returns (LoanAuction memory) {
-        Offer memory offerCreated = createOffer(offer, lender1);
+        createOffer(offer, lender1);
 
         LoanAuction memory loan = tryBorrowingWithFlashPurchase(offer, nftId, receiver, errorCode);
         return loan;

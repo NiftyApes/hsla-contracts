@@ -232,7 +232,7 @@ contract SudoswapFlashPurchaseIntegration is
     function _validateSudoswapPair(
         Offer memory offer,
         ILSSVMPair lssvmPair
-    ) internal {
+    ) internal view {
         // verify pair provided is a valid clone of sudoswap factory pair template
         ILSSVMPairFactoryLike.PairVariant pairVariant = lssvmPair.pairVariant();
         require(ILSSVMPairFactoryLike(sudoswapFactoryContractAddress).isPair(address(lssvmPair), pairVariant), "00050");
@@ -248,7 +248,7 @@ contract SudoswapFlashPurchaseIntegration is
     function _getConsiderationAmount(
         ILSSVMPair lssvmPair,
         uint256 numOfNfts
-    ) internal returns (uint256) {
+    ) internal view returns (uint256) {
         // calculate consideration amount
         (ILSSVMPair.Error error, , , uint256 considerationAmount, ) = lssvmPair.getBuyNFTQuote(numOfNfts);
         // Require no error

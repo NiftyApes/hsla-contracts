@@ -12,6 +12,8 @@ contract FlashPurchaseReceiverMock is IFlashPurchaseReceiver, ERC721HolderUpgrad
         address initiator,
         bytes calldata data
     ) external payable returns (bool) {
+        initiator;
+        data;
         IERC721Upgradeable(nftContractAddress).approve(msg.sender, nftId);
         return true;
     }
