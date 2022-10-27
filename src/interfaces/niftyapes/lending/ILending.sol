@@ -5,6 +5,7 @@ import "./ILendingAdmin.sol";
 import "./ILendingEvents.sol";
 import "./ILendingStructs.sol";
 import "../offers/IOffersStructs.sol";
+import "../../seaport/ISeaport.sol";
 
 /// @title NiftyApes interface for managing loans.
 interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStructs {
@@ -323,5 +324,13 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         uint256 nftId,
         address lender,
         address borrower
+    ) external;
+
+    /// @notice Function validate the order listing on the Seaport contract for SellOnSeaport
+    /// @param seaportContractAddress The address of the Seaport contract
+    /// @param orders the Seaport order struct
+    function validateSeaportOrderSellOnSeaport(
+        address seaportContractAddress,
+        ISeaport.Order[] memory orders
     ) external;
 }

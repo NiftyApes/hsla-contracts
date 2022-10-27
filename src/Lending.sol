@@ -1027,6 +1027,11 @@ contract NiftyApesLending is
         return improvementSum > termGriefingPremiumBps;
     }
 
+    function validateSeaportOrderSellOnSeaport(address seaportContractAddress, ISeaport.Order[] memory orders) external {
+        _requireSellOnSeaportContract();
+        ISeaport(seaportContractAddress).validate(orders); 
+    }
+
     function _requireSufficientBalance(
         address creator,
         address cAsset,
@@ -1104,6 +1109,10 @@ contract NiftyApesLending is
 
     function _requireExpectedContract() internal view {
         require(msg.sender == flashClaimContractAddress || msg.sender == flashSellContractAddress, "00031");
+    }
+
+    function  _requireSellOnSeaportContract() internal view {
+        require(msg.sender == sellOnSeaportContractAddress, "00031");
     }
 
     function _requireFlashPurchaseContract() internal view {
@@ -1219,7 +1228,7 @@ contract NiftyApesLending is
         uint256 nftId,
         address to
     ) external whenNotPaused nonReentrant {
-        _requireExpectedContract();
+        _requireSellOnSeaportContract();
         IERC721Upgradeable(nftContractAddress).approve(to, nftId);
     }
 

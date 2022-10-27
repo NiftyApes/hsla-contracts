@@ -189,8 +189,8 @@ contract NiftyApesSellOnSeaport is
         );
         // approve the NFT for Seaport address
         ILending(lendingContractAddress).approveNft(nftContractAddress, nftId, seaportContractAddress);
-        // call ISeaport.validate(order)
-        ISeaport(seaportContractAddress).validate(order);
+        // call lending contract to validate listing to Seaport
+        ILending(lendingContractAddress).validateSeaportOrderSellOnSeaport(seaportContractAddress, order);
         // get orderHash by calling ISeaport.getOrderHash()
         bytes32 orderHash = _getOrderHash(order[0]);
         // validate order status by calling ISeaport.getOrderStatus(orderHash)
@@ -270,7 +270,7 @@ contract NiftyApesSellOnSeaport is
             {
                 parameters: ISeaport.OrderParameters(
                     {
-                        offerer: address(this),
+                        offerer: lendingContractAddress,
                         zone: openseaZone,
                         offer: new ISeaport.OfferItem[](1),
                         consideration: new ISeaport.ConsiderationItem[](2),
