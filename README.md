@@ -55,24 +55,24 @@ The NiftyApes protocol is made up of four core contracts `Liquidity.sol`, `Offer
    Siglending: 0x13066734874c538606e5589eE9BB6BbC3C018fAF
    Lending: 0xd830dcFC57816aDeB9Bf34A5dA38197810fA8Fd4
 
-5. For deployment to Mainnet:
-   a. `forge script script/NiftyApes.s.sol:NiftyApesScript --optimize --slow --rpc-url $MAINNET_RPC_URL --ledger --broadcast`
+5. For deployment to Goerli via the Goerli Protocol Multisig wallet:
+   b. Add the Goerli Multisig address to to `.env`.
+   c. If you have made any changes to the `.env` run: `source .env`
+   d. Then run:
+   `forge script script/Goerli_Deploy_NiftyApes.s.sol:DeployNiftyApesScript --optimize --rpc-url $GOERLI_RPC_URL --private-key $GOERLI_PRIVATE_KEY --slow --broadcast`
+
+6. For deployment to Mainnet:
+   a. `forge script script/Mainnet_Deploy_NiftyApes.s.sol:DeployNiftyApesScript --optimize --rpc-url $MAINNET_RPC_URL --private-key $MAINNET_BURNER_PRIVATE_KEY --slow --broadcast`
 
 ## Pause
 
-1. To pause Rinkeby protocol:
-   a. `forge script script/Rinkeby_PauseProtocol.s.sol:PauseScript --rpc-url $RINKEBY_RPC_URL --ledger --broadcast`
-
-2. To pause Mainnet protocol:
-   a. `forge script script/Rinkeby_PauseProtocol.s.sol:PauseScript --rpc-url $MAINNET_RPC_URL --ledger --broadcast`
+1. To pause Mainnet protocol:
+   a.
 
 ## Unpause
 
-3. To unpause Rinkeby protocol:
-   a. `forge script script/Rinkeby_UnpauseProtocol.s.sol:UnpauseScript --rpc-url $RINKEBY_RPC_URL --ledger --broadcast`
-
 4. To unpause Mainnet protocol:
-   a. `forge script script/Rinkeby_UnpauseProtocol.s.sol:UnpauseScript --rpc-url $MAINNET_RPC_URL --ledger --broadcast`
+   a.
 
 ## NiftyApes Error Messages
 
