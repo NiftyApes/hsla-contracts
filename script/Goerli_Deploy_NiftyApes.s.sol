@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
@@ -5,40 +6,69 @@ import "../src/Liquidity.sol";
 import "../src/Offers.sol";
 import "../src/SigLending.sol";
 import "../src/Lending.sol";
+import "../src/FlashClaim.sol";
+import "../src/FlashPurchase.sol";
+import "../src/FlashSell.sol";
 
 contract DeployNiftyApesScript is Script {
     function run() external {
-        NiftyApesLending lendingAuction;
-        NiftyApesOffers offersContract;
-        NiftyApesLiquidity liquidityProviders;
-        NiftyApesSigLending sigLendingAuction;
+        NiftyApesLending lending;
+        NiftyApesOffers offers;
+        NiftyApesLiquidity liquidity;
+        NiftyApesSigLending sigLending;
+        NiftyApesFlashClaim flashClaim;
+        NiftyApesFlashPurchase flashPurchase;
+        NiftyApesFlashSell flashSell;
+
         address compContractAddress = 0xc00e94Cb662C3520282E6f5717214004A7f26888;
         address goerliMultisigAddress = 0x213dE8CcA7C414C0DE08F456F9c4a2Abc4104028;
 
         vm.startBroadcast();
 
-        liquidityProviders = new NiftyApesLiquidity();
-        liquidityProviders.initialize(compContractAddress);
+        flashClaim = new NiftyApesFlashClaim();
+        flashClaim.initialize();
 
-        offersContract = new NiftyApesOffers();
-        offersContract.initialize(address(liquidityProviders));
+        flashPurchase = new NiftyApesFlashPurchase();
+        flashPurchase.initialize();
 
-        sigLendingAuction = new NiftyApesSigLending();
-        sigLendingAuction.initialize(address(offersContract));
+        flashSell = new NiftyApesFlashSell();
+        flashSell.initialize();
 
-        lendingAuction = new NiftyApesLending();
-        lendingAuction.initialize(
-            address(liquidityProviders),
-            address(offersContract),
-            address(sigLendingAuction)
+        liquidity = new NiftyApesLiquidity();
+        liquidity.initialize(address(compContractAddress), address(flashPurchase));
+
+        offers = new NiftyApesOffers();
+        offers.initialize(address(liquidity), address(flashPurchase));
+
+        sigLending = new NiftyApesSigLending();
+        sigLending.initialize(address(offers), address(flashPurchase));
+
+        lending = new NiftyApesLending();
+        lending.initialize(
+            address(liquidity),
+            address(offers),
+            address(sigLending),
+            address(flashClaim),
+            address(flashPurchase),
+            address(flashSell)
         );
 
-        liquidityProviders.updateLendingContractAddress(address(lendingAuction));
+        liquidity.updateLendingContractAddress(address(lending));
 
-        offersContract.updateLendingContractAddress(address(lendingAuction));
-        offersContract.updateSigLendingContractAddress(address(sigLendingAuction));
+        offers.updateLendingContractAddress(address(lending));
+        offers.updateSigLendingContractAddress(address(sigLending));
 
-        sigLendingAuction.updateLendingContractAddress(address(lendingAuction));
+        sigLending.updateLendingContractAddress(address(lending));
+
+        flashClaim.updateLendingContractAddress(address(lending));
+
+        flashPurchase.updateLiquidityContractAddress(address(liquidity));
+        flashPurchase.updateOffersContractAddress(address(offers));
+        flashPurchase.updateLendingContractAddress(address(lending));
+        flashPurchase.updateSigLendingContractAddress(address(sigLending));
+
+        flashSell.updateLendingContractAddress(address(lending));
+        flashSell.updateLiquidityContractAddress(address(liquidity));
 
         // Goerli Addresses
         address daiToken = 0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60;
@@ -47,19 +77,22 @@ contract DeployNiftyApesScript is Script {
         address cEtherToken = 0x20572e4c090f15667cF7378e16FaD2eA0e2f3EfF;
 
         // DAI
-        liquidityProviders.setCAssetAddress(daiToken, cDAIToken);
+        liquidity.setCAssetAddress(daiToken, cDAIToken);
 
         // ETH
-        liquidityProviders.setCAssetAddress(ETH_ADDRESS, cEtherToken);
+        liquidity.setCAssetAddress(ETH_ADDRESS, cEtherToken);
 
         // pauseSanctions for Goerli as Chainalysis contacts doent exists there
-        liquidityProviders.pauseSanctions();
-        lendingAuction.pauseSanctions();
+        liquidity.pauseSanctions();
+        lending.pauseSanctions();
 
-        liquidityProviders.transferOwnership(goerliMultisigAddress);
-        lendingAuction.transferOwnership(goerliMultisigAddress);
-        offersContract.transferOwnership(goerliMultisigAddress);
-        sigLendingAuction.transferOwnership(goerliMultisigAddress);
+        liquidity.transferOwnership(goerliMultisigAddress);
+        lending.transferOwnership(goerliMultisigAddress);
+        offers.transferOwnership(goerliMultisigAddress);
+        sigLending.transferOwnership(goerliMultisigAddress);
+        flashClaim.transferOwnership(goerliMultisigAddress);
+        flashPurchase.transferOwnership(goerliMultisigAddress);
+        flashSell.transferOwnership(goerliMultisigAddress);
 
         vm.stopBroadcast();
     }
