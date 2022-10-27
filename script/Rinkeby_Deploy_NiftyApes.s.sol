@@ -8,6 +8,7 @@ import "../src/Lending.sol";
 import "../src/FlashClaim.sol";
 import "../src/FlashPurchase.sol";
 import "../src/FlashSell.sol";
+import "../src/SellOnSeaport.sol";
 
 contract DeployNiftyApesScript is Script {
     function run() external {
@@ -18,7 +19,9 @@ contract DeployNiftyApesScript is Script {
         NiftyApesFlashClaim flashClaim;
         NiftyApesFlashPurchase flashPurchase;
         NiftyApesFlashSell flashSell;
+        NiftyApesSellOnSeaport sellOnSeaport;
         address compContractAddress = 0xbbEB7c67fa3cfb40069D19E598713239497A3CA5;
+        address seaportContractAddress = 0x00000000006c3852cbEf3e08E8dF289169EdE581;
         vm.startBroadcast();
 
         flashClaim = new NiftyApesFlashClaim();
@@ -39,6 +42,9 @@ contract DeployNiftyApesScript is Script {
         flashSell = new NiftyApesFlashSell();
         flashSell.initialize();
 
+        sellOnSeaport = new NiftyApesSellOnSeaport();
+        sellOnSeaport.initialize();
+
         lendingAuction = new NiftyApesLending();
         lendingAuction.initialize(
             address(liquidityProviders),
@@ -46,7 +52,8 @@ contract DeployNiftyApesScript is Script {
             address(sigLendingAuction),
             address(flashClaim),
             address(flashPurchase),
-            address(flashSell)
+            address(flashSell),
+            address(sellOnSeaport)
         );
 
         liquidityProviders.updateLendingContractAddress(address(lendingAuction));
@@ -65,6 +72,10 @@ contract DeployNiftyApesScript is Script {
 
         flashSell.updateLendingContractAddress(address(lendingAuction));
         flashSell.updateLiquidityContractAddress(address(liquidityProviders));
+
+        sellOnSeaport.updateLendingContractAddress(address(lendingAuction));
+        sellOnSeaport.updateLiquidityContractAddress(address(liquidityProviders));
+        sellOnSeaport.updateSeaportContractAddress(seaportContractAddress);
 
         // Rinkeby Addresses
         address daiToken = 0x6B175474E89094C44Da98b954EedeAC495271d0F;

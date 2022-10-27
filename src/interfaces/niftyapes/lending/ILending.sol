@@ -26,6 +26,9 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     /// @notice Returns the address for the associated flashSell contract
     function flashSellContractAddress() external view returns (address);
 
+    /// @notice Returns the address for the associated sellOnSeaport contract
+    function sellOnSeaportContractAddress() external view returns (address);
+
     /// @notice Returns the fee that computes protocol interest
     ///         This fee is the basis points in order to calculate interest per second
     function protocolInterestBps() external view returns (uint16);
@@ -184,13 +187,13 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         uint32 expectedLoanBeginTimestamp
     ) external payable;
 
-    /// @notice Repay and close the borrower's loan without the NFT present, callable only by FlashSell contract.
-    ///         This function is similar to repayLoanForAccount except that it is only meant to be called by FlashSell contract.
+    /// @notice Repay and close the borrower's loan without the NFT present, callable only by FlashSell or SellOnSeaport contract.
+    ///         This function is similar to repayLoanForAccount except that it is only meant to be called by FlashSell or SellOnSeaport contract.
     ///         It assumes that the NFT has already been transferred to be used for sale.
     /// @param nftContractAddress The address of the NFT collection
     /// @param nftId The id of the specified NFT
     /// @param expectedLoanBeginTimestamp `LoanAuction.expectedLoanBeginTimestamp` to reassure that the loan is correct and active.
-    function repayLoanForAccountFlashSell(
+    function repayLoanForAccountInternal(
         address nftContractAddress,
         uint256 nftId,
         uint32 expectedLoanBeginTimestamp
@@ -293,6 +296,17 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     /// @param nftId The id of the specified NFT
     /// @param to The address to transfer the NFT to
     function transferNft(
+        address nftContractAddress,
+        uint256 nftId,
+        address to
+    ) external;
+
+    /// @notice Function only callable by the SellOnSeaport
+    ///         Allows other contracts to pull NFT from the lending contract
+    /// @param nftContractAddress The address of the nft collection
+    /// @param nftId The id of the specified NFT
+    /// @param to The address to approve the NFT
+    function approveNft(
         address nftContractAddress,
         uint256 nftId,
         address to

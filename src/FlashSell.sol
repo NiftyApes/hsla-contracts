@@ -140,7 +140,7 @@ contract NiftyApesFlashSell is
         _requireCorrectFundsSent(assetBalanceAfter - assetBalanceBefore, totalLoanPaymentAmount);
 
         if (loanAuction.asset == ETH_ADDRESS) {
-            ILending(lendingContractAddress).repayLoanForAccountFlashSell{value: totalLoanPaymentAmount}(
+            ILending(lendingContractAddress).repayLoanForAccountInternal{value: totalLoanPaymentAmount}(
                 nftContractAddress,
                 nftId,
                 loanAuction.loanBeginTimestamp
@@ -152,7 +152,7 @@ contract NiftyApesFlashSell is
                 assetToken.safeDecreaseAllowance(liquidityContractAddress, allowance);
             }
             assetToken.safeIncreaseAllowance(liquidityContractAddress, totalLoanPaymentAmount);
-            ILending(lendingContractAddress).repayLoanForAccountFlashSell(
+            ILending(lendingContractAddress).repayLoanForAccountInternal(
                 nftContractAddress,
                 nftId,
                 loanAuction.loanBeginTimestamp

@@ -66,6 +66,9 @@ contract NiftyApesLending is
     address public flashSellContractAddress;
 
     /// @inheritdoc ILending
+    address public sellOnSeaportContractAddress;
+
+    /// @inheritdoc ILending
     uint16 public protocolInterestBps;
 
     /// @inheritdoc ILending
@@ -96,7 +99,8 @@ contract NiftyApesLending is
         address newSigLendingContractAddress,
         address newFlashClaimContractAddress,
         address newFlashPurchaseAddress,
-        address newFlashSellContractAddress
+        address newFlashSellContractAddress,
+        address newSellOnSeaportContractAddress
     ) public initializer {
         protocolInterestBps = 0;
         originationPremiumBps = 25;
@@ -110,6 +114,7 @@ contract NiftyApesLending is
         flashClaimContractAddress = newFlashClaimContractAddress;
         flashPurchaseContractAddress = newFlashPurchaseAddress;
         flashSellContractAddress = newFlashSellContractAddress;
+        sellOnSeaportContractAddress = newSellOnSeaportContractAddress;
 
         OwnableUpgradeable.__Ownable_init();
         PausableUpgradeable.__Pausable_init();
@@ -674,12 +679,12 @@ contract NiftyApesLending is
     }
 
     /// @inheritdoc ILending
-    function repayLoanForAccountFlashSell(
+    function repayLoanForAccountInternal(
         address nftContractAddress,
         uint256 nftId,
         uint32 expectedLoanBeginTimestamp
     ) external payable override whenNotPaused nonReentrant {
-        _requireFlashSellContract();
+        _requireFlashSellOrSellOnSeaportContract();
         LoanAuction memory loanAuction = _getLoanAuctionInternal(nftContractAddress, nftId);
         // requireExpectedLoanIsActive
         require(loanAuction.loanBeginTimestamp == expectedLoanBeginTimestamp, "00027");
@@ -1105,8 +1110,8 @@ contract NiftyApesLending is
         require(msg.sender == flashPurchaseContractAddress, "00031");
     }
 
-    function _requireFlashSellContract() internal view {
-        require(msg.sender == flashSellContractAddress, "00031");
+    function _requireFlashSellOrSellOnSeaportContract() internal view {
+        require(msg.sender == flashSellContractAddress || msg.sender == sellOnSeaportContractAddress, "00031");
     }
 
     function _requireOfferParity(LoanAuction storage loanAuction, Offer memory offer)
@@ -1206,6 +1211,16 @@ contract NiftyApesLending is
         address to
     ) internal {
         IERC721Upgradeable(nftContractAddress).safeTransferFrom(from, to, nftId);
+    }
+
+    /// @inheritdoc ILending
+    function approveNft(
+        address nftContractAddress,
+        uint256 nftId,
+        address to
+    ) external whenNotPaused nonReentrant {
+        _requireExpectedContract();
+        IERC721Upgradeable(nftContractAddress).approve(to, nftId);
     }
 
     function _payoutCTokenBalances(
