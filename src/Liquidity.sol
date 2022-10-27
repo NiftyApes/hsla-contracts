@@ -53,6 +53,9 @@ contract NiftyApesLiquidity is
     address public lendingContractAddress;
 
     /// @inheritdoc ILiquidity
+    address public flashPurchaseContractAddress;
+
+    /// @inheritdoc ILiquidity
     uint16 public regenCollectiveBpsOfRevenue;
 
     /// @inheritdoc ILiquidity
@@ -74,10 +77,14 @@ contract NiftyApesLiquidity is
     /// @notice The initializer for the NiftyApes protocol.
     ///         NiftyApes is intended to be deployed behind a proxy and thus needs to initialize
     ///         its state outside of a constructor.
-    function initialize(address newCompContractAddress) public initializer {
+    function initialize(
+        address newCompContractAddress,
+        address newFlashPurchaseContractAddress
+    ) public initializer {
         regenCollectiveBpsOfRevenue = 100;
         regenCollectiveAddress = address(0x252de94Ae0F07fb19112297F299f8c9Cc10E28a6);
         compContractAddress = newCompContractAddress;
+        flashPurchaseContractAddress = newFlashPurchaseContractAddress;
 
         OwnableUpgradeable.__Ownable_init();
         PausableUpgradeable.__Pausable_init();
@@ -365,8 +372,10 @@ contract NiftyApesLiquidity is
         require(amount > 0, "00045");
     }
 
-    function _requireLendingContract() internal view {
-        require(msg.sender == lendingContractAddress, "00031");
+    function _requireExpectedContract() internal view {
+        if (msg.sender != flashPurchaseContractAddress) {
+            require(msg.sender == lendingContractAddress, "00031");
+        }
     }
 
     function _ownerWithdrawUnderlying(address asset, address cAsset)
@@ -429,7 +438,7 @@ contract NiftyApesLiquidity is
         uint256 amount,
         address to
     ) external {
-        _requireLendingContract();
+        _requireExpectedContract();
         _sendValue(asset, amount, to);
     }
 
@@ -452,7 +461,7 @@ contract NiftyApesLiquidity is
         address asset,
         uint256 amount
     ) external returns (uint256) {
-        _requireLendingContract();
+        _requireExpectedContract();
         return _mintCErc20(from, asset, amount);
     }
 
@@ -482,7 +491,7 @@ contract NiftyApesLiquidity is
 
     /// @inheritdoc ILiquidity
     function mintCEth() external payable returns (uint256) {
-        _requireLendingContract();
+        _requireExpectedContract();
         return _mintCEth(msg.value);
     }
 
@@ -499,11 +508,11 @@ contract NiftyApesLiquidity is
 
     /// @inheritdoc ILiquidity
     function burnCErc20(address asset, uint256 amount) external returns (uint256) {
-        _requireLendingContract();
+        _requireExpectedContract();
         return _burnCErc20(asset, amount);
     }
 
-    // @notice param amount is denominated in the underlying asset, not cAsset
+    /// @notice param amount is denominated in the underlying asset, not cAsset
     function _burnCErc20(address asset, uint256 amount) internal returns (uint256) {
         _requireAmountGreaterThanZero(amount);
 
@@ -524,7 +533,7 @@ contract NiftyApesLiquidity is
         address cAsset,
         uint256 cTokenAmount
     ) external {
-        _requireLendingContract();
+        _requireExpectedContract();
         _withdrawCBalance(account, cAsset, cTokenAmount);
     }
 
@@ -543,7 +552,7 @@ contract NiftyApesLiquidity is
         address cAsset,
         uint256 amount
     ) external {
-        _requireLendingContract();
+        _requireExpectedContract();
         _balanceByAccountByCAsset[account][cAsset] += amount;
     }
 

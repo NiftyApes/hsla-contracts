@@ -8,7 +8,12 @@ import "../../../SigLending.sol";
 import "../../../FlashClaim.sol";
 import "./FlashClaimReceivers/FlashClaimReceiverTestHappy.sol";
 import "./FlashClaimReceivers/FlashClaimReceiverTestNoReturn.sol";
+import "../../../FlashPurchase.sol";
+import "../../../flashPurchase/integrations/SeaportFlashPurchaseIntegration.sol";
+import "../../../flashPurchase/integrations/SudoswapFlashPurchaseIntegration.sol";
+import "../../../FlashSell.sol";
 import "./NFTAndERC20Fixtures.sol";
+import "../../../interfaces/seaport/ISeaport.sol";
 
 import "forge-std/Test.sol";
 
@@ -24,8 +29,15 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
     NiftyApesFlashClaim flashClaim;
     FlashClaimReceiverBaseHappy flashClaimReceiverHappy;
     FlashClaimReceiverBaseNoReturn flashClaimReceiverNoReturn;
+    NiftyApesFlashPurchase flashPurchase;
+    SeaportFlashPurchaseIntegration seaportFlashPurchase;
+    SudoswapFlashPurchaseIntegration sudoswapFlashPurchase;
+    NiftyApesFlashSell flashSell;
 
     address constant ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+    address constant SEAPORT_ADDRESS = 0x00000000006c3852cbEf3e08E8dF289169EdE581;
+    address constant SUDOSWAP_FACTORY_ADDRESS = 0xb16c1342E617A5B6E4b631EB114483FDB289c0A4;
+    address constant SUDOSWAP_ROUTER_ADDRESS = 0x2B2e8cDA09bBA9660dCA5cB6233787738Ad68329;
 
     function setUp() public virtual override {
         super.setUp();
@@ -38,22 +50,44 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         flashClaim = new NiftyApesFlashClaim();
         flashClaim.initialize();
 
+        if (integration) {
+            flashPurchase = new NiftyApesFlashPurchase();
+
+            seaportFlashPurchase = new SeaportFlashPurchaseIntegration();
+            seaportFlashPurchase.initialize(address(offers), address(flashPurchase), SEAPORT_ADDRESS);
+
+            sudoswapFlashPurchase = new SudoswapFlashPurchaseIntegration();
+            sudoswapFlashPurchase.initialize(address(offers), address(flashPurchase), SUDOSWAP_FACTORY_ADDRESS, SUDOSWAP_ROUTER_ADDRESS);
+
+        } else {
+            flashPurchase = new NiftyApesFlashPurchase();
+            seaportFlashPurchase = new SeaportFlashPurchaseIntegration();
+            sudoswapFlashPurchase = new SudoswapFlashPurchaseIntegration();
+        }
+
         liquidity = new NiftyApesLiquidity();
-        liquidity.initialize(address(compToken));
+        liquidity.initialize(address(compToken), address(flashPurchase));
 
         offers = new NiftyApesOffers();
-        offers.initialize(address(liquidity));
+        offers.initialize(address(liquidity), address(flashPurchase));
 
         sigLending = new NiftyApesSigLending();
-        sigLending.initialize(address(offers));
+        sigLending.initialize(address(offers), address(flashPurchase));
+
+        flashSell = new NiftyApesFlashSell();
+        flashSell.initialize();
 
         lending = new NiftyApesLending();
         lending.initialize(
             address(liquidity),
             address(offers),
             address(sigLending),
-            address(flashClaim)
+            address(flashClaim),
+            address(flashPurchase),
+            address(flashSell)
         );
+
+        flashPurchase.initialize();
 
         sigLending.updateLendingContractAddress(address(lending));
 
@@ -63,6 +97,16 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         liquidity.updateLendingContractAddress(address(lending));
 
         flashClaim.updateLendingContractAddress(address(lending));
+
+        flashPurchase.updateLiquidityContractAddress(address(liquidity));
+        flashPurchase.updateOffersContractAddress(address(offers));
+        flashPurchase.updateLendingContractAddress(address(lending));
+        flashPurchase.updateSigLendingContractAddress(address(sigLending));
+        seaportFlashPurchase.updateOffersContractAddress(address(offers));
+        sudoswapFlashPurchase.updateOffersContractAddress(address(offers));
+
+        flashSell.updateLendingContractAddress(address(lending));
+        flashSell.updateLiquidityContractAddress(address(liquidity));
 
         liquidity.setCAssetAddress(ETH_ADDRESS, address(cEtherToken));
         liquidity.setMaxCAssetBalance(address(cEtherToken), ~uint256(0));
@@ -78,6 +122,7 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
             liquidity.pauseSanctions();
             lending.pauseSanctions();
             flashClaim.pauseSanctions();
+            flashSell.pauseSanctions();
         }
 
         vm.stopPrank();

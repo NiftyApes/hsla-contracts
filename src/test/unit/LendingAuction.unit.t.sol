@@ -10,6 +10,8 @@ import "../../Liquidity.sol";
 import "../../Offers.sol";
 import "../../SigLending.sol";
 import "../../FlashClaim.sol";
+import "../../FlashPurchase.sol";
+import "../../FlashSell.sol";
 import "../../interfaces/niftyapes/lending/ILendingEvents.sol";
 import "../../interfaces/niftyapes/offers/IOffersEvents.sol";
 
@@ -34,6 +36,8 @@ contract LendingAuctionUnitTest is
     NiftyApesLiquidity liquidityProviders;
     NiftyApesSigLending sigLendingAuction;
     NiftyApesFlashClaim flashClaim;
+    NiftyApesFlashPurchase flashPurchase;
+    NiftyApesFlashSell flashSell;
     ERC20Mock daiToken;
     CERC20Mock cDAIToken;
     CEtherMock cEtherToken;
@@ -69,21 +73,29 @@ contract LendingAuctionUnitTest is
         flashClaim = new NiftyApesFlashClaim();
         flashClaim.initialize();
 
+        flashPurchase = new NiftyApesFlashPurchase();
+        flashPurchase.initialize();
+
         liquidityProviders = new NiftyApesLiquidity();
-        liquidityProviders.initialize(compContractAddress);
+        liquidityProviders.initialize(compContractAddress, address(flashPurchase));
 
         offersContract = new NiftyApesOffers();
-        offersContract.initialize(address(liquidityProviders));
+        offersContract.initialize(address(liquidityProviders), address(flashPurchase));
 
         sigLendingAuction = new NiftyApesSigLending();
-        sigLendingAuction.initialize(address(offersContract));
+        sigLendingAuction.initialize(address(offersContract), address(flashPurchase));
+
+        flashSell = new NiftyApesFlashSell();
+        flashSell.initialize();
 
         lendingAuction = new NiftyApesLending();
         lendingAuction.initialize(
             address(liquidityProviders),
             address(offersContract),
             address(sigLendingAuction),
-            address(flashClaim)
+            address(flashClaim),
+            address(flashPurchase),
+            address(flashSell)
         );
 
         liquidityProviders.updateLendingContractAddress(address(lendingAuction));
@@ -94,6 +106,8 @@ contract LendingAuctionUnitTest is
         sigLendingAuction.updateLendingContractAddress(address(lendingAuction));
 
         flashClaim.updateLendingContractAddress(address(lendingAuction));
+
+        flashSell.updateLendingContractAddress(address(lendingAuction));
 
         if (block.number == 1) {
             lendingAuction.pauseSanctions();

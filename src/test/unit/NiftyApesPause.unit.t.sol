@@ -10,6 +10,8 @@ import "../../Liquidity.sol";
 import "../../Offers.sol";
 import "../../SigLending.sol";
 import "../../FlashClaim.sol";
+import "../../FlashPurchase.sol";
+import "../../FlashSell.sol";
 import "../../interfaces/niftyapes/lending/ILendingStructs.sol";
 import "../../interfaces/niftyapes/offers/IOffersStructs.sol";
 
@@ -30,6 +32,8 @@ contract NiftyApesPauseUnitTest is
     NiftyApesLiquidity liquidityProviders;
     NiftyApesSigLending sigLendingAuction;
     NiftyApesFlashClaim flashClaim;
+    NiftyApesFlashPurchase flashPurchase;
+    NiftyApesFlashSell flashSell;
     ERC20Mock daiToken;
     CERC20Mock cDAIToken;
     CEtherMock cEtherToken;
@@ -54,21 +58,29 @@ contract NiftyApesPauseUnitTest is
         flashClaim = new NiftyApesFlashClaim();
         flashClaim.initialize();
 
+        flashPurchase = new NiftyApesFlashPurchase();
+        flashPurchase.initialize();
+
         liquidityProviders = new NiftyApesLiquidity();
-        liquidityProviders.initialize(compContractAddress);
+        liquidityProviders.initialize(compContractAddress, address(flashPurchase));
 
         offersContract = new NiftyApesOffers();
-        offersContract.initialize(address(liquidityProviders));
+        offersContract.initialize(address(liquidityProviders), address(flashPurchase));
 
         sigLendingAuction = new NiftyApesSigLending();
-        sigLendingAuction.initialize(address(offersContract));
+        sigLendingAuction.initialize(address(offersContract), address(flashPurchase));
+
+        flashSell = new NiftyApesFlashSell();
+        flashSell.initialize();
 
         lendingAuction = new NiftyApesLending();
         lendingAuction.initialize(
             address(liquidityProviders),
             address(offersContract),
             address(sigLendingAuction),
-            address(flashClaim)
+            address(flashClaim),
+            address(flashPurchase),
+            address(flashSell)
         );
 
         offersContract.updateLendingContractAddress(address(lendingAuction));
@@ -91,6 +103,7 @@ contract NiftyApesPauseUnitTest is
         offersContract.pause();
         sigLendingAuction.pause();
         flashClaim.pause();
+        flashSell.pause();
 
         acceptEth = true;
 
