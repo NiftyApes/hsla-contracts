@@ -54,11 +54,19 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
             flashPurchase = new NiftyApesFlashPurchase();
 
             seaportFlashPurchase = new SeaportFlashPurchaseIntegration();
-            seaportFlashPurchase.initialize(address(offers), address(flashPurchase), SEAPORT_ADDRESS);
+            seaportFlashPurchase.initialize(
+                address(offers),
+                address(flashPurchase),
+                SEAPORT_ADDRESS
+            );
 
             sudoswapFlashPurchase = new SudoswapFlashPurchaseIntegration();
-            sudoswapFlashPurchase.initialize(address(offers), address(flashPurchase), SUDOSWAP_FACTORY_ADDRESS, SUDOSWAP_ROUTER_ADDRESS);
-
+            sudoswapFlashPurchase.initialize(
+                address(offers),
+                address(flashPurchase),
+                SUDOSWAP_FACTORY_ADDRESS,
+                SUDOSWAP_ROUTER_ADDRESS
+            );
         } else {
             flashPurchase = new NiftyApesFlashPurchase();
             seaportFlashPurchase = new SeaportFlashPurchaseIntegration();
