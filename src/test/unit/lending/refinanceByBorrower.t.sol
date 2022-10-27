@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC721/IERC721Upgradeable.sol";
 
 import "../../utils/fixtures/OffersLoansRefinancesFixtures.sol";
 
-contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
+contract TestRefinanceLoanByBorrower is Test, OffersLoansRefinancesFixtures {
     function setUp() public override {
         super.setUp();
     }
@@ -17,7 +17,10 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
     {
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
 
-        createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
+        (, LoanAuction memory loanAuction) = createOfferAndTryToExecuteLoanByBorrower(
+            offer,
+            "should work"
+        );
 
         assertionsForExecutedLoan(offer);
 
@@ -27,10 +30,14 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
 
         vm.warp(block.timestamp + secondsBeforeRefinance);
 
-        uint256 interestShortfall = lending.checkSufficientInterestAccumulated(
-            offer.nftContractAddress,
-            offer.nftId
-        );
+        uint256 interestShortfall;
+
+        if (loanAuction.loanEndTimestamp - block.timestamp < 1 days) {
+            interestShortfall = lending.checkSufficientInterestAccumulated(
+                offer.nftContractAddress,
+                offer.nftId
+            );
+        }
 
         // will trigger gas griefing (but not term griefing with borrower refinance)
         defaultFixedOfferFields.creator = lender2;

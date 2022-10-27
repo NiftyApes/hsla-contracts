@@ -336,7 +336,7 @@ contract NiftyApesLending is
 
         address cAsset = ILiquidity(liquidityContractAddress).getCAsset(offer.asset);
 
-        if (loanAuction.loanEndTimestamp - _currentTimestamp32() < 1 days) {
+        if (loanAuction.loanEndTimestamp - _currentTimestamp32() > 1 days) {
             uint256 interestThresholdDelta = _checkSufficientInterestAccumulated(loanAuction);
 
             if (interestThresholdDelta > 0) {
@@ -715,7 +715,7 @@ contract NiftyApesLending is
             require(msg.sender == loanAuction.nftOwner, "00028");
         }
 
-        if (loanAuction.loanEndTimestamp - _currentTimestamp32() < 1 days) {
+        if (loanAuction.loanEndTimestamp - _currentTimestamp32() > 1 days) {
             uint256 interestThresholdDelta = _checkSufficientInterestAccumulated(loanAuction);
 
             if (interestThresholdDelta > 0) {
@@ -1103,7 +1103,10 @@ contract NiftyApesLending is
     }
 
     function _requireExpectedContract() internal view {
-        require(msg.sender == flashClaimContractAddress || msg.sender == flashSellContractAddress, "00031");
+        require(
+            msg.sender == flashClaimContractAddress || msg.sender == flashSellContractAddress,
+            "00031"
+        );
     }
 
     function _requireFlashPurchaseContract() internal view {
