@@ -200,7 +200,7 @@ contract TestFlashSell is Test, ILendingStructs, OffersLoansRefinancesFixtures {
     ) private view returns (uint256) {
         uint256 interestThresholdDelta;
 
-        if (loanAuction.loanEndTimestamp - uint32(block.timestamp) > 1 days) {
+        if (loanAuction.loanEndTimestamp - 1 days > uint32(block.timestamp)) {
             interestThresholdDelta = lending.checkSufficientInterestAccumulated(
                 nftContractAddress,
                 nftId

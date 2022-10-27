@@ -32,7 +32,7 @@ contract TestRefinanceLoanByBorrower is Test, OffersLoansRefinancesFixtures {
 
         uint256 interestShortfall;
 
-        if (loanAuction.loanEndTimestamp - block.timestamp < 1 days) {
+        if (loanAuction.loanEndTimestamp - 1 days > uint32(block.timestamp)) {
             interestShortfall = lending.checkSufficientInterestAccumulated(
                 offer.nftContractAddress,
                 offer.nftId
