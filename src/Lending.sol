@@ -90,7 +90,7 @@ contract NiftyApesLending is
         originationPremiumBps = 25;
         gasGriefingPremiumBps = 25;
         termGriefingPremiumBps = 25;
-        defaultRefinancePremiumBps = 25;
+        defaultRefinancePremiumBps = 0;
 
         liquidityContractAddress = newLiquidityContractAddress;
         offersContractAddress = newOffersContractAddress;
