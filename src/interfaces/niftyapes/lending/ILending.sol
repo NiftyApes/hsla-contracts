@@ -265,4 +265,10 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         address nftOwner,
         uint32 expectedLastUpdatedTimestamp
     ) external;
+
+    function initialize(
+        address newLiquidityContractAddress,
+        address newOffersContractAddress,
+        address newSigLendingContractAddress
+    ) external;
 }

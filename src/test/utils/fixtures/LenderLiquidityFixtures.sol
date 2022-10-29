@@ -3,9 +3,9 @@ pragma solidity 0.8.13;
 
 import "forge-std/Test.sol";
 
-import "./NiftyApesDeployment.sol";
+import "./DeployProxy.sol";
 
-contract LenderLiquidityFixtures is Test, NiftyApesDeployment {
+contract LenderLiquidityFixtures is Test, DeployProxy {
     uint256 internal defaultEthLiquiditySupplied;
     uint256 internal defaultDaiLiquiditySupplied;
 
