@@ -39,7 +39,6 @@ contract DeployNiftyApesScript is Script {
 
     function run() external {
         address compContractAddress = 0xc00e94Cb662C3520282E6f5717214004A7f26888;
-        address goerliMultisigAddress = 0x213dE8CcA7C414C0DE08F456F9c4a2Abc4104028;
 
         vm.startBroadcast();
 
@@ -114,14 +113,14 @@ contract DeployNiftyApesScript is Script {
         // DAI
         liquidity.setCAssetAddress(daiToken, cDAIToken);
 
-        uint256 cDAIAmount = liquidity.assetAmountToCAssetAmount(daiToken, type(uint256).max);
+        uint256 cDAIAmount = liquidity.assetAmountToCAssetAmount(daiToken, type(uint128).max);
 
         liquidity.setMaxCAssetBalance(cDAIToken, cDAIAmount);
 
         // ETH
         liquidity.setCAssetAddress(ETH_ADDRESS, cEtherToken);
 
-        uint256 cEtherAmount = liquidity.assetAmountToCAssetAmount(ETH_ADDRESS, type(uint256).max);
+        uint256 cEtherAmount = liquidity.assetAmountToCAssetAmount(ETH_ADDRESS, type(uint128).max);
 
         liquidity.setMaxCAssetBalance(cEtherToken, cEtherAmount);
 

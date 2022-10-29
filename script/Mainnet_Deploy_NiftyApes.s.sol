@@ -114,14 +114,14 @@ contract DeployNiftyApesScript is Script {
         // DAI
         liquidity.setCAssetAddress(daiToken, cDAIToken);
 
-        uint256 cDAIAmount = liquidity.assetAmountToCAssetAmount(daiToken, type(uint256).max);
+        uint256 cDAIAmount = liquidity.assetAmountToCAssetAmount(daiToken, type(uint128).max);
 
         liquidity.setMaxCAssetBalance(cDAIToken, cDAIAmount);
 
         // ETH
         liquidity.setCAssetAddress(ETH_ADDRESS, cEtherToken);
 
-        uint256 cEtherAmount = liquidity.assetAmountToCAssetAmount(ETH_ADDRESS, type(uint256).max);
+        uint256 cEtherAmount = liquidity.assetAmountToCAssetAmount(ETH_ADDRESS, type(uint128).max);
 
         liquidity.setMaxCAssetBalance(cEtherToken, cEtherAmount);
 
