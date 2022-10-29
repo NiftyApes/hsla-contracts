@@ -18,19 +18,44 @@ import "../mock/CEtherMock.sol";
 import "../mock/ERC20Mock.sol";
 import "../mock/ERC721Mock.sol";
 
+import "@openzeppelin-norm/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import "@openzeppelin-norm/contracts/proxy/transparent/ProxyAdmin.sol";
+
+import "../../interfaces/niftyapes/lending/ILending.sol";
+import "../../interfaces/niftyapes/offers/IOffers.sol";
+import "../../interfaces/niftyapes/liquidity/ILiquidity.sol";
+import "../../interfaces/niftyapes/sigLending/ISigLending.sol";
+
 contract NiftyApesPauseUnitTest is
     BaseTest,
     ILendingStructs,
     IOffersStructs,
     ERC721HolderUpgradeable
 {
-    NiftyApesLending lendingAuction;
-    NiftyApesOffers offersContract;
-    NiftyApesLiquidity liquidityProviders;
-    NiftyApesSigLending sigLendingAuction;
     ERC20Mock daiToken;
     CERC20Mock cDAIToken;
     CEtherMock cEtherToken;
+
+    NiftyApesLending lendingImplementation;
+    NiftyApesOffers offersImplementation;
+    NiftyApesLiquidity liquidityImplementation;
+    NiftyApesSigLending sigLendingImplementation;
+
+    ProxyAdmin lendingProxyAdmin;
+    ProxyAdmin offersProxyAdmin;
+    ProxyAdmin liquidityProxyAdmin;
+    ProxyAdmin sigLendingProxyAdmin;
+
+    TransparentUpgradeableProxy lendingProxy;
+    TransparentUpgradeableProxy offersProxy;
+    TransparentUpgradeableProxy liquidityProxy;
+    TransparentUpgradeableProxy sigLendingProxy;
+
+    ILending lendingAuction;
+    IOffers offersContract;
+    ILiquidity liquidityProviders;
+    ISigLending sigLendingAuction;
+
     address compContractAddress = 0xbbEB7c67fa3cfb40069D19E598713239497A3CA5;
 
     ERC721Mock mockNft;
@@ -49,16 +74,50 @@ contract NiftyApesPauseUnitTest is
     }
 
     function setUp() public {
-        liquidityProviders = new NiftyApesLiquidity();
-        liquidityProviders.initialize(compContractAddress);
+        liquidityImplementation = new NiftyApesLiquidity();
+        offersImplementation = new NiftyApesOffers();
+        sigLendingImplementation = new NiftyApesSigLending();
+        lendingImplementation = new NiftyApesLending();
 
-        offersContract = new NiftyApesOffers();
+        // deploy proxy admins
+        lendingProxyAdmin = new ProxyAdmin();
+        offersProxyAdmin = new ProxyAdmin();
+        liquidityProxyAdmin = new ProxyAdmin();
+        sigLendingProxyAdmin = new ProxyAdmin();
+
+        // deploy proxies
+        lendingProxy = new TransparentUpgradeableProxy(
+            address(lendingImplementation),
+            address(lendingProxyAdmin),
+            bytes("")
+        );
+        offersProxy = new TransparentUpgradeableProxy(
+            address(offersImplementation),
+            address(offersProxyAdmin),
+            bytes("")
+        );
+        liquidityProxy = new TransparentUpgradeableProxy(
+            address(liquidityImplementation),
+            address(liquidityProxyAdmin),
+            bytes("")
+        );
+
+        sigLendingProxy = new TransparentUpgradeableProxy(
+            address(sigLendingImplementation),
+            address(sigLendingProxyAdmin),
+            bytes("")
+        );
+
+        // declare interfaces
+        lendingAuction = ILending(address(lendingProxy));
+        liquidityProviders = ILiquidity(address(liquidityProxy));
+        offersContract = IOffers(address(offersProxy));
+        sigLendingAuction = ISigLending(address(sigLendingProxy));
+
+        // initialize proxies
+        liquidityProviders.initialize(address(compContractAddress));
         offersContract.initialize(address(liquidityProviders));
-
-        sigLendingAuction = new NiftyApesSigLending();
         sigLendingAuction.initialize(address(offersContract));
-
-        lendingAuction = new NiftyApesLending();
         lendingAuction.initialize(
             address(liquidityProviders),
             address(offersContract),

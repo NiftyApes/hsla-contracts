@@ -39,7 +39,7 @@ contract DeployNiftyApesScript is Script {
 
     function run() external {
         address compContractAddress = 0xc00e94Cb662C3520282E6f5717214004A7f26888;
-        address mainnetMultisigAddress = 0xbe9B799D066A51F77d353Fc72e832f3803789362;
+        address goerliMultisigAddress = 0x213dE8CcA7C414C0DE08F456F9c4a2Abc4104028;
 
         vm.startBroadcast();
 
@@ -105,11 +105,11 @@ contract DeployNiftyApesScript is Script {
 
         sigLending.updateLendingContractAddress(address(lending));
 
-        // Mainnet Addresses
-        address daiToken = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
-        address cDAIToken = 0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643;
+        // Goerli Addresses
+        address daiToken = 0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60;
+        address cDAIToken = 0x822397d9a55d0fefd20F5c4bCaB33C5F65bd28Eb;
         address ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
-        address cEtherToken = 0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5;
+        address cEtherToken = 0x20572e4c090f15667cF7378e16FaD2eA0e2f3EfF;
 
         // DAI
         liquidity.setCAssetAddress(daiToken, cDAIToken);
@@ -125,23 +125,9 @@ contract DeployNiftyApesScript is Script {
 
         liquidity.setMaxCAssetBalance(cEtherToken, cEtherAmount);
 
-        // change ownership of implementation contracts
-        liquidityImplementation.transferOwnership(mainnetMultisigAddress);
-        lendingImplementation.transferOwnership(mainnetMultisigAddress);
-        offersImplementation.transferOwnership(mainnetMultisigAddress);
-        sigLendingImplementation.transferOwnership(mainnetMultisigAddress);
-
-        // change ownership of proxies
-        IOwnership(address(lendingProxy)).transferOwnership(mainnetMultisigAddress);
-        IOwnership(address(offersProxy)).transferOwnership(mainnetMultisigAddress);
-        IOwnership(address(liquidityProxy)).transferOwnership(mainnetMultisigAddress);
-        IOwnership(address(sigLendingProxy)).transferOwnership(mainnetMultisigAddress);
-
-        // change ownership of proxyAdmin
-        lendingProxyAdmin.transferOwnership(mainnetMultisigAddress);
-        offersProxyAdmin.transferOwnership(mainnetMultisigAddress);
-        liquidityProxyAdmin.transferOwnership(mainnetMultisigAddress);
-        sigLendingProxyAdmin.transferOwnership(mainnetMultisigAddress);
+        // pauseSanctions for Goerli as Chainalysis contacts doent exists there
+        liquidity.pauseSanctions();
+        lending.pauseSanctions();
 
         vm.stopBroadcast();
     }
