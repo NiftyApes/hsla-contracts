@@ -73,6 +73,14 @@ interface ISellOnSeaportEvents {
         bytes32 newOpenseaConduitKey
     );
 
+    /// @notice Emitted when OpenseaConduit is changed
+    /// @param oldOpenseaConduit The old OpenseaConduit
+    /// @param newOpenseaConduit The new OpenseaConduit
+    event OpenseaConduitUpdated(
+        address oldOpenseaConduit,
+        address newOpenseaConduit
+    );
+
     /// @notice Emitted when sanctions checks are paused
     event SellOnSeaportSanctionsPaused();
 

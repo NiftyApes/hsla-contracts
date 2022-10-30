@@ -35,6 +35,9 @@ interface ISellOnSeaport is
     /// @notice Returns the openseaConduitKey
     function openseaConduitKey() external view returns (bytes32);
 
+    /// @notice Returns the openseaConduit
+    function openseaConduit() external view returns (address);
+
     /// @notice Allows a borrower to list their locked NFTs on Seaport
     /// @param  nftContractAddress Address of the NFT collection to be pruchased
     /// @param  nftId Token id of the NFT user intends to provide as collateral
@@ -42,6 +45,7 @@ interface ISellOnSeaport is
     /// @param  listingStartTime id of the NFT user intends to provide as collateral
     /// @param  listingEndTime Token id of the NFT user intends to provide as collateral
     /// @param  salt a random salt
+    /// @return orderHash
     function listNftForSale(
         address nftContractAddress,
         uint256 nftId,
@@ -49,7 +53,7 @@ interface ISellOnSeaport is
         uint256 listingStartTime,
         uint256 listingEndTime,
         uint256 salt
-    ) external;
+    ) external returns (bytes32);
 
     /// @notice Allows a borrower to validate the sale of their listed NFT
     /// @param  nftContractAddress Address of the NFT collection to be pruchased

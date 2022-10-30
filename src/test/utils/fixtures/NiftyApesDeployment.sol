@@ -52,6 +52,9 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         flashClaim = new NiftyApesFlashClaim();
         flashClaim.initialize();
 
+        sellOnSeaport = new NiftyApesSellOnSeaport();
+        sellOnSeaport.initialize();
+
         if (integration) {
             flashPurchase = new NiftyApesFlashPurchase();
 
@@ -60,6 +63,8 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
 
             sudoswapFlashPurchase = new SudoswapFlashPurchaseIntegration();
             sudoswapFlashPurchase.initialize(address(offers), address(flashPurchase), SUDOSWAP_FACTORY_ADDRESS, SUDOSWAP_ROUTER_ADDRESS);
+
+            sellOnSeaport.updateSeaportContractAddress(SEAPORT_ADDRESS);
 
         } else {
             flashPurchase = new NiftyApesFlashPurchase();
@@ -78,9 +83,6 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
 
         flashSell = new NiftyApesFlashSell();
         flashSell.initialize();
-
-        sellOnSeaport = new NiftyApesSellOnSeaport();
-        sellOnSeaport.initialize();
 
         lending = new NiftyApesLending();
         lending.initialize(
@@ -121,6 +123,9 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         liquidity.setMaxCAssetBalance(address(cDAIToken), ~uint256(0));
 
         flashClaimReceiverHappy.updateFlashClaimContractAddress(address(flashClaim));
+
+        sellOnSeaport.updateLendingContractAddress(address(lending));
+        sellOnSeaport.updateLiquidityContractAddress(address(liquidity));
 
         lending.updateProtocolInterestBps(100);
 

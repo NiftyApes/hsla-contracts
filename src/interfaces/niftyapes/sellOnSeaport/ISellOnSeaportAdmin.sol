@@ -24,6 +24,9 @@ interface ISellOnSeaportAdmin {
     /// @notice Updates the OpenseaConduitKey
     function updateOpenseaConduitKey(bytes32 newOpenseaConduitKey) external;
 
+    /// @notice Updates the OpenseaConduit
+    function updateOpenseaConduit(address newOpenseaConduit) external;
+
     /// @notice Pauses sanctions checks
     function pauseSanctions() external;
 

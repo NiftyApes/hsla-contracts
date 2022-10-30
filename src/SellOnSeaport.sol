@@ -59,6 +59,9 @@ contract NiftyApesSellOnSeaport is
     /// @inheritdoc ISellOnSeaport
     bytes32 public openseaConduitKey;
 
+    /// @inheritdoc ISellOnSeaport
+    address public openseaConduit;
+
     /// @dev The status of sanctions checks. Can be set to false if oracle becomes malicious.
     bool internal _sanctionsPause;
 
@@ -78,6 +81,7 @@ contract NiftyApesSellOnSeaport is
         openseaFeeRecepient = 0x0000a26b00c1F0DF003000390027140000fAa719;
         openseaZoneHash = bytes32(0x0000000000000000000000000000000000000000000000000000000000000000);
         openseaConduitKey = bytes32(0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000);
+        openseaConduit = 0x1E0049783F008A0085193E00003D00cd54003c71;
     }
 
     /// @inheritdoc ISellOnSeaportAdmin
@@ -137,6 +141,12 @@ contract NiftyApesSellOnSeaport is
     }
 
     /// @inheritdoc ISellOnSeaportAdmin
+    function updateOpenseaConduit(address newOpenseaConduit) external onlyOwner {
+        emit OpenseaConduitUpdated(openseaConduit, newOpenseaConduit);
+        openseaConduit = newOpenseaConduit;
+    }
+
+    /// @inheritdoc ISellOnSeaportAdmin
     function pauseSanctions() external onlyOwner {
         _sanctionsPause = true;
         emit SellOnSeaportSanctionsPaused();
@@ -166,7 +176,7 @@ contract NiftyApesSellOnSeaport is
         uint256 listingStartTime,
         uint256 listingEndTime,
         uint256 salt
-    ) external whenNotPaused nonReentrant {
+    ) external whenNotPaused nonReentrant returns (bytes32) {
         LoanAuction memory loanAuction = ILending(lendingContractAddress).getLoanAuction(nftContractAddress, nftId); 
         uint256 openSeaFeeAmount = listingPrice - (listingPrice * 39) / 40;
 
@@ -188,7 +198,7 @@ contract NiftyApesSellOnSeaport is
             salt
         );
         // approve the NFT for Seaport address
-        ILending(lendingContractAddress).approveNft(nftContractAddress, nftId, seaportContractAddress);
+        ILending(lendingContractAddress).approveNft(nftContractAddress, nftId, openseaConduit);
         // call lending contract to validate listing to Seaport
         ILending(lendingContractAddress).validateSeaportOrderSellOnSeaport(seaportContractAddress, order);
         // get orderHash by calling ISeaport.getOrderHash()
@@ -197,11 +207,12 @@ contract NiftyApesSellOnSeaport is
         (bool validated,,,) = ISeaport(seaportContractAddress).getOrderStatus(orderHash);
         require(validated, "00059");
 
-        // store the listing with its hash
+        // store the listing with orderHash
         _orderHashToListing[orderHash] = SeaportListing(nftContractAddress, nftId, listingPrice - openSeaFeeAmount);
 
         // emit orderHash with it's listing
         emit ListedOnSeaport(nftContractAddress, nftId, orderHash, loanAuction);
+        return orderHash;
     }
 
     /// @inheritdoc ISellOnSeaport
@@ -275,8 +286,8 @@ contract NiftyApesSellOnSeaport is
                         offer: new ISeaport.OfferItem[](1),
                         consideration: new ISeaport.ConsiderationItem[](2),
                         orderType: ISeaport.OrderType.FULL_OPEN,
-                        startTime: listingStartTime * 1000,
-                        endTime: listingEndTime * 1000,
+                        startTime: listingStartTime,
+                        endTime: listingEndTime,
                         zoneHash: openseaZoneHash,
                         salt: randomSalt,
                         conduitKey: openseaConduitKey,
