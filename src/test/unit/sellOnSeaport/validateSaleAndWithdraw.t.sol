@@ -126,6 +126,37 @@ contract TestListNftForSale is Test, OffersLoansRefinancesFixtures, ERC721Holder
     function test_fuzz_validateSaleAndWithdraw_happy_case_lender_call(FuzzedOfferFields memory fuzzedOfferData) public validateFuzzedOfferFields(fuzzedOfferData) {
         _test_unit_validateSaleAndWithdraw_happy_case(fuzzedOfferData, true);
     }
+
+    function _test_unit_validateSaleAndWithdraw_notFulfilled_not_happy(FuzzedOfferFields memory fuzzed) private {
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
+
+        LoanAuction memory loanAuction = lending.getLoanAuction(offer.nftContractAddress, offer.nftId);
+        // skip time to accrue interest
+        skip(uint256(loanAuction.loanEndTimestamp - loanAuction.loanBeginTimestamp) / 2);
+
+        uint256 listingValueToBePaidToNiftyApes = _calculateTotalLoanPaymentAmountAtTimestamp(loanAuction, loanAuction.loanEndTimestamp);
+        // adding 2.5% opnesea fee amount
+        uint256 listingPrice = ((listingValueToBePaidToNiftyApes) * 40 + 38) / 39;
+
+        vm.startPrank(borrower1);
+        bytes32 orderHash = sellOnSeaport.listNftForSale(
+            offer.nftContractAddress,
+            offer.nftId,
+            listingPrice,
+            block.timestamp,
+            loanAuction.loanEndTimestamp,
+            1
+        );
+
+        vm.expectRevert("00063");
+        sellOnSeaport.validateSaleAndWithdraw(offer.nftContractAddress, offer.nftId, orderHash);
+        vm.stopPrank();
+    }
+
+    function test_fuzz_validateSaleAndWithdraw_notFulfilled_not_happy(FuzzedOfferFields memory fuzzedOfferData) public validateFuzzedOfferFields(fuzzedOfferData) {
+        _test_unit_validateSaleAndWithdraw_notFulfilled_not_happy(fuzzedOfferData);
+    }
     
     function _createOrder(
         address nftContractAddress,
