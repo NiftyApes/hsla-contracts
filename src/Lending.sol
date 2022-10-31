@@ -391,7 +391,8 @@ contract NiftyApesLending is
         loanAuction.lender = offer.creator;
         loanAuction.amount = offer.amount;
         loanAuction.interestRatePerSecond = offer.interestRatePerSecond;
-        loanAuction.loanEndTimestamp = loanAuction.loanBeginTimestamp + offer.duration;
+        loanAuction.loanEndTimestamp = _currentTimestamp32() + offer.duration;
+        loanAuction.loanBeginTimestamp = _currentTimestamp32();
         loanAuction.amountDrawn = SafeCastUpgradeable.toUint128(
             toLenderUnderlying + toProtocolUnderlying
         );
@@ -812,11 +813,11 @@ contract NiftyApesLending is
 
         address currentLender = loanAuction.lender;
 
+        emit AssetSeized(nftContractAddress, nftId, loanAuction);
+
         delete _loanAuctions[nftContractAddress][nftId];
 
         _transferNft(nftContractAddress, nftId, address(this), currentLender);
-
-        emit AssetSeized(nftContractAddress, nftId, loanAuction);
     }
 
     /// @inheritdoc ILending
