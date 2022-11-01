@@ -29,8 +29,6 @@ interface ISellOnSeaportEvents {
         ILendingStructs.LoanAuction loanAuction   
     );
 
-    
-
     /// @notice Emitted when the associated liquidity contract address is changed
     /// @param oldLiquidityContractAddress The old liquidity contract address
     /// @param newLiquidityContractAddress The new liquidity contract address

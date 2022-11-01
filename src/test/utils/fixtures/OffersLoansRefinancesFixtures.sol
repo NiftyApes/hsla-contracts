@@ -278,7 +278,7 @@ contract OffersLoansRefinancesFixtures is
     function assetBalancePlusOneCToken(address account, address asset) internal returns (uint256) {
         address cAsset = liquidity.assetToCAsset(asset);
 
-        uint256 cTokens = liquidity.getCAssetBalance(account, address(cAsset)) + 2;
+        uint256 cTokens = liquidity.getCAssetBalance(account, address(cAsset)) + 1;
 
         return liquidity.cAssetAmountToAssetAmount(address(cAsset), cTokens);
     }
