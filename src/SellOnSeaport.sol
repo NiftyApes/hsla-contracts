@@ -228,7 +228,7 @@ contract NiftyApesSellOnSeaport is
         _requireIsNotSanctioned(msg.sender);
         _requireOpenLoan(loanAuction);
         
-        // validate order status using ISeaport.getOrderStatus()
+        // validate order status
         (bool valid, bool cancelled, uint256 filled, )  = ISeaport(seaportContractAddress).getOrderStatus(orderHash);
         require(valid, "00059");
         require(!cancelled, "00062");
@@ -261,6 +261,32 @@ contract NiftyApesSellOnSeaport is
             // transfer the remaining to the borrower
             IERC20Upgradeable(loanAuction.asset).safeTransfer(loanAuction.nftOwner, listing.listingValue - totalLoanPaymentAmount);
         }
+    }
+
+    function cancelNftListing(ISeaport.OrderComponents memory orderComponents) external whenNotPaused nonReentrant {
+        bytes32 orderHash = ISeaport(seaportContractAddress).getOrderHash(orderComponents);
+        address nftContractAddress = orderComponents.offer[0].token;
+        uint256 nftId = orderComponents.offer[0].identifierOrCriteria;
+
+        LoanAuction memory loanAuction = ILending(lendingContractAddress).getLoanAuction(nftContractAddress, nftId); 
+
+        // validate inputs
+        _requireNftOwner(loanAuction);
+        _requireValidOrderHash(nftContractAddress, nftId, orderHash);
+        _requireIsNotSanctioned(msg.sender);
+
+        // validate order status
+        (bool valid, bool cancelled, uint256 filled, )  = ISeaport(seaportContractAddress).getOrderStatus(orderHash);
+        require(valid, "00059");
+        require(!cancelled, "00062");
+        require(filled == 0, "00063");
+        
+        ISeaport.OrderComponents[] memory orderComponentsList = new ISeaport.OrderComponents[](1);
+        orderComponentsList[0] =  orderComponents;
+        require(ILending(lendingContractAddress).cancelOrderSellOnSeaport(seaportContractAddress, orderComponentsList), "00065");
+
+        // emit orderHash with it's listing
+        emit ListingCancelledSeaport(nftContractAddress, nftId, orderHash, loanAuction);
     }
 
     function _constructOrder(

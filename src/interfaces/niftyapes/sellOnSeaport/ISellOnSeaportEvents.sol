@@ -17,6 +17,20 @@ interface ISellOnSeaportEvents {
         ILendingStructs.LoanAuction loanAuction   
     );
 
+    /// @notice Emitted when a seaport NFT listing thorugh NiftyApes is cancelled by the borrower
+    /// @param nftContractAddress The nft contract address
+    /// @param nftId The tokenId of the listed NFT
+    /// @param orderHash The hash of the order which listed the NFT
+    /// @param loanAuction The loan details at the time of listing
+    event ListingCancelledSeaport(
+        address indexed nftContractAddress,
+        uint256 indexed nftId,
+        bytes32 indexed orderHash,
+        ILendingStructs.LoanAuction loanAuction   
+    );
+
+    
+
     /// @notice Emitted when the associated liquidity contract address is changed
     /// @param oldLiquidityContractAddress The old liquidity contract address
     /// @param newLiquidityContractAddress The new liquidity contract address

@@ -333,4 +333,12 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         address seaportContractAddress,
         ISeaport.Order[] memory orders
     ) external;
+    
+    /// @notice Function cancels the valid order listed on the Seaport for SellOnSeaport
+    /// @param seaportContractAddress The address of the Seaport contract
+    /// @param orderComponentsList the Seaport orderComponents struct list
+    function cancelOrderSellOnSeaport(
+        address seaportContractAddress,
+        ISeaport.OrderComponents[] memory orderComponentsList
+    ) external returns (bool);
 }

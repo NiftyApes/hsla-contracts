@@ -1028,9 +1028,16 @@ contract NiftyApesLending is
         return improvementSum > termGriefingPremiumBps;
     }
 
+    /// @inheritdoc ILending
     function validateSeaportOrderSellOnSeaport(address seaportContractAddress, ISeaport.Order[] memory orders) external {
         _requireSellOnSeaportContract();
         ISeaport(seaportContractAddress).validate(orders); 
+    }
+
+    /// @inheritdoc ILending
+    function cancelOrderSellOnSeaport(address seaportContractAddress, ISeaport.OrderComponents[] memory orderComponentsList) external returns (bool) {
+        _requireSellOnSeaportContract();
+        return ISeaport(seaportContractAddress).cancel(orderComponentsList); 
     }
 
     function _requireSufficientBalance(
