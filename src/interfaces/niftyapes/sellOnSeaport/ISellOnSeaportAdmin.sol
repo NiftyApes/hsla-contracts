@@ -12,6 +12,12 @@ interface ISellOnSeaportAdmin {
     /// @notice Updates the associated seaport contract address
     function updateSeaportContractAddress(address newSeaportContractAddress) external;
 
+    /// @notice Updates the associated flashSell contract address
+    function updateFlashSellContractAddress(address newFlashSellContractAddress) external;
+
+    /// @notice Updates the associated weth contract address
+    function updateWethContractAddress(address newWethContractAddress) external;
+
     /// @notice Updates the OpenseaZone
     function updateOpenseaZone(address newOpenseaZone) external;
 

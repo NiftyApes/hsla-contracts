@@ -23,6 +23,12 @@ interface ISellOnSeaport is
     /// @notice Returns the address for the associated seaport contract
     function seaportContractAddress() external view returns (address);
 
+    /// @notice Returns the address for the associated flashSell contract
+    function flashSellContractAddress() external view returns (address);
+
+    /// @notice Returns the address for the weth contract
+    function wethContractAddress() external view returns (address);
+
     /// @notice Returns the address for the openseaZone
     function openseaZone() external view returns (address);
 

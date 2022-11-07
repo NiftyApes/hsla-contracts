@@ -12,7 +12,7 @@ contract LenderLiquidityFixtures is Test, NiftyApesDeployment {
     function setUp() public virtual override {
         super.setUp();
 
-        defaultEthLiquiditySupplied = address(lender1).balance;
+        defaultEthLiquiditySupplied = wethToken.balanceOf(wethWhale);
 
         if (integration) {
             defaultDaiLiquiditySupplied = daiToken.balanceOf(lender1);

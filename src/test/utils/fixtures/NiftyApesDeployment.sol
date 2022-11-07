@@ -135,6 +135,9 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
 
         sellOnSeaport.updateLendingContractAddress(address(lending));
         sellOnSeaport.updateLiquidityContractAddress(address(liquidity));
+        sellOnSeaport.updateFlashSellContractAddress(address(flashSell));
+        sellOnSeaport.updateFlashSellContractAddress(address(flashSell));
+        sellOnSeaport.updateWethContractAddress(address(wethToken));
 
         lending.updateProtocolInterestBps(100);
 

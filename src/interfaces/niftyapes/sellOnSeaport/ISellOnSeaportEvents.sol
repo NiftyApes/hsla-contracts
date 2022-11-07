@@ -53,6 +53,22 @@ interface ISellOnSeaportEvents {
         address newSeaportContractAddress
     );
 
+    /// @notice Emitted when the address for FlashSell is changed
+    /// @param oldFlashSellContractAddress The old address of the FlashSell Contract
+    /// @param newFlashSellContractAddress The new address of the FlashSell Contract
+    event SellOnSeaportXFlashSellContractAddressUpdated(
+        address oldFlashSellContractAddress,
+        address newFlashSellContractAddress
+    );
+
+    /// @notice Emitted when the address for Weth contract is changed
+    /// @param oldWethContractAddress The old address of the Weth Contract
+    /// @param newWethContractAddress The new address of the Weth Contract
+    event SellOnSeaportXWethContractAddressUpdated(
+        address oldWethContractAddress,
+        address newWethContractAddress
+    );
+
     /// @notice Emitted when the address for OpenseaZone is changed
     /// @param oldOpenseaZone The old OpenseaZone
     /// @param newOpenseaZone The new OpenseaZone

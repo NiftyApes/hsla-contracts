@@ -119,6 +119,7 @@ contract LendingAuctionUnitTest is
         sellOnSeaport.updateLendingContractAddress(address(lendingAuction));
         sellOnSeaport.updateLiquidityContractAddress(address(liquidityProviders));
         sellOnSeaport.updateSeaportContractAddress(seaportContractAddress);
+        sellOnSeaport.updateFlashSellContractAddress(address(flashSell));
 
         if (block.number == 1) {
             lendingAuction.pauseSanctions();

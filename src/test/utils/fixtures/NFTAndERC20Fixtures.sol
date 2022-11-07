@@ -16,6 +16,7 @@ import "forge-std/Test.sol";
 // supplies DAI to lenders
 contract NFTAndERC20Fixtures is Test, UsersFixtures {
     ERC20Mock internal daiToken;
+    ERC20Mock internal wethToken;
     ERC20Mock internal compToken;
     CERC20Mock internal cDAIToken;
     CEtherMock internal cEtherToken;
@@ -26,6 +27,8 @@ contract NFTAndERC20Fixtures is Test, UsersFixtures {
     address constant daiWhale1 = 0x6c6Bc977E13Df9b0de53b251522280BB72383700;
     address constant daiWhale2 = 0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643;
     address constant daiWhale = 0x5777d92f208679DB4b9778590Fa3CAB3aC9e2168;
+
+    address constant wethWhale = 0xF04a5cC80B1E94C69B48f5ee68a08CD2F09A7c3E;
 
     address constant compWhale = 0x2775b1c75658Be0F640272CCb8c72ac986009e38;
 
@@ -40,6 +43,8 @@ contract NFTAndERC20Fixtures is Test, UsersFixtures {
 
         if (integration) {
             daiToken = ERC20Mock(0x6B175474E89094C44Da98b954EedeAC495271d0F);
+            
+            wethToken = ERC20Mock(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
 
             compToken = ERC20Mock(0xc00e94Cb662C3520282E6f5717214004A7f26888);
 
@@ -99,6 +104,14 @@ contract NFTAndERC20Fixtures is Test, UsersFixtures {
             vm.stopPrank();
         } else {
             daiToken.mint(recipient, amount);
+        }
+    }
+
+    function mintWeth(address recipient, uint256 amount) internal {
+        if (integration) {
+            vm.startPrank(wethWhale);
+            wethToken.transfer(recipient, amount);
+            vm.stopPrank();
         }
     }
 
