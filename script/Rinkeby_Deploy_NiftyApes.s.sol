@@ -76,12 +76,17 @@ contract DeployNiftyApesScript is Script {
         sellOnSeaport.updateLendingContractAddress(address(lendingAuction));
         sellOnSeaport.updateLiquidityContractAddress(address(liquidityProviders));
         sellOnSeaport.updateSeaportContractAddress(seaportContractAddress);
+        sellOnSeaport.updateFlashSellContractAddress(address(flashSell));
 
         // Rinkeby Addresses
         address daiToken = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
         address cDAIToken = 0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643;
         address ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
         address cEtherToken = 0xd6801a1DfFCd0a410336Ef88DeF4320D6DF1883e;
+        address wethToken = 0xDf032Bc4B9dC2782Bb09352007D4C57B75160B15;
+        
+        // WETH
+        sellOnSeaport.updateWethContractAddress(wethToken);
 
         // DAI
         liquidityProviders.setCAssetAddress(daiToken, cDAIToken);
