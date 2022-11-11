@@ -61,19 +61,19 @@ contract NiftyApesSellOnSeaport is
     address public wethContractAddress;
 
     /// @inheritdoc ISellOnSeaport
-    address public openseaZone;
+    address public openSeaZone;
 
     /// @inheritdoc ISellOnSeaport
-    address public openseaFeeRecepient;
+    address public openSeaFeeRecepient;
 
     /// @inheritdoc ISellOnSeaport
-    bytes32 public openseaZoneHash;
+    bytes32 public openSeaZoneHash;
 
     /// @inheritdoc ISellOnSeaport
-    bytes32 public openseaConduitKey;
+    bytes32 public openSeaConduitKey;
 
     /// @inheritdoc ISellOnSeaport
-    address public openseaConduit;
+    address public openSeaConduit;
 
     /// @dev The status of sanctions checks. Can be set to false if oracle becomes malicious.
     bool internal _sanctionsPause;
@@ -90,12 +90,12 @@ contract NiftyApesSellOnSeaport is
         PausableUpgradeable.__Pausable_init();
         ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
         ERC721HolderUpgradeable.__ERC721Holder_init();
-        
-        openseaZone = 0x004C00500000aD104D7DBd00e3ae0A5C00560C00;
-        openseaFeeRecepient = 0x0000a26b00c1F0DF003000390027140000fAa719;
-        openseaZoneHash = bytes32(0x0000000000000000000000000000000000000000000000000000000000000000);
-        openseaConduitKey = bytes32(0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000);
-        openseaConduit = 0x1E0049783F008A0085193E00003D00cd54003c71;
+
+        openSeaZone = 0x004C00500000aD104D7DBd00e3ae0A5C00560C00;
+        openSeaFeeRecepient = 0x0000a26b00c1F0DF003000390027140000fAa719;
+        openSeaZoneHash = bytes32(0x0000000000000000000000000000000000000000000000000000000000000000);
+        openSeaConduitKey = bytes32(0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000);
+        openSeaConduit = 0x1E0049783F008A0085193E00003D00cd54003c71;
     }
 
     /// @inheritdoc ISellOnSeaportAdmin
@@ -143,35 +143,35 @@ contract NiftyApesSellOnSeaport is
     }
 
     /// @inheritdoc ISellOnSeaportAdmin
-    function updateOpenseaZone(address newOpenseaZone) external onlyOwner {
-        require(address(newOpenseaZone) != address(0), "00035");
-        emit OpenseaZoneUpdated(openseaZone, newOpenseaZone);
-        openseaZone = newOpenseaZone;
+    function updateOpenSeaZone(address newOpenSeaZone) external onlyOwner {
+        require(address(newOpenSeaZone) != address(0), "00035");
+        emit OpenSeaZoneUpdated(openSeaZone, newOpenSeaZone);
+        openSeaZone = newOpenSeaZone;
     }
 
     /// @inheritdoc ISellOnSeaportAdmin
-    function updateOpenseaFeeRecepient(address newOpenseaFeeRecepient) external onlyOwner {
-        require(address(newOpenseaFeeRecepient) != address(0), "00035");
-        emit OpenseaFeeRecepientUpdated(openseaFeeRecepient, newOpenseaFeeRecepient);
-        openseaFeeRecepient = newOpenseaFeeRecepient;
+    function updateOpenSeaFeeRecepient(address newOpenSeaFeeRecepient) external onlyOwner {
+        require(address(newOpenSeaFeeRecepient) != address(0), "00035");
+        emit OpenSeaFeeRecepientUpdated(openSeaFeeRecepient, newOpenSeaFeeRecepient);
+        openSeaFeeRecepient = newOpenSeaFeeRecepient;
     }
 
     /// @inheritdoc ISellOnSeaportAdmin
-    function updateOpenseaZoneHash(bytes32 newOpenseaZoneHash) external onlyOwner {
-        emit OpenseaZoneHashUpdated(openseaZoneHash, newOpenseaZoneHash);
-        openseaZoneHash = newOpenseaZoneHash;
+    function updateOpenSeaZoneHash(bytes32 newOpenSeaZoneHash) external onlyOwner {
+        emit OpenSeaZoneHashUpdated(openSeaZoneHash, newOpenSeaZoneHash);
+        openSeaZoneHash = newOpenSeaZoneHash;
     }
 
     /// @inheritdoc ISellOnSeaportAdmin
-    function updateOpenseaConduitKey(bytes32 newOpenseaConduitKey) external onlyOwner {
-        emit OpenseaConduitKeyUpdated(openseaConduitKey, newOpenseaConduitKey);
-        openseaConduitKey = newOpenseaConduitKey;
+    function updateOpenSeaConduitKey(bytes32 newOpenSeaConduitKey) external onlyOwner {
+        emit OpenSeaConduitKeyUpdated(openSeaConduitKey, newOpenSeaConduitKey);
+        openSeaConduitKey = newOpenSeaConduitKey;
     }
 
     /// @inheritdoc ISellOnSeaportAdmin
-    function updateOpenseaConduit(address newOpenseaConduit) external onlyOwner {
-        emit OpenseaConduitUpdated(openseaConduit, newOpenseaConduit);
-        openseaConduit = newOpenseaConduit;
+    function updateOpenSeaConduit(address newOpenSeaConduit) external onlyOwner {
+        emit OpenSeaConduitUpdated(openSeaConduit, newOpenSeaConduit);
+        openSeaConduit = newOpenSeaConduit;
     }
 
     /// @inheritdoc ISellOnSeaportAdmin
@@ -226,7 +226,7 @@ contract NiftyApesSellOnSeaport is
             salt
         );
         // approve the NFT for Seaport address
-        ILending(lendingContractAddress).approveNft(nftContractAddress, nftId, openseaConduit);
+        ILending(lendingContractAddress).approveNft(nftContractAddress, nftId, openSeaConduit);
         // call lending contract to validate listing to Seaport
         ILending(lendingContractAddress).validateSeaportOrderSellOnSeaport(seaportContractAddress, order);
         // get orderHash by calling ISeaport.getOrderHash()
@@ -342,7 +342,7 @@ contract NiftyApesSellOnSeaport is
         }
 
         uint256 assetBalanceBefore = _getAssetBalance(address(asset));
-        
+
         uint256 allowance = asset.allowance(address(this), seaportContractAddress);
         if (allowance > 0) {
             asset.safeDecreaseAllowance(seaportContractAddress, allowance);
@@ -380,7 +380,7 @@ contract NiftyApesSellOnSeaport is
         address nftContractAddress,
         uint256 nftId,
         uint256 listingPrice,
-        uint256 openseaFeeAmount,
+        uint256 openSeaFeeAmount,
         uint256 listingStartTime,
         uint256 listingEndTime,
         address asset,
@@ -395,15 +395,15 @@ contract NiftyApesSellOnSeaport is
                 parameters: ISeaport.OrderParameters(
                     {
                         offerer: lendingContractAddress,
-                        zone: openseaZone,
+                        zone: openSeaZone,
                         offer: new ISeaport.OfferItem[](1),
                         consideration: new ISeaport.ConsiderationItem[](2),
                         orderType: ISeaport.OrderType.FULL_OPEN,
                         startTime: listingStartTime,
                         endTime: listingEndTime,
-                        zoneHash: openseaZoneHash,
+                        zoneHash: openSeaZoneHash,
                         salt: randomSalt,
-                        conduitKey: openseaConduitKey,
+                        conduitKey: openSeaConduitKey,
                         totalOriginalConsiderationItems: 2
                     }
                 ),
@@ -424,8 +424,8 @@ contract NiftyApesSellOnSeaport is
                 itemType: considerationItemType,
                 token: considerationToken,
                 identifierOrCriteria: 0,
-                startAmount: listingPrice - openseaFeeAmount,
-                endAmount:listingPrice - openseaFeeAmount,
+                startAmount: listingPrice - openSeaFeeAmount,
+                endAmount:listingPrice - openSeaFeeAmount,
                 recipient: payable(address(this))
             }
             
@@ -435,9 +435,9 @@ contract NiftyApesSellOnSeaport is
                 itemType: considerationItemType,
                 token: considerationToken,
                 identifierOrCriteria: 0,
-                startAmount: openseaFeeAmount,
-                endAmount: openseaFeeAmount,
-                recipient: payable(openseaFeeRecepient)
+                startAmount: openSeaFeeAmount,
+                endAmount: openSeaFeeAmount,
+                recipient: payable(openSeaFeeRecepient)
             }
         );
     }
@@ -445,11 +445,11 @@ contract NiftyApesSellOnSeaport is
     function _requireListingValueGreaterThanLoanRepaymentAmountUntilListingExpiry(
         LoanAuction memory loanAuction,
         uint256 listingPrice,
-        uint256 openseaFeeAmount,
+        uint256 openSeaFeeAmount,
         uint256 listingEndTime
     ) internal view {
         require(
-            listingPrice - openseaFeeAmount >= _calculateTotalLoanPaymentAmountAtTimestamp(loanAuction, listingEndTime),
+            listingPrice - openSeaFeeAmount >= _calculateTotalLoanPaymentAmountAtTimestamp(loanAuction, listingEndTime),
             "00060"
         );
     }
@@ -557,7 +557,7 @@ contract NiftyApesSellOnSeaport is
             return address(this).balance;
         } else {
             return IERC20Upgradeable(asset).balanceOf(address(this));
-        }   
+        }
     }
 
     function _requireFlashSellContract() internal view {

@@ -18,20 +18,20 @@ interface ISellOnSeaportAdmin {
     /// @notice Updates the associated weth contract address
     function updateWethContractAddress(address newWethContractAddress) external;
 
-    /// @notice Updates the OpenseaZone
-    function updateOpenseaZone(address newOpenseaZone) external;
+    /// @notice Updates the OpenSeaZone
+    function updateOpenSeaZone(address newOpenSeaZone) external;
 
-    /// @notice Updates the OpenseaFeeRecepient
-    function updateOpenseaFeeRecepient(address newOpenseaFeeRecepient) external;
+    /// @notice Updates the OpenSeaFeeRecepient
+    function updateOpenSeaFeeRecepient(address newOpenSeaFeeRecepient) external;
 
-    /// @notice Updates the OpenseaZoneHash
-    function updateOpenseaZoneHash(bytes32 newOpenseaZoneHash) external;
+    /// @notice Updates the OpenSeaZoneHash
+    function updateOpenSeaZoneHash(bytes32 newOpenSeaZoneHash) external;
 
-    /// @notice Updates the OpenseaConduitKey
-    function updateOpenseaConduitKey(bytes32 newOpenseaConduitKey) external;
+    /// @notice Updates the OpenSeaConduitKey
+    function updateOpenSeaConduitKey(bytes32 newOpenSeaConduitKey) external;
 
-    /// @notice Updates the OpenseaConduit
-    function updateOpenseaConduit(address newOpenseaConduit) external;
+    /// @notice Updates the OpenSeaConduit
+    function updateOpenSeaConduit(address newOpenSeaConduit) external;
 
     /// @notice Pauses sanctions checks
     function pauseSanctions() external;

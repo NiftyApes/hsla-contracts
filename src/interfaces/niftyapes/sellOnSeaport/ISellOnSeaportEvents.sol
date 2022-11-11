@@ -69,44 +69,43 @@ interface ISellOnSeaportEvents {
         address newWethContractAddress
     );
 
-    /// @notice Emitted when the address for OpenseaZone is changed
-    /// @param oldOpenseaZone The old OpenseaZone
-    /// @param newOpenseaZone The new OpenseaZone
-    event OpenseaZoneUpdated(
-        address oldOpenseaZone,
-        address newOpenseaZone
+    /// @notice Emitted when the address for OpenSeaZone is changed
+    /// @param oldOpenSeaZone The old OpenSeaZone
+    /// @param newOpenSeaZone The new OpenSeaZone
+    event OpenSeaZoneUpdated(
+        address oldOpenSeaZone,
+        address newOpenSeaZone
+
+    /// @notice Emitted when the address for OpenSeaFeeRecepient is changed
+    /// @param oldOpenSeaFeeRecepient The old OpenSeaFeeRecepient
+    /// @param newOpenSeaFeeRecepient The new OpenSeaFeeRecepient
+    event OpenSeaFeeRecepientUpdated(
+        address oldOpenSeaFeeRecepient,
+        address newOpenSeaFeeRecepient
     );
 
-    /// @notice Emitted when the address for OpenseaFeeRecepient is changed
-    /// @param oldOpenseaFeeRecepient The old OpenseaFeeRecepient
-    /// @param newOpenseaFeeRecepient The new OpenseaFeeRecepient
-    event OpenseaFeeRecepientUpdated(
-        address oldOpenseaFeeRecepient,
-        address newOpenseaFeeRecepient
+    /// @notice Emitted when the OpenSeaZoneHash is changed
+    /// @param oldOpenSeaZoneHash The old OpenSeaZoneHash
+    /// @param newOpenSeaZoneHash The new OpenSeaZoneHash
+    event OpenSeaZoneHashUpdated(
+        bytes32 oldOpenSeaZoneHash,
+        bytes32 newOpenSeaZoneHash
     );
 
-    /// @notice Emitted when the OpenseaZoneHash is changed
-    /// @param oldOpenseaZoneHash The old OpenseaZoneHash
-    /// @param newOpenseaZoneHash The new OpenseaZoneHash
-    event OpenseaZoneHashUpdated(
-        bytes32 oldOpenseaZoneHash,
-        bytes32 newOpenseaZoneHash
+    /// @notice Emitted when OpenSeaConduitKey is changed
+    /// @param oldOpenSeaConduitKey The old OpenSeaConduitKey
+    /// @param newOpenSeaConduitKey The new OpenSeaConduitKey
+    event OpenSeaConduitKeyUpdated(
+        bytes32 oldOpenSeaConduitKey,
+        bytes32 newOpenSeaConduitKey
     );
 
-    /// @notice Emitted when OpenseaConduitKey is changed
-    /// @param oldOpenseaConduitKey The old OpenseaConduitKey
-    /// @param newOpenseaConduitKey The new OpenseaConduitKey
-    event OpenseaConduitKeyUpdated(
-        bytes32 oldOpenseaConduitKey,
-        bytes32 newOpenseaConduitKey
-    );
-
-    /// @notice Emitted when OpenseaConduit is changed
-    /// @param oldOpenseaConduit The old OpenseaConduit
-    /// @param newOpenseaConduit The new OpenseaConduit
-    event OpenseaConduitUpdated(
-        address oldOpenseaConduit,
-        address newOpenseaConduit
+    /// @notice Emitted when OpenSeaConduit is changed
+    /// @param oldOpenSeaConduit The old OpenSeaConduit
+    /// @param newOpenSeaConduit The new OpenSeaConduit
+    event OpenSeaConduitUpdated(
+        address oldOpenSeaConduit,
+        address newOpenSeaConduit
     );
 
     /// @notice Emitted when sanctions checks are paused

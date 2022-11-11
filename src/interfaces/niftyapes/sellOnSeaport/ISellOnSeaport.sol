@@ -29,20 +29,20 @@ interface ISellOnSeaport is
     /// @notice Returns the address for the weth contract
     function wethContractAddress() external view returns (address);
 
-    /// @notice Returns the address for the openseaZone
-    function openseaZone() external view returns (address);
+    /// @notice Returns the address for the openSeaZone
+    function openSeaZone() external view returns (address);
 
-    /// @notice Returns the address for the openseaFeeRecepient
-    function openseaFeeRecepient() external view returns (address);
+    /// @notice Returns the address for the openSeaFeeRecepient
+    function openSeaFeeRecepient() external view returns (address);
 
-    /// @notice Returns the openseaZoneHash
-    function openseaZoneHash() external view returns (bytes32);
+    /// @notice Returns the openSeaZoneHash
+    function openSeaZoneHash() external view returns (bytes32);
 
-    /// @notice Returns the openseaConduitKey
-    function openseaConduitKey() external view returns (bytes32);
+    /// @notice Returns the openSeaConduitKey
+    function openSeaConduitKey() external view returns (bytes32);
 
-    /// @notice Returns the openseaConduit
-    function openseaConduit() external view returns (address);
+    /// @notice Returns the openSeaConduit
+    function openSeaConduit() external view returns (address);
 
     /// @notice Allows a borrower to list their locked NFTs on Seaport
     /// @param  nftContractAddress Address of the NFT collection to be pruchased
