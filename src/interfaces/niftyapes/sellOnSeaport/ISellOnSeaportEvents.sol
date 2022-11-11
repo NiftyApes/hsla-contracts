@@ -75,6 +75,7 @@ interface ISellOnSeaportEvents {
     event OpenSeaZoneUpdated(
         address oldOpenSeaZone,
         address newOpenSeaZone
+    );
 
     /// @notice Emitted when the address for OpenSeaFeeRecepient is changed
     /// @param oldOpenSeaFeeRecepient The old OpenSeaFeeRecepient
