@@ -83,6 +83,15 @@ contract NiftyApesLending is
     /// @dev The status of sanctions checks. Can be set to false if oracle becomes malicious.
     bool internal _sanctionsPause;
 
+    // Mapping owner to nftContractAddress to token count
+    mapping(address => mapping(address => uint256)) private _balances;
+
+    // Mapping from owner to nftContractAddress to list of owned token IDs
+    mapping(address => mapping(address => mapping(uint256 => uint256))) private _ownedTokens;
+
+    // Mapping from nftContractAddress to token ID to index of the owner tokens list
+    mapping(address => mapping(uint256 => uint256)) private _ownedTokensIndex;
+
     /// @dev This empty reserved space is put in place to allow future versions to add new
     /// variables without shifting storage.
     uint256[500] private __gap;
@@ -272,6 +281,8 @@ contract NiftyApesLending is
         _createLoan(loanAuction, offer, lender, borrower);
 
         _transferNft(offer.nftContractAddress, nftId, borrower, address(this));
+
+        _addTokenToOwnerEnumeration(borrower, offer.nftContractAddress, nftId);
 
         uint256 cTokensBurned = ILiquidity(liquidityContractAddress).burnCErc20(
             offer.asset,
@@ -655,8 +666,10 @@ contract NiftyApesLending is
         nonReentrant
     {
         LoanAuction memory loanAuction = _getLoanAuctionInternal(nftContractAddress, nftId);
+        address nftOwner = loanAuction.nftOwner;
         _repayLoanAmount(nftContractAddress, nftId, true, 0, true);
-        _transferNft(nftContractAddress, nftId, address(this), loanAuction.nftOwner);
+        _transferNft(nftContractAddress, nftId, address(this), nftOwner);
+        _removeTokenFromOwnerEnumeration(nftOwner, nftContractAddress, nftId);
     }
 
     /// @inheritdoc ILending
@@ -670,8 +683,10 @@ contract NiftyApesLending is
         require(loanAuction.loanBeginTimestamp == expectedLoanBeginTimestamp, "00027");
         _requireIsNotSanctioned(msg.sender);
 
+        address nftOwner = loanAuction.nftOwner;
         _repayLoanAmount(nftContractAddress, nftId, true, 0, false);
-        _transferNft(nftContractAddress, nftId, address(this), loanAuction.nftOwner);
+        _transferNft(nftContractAddress, nftId, address(this), nftOwner);
+        _removeTokenFromOwnerEnumeration(nftOwner, nftContractAddress, nftId);
     }
 
     /// @inheritdoc ILending
@@ -684,8 +699,10 @@ contract NiftyApesLending is
         LoanAuction memory loanAuction = _getLoanAuctionInternal(nftContractAddress, nftId);
         // requireExpectedLoanIsActive
         require(loanAuction.loanBeginTimestamp == expectedLoanBeginTimestamp, "00027");
-
+        
+        address nftOwner = loanAuction.nftOwner;
         _repayLoanAmount(nftContractAddress, nftId, true, 0, false);
+        _removeTokenFromOwnerEnumeration(nftOwner, nftContractAddress, nftId);
     }
 
     /// @inheritdoc ILending
@@ -807,12 +824,13 @@ contract NiftyApesLending is
         require(_currentTimestamp32() >= loanAuction.loanEndTimestamp, "00008");
 
         address currentLender = loanAuction.lender;
-
+        address nftOwner = loanAuction.nftOwner;
         emit AssetSeized(nftContractAddress, nftId, loanAuction);
 
         delete _loanAuctions[nftContractAddress][nftId];
 
         _transferNft(nftContractAddress, nftId, address(this), currentLender);
+        _removeTokenFromOwnerEnumeration(nftOwner, nftContractAddress, nftId);
     }
 
     /// @inheritdoc ILending
@@ -1021,6 +1039,62 @@ contract NiftyApesLending is
 
         // check and return if improvements are greater than 25 bps total
         return improvementSum > termGriefingPremiumBps;
+    }
+
+    /// @inheritdoc ILending
+    function balanceOf(address owner, address nftContractAddress) public view override returns (uint256) {
+        require(owner != address(0), "00035");
+        return _balances[owner][nftContractAddress];
+    }
+
+    /// @inheritdoc ILending
+    function tokenOfOwnerByIndex(address owner, address nftContractAddress, uint256 index) public view override returns (uint256) {
+        require(index < balanceOf(owner, nftContractAddress), "00069");
+        return _ownedTokens[owner][nftContractAddress][index];
+    }
+
+    /**
+     * @dev Private function to add a token to this extension's ownership-tracking data structures.
+     * @param owner address representing the new owner of the given token ID
+     * @param nftContractAddress address nft collection address
+     * @param tokenId uint256 ID of the token to be added to the tokens list of the given address
+     */
+    function _addTokenToOwnerEnumeration(address owner, address nftContractAddress, uint256 tokenId) private {
+        uint256 length = _balances[owner][nftContractAddress];
+        _ownedTokens[owner][nftContractAddress][length] = tokenId;
+        _ownedTokensIndex[nftContractAddress][tokenId] = length;
+        _balances[owner][nftContractAddress] += 1;
+    }
+
+    /**
+     * @dev Private function to remove a token from this extension's ownership-tracking data structures. Note that
+     * while the token is not assigned a new owner, the `_ownedTokensIndex` mapping is _not_ updated: this allows for
+     * gas optimizations e.g. when performing a transfer operation (avoiding double writes).
+     * This has O(1) time complexity, but alters the order of the _ownedTokens array.
+     * @param owner address representing the owner of the given token ID to be removed
+     * @param nftContractAddress address nft collection address
+     * @param tokenId uint256 ID of the token to be removed from the tokens list of the given address
+     */
+    function _removeTokenFromOwnerEnumeration(address owner, address nftContractAddress, uint256 tokenId) private {
+        // To prevent a gap in from's tokens array, we store the last token in the index of the token to delete, and then delete the last slot (swap and pop).
+
+        uint256 lastTokenIndex = balanceOf(owner, nftContractAddress) - 1;
+        uint256 tokenIndex = _ownedTokensIndex[nftContractAddress][tokenId];
+
+        // When the token to delete is the last token, the swap operation is unnecessary
+        if (tokenIndex != lastTokenIndex) {
+            uint256 lastTokenId = _ownedTokens[owner][nftContractAddress][lastTokenIndex];
+
+            _ownedTokens[owner][nftContractAddress][tokenIndex] = lastTokenId; // Move the last token to the slot of the to-delete token
+            _ownedTokensIndex[nftContractAddress][lastTokenId] = tokenIndex; // Update the moved token's index
+        }
+
+        // This also deletes the contents at the last position of the array
+        delete _ownedTokensIndex[nftContractAddress][tokenId];
+        delete _ownedTokens[owner][nftContractAddress][lastTokenIndex];
+
+        // decrease the owner's collection balance by one
+        _balances[owner][nftContractAddress] -= 1;
     }
 
     function _requireSufficientBalance(

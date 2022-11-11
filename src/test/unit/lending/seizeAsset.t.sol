@@ -48,6 +48,9 @@ contract TestSeizeAsset is Test, OffersLoansRefinancesFixtures {
         // lender1 owns NFT after seize
         assertEq(mockNft.ownerOf(offer.nftId), address(lender1));
         assertEq(lending.ownerOf(offer.nftContractAddress, offer.nftId), address(0));
+
+        // borrower's balance decrements to 0
+        assertEq(lending.balanceOf(borrower1, address(mockNft)), 0);
     }
 
     function test_fuzz_seizeAsset_simplest_case(FuzzedOfferFields memory fuzzed)
