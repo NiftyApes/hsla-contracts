@@ -12,6 +12,7 @@ import "../../../FlashPurchase.sol";
 import "../../../flashPurchase/integrations/SeaportFlashPurchaseIntegration.sol";
 import "../../../flashPurchase/integrations/SudoswapFlashPurchaseIntegration.sol";
 import "../../../FlashSell.sol";
+import "../../../Refinance.sol";
 import "./NFTAndERC20Fixtures.sol";
 import "../../../interfaces/seaport/ISeaport.sol";
 
@@ -33,6 +34,7 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
     SeaportFlashPurchaseIntegration seaportFlashPurchase;
     SudoswapFlashPurchaseIntegration sudoswapFlashPurchase;
     NiftyApesFlashSell flashSell;
+    NiftyApesRefinance refinance;
 
     address constant ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     address constant SEAPORT_ADDRESS = 0x00000000006c3852cbEf3e08E8dF289169EdE581;
@@ -73,11 +75,14 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
             sudoswapFlashPurchase = new SudoswapFlashPurchaseIntegration();
         }
 
+        refinance = new NiftyApesRefinance();
+        refinance.initialize();
+
         liquidity = new NiftyApesLiquidity();
-        liquidity.initialize(address(compToken), address(flashPurchase));
+        liquidity.initialize(address(compToken), address(flashPurchase), address(refinance));
 
         offers = new NiftyApesOffers();
-        offers.initialize(address(liquidity), address(flashPurchase));
+        offers.initialize(address(liquidity), address(flashPurchase), address(refinance));
 
         sigLending = new NiftyApesSigLending();
         sigLending.initialize(address(offers), address(flashPurchase));
@@ -92,7 +97,8 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
             address(sigLending),
             address(flashClaim),
             address(flashPurchase),
-            address(flashSell)
+            address(flashSell),
+            address(refinance)
         );
 
         flashPurchase.initialize();
@@ -115,6 +121,11 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
 
         flashSell.updateLendingContractAddress(address(lending));
         flashSell.updateLiquidityContractAddress(address(liquidity));
+
+        refinance.updateLendingContractAddress(address(lending));
+        refinance.updateLiquidityContractAddress(address(liquidity));
+        refinance.updateOffersContractAddress(address(offers));
+        refinance.updateSigLendingContractAddress(address(sigLending));
 
         liquidity.setCAssetAddress(ETH_ADDRESS, address(cEtherToken));
         liquidity.setMaxCAssetBalance(address(cEtherToken), ~uint256(0));

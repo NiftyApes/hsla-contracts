@@ -12,6 +12,7 @@ import "../../SigLending.sol";
 import "../../FlashClaim.sol";
 import "../../FlashPurchase.sol";
 import "../../FlashSell.sol";
+import "../../Refinance.sol";
 import "../../interfaces/niftyapes/lending/ILendingStructs.sol";
 import "../../interfaces/niftyapes/offers/IOffersStructs.sol";
 
@@ -34,6 +35,7 @@ contract NiftyApesPauseUnitTest is
     NiftyApesFlashClaim flashClaim;
     NiftyApesFlashPurchase flashPurchase;
     NiftyApesFlashSell flashSell;
+    NiftyApesRefinance refinance;
     ERC20Mock daiToken;
     CERC20Mock cDAIToken;
     CEtherMock cEtherToken;
@@ -61,18 +63,21 @@ contract NiftyApesPauseUnitTest is
         flashPurchase = new NiftyApesFlashPurchase();
         flashPurchase.initialize();
 
+        refinance = new NiftyApesRefinance();
+        refinance.initialize();
+
         liquidityProviders = new NiftyApesLiquidity();
-        liquidityProviders.initialize(compContractAddress, address(flashPurchase));
+        liquidityProviders.initialize(compContractAddress, address(flashPurchase), address(refinance));
 
         offersContract = new NiftyApesOffers();
-        offersContract.initialize(address(liquidityProviders), address(flashPurchase));
+        offersContract.initialize(address(liquidityProviders), address(flashPurchase), address(refinance));
 
         sigLendingAuction = new NiftyApesSigLending();
         sigLendingAuction.initialize(address(offersContract), address(flashPurchase));
 
         flashSell = new NiftyApesFlashSell();
         flashSell.initialize();
-
+        
         lendingAuction = new NiftyApesLending();
         lendingAuction.initialize(
             address(liquidityProviders),
@@ -80,7 +85,8 @@ contract NiftyApesPauseUnitTest is
             address(sigLendingAuction),
             address(flashClaim),
             address(flashPurchase),
-            address(flashSell)
+            address(flashSell),
+            address(refinance)
         );
 
         offersContract.updateLendingContractAddress(address(lendingAuction));
@@ -104,6 +110,7 @@ contract NiftyApesPauseUnitTest is
         sigLendingAuction.pause();
         flashClaim.pause();
         flashSell.pause();
+        refinance.pause();
 
         acceptEth = true;
 
@@ -262,7 +269,7 @@ contract NiftyApesPauseUnitTest is
     function testCannotRefinanceByBorrower_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        lendingAuction.refinanceByBorrower(
+        refinance.refinanceByBorrower(
             address(0),
             1,
             false,
@@ -280,7 +287,7 @@ contract NiftyApesPauseUnitTest is
     function testCannotRefinanceByLender_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        lendingAuction.refinanceByLender(getOffer(), 0);
+        refinance.refinanceByLender(getOffer(), 0);
     }
 
     function testCannotDrawLoanAmount_paused() public {

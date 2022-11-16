@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC721/IERC721Upgradeable.sol";
 
 import "../../utils/fixtures/OffersLoansRefinancesFixtures.sol";
 
-contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
+contract TestRefinanceByBorrower is Test, OffersLoansRefinancesFixtures {
     function setUp() public override {
         super.setUp();
     }
@@ -192,7 +192,7 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
 
         // refinance by borrower
         vm.startPrank(borrower1);
-        lending.refinanceByBorrower(
+        refinance.refinanceByBorrower(
             newOffer.nftContractAddress,
             newOffer.nftId,
             newOffer.floorTerm,
@@ -249,7 +249,7 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
 
         // refinance by borrower
         vm.startPrank(borrower1);
-        lending.refinanceByBorrower(
+        refinance.refinanceByBorrower(
             newOffer.nftContractAddress,
             newOffer.nftId,
             newOffer.floorTerm,
@@ -300,7 +300,7 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         // refinance by borrower
         vm.startPrank(borrower1);
         vm.expectRevert("00026");
-        lending.refinanceByBorrower(
+        refinance.refinanceByBorrower(
             newOffer.nftContractAddress,
             newOffer.nftId,
             newOffer.floorTerm,
@@ -344,7 +344,7 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         // refinance by borrower
         vm.startPrank(borrower1);
         vm.expectRevert("00009");
-        lending.refinanceByBorrower(
+        refinance.refinanceByBorrower(
             newOffer.nftContractAddress,
             newOffer.nftId,
             newOffer.floorTerm,
@@ -353,64 +353,4 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         );
         vm.stopPrank();
     }
-
-    // this test fails because refinanceByBorrower calls an additional internal function which passes the vm.expectRevert() statement.
-    // however if this statement is commented out we see that the function does still fail with the proper "00017" error message.
-    // function test_unit_CANNOT_refinanceByBorrower_sanctionedBorrower() public {
-    //     vm.startPrank(owner);
-    //     lending.updateProtocolInterestBps(100);
-    //     lending.updateGasGriefingPremiumBps(25);
-    //     lending.pauseSanctions();
-    //     vm.stopPrank();
-
-    //     Offer memory offer = offerStructFromFields(
-    //         defaultFixedFuzzedFieldsForFastUnitTesting,
-    //         defaultFixedOfferFields
-    //     );
-
-    //     offer.nftId = 3;
-
-    //     vm.startPrank(offer.creator);
-    //     bytes32 offerHash = offers.createOffer(offer);
-    //     vm.stopPrank();
-
-    //     vm.startPrank(SANCTIONED_ADDRESS);
-    //     mockNft.approve(address(lending), offer.nftId);
-    //     lending.executeLoanByBorrower(
-    //         offer.nftContractAddress,
-    //         offer.nftId,
-    //         offerHash,
-    //         offer.floorTerm
-    //     );
-    //     vm.stopPrank();
-
-    //     // will trigger gas griefing (but not term griefing with borrower refinance)
-    //     defaultFixedOfferFields.creator = lender2;
-
-    //     Offer memory newOffer = offerStructFromFields(
-    //         defaultFixedFuzzedFieldsForFastUnitTesting,
-    //         defaultFixedOfferFields
-    //     );
-
-    //     newOffer.nftId = 3;
-
-    //     vm.startPrank(lender2);
-    //     bytes32 offerHash2 = offers.createOffer(newOffer);
-    //     vm.stopPrank();
-
-    //     vm.startPrank(owner);
-    //     lending.unpauseSanctions();
-    //     vm.stopPrank();
-
-    //     vm.startPrank(SANCTIONED_ADDRESS);
-    //     vm.expectRevert("00017");
-    //     lending.refinanceByBorrower(
-    //         newOffer.nftContractAddress,
-    //         newOffer.nftId,
-    //         newOffer.floorTerm,
-    //         offerHash2,
-    //         lending.getLoanAuction(address(mockNft), 3).lastUpdatedTimestamp
-    //     );
-    //     vm.stopPrank();
-    // }
 }

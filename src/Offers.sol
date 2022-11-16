@@ -49,6 +49,9 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
     address public liquidityContractAddress;
 
     /// @inheritdoc IOffers
+    address public refinanceContractAddress;
+
+    /// @inheritdoc IOffers
     address public flashPurchaseContractAddress;
 
     /// @dev This empty reserved space is put in place to allow future versions to add new
@@ -60,12 +63,14 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
     ///         its state outside of a constructor.
     function initialize(
         address newliquidityContractAddress,
-        address newFlashPurchaseContractAddress
+        address newFlashPurchaseContractAddress,
+        address newRefinanceContractAddress
     ) public initializer {
         EIP712Upgradeable.__EIP712_init("NiftyApes_Offers", "0.0.1");
 
         liquidityContractAddress = newliquidityContractAddress;
         flashPurchaseContractAddress = newFlashPurchaseContractAddress;
+        refinanceContractAddress = newRefinanceContractAddress;
 
         OwnableUpgradeable.__Ownable_init();
         PausableUpgradeable.__Pausable_init();
@@ -92,6 +97,19 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
             newSigLendingContractAddress
         );
         sigLendingContractAddress = newSigLendingContractAddress;
+    }
+
+    /// @inheritdoc IOffersAdmin
+    function updateRefinanceContractAddress(address newRefinanceContractAddress)
+        external
+        onlyOwner
+    {
+        require(address(newRefinanceContractAddress) != address(0), "00035");
+        emit OffersXRefinanceContractAddressUpdated(
+            refinanceContractAddress,
+            newRefinanceContractAddress
+        );
+        refinanceContractAddress = newRefinanceContractAddress;
     }
 
     /// @inheritdoc IOffersAdmin
@@ -327,11 +345,13 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
         internal
         view
     {
-        if (msg.sender != lendingContractAddress) {
-            if (msg.sender != flashPurchaseContractAddress) {
-                require(signer == expected, "00024");
-            }
-        }
+        require(
+            signer == expected ||
+            msg.sender == lendingContractAddress ||
+            msg.sender == flashPurchaseContractAddress ||
+            msg.sender == refinanceContractAddress,
+            "00031"
+        );
     }
 
     function _requireExpectedContract() internal view {

@@ -56,6 +56,9 @@ contract NiftyApesLiquidity is
     address public flashPurchaseContractAddress;
 
     /// @inheritdoc ILiquidity
+    address public refinanceContractAddress;
+
+    /// @inheritdoc ILiquidity
     uint16 public regenCollectiveBpsOfRevenue;
 
     /// @inheritdoc ILiquidity
@@ -79,12 +82,14 @@ contract NiftyApesLiquidity is
     ///         its state outside of a constructor.
     function initialize(
         address newCompContractAddress,
-        address newFlashPurchaseContractAddress
+        address newFlashPurchaseContractAddress,
+        address newRefinanceContractAddress
     ) public initializer {
         regenCollectiveBpsOfRevenue = 100;
         regenCollectiveAddress = address(0x252de94Ae0F07fb19112297F299f8c9Cc10E28a6);
         compContractAddress = newCompContractAddress;
         flashPurchaseContractAddress = newFlashPurchaseContractAddress;
+        refinanceContractAddress = newRefinanceContractAddress;
 
         OwnableUpgradeable.__Ownable_init();
         PausableUpgradeable.__Pausable_init();
@@ -120,6 +125,15 @@ contract NiftyApesLiquidity is
             newLendingContractAddress
         );
         lendingContractAddress = newLendingContractAddress;
+    }
+
+    /// @inheritdoc ILiquidityAdmin
+    function updateRefinanceContractAddress(address newRefinanceContractAddress) external onlyOwner {
+        emit LiquidityXRefinanceContractAddressUpdated(
+            refinanceContractAddress,
+            newRefinanceContractAddress
+        );
+        refinanceContractAddress = newRefinanceContractAddress;
     }
 
     /// @inheritdoc ILiquidityAdmin
@@ -373,9 +387,12 @@ contract NiftyApesLiquidity is
     }
 
     function _requireExpectedContract() internal view {
-        if (msg.sender != flashPurchaseContractAddress) {
-            require(msg.sender == lendingContractAddress, "00031");
-        }
+        require(
+            msg.sender == lendingContractAddress ||
+            msg.sender == flashPurchaseContractAddress ||
+            msg.sender == refinanceContractAddress,
+            "00031"
+        );
     }
 
     function _ownerWithdrawUnderlying(address asset, address cAsset)

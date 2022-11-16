@@ -8,6 +8,7 @@ import "../src/Lending.sol";
 import "../src/FlashClaim.sol";
 import "../src/FlashPurchase.sol";
 import "../src/FlashSell.sol";
+import "../src/Refinance.sol";
 
 contract DeployNiftyApesScript is Script {
     function run() external {
@@ -18,6 +19,7 @@ contract DeployNiftyApesScript is Script {
         NiftyApesFlashClaim flashClaim;
         NiftyApesFlashPurchase flashPurchase;
         NiftyApesFlashSell flashSell;
+        NiftyApesRefinance refinance;
         address compContractAddress = 0xc00e94Cb662C3520282E6f5717214004A7f26888;
         address mainnetMultisigAddress = 0xbe9B799D066A51F77d353Fc72e832f3803789362;
 
@@ -32,11 +34,14 @@ contract DeployNiftyApesScript is Script {
         flashSell = new NiftyApesFlashSell();
         flashSell.initialize();
 
+        refinance = new NiftyApesRefinance();
+        refinance.initialize();
+
         liquidity = new NiftyApesLiquidity();
-        liquidity.initialize(address(compContractAddress), address(flashPurchase));
+        liquidity.initialize(address(compContractAddress), address(flashPurchase), address(refinance));
 
         offers = new NiftyApesOffers();
-        offers.initialize(address(liquidity), address(flashPurchase));
+        offers.initialize(address(liquidity), address(flashPurchase), address(refinance));
 
         sigLending = new NiftyApesSigLending();
         sigLending.initialize(address(offers), address(flashPurchase));
@@ -48,10 +53,12 @@ contract DeployNiftyApesScript is Script {
             address(sigLending),
             address(flashClaim),
             address(flashPurchase),
-            address(flashSell)
+            address(flashSell),
+            address(refinance)
         );
 
         liquidity.updateLendingContractAddress(address(lending));
+        liquidity.updateRefinanceContractAddress(address(refinance));
 
         offers.updateLendingContractAddress(address(lending));
         offers.updateSigLendingContractAddress(address(sigLending));
@@ -67,6 +74,11 @@ contract DeployNiftyApesScript is Script {
 
         flashSell.updateLendingContractAddress(address(lending));
         flashSell.updateLiquidityContractAddress(address(liquidity));
+
+        refinance.updateLendingContractAddress(address(lending));
+        refinance.updateLiquidityContractAddress(address(liquidity));
+        refinance.updateOffersContractAddress(address(offers));
+        refinance.updateSigLendingContractAddress(address(sigLending));
 
         // Mainnet Addresses
         address daiToken = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
@@ -95,6 +107,7 @@ contract DeployNiftyApesScript is Script {
         flashClaim.transferOwnership(mainnetMultisigAddress);
         flashPurchase.transferOwnership(mainnetMultisigAddress);
         flashSell.transferOwnership(mainnetMultisigAddress);
+        refinance.transferOwnership(mainnetMultisigAddress);
 
         vm.stopBroadcast();
     }

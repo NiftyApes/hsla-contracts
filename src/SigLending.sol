@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "./interfaces/niftyapes/lending/ILending.sol";
+import "./interfaces/niftyapes/refinance/IRefinance.sol";
 import "./interfaces/niftyapes/sigLending/ISigLending.sol";
 import "./interfaces/niftyapes/offers/IOffers.sol";
 import "./interfaces/niftyapes/flashPurchase/IFlashPurchase.sol";
@@ -29,6 +30,9 @@ contract NiftyApesSigLending is
 
     /// @inheritdoc ISigLending
     address public lendingContractAddress;
+
+    /// @inheritdoc ISigLending
+    address public refinanceContractAddress;
 
     /// @inheritdoc ISigLending
     address public flashPurchaseContractAddress;
@@ -59,6 +63,15 @@ contract NiftyApesSigLending is
             newLendingContractAddress
         );
         lendingContractAddress = newLendingContractAddress;
+    }
+
+    /// @inheritdoc ISigLendingAdmin
+    function updateRefinanceContractAddress(address newRefinanceContractAddress) external onlyOwner {
+        emit SigLendingXRefinanceContractAddressUpdated(
+            refinanceContractAddress,
+            newRefinanceContractAddress
+        );
+        refinanceContractAddress = newRefinanceContractAddress;
     }
 
     /// @inheritdoc ISigLendingAdmin
@@ -140,7 +153,7 @@ contract NiftyApesSigLending is
     ) external whenNotPaused nonReentrant {
         _sigOfferNftIdAndCountChecks(offer, signature, nftId);
 
-        ILending(lendingContractAddress).doRefinanceByBorrower(
+        IRefinance(refinanceContractAddress).doRefinanceByBorrower(
             offer,
             nftId,
             msg.sender,
