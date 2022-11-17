@@ -331,8 +331,11 @@ contract TestSellOnSeaportWithFlashSell is Test, ILendingStructs, OffersLoansRef
         uint256 lenderInterest = (timePassed * loanAuction.interestRatePerSecond);
         uint256 protocolInterest = (timePassed * loanAuction.protocolInterestRatePerSecond);
 
-        uint256 interestThreshold = (uint256(loanAuction.amountDrawn) * lending.gasGriefingPremiumBps()) /
-            10_000;
+        uint256 interestThreshold;
+        if (loanAuction.loanEndTimestamp - 1 days > uint32(timestamp)) {
+            interestThreshold = (uint256(loanAuction.amountDrawn) * lending.gasGriefingPremiumBps()) /
+                10_000;
+        }
 
         lenderInterest = lenderInterest > interestThreshold ? lenderInterest : interestThreshold;
 
