@@ -341,12 +341,14 @@ contract NiftyApesLending is
 
         address cAsset = ILiquidity(liquidityContractAddress).getCAsset(offer.asset);
 
-        uint256 interestThresholdDelta = _checkSufficientInterestAccumulated(loanAuction);
+        if (loanAuction.loanEndTimestamp - 1 days > _currentTimestamp32()) {
+            uint256 interestThresholdDelta = _checkSufficientInterestAccumulated(loanAuction);
 
-        if (interestThresholdDelta > 0) {
-            loanAuction.accumulatedLenderInterest += SafeCastUpgradeable.toUint128(
-                interestThresholdDelta
-            );
+            if (interestThresholdDelta > 0) {
+                loanAuction.accumulatedLenderInterest += SafeCastUpgradeable.toUint128(
+                    interestThresholdDelta
+                );
+            }
         }
 
         _updateInterest(loanAuction);
@@ -718,12 +720,14 @@ contract NiftyApesLending is
             require(msg.sender == loanAuction.nftOwner, "00028");
         }
 
-        uint256 interestThresholdDelta = _checkSufficientInterestAccumulated(loanAuction);
+        if (loanAuction.loanEndTimestamp - 1 days > _currentTimestamp32()) {
+            uint256 interestThresholdDelta = _checkSufficientInterestAccumulated(loanAuction);
 
-        if (interestThresholdDelta > 0) {
-            loanAuction.accumulatedLenderInterest += SafeCastUpgradeable.toUint128(
-                interestThresholdDelta
-            );
+            if (interestThresholdDelta > 0) {
+                loanAuction.accumulatedLenderInterest += SafeCastUpgradeable.toUint128(
+                    interestThresholdDelta
+                );
+            }
         }
 
         _updateInterest(loanAuction);
@@ -1116,7 +1120,10 @@ contract NiftyApesLending is
     }
 
     function _requireExpectedContract() internal view {
-        require(msg.sender == flashClaimContractAddress || msg.sender == flashSellContractAddress, "00031");
+        require(
+            msg.sender == flashClaimContractAddress || msg.sender == flashSellContractAddress,
+            "00031"
+        );
     }
 
     function  _requireSellOnSeaportContract() internal view {
