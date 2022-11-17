@@ -187,12 +187,14 @@ contract NiftyApesRefinance is
 
         address cAsset = ILiquidity(liquidityContractAddress).getCAsset(offer.asset);
 
-        uint256 interestThresholdDelta = ILending(lendingContractAddress).checkSufficientInterestAccumulated(offer.nftContractAddress, nftId);
+        if (loanAuction.loanEndTimestamp - 1 days > _currentTimestamp32()) {
+            uint256 interestThresholdDelta = ILending(lendingContractAddress).checkSufficientInterestAccumulated(offer.nftContractAddress, nftId);
 
-        if (interestThresholdDelta > 0) {
-            loanAuction.accumulatedLenderInterest += SafeCastUpgradeable.toUint128(
-                interestThresholdDelta
-            );
+            if (interestThresholdDelta > 0) {
+                loanAuction.accumulatedLenderInterest += SafeCastUpgradeable.toUint128(
+                    interestThresholdDelta
+                );
+            }
         }
 
         _updateInterest(loanAuction);
