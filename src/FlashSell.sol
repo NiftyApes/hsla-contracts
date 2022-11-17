@@ -67,7 +67,10 @@ contract NiftyApesFlashSell is
     }
 
     /// @inheritdoc IFlashSellAdmin
-    function updateLiquidityContractAddress(address newLiquidityContractAddress) external onlyOwner {
+    function updateLiquidityContractAddress(address newLiquidityContractAddress)
+        external
+        onlyOwner
+    {
         require(address(newLiquidityContractAddress) != address(0), "00035");
         emit FlashSellXLiquidityContractAddressUpdated(
             liquidityContractAddress,
@@ -115,24 +118,33 @@ contract NiftyApesFlashSell is
         );
 
         // transfer NFT
-        ILending(lendingContractAddress).transferNft(
-            nftContractAddress,
-            nftId,
-            receiver
-        );
+        ILending(lendingContractAddress).transferNft(nftContractAddress, nftId, receiver);
 
         address loanAsset;
         if (loanAuction.asset != ETH_ADDRESS) {
             loanAsset = loanAuction.asset;
         }
-        uint256 totalLoanPaymentAmount = _calculateTotalLoanPaymentAmount(loanAuction, nftContractAddress, nftId);
+        uint256 totalLoanPaymentAmount = _calculateTotalLoanPaymentAmount(
+            loanAuction,
+            nftContractAddress,
+            nftId
+        );
 
         uint256 assetBalanceBefore = _getAssetBalance(loanAuction.asset);
         _ethTransferable = true;
         // execute firewalled external arbitrary functionality
         // function must send correct funds required to close the loan
-        require(IFlashSellReceiver(receiver).executeOperation(nftContractAddress, nftId, loanAsset, totalLoanPaymentAmount, msg.sender, data), "00052");
-        
+        require(
+            IFlashSellReceiver(receiver).executeOperation(
+                nftContractAddress,
+                nftId,
+                loanAsset,
+                totalLoanPaymentAmount,
+                msg.sender,
+                data
+            ),
+            "00052"
+        );
         _ethTransferable = false;
         uint256 assetBalanceAfter = _getAssetBalance(loanAuction.asset);
 
@@ -140,11 +152,9 @@ contract NiftyApesFlashSell is
         _requireCorrectFundsSent(assetBalanceAfter - assetBalanceBefore, totalLoanPaymentAmount);
 
         if (loanAuction.asset == ETH_ADDRESS) {
-            ILending(lendingContractAddress).repayLoanForAccountFlashSell{value: totalLoanPaymentAmount}(
-                nftContractAddress,
-                nftId,
-                loanAuction.loanBeginTimestamp
-            );
+            ILending(lendingContractAddress).repayLoanForAccountFlashSell{
+                value: totalLoanPaymentAmount
+            }(nftContractAddress, nftId, loanAuction.loanBeginTimestamp);
         } else {
             IERC20Upgradeable assetToken = IERC20Upgradeable(loanAuction.asset);
             uint256 allowance = assetToken.allowance(address(this), liquidityContractAddress);
@@ -175,7 +185,10 @@ contract NiftyApesFlashSell is
         require(nftOwner == msg.sender, "00021");
     }
 
-    function _requireCorrectFundsSent(uint256 balanceReceived, uint256 balanceRequired) internal pure {
+    function _requireCorrectFundsSent(uint256 balanceReceived, uint256 balanceRequired)
+        internal
+        pure
+    {
         require(balanceReceived == balanceRequired, "00057");
     }
 
@@ -187,35 +200,33 @@ contract NiftyApesFlashSell is
         }
     }
 
-
     function _calculateTotalLoanPaymentAmount(
         LoanAuction memory loanAuction,
         address nftContractAddress,
         uint256 nftId
-        ) internal view returns(uint256) {
-        uint256 interestThresholdDelta = 
-            ILending(lendingContractAddress).checkSufficientInterestAccumulated(
-                nftContractAddress,
-                nftId
-            );
+    ) internal view returns (uint256) {
+        uint256 interestThresholdDelta;
 
-        (uint256 lenderInterest, uint256 protocolInterest) = 
-            ILending(lendingContractAddress).calculateInterestAccrued(
-                nftContractAddress,
-                nftId
-            );
+        if (loanAuction.loanEndTimestamp - 1 days > uint32(block.timestamp)) {
+            interestThresholdDelta = ILending(lendingContractAddress)
+                .checkSufficientInterestAccumulated(nftContractAddress, nftId);
+        }
 
-        return uint256(loanAuction.accumulatedLenderInterest) +
-                loanAuction.accumulatedPaidProtocolInterest +
-                loanAuction.unpaidProtocolInterest +
-                loanAuction.slashableLenderInterest +
-                loanAuction.amountDrawn +
-                interestThresholdDelta +
-                lenderInterest +
-                protocolInterest;
-    } 
+        (uint256 lenderInterest, uint256 protocolInterest) = ILending(lendingContractAddress)
+            .calculateInterestAccrued(nftContractAddress, nftId);
 
-    function _getAssetBalance(address asset) internal view returns(uint256) {
+        return
+            uint256(loanAuction.accumulatedLenderInterest) +
+            loanAuction.accumulatedPaidProtocolInterest +
+            loanAuction.unpaidProtocolInterest +
+            loanAuction.slashableLenderInterest +
+            loanAuction.amountDrawn +
+            interestThresholdDelta +
+            lenderInterest +
+            protocolInterest;
+    }
+
+    function _getAssetBalance(address asset) internal view returns (uint256) {
         if (asset == ETH_ADDRESS) {
             return address(this).balance;
         } else {
