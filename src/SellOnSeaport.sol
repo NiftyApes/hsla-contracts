@@ -386,8 +386,11 @@ contract NiftyApesSellOnSeaport is
         uint256 lenderInterest = (timePassed * loanAuction.interestRatePerSecond);
         uint256 protocolInterest = (timePassed * loanAuction.protocolInterestRatePerSecond);
 
-        uint256 interestThreshold = (uint256(loanAuction.amountDrawn) * ILending(lendingContractAddress).gasGriefingPremiumBps()) /
-            MAX_BPS;
+        uint256 interestThreshold;
+        if (loanAuction.loanEndTimestamp - 1 days > uint32(timestamp)) {
+            interestThreshold = (uint256(loanAuction.amountDrawn) * ILending(lendingContractAddress).gasGriefingPremiumBps()) /
+                MAX_BPS;
+        }
 
         lenderInterest = lenderInterest > interestThreshold ? lenderInterest : interestThreshold;
 
