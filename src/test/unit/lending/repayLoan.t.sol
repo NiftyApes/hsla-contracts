@@ -54,8 +54,10 @@ contract TestRepayLoan is Test, OffersLoansRefinancesFixtures {
 
         uint256 interestDelta = 0;
 
-        if (interestThreshold > accruedLenderInterest) {
-            interestDelta = interestThreshold - accruedLenderInterest;
+        if (loanAuction.loanEndTimestamp - 1 days > uint32(block.timestamp)) {
+            if (interestThreshold > accruedLenderInterest) {
+                interestDelta = interestThreshold - accruedLenderInterest;
+            }
         }
 
         uint256 protocolInterest = loanAuction.accumulatedPaidProtocolInterest +
