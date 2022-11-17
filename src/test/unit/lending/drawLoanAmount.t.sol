@@ -37,10 +37,14 @@ contract TestDrawLoanAmount is Test, OffersLoansRefinancesFixtures {
 
         vm.warp(block.timestamp + secondsBeforeRefinance);
 
-        uint256 interestShortfall = lending.checkSufficientInterestAccumulated(
-            offer.nftContractAddress,
-            offer.nftId
-        );
+        uint256 interestShortfall;
+
+        if (loanAuction.loanEndTimestamp - 1 days > uint32(block.timestamp)) {
+            interestShortfall = lending.checkSufficientInterestAccumulated(
+                offer.nftContractAddress,
+                offer.nftId
+            );
+        }
 
         (, uint256 protocolInterest) = lending.calculateInterestAccrued(
             offer.nftContractAddress,
