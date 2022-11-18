@@ -219,7 +219,7 @@ contract TestSellOnSeaportWithFlashSell is Test, ILendingStructs, OffersLoansRef
         address asset,
         address orderCreator
     ) internal view returns (ISeaport.Order[] memory order) {
-        uint256 openseaFeeAmount = bidPrice - (bidPrice * 39) / 40;
+        uint256 seaportFeeAmount = bidPrice - (bidPrice * 39) / 40;
         ISeaport.ItemType offerItemType = ISeaport.ItemType.ERC20;
         address offerToken = (asset == ETH_ADDRESS ? address(wethToken) : asset);
 
@@ -268,8 +268,8 @@ contract TestSellOnSeaportWithFlashSell is Test, ILendingStructs, OffersLoansRef
                 itemType: offerItemType,
                 token: offerToken,
                 identifierOrCriteria: 0,
-                startAmount: openseaFeeAmount,
-                endAmount: openseaFeeAmount,
+                startAmount: seaportFeeAmount,
+                endAmount: seaportFeeAmount,
                 recipient: payable(0x0000a26b00c1F0DF003000390027140000fAa719)
             }
         );
