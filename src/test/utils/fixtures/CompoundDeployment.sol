@@ -18,20 +18,20 @@ import "forge-std/Test.sol";
 // deploy & initializes bCompound Contracts
 contract CompoundDeployment is Test, NiftyApesDeployment {
     CErc20Delegate cTokenImplementation;
-    CErc20Delegator cErc20;
+    CErc20Delegator bDAI;
     CToken cToken;
     Comptroller comptroller;
     Unitroller unitroller;
     JumpRateModelV2 interestRateModel;
     Comp bComp;
 
-    bool internal BCOMP = false;
+    bool internal BDAI = false;
 
     function setUp() public virtual override {
         super.setUp();
 
-        try vm.envBool("BCOMP") returns (bool isBComp) {
-            BCOMP = isBComp;
+        try vm.envBool("BDAI") returns (bool isBDai) {
+            BDAI = isBDai;
         } catch (bytes memory) {
             // This catches revert that occurs if env variable not supplied
         }
@@ -53,7 +53,7 @@ contract CompoundDeployment is Test, NiftyApesDeployment {
         cTokenImplementation = new CErc20Delegate();
 
         // deploy cTokenDelegator
-        cErc20 = new CErc20Delegator(
+        bDAI = new CErc20Delegator(
             address(daiToken),
             ComptrollerInterface(address(unitroller)),
             interestRateModel,
@@ -67,13 +67,13 @@ contract CompoundDeployment is Test, NiftyApesDeployment {
         );
 
         // declare interfaces
-        cToken = CToken(address(cErc20));
+        cToken = CToken(address(bDAI));
 
         ComptrollerInterface(address(unitroller))._supportMarket(cToken);
         ComptrollerInterface(address(unitroller))._setBorrowPaused(cToken, true);
 
-        if (BCOMP) {
-            cDAIToken = CERC20Mock(address(cErc20));
+        if (BDAI) {
+            cDAIToken = CERC20Mock(address(bDAI));
             liquidity.setCAssetAddress(address(daiToken), address(cDAIToken));
             liquidity.setMaxCAssetBalance(address(cDAIToken), ~uint256(0));
         }
