@@ -45,13 +45,6 @@ interface ISellOnSeaportEvents {
         address newLendingContractAddress
     );
 
-    /// @notice Emitted when the address for Seaport is changed
-    /// @param oldSeaportContractAddress The old address of the Seaport Contract
-    /// @param newSeaportContractAddress The new address of the Seaport Contract
-    event SellOnSeaportXSeaportContractAddressUpdated(
-        address oldSeaportContractAddress,
-        address newSeaportContractAddress
-    );
 
     /// @notice Emitted when the address for FlashSell is changed
     /// @param oldFlashSellContractAddress The old address of the FlashSell Contract
@@ -69,44 +62,52 @@ interface ISellOnSeaportEvents {
         address newWethContractAddress
     );
 
-    /// @notice Emitted when the address for OpenSeaZone is changed
-    /// @param oldOpenSeaZone The old OpenSeaZone
-    /// @param newOpenSeaZone The new OpenSeaZone
-    event OpenSeaZoneUpdated(
-        address oldOpenSeaZone,
-        address newOpenSeaZone
+    /// @notice Emitted when the address for Seaport is changed
+    /// @param oldSeaportContractAddress The old address of the Seaport Contract
+    /// @param newSeaportContractAddress The new address of the Seaport Contract
+    event SellOnSeaportXSeaportContractAddressUpdated(
+        address oldSeaportContractAddress,
+        address newSeaportContractAddress
     );
 
-    /// @notice Emitted when the address for OpenSeaFeeRecepient is changed
-    /// @param oldOpenSeaFeeRecepient The old OpenSeaFeeRecepient
-    /// @param newOpenSeaFeeRecepient The new OpenSeaFeeRecepient
-    event OpenSeaFeeRecepientUpdated(
-        address oldOpenSeaFeeRecepient,
-        address newOpenSeaFeeRecepient
+    /// @notice Emitted when the address for SeaportZone is changed
+    /// @param oldSeaportZone The old SeaportZone
+    /// @param newSeaportZone The new SeaportZone
+    event SeaportZoneUpdated(
+        address oldSeaportZone,
+        address newSeaportZone
     );
 
-    /// @notice Emitted when the OpenSeaZoneHash is changed
-    /// @param oldOpenSeaZoneHash The old OpenSeaZoneHash
-    /// @param newOpenSeaZoneHash The new OpenSeaZoneHash
-    event OpenSeaZoneHashUpdated(
-        bytes32 oldOpenSeaZoneHash,
-        bytes32 newOpenSeaZoneHash
+    /// @notice Emitted when the address for SeaportFeeRecepient is changed
+    /// @param oldSeaportFeeRecepient The old SeaportFeeRecepient
+    /// @param newSeaportFeeRecepient The new SeaportFeeRecepient
+    event SeaportFeeRecepientUpdated(
+        address oldSeaportFeeRecepient,
+        address newSeaportFeeRecepient
     );
 
-    /// @notice Emitted when OpenSeaConduitKey is changed
-    /// @param oldOpenSeaConduitKey The old OpenSeaConduitKey
-    /// @param newOpenSeaConduitKey The new OpenSeaConduitKey
-    event OpenSeaConduitKeyUpdated(
-        bytes32 oldOpenSeaConduitKey,
-        bytes32 newOpenSeaConduitKey
+    /// @notice Emitted when the SeaportZoneHash is changed
+    /// @param oldSeaportZoneHash The old SeaportZoneHash
+    /// @param newSeaportZoneHash The new SeaportZoneHash
+    event SeaportZoneHashUpdated(
+        bytes32 oldSeaportZoneHash,
+        bytes32 newSeaportZoneHash
     );
 
-    /// @notice Emitted when OpenSeaConduit is changed
-    /// @param oldOpenSeaConduit The old OpenSeaConduit
-    /// @param newOpenSeaConduit The new OpenSeaConduit
-    event OpenSeaConduitUpdated(
-        address oldOpenSeaConduit,
-        address newOpenSeaConduit
+    /// @notice Emitted when SeaportConduitKey is changed
+    /// @param oldSeaportConduitKey The old SeaportConduitKey
+    /// @param newSeaportConduitKey The new SeaportConduitKey
+    event SeaportConduitKeyUpdated(
+        bytes32 oldSeaportConduitKey,
+        bytes32 newSeaportConduitKey
+    );
+
+    /// @notice Emitted when SeaportConduit is changed
+    /// @param oldSeaportConduit The old SeaportConduit
+    /// @param newSeaportConduit The new SeaportConduit
+    event SeaportConduitUpdated(
+        address oldSeaportConduit,
+        address newSeaportConduit
     );
 
     /// @notice Emitted when sanctions checks are paused

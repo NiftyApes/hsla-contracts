@@ -20,29 +20,29 @@ interface ISellOnSeaport is
     /// @notice Returns the address for the associated lending contract
     function lendingContractAddress() external view returns (address);
 
-    /// @notice Returns the address for the associated seaport contract
-    function seaportContractAddress() external view returns (address);
-
     /// @notice Returns the address for the associated flashSell contract
     function flashSellContractAddress() external view returns (address);
 
     /// @notice Returns the address for the weth contract
     function wethContractAddress() external view returns (address);
 
-    /// @notice Returns the address for the openSeaZone
-    function openSeaZone() external view returns (address);
+    /// @notice Returns the address for the associated seaport contract
+    function seaportContractAddress() external view returns (address);
 
-    /// @notice Returns the address for the openSeaFeeRecepient
-    function openSeaFeeRecepient() external view returns (address);
+    /// @notice Returns the address for the seaportZone
+    function seaportZone() external view returns (address);
 
-    /// @notice Returns the openSeaZoneHash
-    function openSeaZoneHash() external view returns (bytes32);
+    /// @notice Returns the address for the seaportFeeRecepient
+    function seaportFeeRecepient() external view returns (address);
 
-    /// @notice Returns the openSeaConduitKey
-    function openSeaConduitKey() external view returns (bytes32);
+    /// @notice Returns the seaportZoneHash
+    function seaportZoneHash() external view returns (bytes32);
 
-    /// @notice Returns the openSeaConduit
-    function openSeaConduit() external view returns (address);
+    /// @notice Returns the seaportConduitKey
+    function seaportConduitKey() external view returns (bytes32);
+
+    /// @notice Returns the seaportConduit
+    function seaportConduit() external view returns (address);
 
     /// @notice Allows a borrower to list their locked NFTs on Seaport
     /// @param  nftContractAddress Address of the NFT collection to be pruchased

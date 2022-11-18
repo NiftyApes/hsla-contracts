@@ -9,29 +9,29 @@ interface ISellOnSeaportAdmin {
     /// @notice Updates the associated lending contract address
     function updateLendingContractAddress(address newLendingContractAddress) external;
 
-    /// @notice Updates the associated seaport contract address
-    function updateSeaportContractAddress(address newSeaportContractAddress) external;
-
     /// @notice Updates the associated flashSell contract address
     function updateFlashSellContractAddress(address newFlashSellContractAddress) external;
 
     /// @notice Updates the associated weth contract address
     function updateWethContractAddress(address newWethContractAddress) external;
 
-    /// @notice Updates the OpenSeaZone
-    function updateOpenSeaZone(address newOpenSeaZone) external;
+    /// @notice Updates the associated seaport contract address
+    function updateSeaportContractAddress(address newSeaportContractAddress) external;
 
-    /// @notice Updates the OpenSeaFeeRecepient
-    function updateOpenSeaFeeRecepient(address newOpenSeaFeeRecepient) external;
+    /// @notice Updates the SeaportZone
+    function updateSeaportZone(address newSeaportZone) external;
 
-    /// @notice Updates the OpenSeaZoneHash
-    function updateOpenSeaZoneHash(bytes32 newOpenSeaZoneHash) external;
+    /// @notice Updates the SeaportFeeRecepient
+    function updateSeaportFeeRecepient(address newSeaportFeeRecepient) external;
 
-    /// @notice Updates the OpenSeaConduitKey
-    function updateOpenSeaConduitKey(bytes32 newOpenSeaConduitKey) external;
+    /// @notice Updates the SeaportZoneHash
+    function updateSeaportZoneHash(bytes32 newSeaportZoneHash) external;
 
-    /// @notice Updates the OpenSeaConduit
-    function updateOpenSeaConduit(address newOpenSeaConduit) external;
+    /// @notice Updates the SeaportConduitKey
+    function updateSeaportConduitKey(bytes32 newSeaportConduitKey) external;
+
+    /// @notice Updates the SeaportConduit
+    function updateSeaportConduit(address newSeaportConduit) external;
 
     /// @notice Pauses sanctions checks
     function pauseSanctions() external;
