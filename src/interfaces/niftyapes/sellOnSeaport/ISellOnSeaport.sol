@@ -20,12 +20,6 @@ interface ISellOnSeaport is
     /// @notice Returns the address for the associated lending contract
     function lendingContractAddress() external view returns (address);
 
-    /// @notice Returns the address for the associated flashSell contract
-    function flashSellContractAddress() external view returns (address);
-
-    /// @notice Returns the address for the weth contract
-    function wethContractAddress() external view returns (address);
-
     /// @notice Returns the address for the associated seaport contract
     function seaportContractAddress() external view returns (address);
 
@@ -70,4 +64,8 @@ interface ISellOnSeaport is
         uint256 nftId,
         bytes32 orderHash
     ) external;
+
+    /// @notice Allows a borrower to cancel their NFT listing on Seaport
+    /// @param  orderComponents Seaport orderComponent
+    function cancelNftListing(ISeaport.OrderComponents memory orderComponents) external;
 }

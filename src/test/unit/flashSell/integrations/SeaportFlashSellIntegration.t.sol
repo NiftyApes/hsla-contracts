@@ -10,7 +10,7 @@ import "../../../utils/fixtures/OffersLoansRefinancesFixtures.sol";
 import "../../../mock/FlashSellReceiverMock.sol";
 import "../../../../interfaces/niftyapes/lending/ILendingStructs.sol";
 
-contract TestSellOnSeaportWithFlashSell is Test, ILendingStructs, OffersLoansRefinancesFixtures {
+contract TestSeaportFlashSellIntegration is Test, ILendingStructs, OffersLoansRefinancesFixtures {
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using AddressUpgradeable for address payable;
 
@@ -21,7 +21,7 @@ contract TestSellOnSeaportWithFlashSell is Test, ILendingStructs, OffersLoansRef
         super.setUp();
     }
 
-    function _test_unit_SellOnSeaportExecuteOperation_simplest_case(FuzzedOfferFields memory fuzzed) private {
+    function _test_unit_SeaportFlashSellIntegration_simplest_case(FuzzedOfferFields memory fuzzed) private {
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
         createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
 
@@ -68,7 +68,7 @@ contract TestSellOnSeaportWithFlashSell is Test, ILendingStructs, OffersLoansRef
         flashSell.borrowNFTForSale(
             offer.nftContractAddress,
             offer.nftId,
-            address(sellOnSeaport),
+            address(seaportFlashSell),
             abi.encode(order[0], bytes32(0))
         );
         vm.stopPrank();
@@ -87,30 +87,30 @@ contract TestSellOnSeaportWithFlashSell is Test, ILendingStructs, OffersLoansRef
         assertEq(loanAfter.loanBeginTimestamp, 0);
     }
 
-    function test_unit_SellOnSeaportExecuteOperation_simplest_case_ETH() public {
+    function test_unit_SeaportFlashSellIntegration_simplest_case_ETH() public {
         FuzzedOfferFields memory fixedForSpeed = defaultFixedFuzzedFieldsForFastUnitTesting;
         fixedForSpeed.randomAsset = 1;
-        _test_unit_SellOnSeaportExecuteOperation_simplest_case(fixedForSpeed);
+        _test_unit_SeaportFlashSellIntegration_simplest_case(fixedForSpeed);
     }
 
-    function test_fuzz_SellOnSeaportExecuteOperation_simplest_case_ETH(FuzzedOfferFields memory fuzzedOfferData) public validateFuzzedOfferFields(fuzzedOfferData) {
+    function test_fuzz_SeaportFlashSellIntegration_simplest_case_ETH(FuzzedOfferFields memory fuzzedOfferData) public validateFuzzedOfferFields(fuzzedOfferData) {
         fuzzedOfferData.randomAsset = 1;
         fuzzedOfferData.amount = fuzzedOfferData.amount / 1000;
-        _test_unit_SellOnSeaportExecuteOperation_simplest_case(fuzzedOfferData);
+        _test_unit_SeaportFlashSellIntegration_simplest_case(fuzzedOfferData);
     }
 
-    function test_unit_SellOnSeaportExecuteOperation_simplest_case_DAI() public {
+    function test_unit_SeaportFlashSellIntegration_simplest_case_DAI() public {
         FuzzedOfferFields memory fixedForSpeed = defaultFixedFuzzedFieldsForFastUnitTesting;
         fixedForSpeed.randomAsset = 0;
-        _test_unit_SellOnSeaportExecuteOperation_simplest_case(fixedForSpeed);
+        _test_unit_SeaportFlashSellIntegration_simplest_case(fixedForSpeed);
     }
 
-    function test_fuzz_SellOnSeaportExecuteOperation_simplest_case_DAI(FuzzedOfferFields memory fuzzedOfferData) public validateFuzzedOfferFields(fuzzedOfferData) {
+    function test_fuzz_SeaportFlashSellIntegration_simplest_case_DAI(FuzzedOfferFields memory fuzzedOfferData) public validateFuzzedOfferFields(fuzzedOfferData) {
         fuzzedOfferData.randomAsset = 0;
-        _test_unit_SellOnSeaportExecuteOperation_simplest_case(fuzzedOfferData);
+        _test_unit_SeaportFlashSellIntegration_simplest_case(fuzzedOfferData);
     }
 
-    function _test_unit_cannot_SellOnSeaportExecuteOperation_invalidOrderToken(FuzzedOfferFields memory fuzzed) private {
+    function _test_unit_cannot_SeaportFlashSellIntegration_invalidOrderToken(FuzzedOfferFields memory fuzzed) private {
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
         createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
 
@@ -149,13 +149,13 @@ contract TestSellOnSeaportWithFlashSell is Test, ILendingStructs, OffersLoansRef
         flashSell.borrowNFTForSale(
             offer.nftContractAddress,
             offer.nftId,
-            address(sellOnSeaport),
+            address(seaportFlashSell),
             abi.encode(order[0], bytes32(0))
         );
         vm.stopPrank();
     }
 
-    function _test_unit_cannot_SellOnSeaportExecuteOperation_invalidOrderAmount(FuzzedOfferFields memory fuzzed) private {
+    function _test_unit_cannot_SeaportFlashSellIntegration_invalidOrderAmount(FuzzedOfferFields memory fuzzed) private {
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
         createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
 
@@ -194,22 +194,22 @@ contract TestSellOnSeaportWithFlashSell is Test, ILendingStructs, OffersLoansRef
         flashSell.borrowNFTForSale(
             offer.nftContractAddress,
             offer.nftId,
-            address(sellOnSeaport),
+            address(seaportFlashSell),
             abi.encode(order[0], bytes32(0))
         );
         vm.stopPrank();
     }
 
-    function test_unit_cannot_SellOnSeaportExecuteOperation_invalidOrderToken() public {
+    function test_unit_cannot_SeaportFlashSellIntegration_invalidOrderToken() public {
         FuzzedOfferFields memory fixedForSpeed = defaultFixedFuzzedFieldsForFastUnitTesting;
         fixedForSpeed.randomAsset = 1;
-        _test_unit_cannot_SellOnSeaportExecuteOperation_invalidOrderToken(fixedForSpeed);
+        _test_unit_cannot_SeaportFlashSellIntegration_invalidOrderToken(fixedForSpeed);
     }
 
-    function test_unit_cannot_SellOnSeaportExecuteOperation_invalidOrderAmount() public {
+    function test_unit_cannot_SeaportFlashSellIntegration_invalidOrderAmount() public {
         FuzzedOfferFields memory fixedForSpeed = defaultFixedFuzzedFieldsForFastUnitTesting;
         fixedForSpeed.randomAsset = 1;
-        _test_unit_cannot_SellOnSeaportExecuteOperation_invalidOrderAmount(fixedForSpeed);
+        _test_unit_cannot_SeaportFlashSellIntegration_invalidOrderAmount(fixedForSpeed);
     }
 
     function _createOrder(
