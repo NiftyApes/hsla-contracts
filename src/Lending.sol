@@ -687,7 +687,7 @@ contract NiftyApesLending is
         uint256 nftId,
         uint32 expectedLoanBeginTimestamp
     ) external payable override whenNotPaused nonReentrant {
-        _requireFlashSellOrSellOnSeaportContract();
+        _requireExpectedContract();
         LoanAuction memory loanAuction = _getLoanAuctionInternal(nftContractAddress, nftId);
         // requireExpectedLoanIsActive
         require(loanAuction.loanBeginTimestamp == expectedLoanBeginTimestamp, "00027");
@@ -1121,7 +1121,7 @@ contract NiftyApesLending is
 
     function _requireExpectedContract() internal view {
         require(
-            msg.sender == flashClaimContractAddress || msg.sender == flashSellContractAddress,
+            msg.sender == flashClaimContractAddress || msg.sender == flashSellContractAddress || msg.sender == sellOnSeaportContractAddress,
             "00031"
         );
     }
@@ -1132,10 +1132,6 @@ contract NiftyApesLending is
 
     function _requireFlashPurchaseContract() internal view {
         require(msg.sender == flashPurchaseContractAddress, "00031");
-    }
-
-    function _requireFlashSellOrSellOnSeaportContract() internal view {
-        require(msg.sender == flashSellContractAddress || msg.sender == sellOnSeaportContractAddress, "00031");
     }
 
     function _requireOfferParity(LoanAuction storage loanAuction, Offer memory offer)

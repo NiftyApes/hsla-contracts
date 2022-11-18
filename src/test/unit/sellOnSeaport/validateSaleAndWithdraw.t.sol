@@ -9,7 +9,7 @@ import "../../utils/fixtures/OffersLoansRefinancesFixtures.sol";
 import "../../../interfaces/niftyapes/offers/IOffersStructs.sol";
 import "../../../interfaces/seaport/ISeaport.sol";
 
-contract TestListNftForSale is Test, OffersLoansRefinancesFixtures, ERC721HolderUpgradeable {
+contract TestValidateSaleAndWithdraw is Test, OffersLoansRefinancesFixtures, ERC721HolderUpgradeable {
     function setUp() public override {
         // pin block to time of writing test to reflect consistent state
         vm.rollFork(15510097);
@@ -165,7 +165,7 @@ contract TestListNftForSale is Test, OffersLoansRefinancesFixtures, ERC721Holder
         uint256 listingEndTime,
         address asset
     ) internal view returns (ISeaport.Order memory order) {
-        uint256 openSeaFeeAmount = listingPrice - (listingPrice * 39) / 40;
+        uint256 seaportFeeAmount = listingPrice - (listingPrice * 39) / 40;
         ISeaport.ItemType considerationItemType = (asset == ETH_ADDRESS ? ISeaport.ItemType.NATIVE : ISeaport.ItemType.ERC20);
         address considerationToken = (asset == ETH_ADDRESS ? address(0) : asset);
 
@@ -203,8 +203,8 @@ contract TestListNftForSale is Test, OffersLoansRefinancesFixtures, ERC721Holder
                 itemType: considerationItemType,
                 token: considerationToken,
                 identifierOrCriteria: 0,
-                startAmount: listingPrice - openSeaFeeAmount,
-                endAmount:listingPrice - openSeaFeeAmount,
+                startAmount: listingPrice - seaportFeeAmount,
+                endAmount:listingPrice - seaportFeeAmount,
                 recipient: payable(address(sellOnSeaport))
             }
             
@@ -214,8 +214,8 @@ contract TestListNftForSale is Test, OffersLoansRefinancesFixtures, ERC721Holder
                 itemType: considerationItemType,
                 token: considerationToken,
                 identifierOrCriteria: 0,
-                startAmount: openSeaFeeAmount,
-                endAmount: openSeaFeeAmount,
+                startAmount: seaportFeeAmount,
+                endAmount: seaportFeeAmount,
                 recipient: payable(0x0000a26b00c1F0DF003000390027140000fAa719)
             }
         );
