@@ -58,21 +58,8 @@ The NiftyApes protocol is made up of four core contracts `Liquidity.sol`, `Offer
 5. For deployment to Mainnet:
    a. `forge script script/NiftyApes.s.sol:NiftyApesScript --optimize --slow --rpc-url $MAINNET_RPC_URL --ledger --broadcast`
 
-## Pause
-
-1. To pause Rinkeby protocol:
-   a. `forge script script/Rinkeby_PauseProtocol.s.sol:PauseScript --rpc-url $RINKEBY_RPC_URL --ledger --broadcast`
-
-2. To pause Mainnet protocol:
-   a. `forge script script/Rinkeby_PauseProtocol.s.sol:PauseScript --rpc-url $MAINNET_RPC_URL --ledger --broadcast`
-
-## Unpause
-
-3. To unpause Rinkeby protocol:
-   a. `forge script script/Rinkeby_UnpauseProtocol.s.sol:UnpauseScript --rpc-url $RINKEBY_RPC_URL --ledger --broadcast`
-
-4. To unpause Mainnet protocol:
-   a. `forge script script/Rinkeby_UnpauseProtocol.s.sol:UnpauseScript --rpc-url $MAINNET_RPC_URL --ledger --broadcast`
+6. For deploying a modified compound fork and bwxDai on Gnosis Chain:
+   `forge script script/Gnosis_Deploy_CompoundAndBwxDai.s.sol:CompoundDeploymentScript --optimize --slow --rpc-url $GNOSIS_RPC_URL --private-key $GNOSIS_PRIVATE_KEY --broadcast`
 
 ## NiftyApes Error Messages
 
