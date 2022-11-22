@@ -4,7 +4,6 @@ pragma solidity 0.8.13;
 import "./IRefinanceAdmin.sol";
 import "./IRefinanceEvents.sol";
 import "../offers/IOffersStructs.sol";
-import "../lending/ILending.sol";
 
 /// @title NiftyApes interface for refinancing loans.
 interface IRefinance is IRefinanceAdmin, IRefinanceEvents, IOffersStructs {

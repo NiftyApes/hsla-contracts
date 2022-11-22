@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/utils/math/SafeCastUpgradeable.sol";
 import "@openzeppelin/contracts/utils/AddressUpgradeable.sol";
+import "./interfaces/niftyapes/lending/ILending.sol";
 import "./interfaces/niftyapes/refinance/IRefinance.sol";
 import "./interfaces/niftyapes/liquidity/ILiquidity.sol";
 import "./interfaces/niftyapes/offers/IOffers.sol";
@@ -15,7 +16,9 @@ import "./interfaces/sanctions/SanctionsList.sol";
 /// @custom:version 1.0
 /// @author captnseagraves (captnseagraves.eth)
 /// @custom:contributor zishansami102 (zishansami.eth)
-
+/// @custom:contributor dankurka
+/// @custom:contributor 0xAlcibiades (alcibiades.eth)
+/// @custom:contributor zjmiller (zjmiller.eth)
 contract NiftyApesRefinance is
     OwnableUpgradeable,
     PausableUpgradeable,

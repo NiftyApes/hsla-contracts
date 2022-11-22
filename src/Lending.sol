@@ -57,9 +57,6 @@ contract NiftyApesLending is
     address public sigLendingContractAddress;
 
     /// @inheritdoc ILending
-    address public refinanceContractAddress;
-
-    /// @inheritdoc ILending
     address public flashClaimContractAddress;
 
     /// @inheritdoc ILending
@@ -86,9 +83,12 @@ contract NiftyApesLending is
     /// @dev The status of sanctions checks. Can be set to false if oracle becomes malicious.
     bool internal _sanctionsPause;
 
+    /// @inheritdoc ILending
+    address public refinanceContractAddress;
+
     /// @dev This empty reserved space is put in place to allow future versions to add new
     /// variables without shifting storage.
-    uint256[500] private __gap;
+    uint256[499] private __gap;
 
     /// @notice The initializer for the NiftyApes protocol.
     ///         Nifty Apes is intended to be deployed behind a proxy amd thus needs to initialize
@@ -97,10 +97,10 @@ contract NiftyApesLending is
         address newLiquidityContractAddress,
         address newOffersContractAddress,
         address newSigLendingContractAddress,
+        address newRefinanceContractAddress,
         address newFlashClaimContractAddress,
         address newFlashPurchaseAddress,
-        address newFlashSellContractAddress,
-        address newRefinanceContractAddress
+        address newFlashSellContractAddress
     ) public initializer {
         protocolInterestBps = 0;
         originationPremiumBps = 25;
@@ -222,7 +222,7 @@ contract NiftyApesLending is
         loanAuction.accumulatedLenderInterest = newLoanAuction.accumulatedLenderInterest;
         loanAuction.accumulatedPaidProtocolInterest = newLoanAuction.accumulatedPaidProtocolInterest;
         loanAuction.interestRatePerSecond = newLoanAuction.interestRatePerSecond;
-        loanAuction.protocolInterestRatePerSecond = newLoanAuction.protocolInterestRatePerSecond ;
+        loanAuction.protocolInterestRatePerSecond = newLoanAuction.protocolInterestRatePerSecond;
         loanAuction.slashableLenderInterest = newLoanAuction.slashableLenderInterest;
         loanAuction.unpaidProtocolInterest = newLoanAuction.unpaidProtocolInterest;
     }

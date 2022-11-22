@@ -16,10 +16,11 @@ contract DeployNiftyApesScript is Script {
         NiftyApesOffers offers;
         NiftyApesLiquidity liquidity;
         NiftyApesSigLending sigLending;
+        NiftyApesRefinance refinance;
         NiftyApesFlashClaim flashClaim;
         NiftyApesFlashPurchase flashPurchase;
         NiftyApesFlashSell flashSell;
-        NiftyApesRefinance refinance;
+        
         address compContractAddress = 0xc00e94Cb662C3520282E6f5717214004A7f26888;
         address mainnetMultisigAddress = 0xbe9B799D066A51F77d353Fc72e832f3803789362;
 
@@ -38,10 +39,10 @@ contract DeployNiftyApesScript is Script {
         refinance.initialize();
 
         liquidity = new NiftyApesLiquidity();
-        liquidity.initialize(address(compContractAddress), address(flashPurchase), address(refinance));
+        liquidity.initialize(address(compContractAddress), address(refinance), address(flashPurchase));
 
         offers = new NiftyApesOffers();
-        offers.initialize(address(liquidity), address(flashPurchase), address(refinance));
+        offers.initialize(address(liquidity), address(refinance), address(flashPurchase));
 
         sigLending = new NiftyApesSigLending();
         sigLending.initialize(address(offers), address(flashPurchase));
@@ -51,10 +52,10 @@ contract DeployNiftyApesScript is Script {
             address(liquidity),
             address(offers),
             address(sigLending),
+            address(refinance),
             address(flashClaim),
             address(flashPurchase),
-            address(flashSell),
-            address(refinance)
+            address(flashSell)
         );
 
         liquidity.updateLendingContractAddress(address(lending));

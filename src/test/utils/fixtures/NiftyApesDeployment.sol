@@ -27,6 +27,7 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
     NiftyApesOffers offers;
     NiftyApesLiquidity liquidity;
     NiftyApesSigLending sigLending;
+    NiftyApesRefinance refinance;
     NiftyApesFlashClaim flashClaim;
     FlashClaimReceiverBaseHappy flashClaimReceiverHappy;
     FlashClaimReceiverBaseNoReturn flashClaimReceiverNoReturn;
@@ -34,7 +35,6 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
     SeaportFlashPurchaseIntegration seaportFlashPurchase;
     SudoswapFlashPurchaseIntegration sudoswapFlashPurchase;
     NiftyApesFlashSell flashSell;
-    NiftyApesRefinance refinance;
 
     address constant ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     address constant SEAPORT_ADDRESS = 0x00000000006c3852cbEf3e08E8dF289169EdE581;
@@ -79,10 +79,10 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         refinance.initialize();
 
         liquidity = new NiftyApesLiquidity();
-        liquidity.initialize(address(compToken), address(flashPurchase), address(refinance));
+        liquidity.initialize(address(compToken), address(refinance), address(flashPurchase));
 
         offers = new NiftyApesOffers();
-        offers.initialize(address(liquidity), address(flashPurchase), address(refinance));
+        offers.initialize(address(liquidity), address(refinance), address(flashPurchase));
 
         sigLending = new NiftyApesSigLending();
         sigLending.initialize(address(offers), address(flashPurchase));
@@ -95,15 +95,21 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
             address(liquidity),
             address(offers),
             address(sigLending),
+            address(refinance),
             address(flashClaim),
             address(flashPurchase),
-            address(flashSell),
-            address(refinance)
+            address(flashSell)
         );
 
         flashPurchase.initialize();
 
         sigLending.updateLendingContractAddress(address(lending));
+        sigLending.updateRefinanceContractAddress(address(refinance));
+
+        refinance.updateLendingContractAddress(address(lending));
+        refinance.updateLiquidityContractAddress(address(liquidity));
+        refinance.updateOffersContractAddress(address(offers));
+        refinance.updateSigLendingContractAddress(address(sigLending));
 
         offers.updateLendingContractAddress(address(lending));
         offers.updateSigLendingContractAddress(address(sigLending));
@@ -121,11 +127,6 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
 
         flashSell.updateLendingContractAddress(address(lending));
         flashSell.updateLiquidityContractAddress(address(liquidity));
-
-        refinance.updateLendingContractAddress(address(lending));
-        refinance.updateLiquidityContractAddress(address(liquidity));
-        refinance.updateOffersContractAddress(address(offers));
-        refinance.updateSigLendingContractAddress(address(sigLending));
 
         liquidity.setCAssetAddress(ETH_ADDRESS, address(cEtherToken));
         liquidity.setMaxCAssetBalance(address(cEtherToken), ~uint256(0));

@@ -24,10 +24,11 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
     NiftyApesOffers offersContract;
     NiftyApesLiquidity liquidityProviders;
     NiftyApesSigLending sigLendingAuction;
+    NiftyApesRefinance refinance;
     NiftyApesFlashClaim flashClaim;
     NiftyApesFlashPurchase flashPurchase;
     NiftyApesFlashSell flashSell;
-    NiftyApesRefinance refinance;
+    
     ERC20Mock daiToken;
     CERC20Mock cDAIToken;
     CEtherMock cEtherToken;
@@ -52,10 +53,10 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
         refinance.initialize();
 
         liquidityProviders = new NiftyApesLiquidity();
-        liquidityProviders.initialize(compContractAddress, address(flashPurchase), address(refinance));
+        liquidityProviders.initialize(compContractAddress, address(refinance), address(flashPurchase));
 
         offersContract = new NiftyApesOffers();
-        offersContract.initialize(address(liquidityProviders), address(flashPurchase), address(refinance));
+        offersContract.initialize(address(liquidityProviders), address(refinance), address(flashPurchase));
 
         sigLendingAuction = new NiftyApesSigLending();
         sigLendingAuction.initialize(address(offersContract), address(flashPurchase));
@@ -68,10 +69,10 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
             address(liquidityProviders),
             address(offersContract),
             address(sigLendingAuction),
+            address(refinance),
             address(flashClaim),
             address(flashPurchase),
-            address(flashSell),
-            address(refinance)
+            address(flashSell)
         );
 
         daiToken = new ERC20Mock();

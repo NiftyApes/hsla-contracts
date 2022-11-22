@@ -17,11 +17,11 @@ contract DeployNiftyApesScript is Script {
         NiftyApesOffers offers;
         NiftyApesLiquidity liquidity;
         NiftyApesSigLending sigLending;
+        NiftyApesRefinance refinance;
         NiftyApesFlashClaim flashClaim;
         NiftyApesFlashPurchase flashPurchase;
         NiftyApesFlashSell flashSell;
-        NiftyApesRefinance refinance;
-
+        
         address compContractAddress = 0xc00e94Cb662C3520282E6f5717214004A7f26888;
         address goerliMultisigAddress = 0x213dE8CcA7C414C0DE08F456F9c4a2Abc4104028;
 
