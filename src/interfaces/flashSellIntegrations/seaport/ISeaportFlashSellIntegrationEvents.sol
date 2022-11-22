@@ -3,14 +3,6 @@ pragma solidity 0.8.13;
 
 /// @title Events emitted by the SeaportFlashSellIntegration.
 interface ISeaportFlashSellIntegrationEvents {
-    /// @notice Emitted when the associated FlashSell contract address is changed
-    /// @param oldFlashSellContractAddress The old FlashSell contract address
-    /// @param newFlashSellContractAddress The new FlashSell contract address
-    event SeaportFlashSellIntegrationXFlashSellContractAddressUpdated(
-        address oldFlashSellContractAddress,
-        address newFlashSellContractAddress
-    );
-
     /// @notice Emitted when the weth contract address is changed
     /// @param oldWethContractAddress The old weth contract address
     /// @param newWethContractAddress The new weth contract address

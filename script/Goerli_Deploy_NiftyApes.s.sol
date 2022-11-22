@@ -80,7 +80,6 @@ contract DeployNiftyApesScript is Script {
         sellOnSeaport.updateLendingContractAddress(address(lending));
         sellOnSeaport.updateLiquidityContractAddress(address(liquidity));
         sellOnSeaport.updateSeaportContractAddress(seaportContractAddress);
-        sellOnSeaport.updateFlashSellContractAddress(address(flashSell));
 
         // Goerli Addresses
         address daiToken = 0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60;
@@ -94,9 +93,6 @@ contract DeployNiftyApesScript is Script {
 
         // ETH
         liquidity.setCAssetAddress(ETH_ADDRESS, cEtherToken);
-
-        // WETH
-        sellOnSeaport.updateWethContractAddress(wethToken);
 
         // pauseSanctions for Goerli as Chainalysis contacts doent exists there
         liquidity.pauseSanctions();

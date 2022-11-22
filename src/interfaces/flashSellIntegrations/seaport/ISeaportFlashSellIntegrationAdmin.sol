@@ -3,9 +3,6 @@ pragma solidity 0.8.13;
 
 /// @title SeaportFlashSellIntegration interface for the admin role.
 interface ISeaportFlashSellIntegrationAdmin {
-    /// @notice Updates the associated flashSell contract address
-    function updateFlashSellContractAddress(address newFlashSellContractAddress) external;
-
     /// @notice Updates the weth contract address
     function updateWethContractAddress(address newWethContractAddress) external;
 
