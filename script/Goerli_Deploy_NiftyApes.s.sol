@@ -86,7 +86,6 @@ contract DeployNiftyApesScript is Script {
         address cDAIToken = 0x822397d9a55d0fefd20F5c4bCaB33C5F65bd28Eb;
         address ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
         address cEtherToken = 0x20572e4c090f15667cF7378e16FaD2eA0e2f3EfF;
-        address wethToken = 0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6;
 
         // DAI
         liquidity.setCAssetAddress(daiToken, cDAIToken);
