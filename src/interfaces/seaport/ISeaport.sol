@@ -168,4 +168,8 @@ interface ISeaport {
         external
         payable
         returns (bool fulfilled);
+
+    function validate(Order[] memory orders) external returns (bool validated);
+
+    function cancel(OrderComponents[] memory orders) external returns (bool cancelled);
 }
