@@ -12,6 +12,8 @@ import "../../../FlashPurchase.sol";
 import "../../../flashPurchase/integrations/SeaportFlashPurchaseIntegration.sol";
 import "../../../flashPurchase/integrations/SudoswapFlashPurchaseIntegration.sol";
 import "../../../FlashSell.sol";
+import "../../../flashSell/integrations/SeaportFlashSellIntegration.sol";
+import "../../../SellOnSeaport.sol";
 import "../../../flashSell/integrations/SudoswapFlashSellIntegration.sol";
 import "./NFTAndERC20Fixtures.sol";
 import "../../../interfaces/seaport/ISeaport.sol";
@@ -34,6 +36,8 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
     SeaportFlashPurchaseIntegration seaportFlashPurchase;
     SudoswapFlashPurchaseIntegration sudoswapFlashPurchase;
     NiftyApesFlashSell flashSell;
+    SeaportFlashSellIntegration seaportFlashSell;
+    NiftyApesSellOnSeaport sellOnSeaport;
     SudoswapFlashSellIntegration sudoswapFlashSellIntegration;
 
     address constant ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
@@ -55,6 +59,12 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         flashSell = new NiftyApesFlashSell();
         flashSell.initialize();
 
+        seaportFlashSell = new SeaportFlashSellIntegration();
+        seaportFlashSell.initialize();
+
+        sellOnSeaport = new NiftyApesSellOnSeaport();
+        sellOnSeaport.initialize();
+
         flashPurchase = new NiftyApesFlashPurchase();
         flashPurchase.initialize();
 
@@ -73,6 +83,10 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
                 SUDOSWAP_FACTORY_ADDRESS,
                 SUDOSWAP_ROUTER_ADDRESS
             );
+
+            sellOnSeaport.updateSeaportContractAddress(SEAPORT_ADDRESS);
+            seaportFlashSell.updateSeaportContractAddress(SEAPORT_ADDRESS);
+
 
             sudoswapFlashSellIntegration = new SudoswapFlashSellIntegration();
             sudoswapFlashSellIntegration.initialize(
@@ -102,7 +116,8 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
             address(sigLending),
             address(flashClaim),
             address(flashPurchase),
-            address(flashSell)
+            address(flashSell),
+            address(sellOnSeaport)
         );
 
         sigLending.updateLendingContractAddress(address(lending));
@@ -124,6 +139,9 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         flashSell.updateLendingContractAddress(address(lending));
         flashSell.updateLiquidityContractAddress(address(liquidity));
 
+        seaportFlashSell.updateFlashSellContractAddress(address(flashSell));
+        seaportFlashSell.updateWethContractAddress(address(wethToken));
+
         liquidity.setCAssetAddress(ETH_ADDRESS, address(cEtherToken));
         liquidity.setMaxCAssetBalance(address(cEtherToken), ~uint256(0));
 
@@ -131,6 +149,9 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         liquidity.setMaxCAssetBalance(address(cDAIToken), ~uint256(0));
 
         flashClaimReceiverHappy.updateFlashClaimContractAddress(address(flashClaim));
+
+        sellOnSeaport.updateLendingContractAddress(address(lending));
+        sellOnSeaport.updateLiquidityContractAddress(address(liquidity));
 
         lending.updateProtocolInterestBps(100);
 
