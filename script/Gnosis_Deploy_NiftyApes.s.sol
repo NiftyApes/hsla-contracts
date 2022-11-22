@@ -39,7 +39,8 @@ contract DeployNiftyApesScript is Script {
 
     function run() external {
         //to update once compound deployed on gnosis
-        address bCompContractAddress = 0xc00e94Cb662C3520282E6f5717214004A7f26888;
+        address bCompContractAddress = 0x267a3d54dF81207D951C495deBd4933Bc5689538;
+        address gnosisMultisigAddress = 0xA407aD41B5703432823f3694f857097542812E5a;
 
         vm.startBroadcast();
 
@@ -107,7 +108,7 @@ contract DeployNiftyApesScript is Script {
 
         // Goerli Addresses
         address wxDaiToken = 0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d;
-        address bwxDaiToken = 0x822397d9a55d0fefd20F5c4bCaB33C5F65bd28Eb;
+        address bwxDaiToken = 0x67ECb3C872941241F21839Ec9111C7Ca6678342e;
 
         // DAI
         liquidity.setCAssetAddress(wxDaiToken, bwxDaiToken);
@@ -119,6 +120,24 @@ contract DeployNiftyApesScript is Script {
         // pauseSanctions for Gnosis as Chainalysis contacts doesnt exists there
         liquidity.pauseSanctions();
         lending.pauseSanctions();
+
+        // change ownership of implementation contracts
+        liquidityImplementation.transferOwnership(gnosisMultisigAddress);
+        lendingImplementation.transferOwnership(gnosisMultisigAddress);
+        offersImplementation.transferOwnership(gnosisMultisigAddress);
+        sigLendingImplementation.transferOwnership(gnosisMultisigAddress);
+
+        // change ownership of proxies
+        IOwnership(address(lendingProxy)).transferOwnership(gnosisMultisigAddress);
+        IOwnership(address(offersProxy)).transferOwnership(gnosisMultisigAddress);
+        IOwnership(address(liquidityProxy)).transferOwnership(gnosisMultisigAddress);
+        IOwnership(address(sigLendingProxy)).transferOwnership(gnosisMultisigAddress);
+
+        // change ownership of proxyAdmin
+        lendingProxyAdmin.transferOwnership(gnosisMultisigAddress);
+        offersProxyAdmin.transferOwnership(gnosisMultisigAddress);
+        liquidityProxyAdmin.transferOwnership(gnosisMultisigAddress);
+        sigLendingProxyAdmin.transferOwnership(gnosisMultisigAddress);
 
         vm.stopBroadcast();
     }
