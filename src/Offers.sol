@@ -19,13 +19,6 @@ import "./lib/ECDSABridge.sol";
 /// @custom:contributor zjmiller (zjmiller.eth)
 
 contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgradeable, IOffers {
-    /// @dev Constant typeHash for EIP-712 hashing of Offer struct
-    ///      If the Offer struct shape changes, this will need to change as well.
-    bytes32 private constant _OFFER_TYPEHASH =
-        keccak256(
-            "Offer(address creator,uint32 duration,uint32 expiration,bool fixedTerms,bool floorTerm,bool lenderOffer,address nftContractAddress,uint256 nftId,address asset,uint128 amount,uint96 interestRatePerSecond,uint64 floorTermLimit)"
-        );
-
     /// @dev A mapping for a NFT to an Offer
     ///      The mapping has to be broken into three parts since an NFT is denominated by its address (first part)
     ///      and its nftId (second part), offers are referred to by their hash (see #getEIP712EncodedOffer for details) (third part).
@@ -55,9 +48,16 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
     /// @inheritdoc IOffers
     address public liquidityContractAddress;
 
+    /// @dev Constant typeHash for EIP-712 hashing of Offer struct
+    ///      If the Offer struct shape changes, this will need to change as well.
+    bytes32 private constant _OFFER_TYPEHASH =
+        keccak256(
+            "Offer(address creator,uint32 duration,uint32 expiration,bool fixedTerms,bool floorTerm,bool lenderOffer,address nftContractAddress,uint256 nftId,address asset,uint128 amount,uint96 interestRatePerSecond,uint64 floorTermLimit)"
+        );
+
     /// @dev This empty reserved space is put in place to allow future versions to add new
     /// variables without shifting storage.
-    uint256[500] private __gap;
+    uint256[499] private __gap;
 
     /// @notice The initializer for the NiftyApes protocol.
     ///         NiftyApes is intended to be deployed behind a proxy and thus needs to initialize
