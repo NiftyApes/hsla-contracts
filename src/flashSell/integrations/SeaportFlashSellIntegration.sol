@@ -67,6 +67,7 @@ contract SeaportFlashSellIntegration is
         address nftContractAddress,
         uint256 nftId,
         address loanAsset,
+        uint256 loanAmount,
         bytes calldata data
     ) internal override {
         // approve the NFT for Seaport conduit

@@ -38,7 +38,7 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
     NiftyApesFlashSell flashSell;
     SeaportFlashSellIntegration seaportFlashSell;
     NiftyApesSellOnSeaport sellOnSeaport;
-    SudoswapFlashSellIntegration sudoswapFlashSellIntegration;
+    SudoswapFlashSellIntegration sudoswapFlashSell;
 
     address constant ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     address constant SEAPORT_ADDRESS = 0x00000000006c3852cbEf3e08E8dF289169EdE581;
@@ -61,6 +61,9 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
 
         seaportFlashSell = new SeaportFlashSellIntegration();
         seaportFlashSell.initialize();
+
+        sudoswapFlashSell = new SudoswapFlashSellIntegration();
+        sudoswapFlashSell.initialize();
 
         sellOnSeaport = new NiftyApesSellOnSeaport();
         sellOnSeaport.initialize();
@@ -87,17 +90,12 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
             sellOnSeaport.updateSeaportContractAddress(SEAPORT_ADDRESS);
             seaportFlashSell.updateSeaportContractAddress(SEAPORT_ADDRESS);
 
-
-            sudoswapFlashSellIntegration = new SudoswapFlashSellIntegration();
-            sudoswapFlashSellIntegration.initialize(
-                address(flashSell),
-                SUDOSWAP_FACTORY_ADDRESS,
-                SUDOSWAP_ROUTER_ADDRESS
-            );
+            sudoswapFlashSell.updateFlashSellContractAddress(address(flashSell));
+            sudoswapFlashSell.updateSudoswapFactoryContractAddress(SUDOSWAP_FACTORY_ADDRESS);
+            sudoswapFlashSell.updateSudoswapRouterContractAddress(SUDOSWAP_ROUTER_ADDRESS);
         } else {
             seaportFlashPurchase = new SeaportFlashPurchaseIntegration();
             sudoswapFlashPurchase = new SudoswapFlashPurchaseIntegration();
-            sudoswapFlashSellIntegration = new SudoswapFlashSellIntegration();
         }
 
         liquidity = new NiftyApesLiquidity();

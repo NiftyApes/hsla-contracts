@@ -11,9 +11,6 @@ interface ISudoswapFlashSellIntegration is
     ISudoswapFlashSellIntegrationEvents,
     IOffersStructs
 {
-    /// @notice Returns the address for the associated FlashSell contract
-    function flashSellContractAddress() external view returns (address);
-
     /// @notice Returns the address for the associated sudoswap router
     function sudoswapRouterContractAddress() external view returns (address);
 

@@ -3,9 +3,6 @@ pragma solidity 0.8.13;
 
 /// @title SudoswapFlashSellIntegration interface for the admin role.
 interface ISudoswapFlashSellIntegrationAdmin {
-    /// @notice Updates the associated offers contract address
-    function updateFlashSellContractAddress(address newFlashSellContractAddress) external;
-
     /// @notice Updates the associated sudoswap factory contract address
     function updateSudoswapFactoryContractAddress(address newSudoswapFactoryContractAddress) external;
 

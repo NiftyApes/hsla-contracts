@@ -47,7 +47,7 @@ contract TestSudoswapFlashSellIntegration is Test, ILendingStructs, OffersLoansR
         flashSell.borrowNFTForSale(
             offer.nftContractAddress,
             offer.nftId,
-            address(sudoswapFlashSellIntegration),
+            address(sudoswapFlashSell),
             bytes(abi.encode(lssvmPair))
         );
         vm.stopPrank();
@@ -112,7 +112,7 @@ contract TestSudoswapFlashSellIntegration is Test, ILendingStructs, OffersLoansR
         flashSell.borrowNFTForSale(
             offer.nftContractAddress,
             offer.nftId,
-            address(sudoswapFlashSellIntegration),
+            address(sudoswapFlashSell),
             bytes(abi.encode(lssvmPair))
         );
         vm.stopPrank();
