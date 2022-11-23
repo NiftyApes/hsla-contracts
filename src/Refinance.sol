@@ -13,7 +13,7 @@ import "./interfaces/niftyapes/offers/IOffers.sol";
 import "./interfaces/sanctions/SanctionsList.sol";
 
 /// @title NiftyApes Refinance
-/// @custom:version 1.0
+/// @custom:version 1.1
 /// @author captnseagraves (captnseagraves.eth)
 /// @custom:contributor zishansami102 (zishansami.eth)
 /// @custom:contributor dankurka

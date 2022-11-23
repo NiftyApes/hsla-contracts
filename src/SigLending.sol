@@ -32,14 +32,14 @@ contract NiftyApesSigLending is
     address public lendingContractAddress;
 
     /// @inheritdoc ISigLending
-    address public refinanceContractAddress;
+    address public flashPurchaseContractAddress;
 
     /// @inheritdoc ISigLending
-    address public flashPurchaseContractAddress;
+    address public refinanceContractAddress;
 
     /// @dev This empty reserved space is put in place to allow future versions to add new
     /// variables without shifting storage.
-    uint256[500] private __gap;
+    uint256[499] private __gap;
 
     /// @notice The initializer for the NiftyApes protocol.
     ///         Nifty Apes is intended to be deployed behind a proxy amd thus needs to initialize
