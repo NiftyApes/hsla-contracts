@@ -5,6 +5,7 @@ import "./ILendingAdmin.sol";
 import "./ILendingEvents.sol";
 import "./ILendingStructs.sol";
 import "../offers/IOffersStructs.sol";
+import "../../seaport/ISeaport.sol";
 
 /// @title NiftyApes interface for managing loans.
 interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStructs {
@@ -25,6 +26,9 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
 
     /// @notice Returns the address for the associated flashSell contract
     function flashSellContractAddress() external view returns (address);
+
+    /// @notice Returns the address for the associated sellOnSeaport contract
+    function sellOnSeaportContractAddress() external view returns (address);
 
     /// @notice Returns the fee that computes protocol interest
     ///         This fee is the basis points in order to calculate interest per second
@@ -195,13 +199,13 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         uint32 expectedLoanBeginTimestamp
     ) external payable;
 
-    /// @notice Repay and close the borrower's loan without the NFT present, callable only by FlashSell contract.
-    ///         This function is similar to repayLoanForAccount except that it is only meant to be called by FlashSell contract.
+    /// @notice Repay and close the borrower's loan without the NFT present, callable only by FlashSell or SellOnSeaport contract.
+    ///         This function is similar to repayLoanForAccount except that it is only meant to be called by FlashSell or SellOnSeaport contract.
     ///         It assumes that the NFT has already been transferred to be used for sale.
     /// @param nftContractAddress The address of the NFT collection
     /// @param nftId The id of the specified NFT
     /// @param expectedLoanBeginTimestamp `LoanAuction.expectedLoanBeginTimestamp` to reassure that the loan is correct and active.
-    function repayLoanForAccountFlashSell(
+    function repayLoanForAccountInternal(
         address nftContractAddress,
         uint256 nftId,
         uint32 expectedLoanBeginTimestamp
@@ -309,6 +313,17 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         address to
     ) external;
 
+    /// @notice Function only callable by the SellOnSeaport
+    ///         Allows other contracts to pull NFT from the lending contract
+    /// @param nftContractAddress The address of the nft collection
+    /// @param nftId The id of the specified NFT
+    /// @param to The address to approve the NFT
+    function approveNft(
+        address nftContractAddress,
+        uint256 nftId,
+        address to
+    ) external;
+
     /// @notice Function only callable by the NiftyApesFlashPurchase contract
     ///         Allows FlashPurchase.sol to create a loan
     /// @param offer The details of the loan auction offer
@@ -321,4 +336,20 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         address lender,
         address borrower
     ) external;
+
+    /// @notice Function validate the order listing on the Seaport contract for SellOnSeaport
+    /// @param seaportContractAddress The address of the Seaport contract
+    /// @param orders the Seaport order struct
+    function validateSeaportOrderSellOnSeaport(
+        address seaportContractAddress,
+        ISeaport.Order[] memory orders
+    ) external;
+    
+    /// @notice Function cancels the valid order listed on the Seaport for SellOnSeaport
+    /// @param seaportContractAddress The address of the Seaport contract
+    /// @param orderComponentsList the Seaport orderComponents struct list
+    function cancelOrderSellOnSeaport(
+        address seaportContractAddress,
+        ISeaport.OrderComponents[] memory orderComponentsList
+    ) external returns (bool);
 }

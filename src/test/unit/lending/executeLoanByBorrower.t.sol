@@ -19,6 +19,7 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
     ContractThatCannotReceiveEth private contractThatCannotReceiveEth;
 
     function setUp() public override {
+        vm.rollFork(15617130);
         super.setUp();
 
         contractThatCannotReceiveEth = new ContractThatCannotReceiveEth();

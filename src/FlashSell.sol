@@ -152,9 +152,11 @@ contract NiftyApesFlashSell is
         _requireCorrectFundsSent(assetBalanceAfter - assetBalanceBefore, totalLoanPaymentAmount);
 
         if (loanAuction.asset == ETH_ADDRESS) {
-            ILending(lendingContractAddress).repayLoanForAccountFlashSell{
-                value: totalLoanPaymentAmount
-            }(nftContractAddress, nftId, loanAuction.loanBeginTimestamp);
+            ILending(lendingContractAddress).repayLoanForAccountInternal{value: totalLoanPaymentAmount}(
+                nftContractAddress,
+                nftId,
+                loanAuction.loanBeginTimestamp
+            );
         } else {
             IERC20Upgradeable assetToken = IERC20Upgradeable(loanAuction.asset);
             uint256 allowance = assetToken.allowance(address(this), liquidityContractAddress);
@@ -162,7 +164,7 @@ contract NiftyApesFlashSell is
                 assetToken.safeDecreaseAllowance(liquidityContractAddress, allowance);
             }
             assetToken.safeIncreaseAllowance(liquidityContractAddress, totalLoanPaymentAmount);
-            ILending(lendingContractAddress).repayLoanForAccountFlashSell(
+            ILending(lendingContractAddress).repayLoanForAccountInternal(
                 nftContractAddress,
                 nftId,
                 loanAuction.loanBeginTimestamp
