@@ -94,7 +94,7 @@ contract NiftyApesLending is
 
     /// @dev This empty reserved space is put in place to allow future versions to add new
     /// variables without shifting storage.
-    uint256[500] private __gap;
+    uint256[497] private __gap;
 
     /// @notice The initializer for the NiftyApes protocol.
     ///         Nifty Apes is intended to be deployed behind a proxy amd thus needs to initialize
@@ -671,7 +671,6 @@ contract NiftyApesLending is
         address nftOwner = loanAuction.nftOwner;
         _repayLoanAmount(nftContractAddress, nftId, true, 0, true);
         _transferNft(nftContractAddress, nftId, address(this), nftOwner);
-        _removeTokenFromOwnerEnumeration(nftOwner, nftContractAddress, nftId);
     }
 
     /// @inheritdoc ILending
@@ -688,7 +687,6 @@ contract NiftyApesLending is
         address nftOwner = loanAuction.nftOwner;
         _repayLoanAmount(nftContractAddress, nftId, true, 0, false);
         _transferNft(nftContractAddress, nftId, address(this), nftOwner);
-        _removeTokenFromOwnerEnumeration(nftOwner, nftContractAddress, nftId);
     }
 
     /// @inheritdoc ILending
@@ -701,10 +699,7 @@ contract NiftyApesLending is
         LoanAuction memory loanAuction = _getLoanAuctionInternal(nftContractAddress, nftId);
         // requireExpectedLoanIsActive
         require(loanAuction.loanBeginTimestamp == expectedLoanBeginTimestamp, "00027");
-        
-        address nftOwner = loanAuction.nftOwner;
         _repayLoanAmount(nftContractAddress, nftId, true, 0, false);
-        _removeTokenFromOwnerEnumeration(nftOwner, nftContractAddress, nftId);
     }
 
     /// @inheritdoc ILending
@@ -772,6 +767,7 @@ contract NiftyApesLending is
         _payoutCTokenBalances(loanAuction, cAsset, cTokensMinted, paymentAmount, repayFull);
 
         if (repayFull) {
+            _removeTokenFromOwnerEnumeration(loanAuction.nftOwner, nftContractAddress, nftId);
             emit LoanRepaid(nftContractAddress, nftId, paymentAmount, loanAuction);
 
             delete _loanAuctions[nftContractAddress][nftId];
@@ -1057,12 +1053,10 @@ contract NiftyApesLending is
         return _ownedTokens[owner][nftContractAddress][index];
     }
 
-    /**
-     * @dev Private function to add a token to this extension's ownership-tracking data structures.
-     * @param owner address representing the new owner of the given token ID
-     * @param nftContractAddress address nft collection address
-     * @param tokenId uint256 ID of the token to be added to the tokens list of the given address
-     */
+    /// @dev Private function to add a token to this extension's ownership-tracking data structures.
+    /// @param owner address representing the new owner of the given token ID
+    /// @param nftContractAddress address nft collection address
+    /// @param tokenId uint256 ID of the token to be added to the tokens list of the given address
     function _addTokenToOwnerEnumeration(address owner, address nftContractAddress, uint256 tokenId) private {
         uint256 length = _balances[owner][nftContractAddress];
         _ownedTokens[owner][nftContractAddress][length] = tokenId;
@@ -1070,15 +1064,13 @@ contract NiftyApesLending is
         _balances[owner][nftContractAddress] += 1;
     }
 
-    /**
-     * @dev Private function to remove a token from this extension's ownership-tracking data structures. Note that
-     * while the token is not assigned a new owner, the `_ownedTokensIndex` mapping is _not_ updated: this allows for
-     * gas optimizations e.g. when performing a transfer operation (avoiding double writes).
-     * This has O(1) time complexity, but alters the order of the _ownedTokens array.
-     * @param owner address representing the owner of the given token ID to be removed
-     * @param nftContractAddress address nft collection address
-     * @param tokenId uint256 ID of the token to be removed from the tokens list of the given address
-     */
+    /// @dev Private function to remove a token from this extension's ownership-tracking data structures. Note that
+    /// while the token is not assigned a new owner, the `_ownedTokensIndex` mapping is _not_ updated: this allows for
+    /// gas optimizations e.g. when performing a transfer operation (avoiding double writes).
+    /// This has O(1) time complexity, but alters the order of the _ownedTokens array.
+    /// @param owner address representing the owner of the given token ID to be removed
+    /// @param nftContractAddress address nft collection address
+    /// @param tokenId uint256 ID of the token to be removed from the tokens list of the given address
     function _removeTokenFromOwnerEnumeration(address owner, address nftContractAddress, uint256 tokenId) private {
         // To prevent a gap in from's tokens array, we store the last token in the index of the token to delete, and then delete the last slot (swap and pop).
 

@@ -134,5 +134,5 @@ The NiftyApes protocol is made up of four core contracts `Liquidity.sol`, `Offer
 "00056" == "multiple NFT purchase not allowed for non floor offer"
 "00057" == "FlashSell: amount received insufficient"
 "00058" == "flashClaim operation failed"
-"00069" == "Lending: owner has zero nft locked"
+"00069" == "Lending: owner has zero nfts locked"
 
