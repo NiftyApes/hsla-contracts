@@ -53,10 +53,10 @@ contract DeployNiftyApesScript is Script {
             address(liquidity),
             address(offers),
             address(sigLending),
+            address(refinance),
             address(flashClaim),
             address(flashPurchase),
-            address(flashSell),
-            address(refinance)
+            address(flashSell)
         );
 
         liquidity.updateLendingContractAddress(address(lending));
