@@ -136,9 +136,7 @@ contract SudoswapFlashPurchaseIntegration is
             _ethTransferable = true;
             IFlashPurchase(flashPurchaseContractAddress).borrowFundsForPurchase(
                 offerHash,
-                nftContractAddress,
                 nftIds[i],
-                floorTerm,
                 address(this),
                 msg.sender,
                 abi.encode(lssvmPair, offer.asset)

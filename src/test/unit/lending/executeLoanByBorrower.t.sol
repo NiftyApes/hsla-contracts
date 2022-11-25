@@ -365,7 +365,7 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         mockNft.approve(address(lending), 1);
 
         vm.expectRevert("00022");
-        lending.executeLoanByBorrower(offer1.nftContractAddress, 1, offerHash, offer1.floorTerm);
+        lending.executeLoanByBorrower(1, offerHash);
         vm.stopPrank();
     }
 
@@ -398,10 +398,8 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
 
         vm.expectRevert("00017");
         lending.executeLoanByBorrower(
-            offer.nftContractAddress,
             offer.nftId,
-            offerHash,
-            offer.floorTerm
+            offerHash
         );
         vm.stopPrank();
     }
@@ -460,10 +458,8 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
 
         vm.expectRevert("00017");
         lending.executeLoanByBorrower(
-            offer.nftContractAddress,
             offer.nftId,
-            offerHash,
-            offer.floorTerm
+            offerHash
         );
         vm.stopPrank();
     }
@@ -504,7 +500,7 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
 
         vm.startPrank(borrower2);
         mockNft.approve(address(lending), 2);
-        lending.executeLoanByBorrower(offer.nftContractAddress, 2, offerHash, offer.floorTerm);
+        lending.executeLoanByBorrower(2, offerHash);
         vm.stopPrank();
     }
 
@@ -528,7 +524,7 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         vm.startPrank(borrower2);
         mockNft.approve(address(lending), 2);
         vm.expectRevert("00051");
-        lending.executeLoanByBorrower(offer.nftContractAddress, 2, offerHash, offer.floorTerm);
+        lending.executeLoanByBorrower(2, offerHash);
         vm.stopPrank();
     }
 }

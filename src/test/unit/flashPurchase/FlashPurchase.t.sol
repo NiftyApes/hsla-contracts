@@ -190,9 +190,7 @@ contract TestFlashPurchase is Test, OffersLoansRefinancesFixtures, ERC721HolderU
         }
         flashPurchase.borrowFundsForPurchase(
             offerHash,
-            offer.nftContractAddress,
             nftId,
-            offer.floorTerm,
             receiver,
             borrower1,
             bytes("")

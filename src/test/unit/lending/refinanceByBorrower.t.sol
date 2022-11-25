@@ -200,9 +200,7 @@ contract TestRefinanceLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         // refinance by borrower
         vm.startPrank(borrower1);
         lending.refinanceByBorrower(
-            newOffer.nftContractAddress,
             newOffer.nftId,
-            newOffer.floorTerm,
             offerHash,
             lending.getLoanAuction(address(mockNft), 1).lastUpdatedTimestamp
         );
@@ -257,9 +255,7 @@ contract TestRefinanceLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         // refinance by borrower
         vm.startPrank(borrower1);
         lending.refinanceByBorrower(
-            newOffer.nftContractAddress,
             newOffer.nftId,
-            newOffer.floorTerm,
             offerHash,
             lending.getLoanAuction(address(mockNft), 1).lastUpdatedTimestamp
         );
@@ -308,9 +304,7 @@ contract TestRefinanceLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         vm.startPrank(borrower1);
         vm.expectRevert("00026");
         lending.refinanceByBorrower(
-            newOffer.nftContractAddress,
             newOffer.nftId,
-            newOffer.floorTerm,
             offerHash,
             (loanAuction.lastUpdatedTimestamp - 100)
         );
@@ -352,9 +346,7 @@ contract TestRefinanceLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         vm.startPrank(borrower1);
         vm.expectRevert("00009");
         lending.refinanceByBorrower(
-            newOffer.nftContractAddress,
             newOffer.nftId,
-            newOffer.floorTerm,
             offerHash,
             loanAuction.lastUpdatedTimestamp
         );

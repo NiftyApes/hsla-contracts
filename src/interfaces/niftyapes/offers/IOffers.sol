@@ -42,15 +42,9 @@ interface IOffers is IOffersAdmin, IOffersEvents, IOffersStructs, ILendingStruct
     function withdrawOfferSignature(Offer memory offer, bytes calldata signature) external;
 
     /// @notice Returns an offer from the on-chain offer books
-    /// @param nftContractAddress The address of the NFT collection
-    /// @param nftId The id of the specified NFT
     /// @param offerHash The hash of all parameters in an offer
-    /// @param floorTerm Indicates whether this is a floor or individual NFT offer.
     function getOffer(
-        address nftContractAddress,
-        uint256 nftId,
-        bytes32 offerHash,
-        bool floorTerm
+        bytes32 offerHash
     ) external view returns (Offer memory offer);
 
     /// @notice Returns a floor offers usage count
@@ -76,16 +70,8 @@ interface IOffers is IOffersAdmin, IOffersEvents, IOffersStructs, ILendingStruct
     function createOffer(Offer calldata offer) external returns (bytes32);
 
     /// @notice Removes an offer from the on-chain offer book
-    /// @param nftContractAddress The address of the NFT collection
-    /// @param nftId The id of the specified NFT
     /// @param offerHash The hash of all parameters in an offer
-    /// @param floorTerm Indicates whether this is a floor or individual NFT offer.
-    function removeOffer(
-        address nftContractAddress,
-        uint256 nftId,
-        bytes32 offerHash,
-        bool floorTerm
-    ) external;
+    function removeOffer(bytes32 offerHash) external;
 
     /// @notice Can only be called by the lendingContractAddress
     /// @param offer The details of the offer

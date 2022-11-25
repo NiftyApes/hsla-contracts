@@ -30,12 +30,7 @@ abstract contract FlashPurchaseIntegrationBase is
         uint256 nftId
     ) internal view returns(Offer memory offer) {
         // fetch offer
-        offer = IOffers(offersContract).getOffer(
-            nftContractAddress,
-            nftId,
-            offerHash,
-            floorTerm
-        );
+        offer = IOffers(offersContract).getOffer(offerHash);
     }
 
     function _arrangeAssetFromBorrower(

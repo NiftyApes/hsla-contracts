@@ -67,15 +67,11 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
 
     /// @notice Start a loan as the borrower using an offer from the on chain offer book.
     ///         The caller of this method has to be the current owner of the NFT
-    /// @param nftContractAddress The address of the NFT collection
     /// @param nftId The id of the specified NFT
     /// @param offerHash The hash of all parameters in an offer
-    /// @param floorTerm Indicates whether this is a floor or individual NFT offer.
     function executeLoanByBorrower(
-        address nftContractAddress,
         uint256 nftId,
-        bytes32 offerHash,
-        bool floorTerm
+        bytes32 offerHash
     ) external payable;
 
     /// @notice Start a loan as the borrower using a signed offer.
@@ -94,15 +90,11 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     /// @notice Start a loan as the lender using an offer from the on chain offer book.
     ///         Borrowers can make offers for loan terms on their NFTs and thus lenders can
     ///         execute these offers
-    /// @param nftContractAddress The address of the NFT collection
     /// @param nftId The id of the specified NFT
     /// @param offerHash The hash of all parameters in an offer
-    /// @param floorTerm Indicates whether this is a floor or individual NFT offer.
     function executeLoanByLender(
-        address nftContractAddress,
         uint256 nftId,
-        bytes32 offerHash,
-        bool floorTerm
+        bytes32 offerHash
     ) external payable;
 
     /// @notice Start a loan as the lender using a borrowers offer and signature.
@@ -117,14 +109,10 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     /// @notice Refinance a loan against the on chain offer book as the borrower.
     ///         The new offer has to cover the principle remaining and all lender interest owed on the loan
     ///         Borrowers can refinance at any time even after loan default as long as their NFT collateral has not been seized
-    /// @param nftContractAddress The address of the NFT collection
     /// @param nftId The id of the specified NFT
-    /// @param floorTerm Indicates whether this is a floor or individual NFT offer.
     /// @param offerHash The hash of all parameters in an offer. This is used as the unique identifier of an offer.
     function refinanceByBorrower(
-        address nftContractAddress,
         uint256 nftId,
-        bool floorTerm,
         bytes32 offerHash,
         uint32 expectedLastUpdatedTimestamp
     ) external;

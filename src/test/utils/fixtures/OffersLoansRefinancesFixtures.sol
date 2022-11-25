@@ -148,14 +148,14 @@ contract OffersLoansRefinancesFixtures is
         offer.creator = lender;
         bytes32 offerHash = offers.createOffer(offer);
         vm.stopPrank();
-        return offers.getOffer(offer.nftContractAddress, offer.nftId, offerHash, offer.floorTerm);
+        return offers.getOffer(offerHash);
     }
 
     function createBorrowerOffer(Offer memory offer) internal returns (Offer memory) {
         vm.startPrank(offer.creator);
         bytes32 offerHash = offers.createOffer(offer);
         vm.stopPrank();
-        return offers.getOffer(offer.nftContractAddress, offer.nftId, offerHash, offer.floorTerm);
+        return offers.getOffer(offerHash);
     }
 
     function approveLending(Offer memory offer) internal {
@@ -176,10 +176,8 @@ contract OffersLoansRefinancesFixtures is
         }
 
         lending.executeLoanByBorrower(
-            offer.nftContractAddress,
             offer.nftId,
-            offerHash,
-            offer.floorTerm
+            offerHash
         );
         vm.stopPrank();
 
@@ -199,10 +197,8 @@ contract OffersLoansRefinancesFixtures is
         }
 
         lending.executeLoanByLender(
-            offer.nftContractAddress,
             offer.nftId,
-            offerHash,
-            offer.floorTerm
+            offerHash
         );
         vm.stopPrank();
 
@@ -241,9 +237,7 @@ contract OffersLoansRefinancesFixtures is
 
         vm.startPrank(borrower1);
         lending.refinanceByBorrower(
-            newOffer.nftContractAddress,
             newOffer.nftId,
-            newOffer.floorTerm,
             offerHash,
             lending.getLoanAuction(address(mockNft), 1).lastUpdatedTimestamp
         );

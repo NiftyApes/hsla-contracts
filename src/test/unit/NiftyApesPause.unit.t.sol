@@ -245,7 +245,7 @@ contract NiftyApesPauseUnitTest is
     function testCannotExecuteLoanByBorrower_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        lendingAuction.executeLoanByBorrower(address(0), 1, bytes32(0), false);
+        lendingAuction.executeLoanByBorrower(1, bytes32(0));
     }
 
     function testCannotExecuteLoanByBorrowerSignature_paused() public {
@@ -257,7 +257,7 @@ contract NiftyApesPauseUnitTest is
     function testCannotExecuteLoanByLender_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        lendingAuction.executeLoanByLender(address(0), 1, bytes32(0), false);
+        lendingAuction.executeLoanByLender(1, bytes32(0));
     }
 
     function testCannotExecuteLoanByLenderSignature_paused() public {
@@ -270,9 +270,7 @@ contract NiftyApesPauseUnitTest is
         hevm.expectRevert("Pausable: paused");
 
         lendingAuction.refinanceByBorrower(
-            address(0),
             1,
-            false,
             bytes32(0),
             uint32(block.timestamp)
         );

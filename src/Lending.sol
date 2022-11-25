@@ -204,15 +204,11 @@ contract NiftyApesLending is
 
     /// @inheritdoc ILending
     function executeLoanByBorrower(
-        address nftContractAddress,
         uint256 nftId,
-        bytes32 offerHash,
-        bool floorTerm
+        bytes32 offerHash
     ) external payable whenNotPaused nonReentrant {
         Offer memory offer = _offerNftIdAndCountChecks(
-            nftContractAddress,
             nftId,
-            floorTerm,
             offerHash
         );
 
@@ -222,22 +218,15 @@ contract NiftyApesLending is
 
     /// @inheritdoc ILending
     function executeLoanByLender(
-        address nftContractAddress,
         uint256 nftId,
-        bytes32 offerHash,
-        bool floorTerm
+        bytes32 offerHash
     ) public payable whenNotPaused nonReentrant {
-        Offer memory offer = IOffers(offersContractAddress).getOffer(
-            nftContractAddress,
-            nftId,
-            offerHash,
-            floorTerm
-        );
+        Offer memory offer = IOffers(offersContractAddress).getOffer(offerHash);
 
         _requireBorrowerOffer(offer);
         _requireNoFloorTerms(offer);
 
-        IOffers(offersContractAddress).removeOffer(nftContractAddress, nftId, offerHash, floorTerm);
+        IOffers(offersContractAddress).removeOffer(offerHash);
 
         _doExecuteLoan(offer, msg.sender, offer.creator, nftId);
     }
@@ -290,16 +279,12 @@ contract NiftyApesLending is
     }
 
     function refinanceByBorrower(
-        address nftContractAddress,
         uint256 nftId,
-        bool floorTerm,
         bytes32 offerHash,
         uint32 expectedLastUpdatedTimestamp
     ) external whenNotPaused nonReentrant {
         Offer memory offer = _offerNftIdAndCountChecks(
-            nftContractAddress,
             nftId,
-            floorTerm,
             offerHash
         );
 
@@ -326,6 +311,7 @@ contract NiftyApesLending is
 
         _requireIsNotSanctioned(nftOwner);
         _requireIsNotSanctioned(offer.creator);
+        _requireOpenLoan(loanAuction);
         _requireMatchingAsset(offer.asset, loanAuction.asset);
         _requireNftOwner(loanAuction, nftOwner);
         _requireNoFixedTerm(loanAuction);
@@ -333,7 +319,6 @@ contract NiftyApesLending is
         if (expectedLastUpdatedTimestamp != 0) {
             require(loanAuction.lastUpdatedTimestamp == expectedLastUpdatedTimestamp, "00026");
         }
-        _requireOpenLoan(loanAuction);
         _requireLoanNotExpired(loanAuction);
         _requireOfferNotExpired(offer);
         _requireLenderOffer(offer);
@@ -830,26 +815,14 @@ contract NiftyApesLending is
     }
 
     function _offerNftIdAndCountChecks(
-        address nftContractAddress,
         uint256 nftId,
-        bool floorTerm,
         bytes32 offerHash
     ) internal returns (Offer memory) {
-        Offer memory offer = IOffers(offersContractAddress).getOffer(
-            nftContractAddress,
-            nftId,
-            offerHash,
-            floorTerm
-        );
+        Offer memory offer = IOffers(offersContractAddress).getOffer(offerHash);
 
         if (!offer.floorTerm) {
             _requireMatchingNftId(offer, nftId);
-            IOffers(offersContractAddress).removeOffer(
-                nftContractAddress,
-                nftId,
-                offerHash,
-                floorTerm
-            );
+            IOffers(offersContractAddress).removeOffer(offerHash);
         } else {
             require(
                 IOffers(offersContractAddress).getFloorOfferCount(offerHash) < offer.floorTermLimit,

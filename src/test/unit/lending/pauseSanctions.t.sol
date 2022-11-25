@@ -31,10 +31,8 @@ contract TestLendingPauseSanctions is Test, OffersLoansRefinancesFixtures {
         mockNft.approve(address(lending), offer.nftId);
         offers.getOfferHash(offer);
         lending.executeLoanByBorrower(
-            offer.nftContractAddress,
             offer.nftId,
-            offerHash,
-            offer.floorTerm
+            offerHash
         );
     }
 
@@ -61,10 +59,8 @@ contract TestLendingPauseSanctions is Test, OffersLoansRefinancesFixtures {
         offers.getOfferHash(offer);
 
         lending.executeLoanByBorrower(
-            offer.nftContractAddress,
             offer.nftId,
-            offerHash,
-            offer.floorTerm
+            offerHash
         );
         vm.stopPrank();
 

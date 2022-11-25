@@ -138,17 +138,13 @@ contract NiftyApesFlashPurchase is
     /// @inheritdoc IFlashPurchase
     function borrowFundsForPurchase(
         bytes32 offerHash,
-        address nftContractAddress,
         uint256 nftId,
-        bool floorTerm,
         address receiver,
         address borrower,
         bytes calldata data
     ) external whenNotPaused nonReentrant {
         Offer memory offer = _fetchAndRemoveNonFloorOffer(
-            nftContractAddress,
             offerHash,
-            floorTerm,
             nftId
         );
         _doBorrow(offer, nftId, receiver, borrower, data);
@@ -247,28 +243,16 @@ contract NiftyApesFlashPurchase is
     }
 
     function _fetchAndRemoveNonFloorOffer(
-        address nftContractAddress,
         bytes32 offerHash,
-        bool floorTerm,
         uint256 nftId
     ) internal returns(Offer memory offer) {
         // fetch offer
-        offer = IOffers(offersContractAddress).getOffer(
-            nftContractAddress,
-            nftId,
-            offerHash,
-            floorTerm
-        );
+        offer = IOffers(offersContractAddress).getOffer(offerHash);
 
         // remove non-floor offer
         if (!offer.floorTerm) {
             _requireMatchingNftId(offer, nftId);
-            IOffers(offersContractAddress).removeOffer(
-                offer.nftContractAddress,
-                nftId,
-                offerHash,
-                floorTerm
-            );
+            IOffers(offersContractAddress).removeOffer(offerHash);
         } else {
             require(
                 IOffers(offersContractAddress).getFloorOfferCount(offerHash) < offer.floorTermLimit,

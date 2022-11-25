@@ -22,12 +22,7 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
     /// @dev A mapping for a NFT to an Offer
     ///      The mapping has to be broken into three parts since an NFT is denominated by its address (first part)
     ///      and its nftId (second part), offers are referred to by their hash (see #getEIP712EncodedOffer for details) (third part).
-    mapping(address => mapping(uint256 => mapping(bytes32 => Offer))) private _nftOfferBooks;
-
-    /// @dev A mapping for a NFT to a floor offer
-    ///      Floor offers are different from offers on a specific NFT since they are valid on any NFT fro the same address.
-    ///      Thus this mapping skips the nftId, see _nftOfferBooks above.
-    mapping(address => mapping(bytes32 => Offer)) private _floorOfferBooks;
+    mapping(bytes32 => Offer) private _nftOfferBooks;
 
     /// @dev A mapping for an on chain offerHash to a floor offer counter
     mapping(bytes32 => uint64) private _floorOfferCounters;
@@ -163,34 +158,17 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
         _markSignatureUsed(offer, signature);
     }
 
-    function _getOfferBook(
-        address nftContractAddress,
-        uint256 nftId,
-        bool floorTerm
-    ) internal view returns (mapping(bytes32 => Offer) storage) {
-        return
-            floorTerm
-                ? _floorOfferBooks[nftContractAddress]
-                : _nftOfferBooks[nftContractAddress][nftId];
-    }
-
     /// @inheritdoc IOffers
     function getOffer(
-        address nftContractAddress,
-        uint256 nftId,
-        bytes32 offerHash,
-        bool floorTerm
+        bytes32 offerHash
     ) public view returns (Offer memory) {
-        return _getOfferInternal(nftContractAddress, nftId, offerHash, floorTerm);
+        return _nftOfferBooks[offerHash];
     }
 
     function _getOfferInternal(
-        address nftContractAddress,
-        uint256 nftId,
-        bytes32 offerHash,
-        bool floorTerm
+        bytes32 offerHash
     ) internal view returns (Offer storage) {
-        return _getOfferBook(nftContractAddress, nftId, floorTerm)[offerHash];
+        return _nftOfferBooks[offerHash];
     }
 
     /// @inheritdoc IOffers
@@ -234,41 +212,24 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
             requireNoFloorTerms(offer);
         }
 
-        mapping(bytes32 => Offer) storage offerBook = _getOfferBook(
-            offer.nftContractAddress,
-            offer.nftId,
-            offer.floorTerm
-        );
-
         offerHash = getOfferHash(offer);
 
-        _requireOfferDoesntExist(offerBook[offerHash].creator);
+        _requireOfferDoesntExist(_nftOfferBooks[offerHash].creator);
 
-        offerBook[offerHash] = offer;
+        _nftOfferBooks[offerHash] = offer;
 
         emit NewOffer(offer.creator, offer.nftContractAddress, offer.nftId, offer, offerHash);
     }
 
     /// @inheritdoc IOffers
-    function removeOffer(
-        address nftContractAddress,
-        uint256 nftId,
-        bytes32 offerHash,
-        bool floorTerm
-    ) external whenNotPaused {
-        mapping(bytes32 => Offer) storage offerBook = _getOfferBook(
-            nftContractAddress,
-            nftId,
-            floorTerm
-        );
-
-        Offer storage offer = offerBook[offerHash];
+    function removeOffer(bytes32 offerHash) external whenNotPaused {
+        Offer storage offer = _nftOfferBooks[offerHash];
 
         _requireOfferCreatorOrExpectedContract(offer.creator, msg.sender);
 
-        emit OfferRemoved(offer.creator, offer.nftContractAddress, nftId, offer, offerHash);
+        emit OfferRemoved(offer.creator, offer.nftContractAddress, offer.nftId, offer, offerHash);
 
-        delete offerBook[offerHash];
+        delete _nftOfferBooks[offerHash];
     }
 
     /// @inheritdoc IOffers
