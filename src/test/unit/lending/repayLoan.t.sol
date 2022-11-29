@@ -19,8 +19,21 @@ contract TestRepayLoan is Test, OffersLoansRefinancesFixtures {
         }
         // lending contract has NFT
         assertEq(mockNft.ownerOf(1), address(lending));
+        // balance increments to one
+        assertEq(lending.balanceOf(borrower1, address(mockNft)), 1);
+        // nftId exists at index 0
+        assertEq(lending.tokenOfOwnerByIndex(borrower1, address(mockNft), 0), 1);
         // loan auction exists
         assertEq(lending.getLoanAuction(address(mockNft), 1).lastUpdatedTimestamp, block.timestamp);
+    }
+
+    function nftOwnershipAssertionsForClosedLoans(address expectedNftOwner) private {
+        // expected address has NFT
+        assertEq(mockNft.ownerOf(1), expectedNftOwner);
+        // balance decrements to 0
+        assertEq(lending.balanceOf(borrower1, address(mockNft)), 0);
+        // loan auction doesn't exist anymore
+        assertEq(lending.getLoanAuction(address(mockNft), 1).lastUpdatedTimestamp, 0);
     }
 
     function test_fuzz_repayLoan_simplest_case(
@@ -140,5 +153,6 @@ contract TestRepayLoan is Test, OffersLoansRefinancesFixtures {
                 assetBalancePlusOneCToken(lender1, address(ETH_ADDRESS))
             );
         }
+        nftOwnershipAssertionsForClosedLoans(borrower1);
     }
 }
