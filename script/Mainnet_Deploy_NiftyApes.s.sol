@@ -25,7 +25,6 @@ contract DeployNiftyApesScript is Script {
 
         address compContractAddress = 0xc00e94Cb662C3520282E6f5717214004A7f26888;
         address mainnetMultisigAddress = 0xbe9B799D066A51F77d353Fc72e832f3803789362;
-        address seaportContractAddress = 0x00000000006c3852cbEf3e08E8dF289169EdE581;
 
         vm.startBroadcast();
 
@@ -90,9 +89,7 @@ contract DeployNiftyApesScript is Script {
 
         sellOnSeaport.updateLendingContractAddress(address(lending));
         sellOnSeaport.updateLiquidityContractAddress(address(liquidity));
-        sellOnSeaport.updateSeaportContractAddress(seaportContractAddress);
-
-
+        sellOnSeaport.updateSeaportContractAddress(0x00000000006c3852cbEf3e08E8dF289169EdE581);
 
         // Mainnet Addresses
         address daiToken = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
@@ -102,16 +99,10 @@ contract DeployNiftyApesScript is Script {
 
         // DAI
         liquidity.setCAssetAddress(daiToken, cDAIToken);
-
-        // uint256 cDAIAmount = liquidity.assetAmountToCAssetAmount(daiToken, type(uint256).max);
-
         liquidity.setMaxCAssetBalance(cDAIToken, liquidity.assetAmountToCAssetAmount(daiToken, type(uint256).max));
 
         // ETH
         liquidity.setCAssetAddress(ETH_ADDRESS, cEtherToken);
-
-        // uint256 cEtherAmount = liquidity.assetAmountToCAssetAmount(ETH_ADDRESS, type(uint256).max);
-
         liquidity.setMaxCAssetBalance(cEtherToken, liquidity.assetAmountToCAssetAmount(ETH_ADDRESS, type(uint256).max));
 
         liquidity.transferOwnership(mainnetMultisigAddress);
