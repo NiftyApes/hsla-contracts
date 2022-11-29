@@ -12,6 +12,7 @@ import "../../../FlashPurchase.sol";
 import "../../../flashPurchase/integrations/SeaportFlashPurchaseIntegration.sol";
 import "../../../flashPurchase/integrations/SudoswapFlashPurchaseIntegration.sol";
 import "../../../FlashSell.sol";
+import "../../../SellOnSeaport.sol";
 import "../../../Refinance.sol";
 import "./NFTAndERC20Fixtures.sol";
 import "../../../interfaces/seaport/ISeaport.sol";
@@ -35,6 +36,7 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
     SeaportFlashPurchaseIntegration seaportFlashPurchase;
     SudoswapFlashPurchaseIntegration sudoswapFlashPurchase;
     NiftyApesFlashSell flashSell;
+    NiftyApesSellOnSeaport sellOnSeaport;
 
     address constant ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     address constant SEAPORT_ADDRESS = 0x00000000006c3852cbEf3e08E8dF289169EdE581;
@@ -51,6 +53,9 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
 
         flashClaim = new NiftyApesFlashClaim();
         flashClaim.initialize();
+
+        sellOnSeaport = new NiftyApesSellOnSeaport();
+        sellOnSeaport.initialize();
 
         if (integration) {
             flashPurchase = new NiftyApesFlashPurchase();
@@ -69,6 +74,9 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
                 SUDOSWAP_FACTORY_ADDRESS,
                 SUDOSWAP_ROUTER_ADDRESS
             );
+
+            sellOnSeaport.updateSeaportContractAddress(SEAPORT_ADDRESS);
+
         } else {
             flashPurchase = new NiftyApesFlashPurchase();
             seaportFlashPurchase = new SeaportFlashPurchaseIntegration();
@@ -98,7 +106,8 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
             address(refinance),
             address(flashClaim),
             address(flashPurchase),
-            address(flashSell)
+            address(flashSell),
+            address(sellOnSeaport)
         );
 
         flashPurchase.initialize();
@@ -135,6 +144,9 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         liquidity.setMaxCAssetBalance(address(cDAIToken), ~uint256(0));
 
         flashClaimReceiverHappy.updateFlashClaimContractAddress(address(flashClaim));
+
+        sellOnSeaport.updateLendingContractAddress(address(lending));
+        sellOnSeaport.updateLiquidityContractAddress(address(liquidity));
 
         lending.updateProtocolInterestBps(100);
 

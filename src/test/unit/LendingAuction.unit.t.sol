@@ -12,6 +12,7 @@ import "../../SigLending.sol";
 import "../../FlashClaim.sol";
 import "../../FlashPurchase.sol";
 import "../../FlashSell.sol";
+import "../../SellOnSeaport.sol";
 import "../../Refinance.sol";
 import "../../interfaces/niftyapes/lending/ILendingEvents.sol";
 import "../../interfaces/niftyapes/offers/IOffersEvents.sol";
@@ -40,10 +41,12 @@ contract LendingAuctionUnitTest is
     NiftyApesFlashClaim flashClaim;
     NiftyApesFlashPurchase flashPurchase;
     NiftyApesFlashSell flashSell;
+    NiftyApesSellOnSeaport sellOnSeaport;
     ERC20Mock daiToken;
     CERC20Mock cDAIToken;
     CEtherMock cEtherToken;
     address compContractAddress = 0xbbEB7c67fa3cfb40069D19E598713239497A3CA5;
+    address seaportContractAddress = 0x00000000006c3852cbEf3e08E8dF289169EdE581;
 
     ERC721Mock mockNft;
 
@@ -93,6 +96,9 @@ contract LendingAuctionUnitTest is
         flashSell = new NiftyApesFlashSell();
         flashSell.initialize();
 
+        sellOnSeaport = new NiftyApesSellOnSeaport();
+        sellOnSeaport.initialize();
+
         lendingAuction = new NiftyApesLending();
         lendingAuction.initialize(
             address(liquidityProviders),
@@ -101,7 +107,8 @@ contract LendingAuctionUnitTest is
             address(refinance),
             address(flashClaim),
             address(flashPurchase),
-            address(flashSell)
+            address(flashSell),
+            address(sellOnSeaport)
         );
 
         liquidityProviders.updateLendingContractAddress(address(lendingAuction));
@@ -115,6 +122,10 @@ contract LendingAuctionUnitTest is
         flashClaim.updateLendingContractAddress(address(lendingAuction));
 
         flashSell.updateLendingContractAddress(address(lendingAuction));
+
+        sellOnSeaport.updateLendingContractAddress(address(lendingAuction));
+        sellOnSeaport.updateLiquidityContractAddress(address(liquidityProviders));
+        sellOnSeaport.updateSeaportContractAddress(seaportContractAddress);
 
         refinance.updateLendingContractAddress(address(lendingAuction));
         refinance.updateLiquidityContractAddress(address(liquidityProviders));

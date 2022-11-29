@@ -19,6 +19,7 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
     ContractThatCannotReceiveEth private contractThatCannotReceiveEth;
 
     function setUp() public override {
+        vm.rollFork(15617130);
         super.setUp();
 
         contractThatCannotReceiveEth = new ContractThatCannotReceiveEth();
@@ -33,6 +34,10 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
         }
         // lending contract has NFT
         assertEq(mockNft.ownerOf(1), address(lending));
+        // balance increments to one
+        assertEq(lending.balanceOf(borrower1, address(mockNft)), 1);
+        // nftId exists at index 0
+        assertEq(lending.tokenOfOwnerByIndex(borrower1, address(mockNft), 0), 1);
         // loan auction exists
         assertEq(lending.getLoanAuction(address(mockNft), 1).lastUpdatedTimestamp, block.timestamp);
     }

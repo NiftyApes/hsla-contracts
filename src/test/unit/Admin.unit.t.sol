@@ -8,10 +8,11 @@ import "../../Lending.sol";
 import "../../Liquidity.sol";
 import "../../Offers.sol";
 import "../../SigLending.sol";
+import "../../Refinance.sol";
 import "../../FlashClaim.sol";
 import "../../FlashPurchase.sol";
 import "../../FlashSell.sol";
-import "../../Refinance.sol";
+import "../../SellOnSeaport.sol";
 import "../../interfaces/niftyapes/lending/ILendingEvents.sol";
 import "../../interfaces/niftyapes/liquidity/ILiquidityEvents.sol";
 import "../common/BaseTest.sol";
@@ -28,11 +29,14 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
     NiftyApesFlashClaim flashClaim;
     NiftyApesFlashPurchase flashPurchase;
     NiftyApesFlashSell flashSell;
-    
+    NiftyApesSellOnSeaport sellOnSeaport;
+
     ERC20Mock daiToken;
     CERC20Mock cDAIToken;
     CEtherMock cEtherToken;
+
     address compContractAddress = 0xbbEB7c67fa3cfb40069D19E598713239497A3CA5;
+    address seaportContractAddress = 0x00000000006c3852cbEf3e08E8dF289169EdE581;
 
     bool acceptEth;
 
@@ -64,6 +68,9 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
         flashSell = new NiftyApesFlashSell();
         flashSell.initialize();
 
+        sellOnSeaport = new NiftyApesSellOnSeaport();
+        sellOnSeaport.initialize();
+
         niftyApes = new NiftyApesLending();
         niftyApes.initialize(
             address(liquidityProviders),
@@ -72,7 +79,8 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
             address(refinance),
             address(flashClaim),
             address(flashPurchase),
-            address(flashSell)
+            address(flashSell),
+            address(sellOnSeaport)
         );
 
         daiToken = new ERC20Mock();
