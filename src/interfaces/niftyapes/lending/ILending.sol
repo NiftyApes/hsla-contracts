@@ -65,6 +65,17 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         view
         returns (LoanAuction memory auction);
 
+    /// @notice Returns the total NFTs from a given collection owned by a user which has active loans in NiftyApes.
+    /// @param owner The address of the owner
+    /// @param nftContractAddress The address of the NFT collection
+    function balanceOf(address owner, address nftContractAddress) external returns (uint256);
+
+    /// @notice Returns an NFT token ID owned by `owner` at a given `index` of its token list.
+    /// @param owner The address of the user
+    /// @param nftContractAddress The address of the NFT collection
+    /// @param index The index of the owner's token list
+    function tokenOfOwnerByIndex(address owner, address nftContractAddress, uint256 index) external returns (uint256);
+
     /// @notice Start a loan as the borrower using an offer from the on chain offer book.
     ///         The caller of this method has to be the current owner of the NFT
     /// @param nftContractAddress The address of the NFT collection
