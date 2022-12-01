@@ -649,7 +649,7 @@ contract NiftyApesLending is
     {
         LoanAuction memory loanAuction = _getLoanAuctionInternal(nftContractAddress, nftId);
         _repayLoanAmount(nftContractAddress, nftId, true, 0, true);
-        _transferNft(nftContractAddress, nftId, address(this), loanAuction.nftOwner);
+        _transferCollateral(nftContractAddress, nftId, loanAuction.erc1155Amount, address(this), loanAuction.nftOwner);
     }
 
     /// @inheritdoc ILending
@@ -664,7 +664,7 @@ contract NiftyApesLending is
         _requireIsNotSanctioned(msg.sender);
 
         _repayLoanAmount(nftContractAddress, nftId, true, 0, false);
-        _transferNft(nftContractAddress, nftId, address(this), loanAuction.nftOwner);
+        _transferCollateral(nftContractAddress, nftId, loanAuction.erc1155Amount, address(this), loanAuction.nftOwner);
     }
 
     /// @inheritdoc ILending
@@ -807,7 +807,7 @@ contract NiftyApesLending is
 
         delete _loanAuctions[nftContractAddress][nftId];
 
-        _transferNft(nftContractAddress, nftId, address(this), currentLender);
+        _transferCollateral(nftContractAddress, nftId, loanAuction.erc1155Amount, address(this), currentLender);
     }
 
     /// @inheritdoc ILending
