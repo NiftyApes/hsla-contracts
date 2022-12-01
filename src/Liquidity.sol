@@ -70,20 +70,25 @@ contract NiftyApesLiquidity is
     /// @dev The status of sanctions checks. Can be set to false if oracle becomes malicious.
     bool internal _sanctionsPause;
 
+    /// @inheritdoc ILiquidity
+    address public refinanceContractAddress;
+
     /// @dev This empty reserved space is put in place to allow future versions to add new
     /// variables without shifting storage.
-    uint256[500] private __gap;
+    uint256[499] private __gap;
 
     /// @notice The initializer for the NiftyApes protocol.
     ///         NiftyApes is intended to be deployed behind a proxy and thus needs to initialize
     ///         its state outside of a constructor.
     function initialize(
         address newCompContractAddress,
+        address newRefinanceContractAddress,
         address newFlashPurchaseContractAddress
     ) public initializer {
         regenCollectiveBpsOfRevenue = 100;
         regenCollectiveAddress = address(0x252de94Ae0F07fb19112297F299f8c9Cc10E28a6);
         compContractAddress = newCompContractAddress;
+        refinanceContractAddress = newRefinanceContractAddress;
         flashPurchaseContractAddress = newFlashPurchaseContractAddress;
 
         OwnableUpgradeable.__Ownable_init();
@@ -120,6 +125,15 @@ contract NiftyApesLiquidity is
             newLendingContractAddress
         );
         lendingContractAddress = newLendingContractAddress;
+    }
+
+    /// @inheritdoc ILiquidityAdmin
+    function updateRefinanceContractAddress(address newRefinanceContractAddress) external onlyOwner {
+        emit LiquidityXRefinanceContractAddressUpdated(
+            refinanceContractAddress,
+            newRefinanceContractAddress
+        );
+        refinanceContractAddress = newRefinanceContractAddress;
     }
 
     /// @inheritdoc ILiquidityAdmin
@@ -373,9 +387,12 @@ contract NiftyApesLiquidity is
     }
 
     function _requireExpectedContract() internal view {
-        if (msg.sender != flashPurchaseContractAddress) {
-            require(msg.sender == lendingContractAddress, "00031");
-        }
+        require(
+            msg.sender == lendingContractAddress ||
+            msg.sender == flashPurchaseContractAddress ||
+            msg.sender == refinanceContractAddress,
+            "00031"
+        );
     }
 
     function _ownerWithdrawUnderlying(address asset, address cAsset)

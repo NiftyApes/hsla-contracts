@@ -10,4 +10,12 @@ interface ISigLendingEvents {
         address oldLendingContractAddress,
         address newLendingContractAddress
     );
+
+    /// @notice Emitted when the associated refinance contract address is changed
+    /// @param oldRefinanceContractAddress The old refinance contract address
+    /// @param newRefinanceContractAddress The new refinance contract address
+    event SigLendingXRefinanceContractAddressUpdated(
+        address oldRefinanceContractAddress,
+        address newRefinanceContractAddress
+    );
 }
