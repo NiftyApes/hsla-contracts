@@ -58,7 +58,7 @@ abstract contract FlashSellIntegrationBase is
 
         uint256 assetBalanceBefore = _getAssetBalance(loanAsset);
 
-        _executeTheSale(nftContractAddress, nftId, loanAsset, data);
+        _executeTheSale(nftContractAddress, nftId, loanAsset, loanAmount, data);
 
         uint256 assetBalanceAfter = _getAssetBalance(loanAsset);
 
@@ -71,6 +71,7 @@ abstract contract FlashSellIntegrationBase is
         address nftContractAddress,
         uint256 nftId,
         address loanAsset,
+        uint256 loanAmount,
         bytes calldata data
     ) internal virtual;
 

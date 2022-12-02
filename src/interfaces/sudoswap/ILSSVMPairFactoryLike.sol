@@ -50,8 +50,36 @@ interface ILSSVMPairFactoryLike {
         external
         returns (ILSSVMPair pair);
 
+    /**
+        @notice Creates a pair contract using EIP-1167.
+        @param nft The NFT contract of the collection the pair trades
+        @param bondingCurve The bonding curve for the pair to price NFTs, must be whitelisted
+        @param assetRecipient The address that will receive the assets traders give during trades.
+                              If set to address(0), assets will be sent to the pool address.
+                              Not available to TRADE pools. 
+        @param poolType TOKEN, NFT, or TRADE
+        @param delta The delta value used by the bonding curve. The meaning of delta depends
+        on the specific curve.
+        @param fee The fee taken by the LP in each trade. Can only be non-zero if _poolType is Trade.
+        @param spotPrice The initial selling spot price
+        @param initialNFTIDs The list of IDs of NFTs to transfer from the sender to the pair
+        @return pair The new pair
+     */
+    function createPairETH(
+        address nft,
+        address bondingCurve,
+        address payable assetRecipient,
+        PoolType poolType,
+        uint128 delta,
+        uint96 fee,
+        uint128 spotPrice,
+        uint256[] calldata initialNFTIDs
+    ) external payable returns (ILSSVMPair pair);
+
     function isPair(address potentialPair, PairVariant variant)
         external
         view
         returns (bool);
+
+    function protocolFeeMultiplier() external view returns (uint256);
 }
