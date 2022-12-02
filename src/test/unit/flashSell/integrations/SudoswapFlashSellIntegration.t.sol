@@ -14,6 +14,9 @@ contract TestSudoswapFlashSellIntegration is Test, ILendingStructs, OffersLoansR
     using AddressUpgradeable for address payable;
 
     function setUp() public override {
+        // pin block to time of writing test to reflect consistent state
+        vm.rollFork(15510097);
+        vm.warp(1662833943);
         super.setUp();
     }
 
