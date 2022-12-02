@@ -13,6 +13,7 @@ import "../../FlashClaim.sol";
 import "../../FlashPurchase.sol";
 import "../../FlashSell.sol";
 import "../../SellOnSeaport.sol";
+import "../../Refinance.sol";
 import "../../interfaces/niftyapes/lending/ILendingEvents.sol";
 import "../../interfaces/niftyapes/offers/IOffersEvents.sol";
 
@@ -36,6 +37,7 @@ contract LendingAuctionUnitTest is
     NiftyApesOffers offersContract;
     NiftyApesLiquidity liquidityProviders;
     NiftyApesSigLending sigLendingAuction;
+    NiftyApesRefinance refinance;
     NiftyApesFlashClaim flashClaim;
     NiftyApesFlashPurchase flashPurchase;
     NiftyApesFlashSell flashSell;
@@ -79,11 +81,14 @@ contract LendingAuctionUnitTest is
         flashPurchase = new NiftyApesFlashPurchase();
         flashPurchase.initialize();
 
+        refinance = new NiftyApesRefinance();
+        refinance.initialize();
+
         liquidityProviders = new NiftyApesLiquidity();
-        liquidityProviders.initialize(compContractAddress, address(flashPurchase));
+        liquidityProviders.initialize(compContractAddress, address(refinance), address(flashPurchase));
 
         offersContract = new NiftyApesOffers();
-        offersContract.initialize(address(liquidityProviders), address(flashPurchase));
+        offersContract.initialize(address(liquidityProviders), address(refinance), address(flashPurchase));
 
         sigLendingAuction = new NiftyApesSigLending();
         sigLendingAuction.initialize(address(offersContract), address(flashPurchase));
@@ -99,6 +104,7 @@ contract LendingAuctionUnitTest is
             address(liquidityProviders),
             address(offersContract),
             address(sigLendingAuction),
+            address(refinance),
             address(flashClaim),
             address(flashPurchase),
             address(flashSell),
@@ -111,6 +117,7 @@ contract LendingAuctionUnitTest is
         offersContract.updateSigLendingContractAddress(address(sigLendingAuction));
 
         sigLendingAuction.updateLendingContractAddress(address(lendingAuction));
+        sigLendingAuction.updateRefinanceContractAddress(address(refinance));
 
         flashClaim.updateLendingContractAddress(address(lendingAuction));
 
@@ -119,6 +126,11 @@ contract LendingAuctionUnitTest is
         sellOnSeaport.updateLendingContractAddress(address(lendingAuction));
         sellOnSeaport.updateLiquidityContractAddress(address(liquidityProviders));
         sellOnSeaport.updateSeaportContractAddress(seaportContractAddress);
+
+        refinance.updateLendingContractAddress(address(lendingAuction));
+        refinance.updateLiquidityContractAddress(address(liquidityProviders));
+        refinance.updateOffersContractAddress(address(offersContract));
+        refinance.updateSigLendingContractAddress(address(sigLendingAuction));
 
         if (block.number == 1) {
             lendingAuction.pauseSanctions();
@@ -296,7 +308,7 @@ contract LendingAuctionUnitTest is
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
 
-        lendingAuction.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
+        refinance.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
 
         hevm.stopPrank();
 
@@ -418,7 +430,7 @@ contract LendingAuctionUnitTest is
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
 
-        lendingAuction.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
+        refinance.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
 
         hevm.stopPrank();
 
@@ -514,7 +526,7 @@ contract LendingAuctionUnitTest is
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
 
-        lendingAuction.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
+        refinance.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
 
         hevm.stopPrank();
     }
@@ -3139,7 +3151,7 @@ contract LendingAuctionUnitTest is
 
         hevm.expectRevert("00015");
 
-        lendingAuction.refinanceByBorrower(
+        refinance.refinanceByBorrower(
             address(mockNft),
             1,
             true,
@@ -3210,7 +3222,7 @@ contract LendingAuctionUnitTest is
 
         hevm.expectRevert("00012");
 
-        lendingAuction.refinanceByBorrower(
+        refinance.refinanceByBorrower(
             address(mockNft),
             1,
             false,
@@ -3283,7 +3295,7 @@ contract LendingAuctionUnitTest is
 
         hevm.expectRevert("00022");
 
-        lendingAuction.refinanceByBorrower(
+        refinance.refinanceByBorrower(
             address(mockNft),
             3,
             false,
@@ -3354,7 +3366,7 @@ contract LendingAuctionUnitTest is
 
         hevm.expectRevert("00019");
 
-        lendingAuction.refinanceByBorrower(
+        refinance.refinanceByBorrower(
             address(mockNft),
             2,
             false,
@@ -3431,7 +3443,7 @@ contract LendingAuctionUnitTest is
 
         hevm.expectRevert("00019");
 
-        lendingAuction.refinanceByBorrower(
+        refinance.refinanceByBorrower(
             address(mockNft),
             2,
             true,
@@ -3507,7 +3519,7 @@ contract LendingAuctionUnitTest is
 
         hevm.expectRevert("00021");
 
-        lendingAuction.refinanceByBorrower(
+        refinance.refinanceByBorrower(
             address(mockNft),
             1,
             true,
@@ -3578,7 +3590,7 @@ contract LendingAuctionUnitTest is
 
         hevm.expectRevert("00022");
 
-        lendingAuction.refinanceByBorrower(
+        refinance.refinanceByBorrower(
             address(mockNft),
             1,
             false,
@@ -3654,7 +3666,7 @@ contract LendingAuctionUnitTest is
 
         hevm.expectRevert("00022");
 
-        lendingAuction.refinanceByBorrower(
+        refinance.refinanceByBorrower(
             address(mockNft),
             1,
             false,
@@ -3730,7 +3742,7 @@ contract LendingAuctionUnitTest is
 
         hevm.expectRevert("00019");
 
-        lendingAuction.refinanceByBorrower(
+        refinance.refinanceByBorrower(
             address(mockNft),
             1,
             false,
@@ -3805,7 +3817,7 @@ contract LendingAuctionUnitTest is
 
         hevm.expectRevert("00010");
 
-        lendingAuction.refinanceByBorrower(
+        refinance.refinanceByBorrower(
             address(mockNft),
             1,
             true,
@@ -3876,7 +3888,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        lendingAuction.refinanceByBorrower(
+        refinance.refinanceByBorrower(
             address(mockNft),
             1,
             true,
@@ -3981,7 +3993,7 @@ contract LendingAuctionUnitTest is
 
         hevm.stopPrank();
 
-        lendingAuction.refinanceByBorrower(
+        refinance.refinanceByBorrower(
             address(mockNft),
             1,
             true,
@@ -4094,7 +4106,7 @@ contract LendingAuctionUnitTest is
 
         emit AmountDrawn(offer.nftContractAddress, 1, 0, loanAuction);
 
-        lendingAuction.refinanceByBorrower(
+        refinance.refinanceByBorrower(
             address(mockNft),
             1,
             true,
@@ -4169,7 +4181,7 @@ contract LendingAuctionUnitTest is
 
         hevm.expectRevert("00005");
 
-        lendingAuction.refinanceByBorrower(
+        refinance.refinanceByBorrower(
             address(mockNft),
             1,
             true,
@@ -4242,7 +4254,7 @@ contract LendingAuctionUnitTest is
 
         hevm.warp(block.timestamp + 12 hours);
 
-        lendingAuction.refinanceByBorrower(
+        refinance.refinanceByBorrower(
             address(mockNft),
             1,
             true,
@@ -5665,7 +5677,7 @@ contract LendingAuctionUnitTest is
 
         hevm.expectRevert("00015");
 
-        lendingAuction.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
+        refinance.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
     }
 
     function testCannotRefinanceByLender_no_improvements_in_terms() public {
@@ -5728,7 +5740,7 @@ contract LendingAuctionUnitTest is
 
         hevm.expectRevert("00025");
 
-        lendingAuction.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
+        refinance.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
     }
 
     function testCannotRefinanceByLender_borrower_offer() public {
@@ -5795,7 +5807,7 @@ contract LendingAuctionUnitTest is
 
         hevm.expectRevert("00012");
 
-        lendingAuction.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
+        refinance.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
     }
 
     function testCannotRefinanceByLender_mismatch_nftid() public {
@@ -5862,7 +5874,7 @@ contract LendingAuctionUnitTest is
 
         hevm.expectRevert("00007");
 
-        lendingAuction.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
+        refinance.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
     }
 
     function testCannotRefinanceByLender_borrower_not_nft_owner() public {
@@ -5925,7 +5937,7 @@ contract LendingAuctionUnitTest is
 
         hevm.expectRevert("00007");
 
-        lendingAuction.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
+        refinance.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
     }
 
     function testCannotRefinanceByLender_no_open_loan() public {
@@ -5996,7 +6008,7 @@ contract LendingAuctionUnitTest is
 
         hevm.expectRevert("00007");
 
-        lendingAuction.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
+        refinance.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
     }
 
     function testCannotRefinanceByLender_nft_contract_address() public {
@@ -6059,7 +6071,7 @@ contract LendingAuctionUnitTest is
 
         hevm.expectRevert("00007");
 
-        lendingAuction.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
+        refinance.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
     }
 
     function testCannotRefinanceByLender_nft_id() public {
@@ -6122,7 +6134,7 @@ contract LendingAuctionUnitTest is
 
         hevm.expectRevert("00007");
 
-        lendingAuction.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
+        refinance.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
     }
 
     function testCannotRefinanceByLender_wrong_asset() public {
@@ -6185,7 +6197,7 @@ contract LendingAuctionUnitTest is
 
         hevm.expectRevert("00019");
 
-        lendingAuction.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
+        refinance.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
     }
 
     function testCannotRefinanceByLender_offer_expired() public {
@@ -6250,7 +6262,7 @@ contract LendingAuctionUnitTest is
 
         hevm.expectRevert("00010");
 
-        lendingAuction.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
+        refinance.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
     }
 
     function testCannotRefinanceByLender_if_sanctioned() public {
@@ -6320,7 +6332,7 @@ contract LendingAuctionUnitTest is
 
         hevm.expectRevert("00017");
 
-        lendingAuction.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
+        refinance.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
     }
 
     function testRefinanceByBorrower_works_different_lender() public {
@@ -6383,7 +6395,7 @@ contract LendingAuctionUnitTest is
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
 
-        lendingAuction.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
+        refinance.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
 
         assertEq(daiToken.balanceOf(address(this)), 6 ether);
         assertEq(cDAIToken.balanceOf(address(this)), 0);
@@ -6488,7 +6500,7 @@ contract LendingAuctionUnitTest is
 
         hevm.expectRevert("00016");
 
-        lendingAuction.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
+        refinance.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
     }
 
     function testRefinanceByLender_events() public {
@@ -6553,7 +6565,7 @@ contract LendingAuctionUnitTest is
 
         emit Refinance(address(mockNft), 1, loanAuction);
 
-        lendingAuction.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
+        refinance.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
     }
 
     function testRefinanceByLender_covers_interest() public {
@@ -6616,7 +6628,7 @@ contract LendingAuctionUnitTest is
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
 
-        lendingAuction.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
+        refinance.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
 
         assertEq(daiToken.balanceOf(address(this)), 6 ether);
         assertEq(cDAIToken.balanceOf(address(this)), 0);
@@ -6724,7 +6736,7 @@ contract LendingAuctionUnitTest is
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
 
-        lendingAuction.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
+        refinance.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
 
         assertEq(daiToken.balanceOf(address(this)), 6 ether);
         assertEq(cDAIToken.balanceOf(address(this)), 0);
@@ -6822,7 +6834,7 @@ contract LendingAuctionUnitTest is
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
 
-        lendingAuction.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
+        refinance.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
 
         hevm.stopPrank();
 
@@ -6851,7 +6863,7 @@ contract LendingAuctionUnitTest is
 
         loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
 
-        lendingAuction.refinanceByLender(offer3, loanAuction.lastUpdatedTimestamp);
+        refinance.refinanceByLender(offer3, loanAuction.lastUpdatedTimestamp);
 
         assertEq(daiToken.balanceOf(address(this)), 6 ether);
         assertEq(cDAIToken.balanceOf(address(this)), 0);
@@ -7680,7 +7692,7 @@ contract LendingAuctionUnitTest is
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
 
-        lendingAuction.refinanceByLender(frontrunner, loanAuction.lastUpdatedTimestamp);
+        refinance.refinanceByLender(frontrunner, loanAuction.lastUpdatedTimestamp);
 
         // Lender 1 has same 9 DAI
         assertEq(
@@ -7728,7 +7740,7 @@ contract LendingAuctionUnitTest is
 
         hevm.expectRevert("00026");
 
-        lendingAuction.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
+        refinance.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
     }
 
     function testRefinanceByLender_gas_griefing_fee_works() public {
@@ -7813,7 +7825,7 @@ contract LendingAuctionUnitTest is
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
 
-        lendingAuction.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
+        refinance.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
 
         hevm.stopPrank();
 
@@ -7921,7 +7933,7 @@ contract LendingAuctionUnitTest is
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
 
-        lendingAuction.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
+        refinance.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
 
         hevm.stopPrank();
 
@@ -8038,7 +8050,7 @@ contract LendingAuctionUnitTest is
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
 
-        lendingAuction.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
+        refinance.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
 
         hevm.stopPrank();
 
@@ -8395,7 +8407,7 @@ contract LendingAuctionUnitTest is
 
         LoanAuction memory loanAuction = lendingAuction.getLoanAuction(address(mockNft), 1);
 
-        lendingAuction.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
+        refinance.refinanceByLender(offer2, loanAuction.lastUpdatedTimestamp);
 
         hevm.stopPrank();
 

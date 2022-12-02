@@ -240,7 +240,7 @@ contract OffersLoansRefinancesFixtures is
         }
 
         vm.startPrank(borrower1);
-        lending.refinanceByBorrower(
+        refinance.refinanceByBorrower(
             newOffer.nftContractAddress,
             newOffer.nftId,
             newOffer.floorTerm,
@@ -259,7 +259,7 @@ contract OffersLoansRefinancesFixtures is
         if (bytes16(errorCode) != bytes16("should work")) {
             vm.expectRevert(errorCode);
         }
-        lending.refinanceByLender(
+        refinance.refinanceByLender(
             newOffer,
             lending.getLoanAuction(address(mockNft), 1).lastUpdatedTimestamp
         );
