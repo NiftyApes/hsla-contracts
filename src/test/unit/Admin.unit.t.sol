@@ -8,6 +8,7 @@ import "../../Lending.sol";
 import "../../Liquidity.sol";
 import "../../Offers.sol";
 import "../../SigLending.sol";
+import "../../Refinance.sol";
 import "../../FlashClaim.sol";
 import "../../FlashPurchase.sol";
 import "../../FlashSell.sol";
@@ -24,13 +25,16 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
     NiftyApesOffers offersContract;
     NiftyApesLiquidity liquidityProviders;
     NiftyApesSigLending sigLendingAuction;
+    NiftyApesRefinance refinance;
     NiftyApesFlashClaim flashClaim;
     NiftyApesFlashPurchase flashPurchase;
     NiftyApesFlashSell flashSell;
+    NiftyApesSellOnSeaport sellOnSeaport;
+
     ERC20Mock daiToken;
     CERC20Mock cDAIToken;
     CEtherMock cEtherToken;
-    NiftyApesSellOnSeaport sellOnSeaport;
+
     address compContractAddress = 0xbbEB7c67fa3cfb40069D19E598713239497A3CA5;
     address seaportContractAddress = 0x00000000006c3852cbEf3e08E8dF289169EdE581;
 
@@ -49,11 +53,14 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
         flashPurchase = new NiftyApesFlashPurchase();
         flashPurchase.initialize();
 
+        refinance = new NiftyApesRefinance();
+        refinance.initialize();
+
         liquidityProviders = new NiftyApesLiquidity();
-        liquidityProviders.initialize(compContractAddress, address(flashPurchase));
+        liquidityProviders.initialize(compContractAddress, address(refinance), address(flashPurchase));
 
         offersContract = new NiftyApesOffers();
-        offersContract.initialize(address(liquidityProviders), address(flashPurchase));
+        offersContract.initialize(address(liquidityProviders), address(refinance), address(flashPurchase));
 
         sigLendingAuction = new NiftyApesSigLending();
         sigLendingAuction.initialize(address(offersContract), address(flashPurchase));
@@ -69,6 +76,7 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
             address(liquidityProviders),
             address(offersContract),
             address(sigLendingAuction),
+            address(refinance),
             address(flashClaim),
             address(flashPurchase),
             address(flashSell),

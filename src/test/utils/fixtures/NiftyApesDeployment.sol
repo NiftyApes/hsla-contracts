@@ -14,6 +14,7 @@ import "../../../flashPurchase/integrations/SudoswapFlashPurchaseIntegration.sol
 import "../../../FlashSell.sol";
 import "../../../flashSell/integrations/SeaportFlashSellIntegration.sol";
 import "../../../SellOnSeaport.sol";
+import "../../../Refinance.sol";
 import "../../../flashSell/integrations/SudoswapFlashSellIntegration.sol";
 import "./NFTAndERC20Fixtures.sol";
 import "../../../interfaces/seaport/ISeaport.sol";
@@ -29,6 +30,7 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
     NiftyApesOffers offers;
     NiftyApesLiquidity liquidity;
     NiftyApesSigLending sigLending;
+    NiftyApesRefinance refinance;
     NiftyApesFlashClaim flashClaim;
     FlashClaimReceiverBaseHappy flashClaimReceiverHappy;
     FlashClaimReceiverBaseNoReturn flashClaimReceiverNoReturn;
@@ -98,11 +100,14 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
             sudoswapFlashPurchase = new SudoswapFlashPurchaseIntegration();
         }
 
+        refinance = new NiftyApesRefinance();
+        refinance.initialize();
+
         liquidity = new NiftyApesLiquidity();
-        liquidity.initialize(address(compToken), address(flashPurchase));
+        liquidity.initialize(address(compToken), address(refinance), address(flashPurchase));
 
         offers = new NiftyApesOffers();
-        offers.initialize(address(liquidity), address(flashPurchase));
+        offers.initialize(address(liquidity), address(refinance), address(flashPurchase));
 
         sigLending = new NiftyApesSigLending();
         sigLending.initialize(address(offers), address(flashPurchase));
@@ -112,6 +117,7 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
             address(liquidity),
             address(offers),
             address(sigLending),
+            address(refinance),
             address(flashClaim),
             address(flashPurchase),
             address(flashSell),
@@ -119,6 +125,12 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         );
 
         sigLending.updateLendingContractAddress(address(lending));
+        sigLending.updateRefinanceContractAddress(address(refinance));
+
+        refinance.updateLendingContractAddress(address(lending));
+        refinance.updateLiquidityContractAddress(address(liquidity));
+        refinance.updateOffersContractAddress(address(offers));
+        refinance.updateSigLendingContractAddress(address(sigLending));
 
         offers.updateLendingContractAddress(address(lending));
         offers.updateSigLendingContractAddress(address(sigLending));

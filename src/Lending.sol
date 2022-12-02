@@ -86,9 +86,21 @@ contract NiftyApesLending is
     /// @dev The status of sanctions checks. Can be set to false if oracle becomes malicious.
     bool internal _sanctionsPause;
 
+    // Mapping owner to nftContractAddress to token count
+    mapping(address => mapping(address => uint256)) private _balances;
+
+    // Mapping from owner to nftContractAddress to list of owned token IDs
+    mapping(address => mapping(address => mapping(uint256 => uint256))) private _ownedTokens;
+
+    // Mapping from nftContractAddress to token ID to index of the owner tokens list
+    mapping(address => mapping(uint256 => uint256)) private _ownedTokensIndex;
+
+    /// @inheritdoc ILending
+    address public refinanceContractAddress;
+
     /// @dev This empty reserved space is put in place to allow future versions to add new
     /// variables without shifting storage.
-    uint256[500] private __gap;
+    uint256[496] private __gap;
 
     /// @notice The initializer for the NiftyApes protocol.
     ///         Nifty Apes is intended to be deployed behind a proxy amd thus needs to initialize
@@ -97,6 +109,7 @@ contract NiftyApesLending is
         address newLiquidityContractAddress,
         address newOffersContractAddress,
         address newSigLendingContractAddress,
+        address newRefinanceContractAddress,
         address newFlashClaimContractAddress,
         address newFlashPurchaseAddress,
         address newFlashSellContractAddress,
@@ -111,6 +124,7 @@ contract NiftyApesLending is
         liquidityContractAddress = newLiquidityContractAddress;
         offersContractAddress = newOffersContractAddress;
         sigLendingContractAddress = newSigLendingContractAddress;
+        refinanceContractAddress = newRefinanceContractAddress;
         flashClaimContractAddress = newFlashClaimContractAddress;
         flashPurchaseContractAddress = newFlashPurchaseAddress;
         flashSellContractAddress = newFlashSellContractAddress;
@@ -203,6 +217,40 @@ contract NiftyApesLending is
     }
 
     /// @inheritdoc ILending
+    function updateLoanAuctionInternal(address nftContractAddress, uint256 nftId, LoanAuction memory newLoanAuction)
+        external
+    {
+        _requireRefinanceContract();
+        LoanAuction storage loanAuction = _loanAuctions[nftContractAddress][nftId];
+
+        loanAuction.nftOwner = newLoanAuction.nftOwner;
+        loanAuction.lender = newLoanAuction.lender;
+        loanAuction.asset = newLoanAuction.asset;
+        loanAuction.amount = newLoanAuction.amount;
+        loanAuction.loanEndTimestamp = newLoanAuction.loanEndTimestamp;
+        loanAuction.loanBeginTimestamp = newLoanAuction.loanBeginTimestamp;
+        loanAuction.lastUpdatedTimestamp = newLoanAuction.lastUpdatedTimestamp;
+        loanAuction.amountDrawn = newLoanAuction.amountDrawn;
+        loanAuction.fixedTerms = newLoanAuction.fixedTerms;
+        loanAuction.lenderRefi = newLoanAuction.lenderRefi;
+        loanAuction.accumulatedLenderInterest = newLoanAuction.accumulatedLenderInterest;
+        loanAuction.accumulatedPaidProtocolInterest = newLoanAuction.accumulatedPaidProtocolInterest;
+        loanAuction.interestRatePerSecond = newLoanAuction.interestRatePerSecond;
+        loanAuction.protocolInterestRatePerSecond = newLoanAuction.protocolInterestRatePerSecond;
+        loanAuction.slashableLenderInterest = newLoanAuction.slashableLenderInterest;
+        loanAuction.unpaidProtocolInterest = newLoanAuction.unpaidProtocolInterest;
+    }
+
+    function emitAmountDrawnInternal(
+        address nftContractAddress,
+        uint256 nftId,
+        uint256 slashedDrawAmount,
+        LoanAuction memory loanAuction
+    ) external {
+        emit AmountDrawn(nftContractAddress, nftId, slashedDrawAmount, loanAuction);
+    }
+
+    /// @inheritdoc ILending
     function executeLoanByBorrower(
         address nftContractAddress,
         uint256 nftId,
@@ -278,6 +326,8 @@ contract NiftyApesLending is
 
         _transferNft(offer.nftContractAddress, nftId, borrower, address(this));
 
+        _addTokenToOwnerEnumeration(borrower, offer.nftContractAddress, nftId);
+
         uint256 cTokensBurned = ILiquidity(liquidityContractAddress).burnCErc20(
             offer.asset,
             offer.amount
@@ -287,300 +337,6 @@ contract NiftyApesLending is
         ILiquidity(liquidityContractAddress).sendValue(offer.asset, offer.amount, borrower);
 
         emit LoanExecuted(offer.nftContractAddress, nftId, loanAuction);
-    }
-
-    function refinanceByBorrower(
-        address nftContractAddress,
-        uint256 nftId,
-        bool floorTerm,
-        bytes32 offerHash,
-        uint32 expectedLastUpdatedTimestamp
-    ) external whenNotPaused nonReentrant {
-        Offer memory offer = _offerNftIdAndCountChecks(
-            nftContractAddress,
-            nftId,
-            floorTerm,
-            offerHash
-        );
-
-        _doRefinanceByBorrower(offer, nftId, msg.sender, expectedLastUpdatedTimestamp);
-    }
-
-    function doRefinanceByBorrower(
-        Offer memory offer,
-        uint256 nftId,
-        address nftOwner,
-        uint32 expectedLastUpdatedTimestamp
-    ) external whenNotPaused nonReentrant {
-        _requireSigLendingContract();
-        _doRefinanceByBorrower(offer, nftId, nftOwner, expectedLastUpdatedTimestamp);
-    }
-
-    function _doRefinanceByBorrower(
-        Offer memory offer,
-        uint256 nftId,
-        address nftOwner,
-        uint32 expectedLastUpdatedTimestamp
-    ) internal {
-        LoanAuction storage loanAuction = _getLoanAuctionInternal(offer.nftContractAddress, nftId);
-
-        _requireIsNotSanctioned(nftOwner);
-        _requireIsNotSanctioned(offer.creator);
-        _requireMatchingAsset(offer.asset, loanAuction.asset);
-        _requireNftOwner(loanAuction, nftOwner);
-        _requireNoFixedTerm(loanAuction);
-        // requireExpectedTermsAreActive
-        if (expectedLastUpdatedTimestamp != 0) {
-            require(loanAuction.lastUpdatedTimestamp == expectedLastUpdatedTimestamp, "00026");
-        }
-        _requireOpenLoan(loanAuction);
-        _requireLoanNotExpired(loanAuction);
-        _requireOfferNotExpired(offer);
-        _requireLenderOffer(offer);
-        _requireMinDurationForOffer(offer);
-
-        address cAsset = ILiquidity(liquidityContractAddress).getCAsset(offer.asset);
-
-        if (loanAuction.loanEndTimestamp - 1 days > _currentTimestamp32()) {
-            uint256 interestThresholdDelta = _checkSufficientInterestAccumulated(loanAuction);
-
-            if (interestThresholdDelta > 0) {
-                loanAuction.accumulatedLenderInterest += SafeCastUpgradeable.toUint128(
-                    interestThresholdDelta
-                );
-            }
-        }
-
-        _updateInterest(loanAuction);
-
-        uint256 toLenderUnderlying = loanAuction.amountDrawn +
-            loanAuction.accumulatedLenderInterest +
-            loanAuction.slashableLenderInterest +
-            ((uint256(loanAuction.amountDrawn) * originationPremiumBps) / MAX_BPS);
-
-        uint256 toProtocolUnderlying = loanAuction.unpaidProtocolInterest;
-
-        require(offer.amount >= toLenderUnderlying + toProtocolUnderlying, "00005");
-
-        uint256 toLenderCToken = ILiquidity(liquidityContractAddress).assetAmountToCAssetAmount(
-            offer.asset,
-            toLenderUnderlying
-        );
-
-        uint256 toProtocolCToken = ILiquidity(liquidityContractAddress).assetAmountToCAssetAmount(
-            offer.asset,
-            toProtocolUnderlying
-        );
-
-        ILiquidity(liquidityContractAddress).withdrawCBalance(
-            offer.creator,
-            cAsset,
-            toLenderCToken + toProtocolCToken
-        );
-        ILiquidity(liquidityContractAddress).addToCAssetBalance(
-            loanAuction.lender,
-            cAsset,
-            toLenderCToken
-        );
-        ILiquidity(liquidityContractAddress).addToCAssetBalance(owner(), cAsset, toProtocolCToken);
-
-        uint128 currentAmountDrawn = loanAuction.amountDrawn;
-
-        // update Loan state
-        if (loanAuction.lenderRefi) {
-            loanAuction.lenderRefi = false;
-        }
-        loanAuction.lender = offer.creator;
-        loanAuction.amount = offer.amount;
-        loanAuction.interestRatePerSecond = offer.interestRatePerSecond;
-        loanAuction.loanEndTimestamp = _currentTimestamp32() + offer.duration;
-        loanAuction.loanBeginTimestamp = _currentTimestamp32();
-        loanAuction.amountDrawn = SafeCastUpgradeable.toUint128(
-            toLenderUnderlying + toProtocolUnderlying
-        );
-        loanAuction.accumulatedLenderInterest = 0;
-        loanAuction.accumulatedPaidProtocolInterest = 0;
-        loanAuction.unpaidProtocolInterest = 0;
-        if (offer.fixedTerms) {
-            loanAuction.fixedTerms = offer.fixedTerms;
-        }
-        if (loanAuction.slashableLenderInterest > 0) {
-            loanAuction.slashableLenderInterest = 0;
-        }
-
-        emit Refinance(offer.nftContractAddress, nftId, loanAuction);
-
-        emit AmountDrawn(
-            offer.nftContractAddress,
-            nftId,
-            loanAuction.amountDrawn - currentAmountDrawn,
-            loanAuction
-        );
-    }
-
-    /// @inheritdoc ILending
-    function refinanceByLender(Offer memory offer, uint32 expectedLastUpdatedTimestamp)
-        external
-        whenNotPaused
-        nonReentrant
-    {
-        LoanAuction storage loanAuction = _getLoanAuctionInternal(
-            offer.nftContractAddress,
-            offer.nftId
-        );
-
-        _requireIsNotSanctioned(msg.sender);
-        _requireOpenLoan(loanAuction);
-        // requireExpectedTermsAreActive
-        if (expectedLastUpdatedTimestamp != 0) {
-            require(loanAuction.lastUpdatedTimestamp == expectedLastUpdatedTimestamp, "00026");
-        }
-        _requireOfferCreator(offer, msg.sender);
-        _requireLenderOffer(offer);
-        _requireLoanNotExpired(loanAuction);
-        _requireOfferNotExpired(offer);
-        _requireOfferParity(loanAuction, offer);
-        _requireNoFixedTerm(loanAuction);
-        _requireNoFloorTerms(offer);
-        _requireMatchingAsset(offer.asset, loanAuction.asset);
-        // requireNoFixTermOffer
-        require(!offer.fixedTerms, "00016");
-
-        address cAsset = ILiquidity(liquidityContractAddress).getCAsset(offer.asset);
-
-        // check how much, if any, gasGriefing premium should be applied
-        uint256 interestThresholdDelta = _checkSufficientInterestAccumulated(loanAuction);
-
-        // check whether a termGriefing premium should apply
-        bool sufficientTerms = _checkSufficientTerms(
-            loanAuction,
-            offer.amount,
-            offer.interestRatePerSecond,
-            offer.duration
-        );
-
-        _updateInterest(loanAuction);
-
-        // set lenderRefi to true to signify the last action to occur in the loan was a lenderRefinance
-        loanAuction.lenderRefi = true;
-
-        uint256 protocolInterestAndPremium;
-        uint256 protocolPremiumInCtokens;
-
-        if (!sufficientTerms) {
-            protocolInterestAndPremium +=
-                (uint256(loanAuction.amountDrawn) * termGriefingPremiumBps) /
-                MAX_BPS;
-        }
-
-        // update LoanAuction struct
-        loanAuction.amount = offer.amount;
-        loanAuction.interestRatePerSecond = offer.interestRatePerSecond;
-        loanAuction.loanEndTimestamp = loanAuction.loanBeginTimestamp + offer.duration;
-
-        if (loanAuction.lender == offer.creator) {
-            uint256 additionalTokens = ILiquidity(liquidityContractAddress)
-                .assetAmountToCAssetAmount(offer.asset, offer.amount - loanAuction.amountDrawn);
-
-            // This value is only a termGriefing if applicable
-            protocolPremiumInCtokens = ILiquidity(liquidityContractAddress)
-                .assetAmountToCAssetAmount(offer.asset, protocolInterestAndPremium);
-
-            _requireSufficientBalance(
-                offer.creator,
-                cAsset,
-                additionalTokens + protocolPremiumInCtokens
-            );
-
-            ILiquidity(liquidityContractAddress).withdrawCBalance(
-                offer.creator,
-                cAsset,
-                protocolPremiumInCtokens
-            );
-            ILiquidity(liquidityContractAddress).addToCAssetBalance(
-                owner(),
-                cAsset,
-                protocolPremiumInCtokens
-            );
-        } else {
-            // If refinance is done by a new lender and refinacneByLender was the last action to occur, add slashableInterest to accumulated interest
-            if (loanAuction.slashableLenderInterest > 0) {
-                loanAuction.accumulatedLenderInterest += loanAuction.slashableLenderInterest;
-                loanAuction.slashableLenderInterest = 0;
-            }
-            // calculate the value to pay out to the current lender, this includes the protocolInterest, which is paid out each refinance,
-            // and reimbursed by the borrower at the end of the loan.
-            uint256 interestAndPremiumOwedToCurrentLender = uint256(
-                loanAuction.accumulatedLenderInterest
-            ) +
-                loanAuction.accumulatedPaidProtocolInterest +
-                ((uint256(loanAuction.amountDrawn) * originationPremiumBps) / MAX_BPS);
-
-            // add protocolInterest
-            protocolInterestAndPremium += loanAuction.unpaidProtocolInterest;
-
-            // add gasGriefing premium
-            if (interestThresholdDelta > 0) {
-                interestAndPremiumOwedToCurrentLender += interestThresholdDelta;
-            }
-
-            // add default premium
-            if (_currentTimestamp32() > loanAuction.loanEndTimestamp - 1 hours) {
-                protocolInterestAndPremium +=
-                    (uint256(loanAuction.amountDrawn) * defaultRefinancePremiumBps) /
-                    MAX_BPS;
-            }
-
-            uint256 fullCTokenAmountRequired = ILiquidity(liquidityContractAddress)
-                .assetAmountToCAssetAmount(
-                    offer.asset,
-                    interestAndPremiumOwedToCurrentLender +
-                        protocolInterestAndPremium +
-                        loanAuction.amount
-                );
-
-            uint256 fullCTokenAmountToWithdraw = ILiquidity(liquidityContractAddress)
-                .assetAmountToCAssetAmount(
-                    offer.asset,
-                    interestAndPremiumOwedToCurrentLender +
-                        protocolInterestAndPremium +
-                        loanAuction.amountDrawn
-                );
-
-            // require prospective lender has sufficient available balance to refinance loan
-            _requireSufficientBalance(offer.creator, cAsset, fullCTokenAmountRequired);
-
-            protocolPremiumInCtokens = ILiquidity(liquidityContractAddress)
-                .assetAmountToCAssetAmount(offer.asset, protocolInterestAndPremium);
-
-            address currentlender = loanAuction.lender;
-
-            // update LoanAuction lender
-            loanAuction.lender = offer.creator;
-
-            ILiquidity(liquidityContractAddress).withdrawCBalance(
-                offer.creator,
-                cAsset,
-                fullCTokenAmountToWithdraw
-            );
-
-            ILiquidity(liquidityContractAddress).addToCAssetBalance(
-                currentlender,
-                cAsset,
-                (fullCTokenAmountToWithdraw - protocolPremiumInCtokens)
-            );
-
-            ILiquidity(liquidityContractAddress).addToCAssetBalance(
-                owner(),
-                cAsset,
-                protocolPremiumInCtokens
-            );
-
-            loanAuction.accumulatedPaidProtocolInterest += loanAuction.unpaidProtocolInterest;
-            loanAuction.unpaidProtocolInterest = 0;
-        }
-
-        emit Refinance(offer.nftContractAddress, offer.nftId, loanAuction);
     }
 
     /// @inheritdoc ILending
@@ -662,8 +418,9 @@ contract NiftyApesLending is
         nonReentrant
     {
         LoanAuction memory loanAuction = _getLoanAuctionInternal(nftContractAddress, nftId);
+        address nftOwner = loanAuction.nftOwner;
         _repayLoanAmount(nftContractAddress, nftId, true, 0, true);
-        _transferNft(nftContractAddress, nftId, address(this), loanAuction.nftOwner);
+        _transferNft(nftContractAddress, nftId, address(this), nftOwner);
     }
 
     /// @inheritdoc ILending
@@ -677,8 +434,9 @@ contract NiftyApesLending is
         require(loanAuction.loanBeginTimestamp == expectedLoanBeginTimestamp, "00027");
         _requireIsNotSanctioned(msg.sender);
 
+        address nftOwner = loanAuction.nftOwner;
         _repayLoanAmount(nftContractAddress, nftId, true, 0, false);
-        _transferNft(nftContractAddress, nftId, address(this), loanAuction.nftOwner);
+        _transferNft(nftContractAddress, nftId, address(this), nftOwner);
     }
 
     /// @inheritdoc ILending
@@ -691,7 +449,6 @@ contract NiftyApesLending is
         LoanAuction memory loanAuction = _getLoanAuctionInternal(nftContractAddress, nftId);
         // requireExpectedLoanIsActive
         require(loanAuction.loanBeginTimestamp == expectedLoanBeginTimestamp, "00027");
-
         _repayLoanAmount(nftContractAddress, nftId, true, 0, false);
     }
 
@@ -760,6 +517,7 @@ contract NiftyApesLending is
         _payoutCTokenBalances(loanAuction, cAsset, cTokensMinted, paymentAmount, repayFull);
 
         if (repayFull) {
+            _removeTokenFromOwnerEnumeration(loanAuction.nftOwner, nftContractAddress, nftId);
             emit LoanRepaid(nftContractAddress, nftId, paymentAmount, loanAuction);
 
             delete _loanAuctions[nftContractAddress][nftId];
@@ -816,12 +574,13 @@ contract NiftyApesLending is
         require(_currentTimestamp32() >= loanAuction.loanEndTimestamp, "00008");
 
         address currentLender = loanAuction.lender;
-
+        address nftOwner = loanAuction.nftOwner;
         emit AssetSeized(nftContractAddress, nftId, loanAuction);
 
         delete _loanAuctions[nftContractAddress][nftId];
 
         _transferNft(nftContractAddress, nftId, address(this), currentLender);
+        _removeTokenFromOwnerEnumeration(nftOwner, nftContractAddress, nftId);
     }
 
     /// @inheritdoc ILending
@@ -1035,13 +794,65 @@ contract NiftyApesLending is
     /// @inheritdoc ILending
     function validateSeaportOrderSellOnSeaport(address seaportContractAddress, ISeaport.Order[] memory orders) external {
         _requireSellOnSeaportContract();
-        ISeaport(seaportContractAddress).validate(orders); 
+        ISeaport(seaportContractAddress).validate(orders);
     }
 
     /// @inheritdoc ILending
     function cancelOrderSellOnSeaport(address seaportContractAddress, ISeaport.OrderComponents[] memory orderComponentsList) external returns (bool) {
         _requireSellOnSeaportContract();
-        return ISeaport(seaportContractAddress).cancel(orderComponentsList); 
+        return ISeaport(seaportContractAddress).cancel(orderComponentsList);
+    }
+
+    /// @inheritdoc ILending
+    function balanceOf(address owner, address nftContractAddress) public view override returns (uint256) {
+        require(owner != address(0), "00035");
+        return _balances[owner][nftContractAddress];
+    }
+
+    /// @inheritdoc ILending
+    function tokenOfOwnerByIndex(address owner, address nftContractAddress, uint256 index) public view override returns (uint256) {
+        require(index < balanceOf(owner, nftContractAddress), "00069");
+        return _ownedTokens[owner][nftContractAddress][index];
+    }
+
+    /// @dev Private function to add a token to this extension's ownership-tracking data structures.
+    /// @param owner address representing the new owner of the given token ID
+    /// @param nftContractAddress address nft collection address
+    /// @param tokenId uint256 ID of the token to be added to the tokens list of the given address
+    function _addTokenToOwnerEnumeration(address owner, address nftContractAddress, uint256 tokenId) private {
+        uint256 length = _balances[owner][nftContractAddress];
+        _ownedTokens[owner][nftContractAddress][length] = tokenId;
+        _ownedTokensIndex[nftContractAddress][tokenId] = length;
+        _balances[owner][nftContractAddress] += 1;
+    }
+
+    /// @dev Private function to remove a token from this extension's ownership-tracking data structures. Note that
+    /// while the token is not assigned a new owner, the `_ownedTokensIndex` mapping is _not_ updated: this allows for
+    /// gas optimizations e.g. when performing a transfer operation (avoiding double writes).
+    /// This has O(1) time complexity, but alters the order of the _ownedTokens array.
+    /// @param owner address representing the owner of the given token ID to be removed
+    /// @param nftContractAddress address nft collection address
+    /// @param tokenId uint256 ID of the token to be removed from the tokens list of the given address
+    function _removeTokenFromOwnerEnumeration(address owner, address nftContractAddress, uint256 tokenId) private {
+        // To prevent a gap in from's tokens array, we store the last token in the index of the token to delete, and then delete the last slot (swap and pop).
+
+        uint256 lastTokenIndex = balanceOf(owner, nftContractAddress) - 1;
+        uint256 tokenIndex = _ownedTokensIndex[nftContractAddress][tokenId];
+
+        // When the token to delete is the last token, the swap operation is unnecessary
+        if (tokenIndex != lastTokenIndex) {
+            uint256 lastTokenId = _ownedTokens[owner][nftContractAddress][lastTokenIndex];
+
+            _ownedTokens[owner][nftContractAddress][tokenIndex] = lastTokenId; // Move the last token to the slot of the to-delete token
+            _ownedTokensIndex[nftContractAddress][lastTokenId] = tokenIndex; // Update the moved token's index
+        }
+
+        // This also deletes the contents at the last position of the array
+        delete _ownedTokensIndex[nftContractAddress][tokenId];
+        delete _ownedTokens[owner][nftContractAddress][lastTokenIndex];
+
+        // decrease the owner's collection balance by one
+        _balances[owner][nftContractAddress] -= 1;
     }
 
     function _requireSufficientBalance(
@@ -1132,6 +943,10 @@ contract NiftyApesLending is
 
     function _requireFlashPurchaseContract() internal view {
         require(msg.sender == flashPurchaseContractAddress, "00031");
+    }
+
+    function _requireRefinanceContract() internal view {
+        require(msg.sender == refinanceContractAddress, "00031");
     }
 
     function _requireOfferParity(LoanAuction storage loanAuction, Offer memory offer)

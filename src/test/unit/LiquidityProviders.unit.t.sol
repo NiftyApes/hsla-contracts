@@ -31,7 +31,7 @@ contract LiquidityProvidersUnitTest is BaseTest, ILiquidityEvents {
 
     function setUp() public {
         liquidityProviders = new NiftyApesLiquidity();
-        liquidityProviders.initialize(compContractAddress, compContractAddress); // add comp twice, second address not utilized in these tests
+        liquidityProviders.initialize(compContractAddress, compContractAddress, compContractAddress); // add comp thrice, second and third address not utilized in these tests
 
         daiToken = new ERC20Mock();
         daiToken.initialize("USD Coin", "DAI");

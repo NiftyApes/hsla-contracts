@@ -2,7 +2,6 @@
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20Upgradeable.sol";
@@ -18,7 +17,6 @@ import "../interfaces/IFlashSellReceiver.sol";
 /// @custom:contributor captnseagraves (captnseagraves.eth)
 abstract contract FlashSellIntegrationBase is
     OwnableUpgradeable,
-    ReentrancyGuardUpgradeable,
     ERC721HolderUpgradeable,
     IFlashSellReceiver
 {
@@ -37,7 +35,6 @@ abstract contract FlashSellIntegrationBase is
     ///         its state outsize of a constructor.
     function initialize() public virtual initializer {
         OwnableUpgradeable.__Ownable_init();
-        ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
         ERC721HolderUpgradeable.__ERC721Holder_init();
     }
 

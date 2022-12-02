@@ -98,6 +98,14 @@ interface ILiquidityEvents {
         address newLendingContractAddress
     );
 
+    /// @notice Emitted when the associated refinance contract address is changed
+    /// @param oldRefinanceContractAddress The old lending refinance address
+    /// @param newRefinanceContractAddress The new lending refinance address
+    event LiquidityXRefinanceContractAddressUpdated(
+        address oldRefinanceContractAddress,
+        address newRefinanceContractAddress
+    );
+
     /// @notice Emitted when sanctions checks are paused
     event LiquiditySanctionsPaused();
 
