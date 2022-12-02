@@ -8,8 +8,10 @@ import "../../../compound-contracts/Comptroller.sol";
 import "../../../compound-contracts/Unitroller.sol";
 import "../../../compound-contracts/JumpRateModelV2.sol";
 import "../../../compound-contracts/Governance/Comp.sol";
+import "../../../compound-contracts/CEther.sol";
 
 import "../../mock/CERC20Mock.sol";
+import "../../mock/CEtherMock.sol";
 
 import "./NiftyApesDeployment.sol";
 
@@ -19,7 +21,9 @@ import "forge-std/Test.sol";
 contract CompoundDeployment is Test, NiftyApesDeployment {
     CErc20Delegate cTokenImplementation;
     CErc20Delegator bDAI;
+    CEther bETH;
     CToken cToken;
+    CToken cEther;
     Comptroller comptroller;
     Unitroller unitroller;
     JumpRateModelV2 interestRateModel;
@@ -66,9 +70,22 @@ contract CompoundDeployment is Test, NiftyApesDeployment {
             bytes("")
         );
 
+        // deploy cETH
+        bETH = new CEther(
+            ComptrollerInterface(address(unitroller)),
+            interestRateModel,
+            2**18,
+            "niftyApesXDai",
+            "bxDai",
+            8,
+            owner
+        );
+
         // declare interfaces
         cToken = CToken(address(bDAI));
+        cEther = CToken(address(bETH));
 
+        ComptrollerInterface(address(unitroller))._supportMarket(cToken);
         ComptrollerInterface(address(unitroller))._supportMarket(cToken);
         ComptrollerInterface(address(unitroller))._setBorrowPaused(cToken, true);
 
@@ -76,6 +93,10 @@ contract CompoundDeployment is Test, NiftyApesDeployment {
             cDAIToken = CERC20Mock(address(bDAI));
             liquidity.setCAssetAddress(address(daiToken), address(cDAIToken));
             liquidity.setMaxCAssetBalance(address(cDAIToken), ~uint256(0));
+
+            cEtherToken = CEtherMock(address(bETH));
+            liquidity.setCAssetAddress(address(ETH_ADDRESS), address(cEtherToken));
+            liquidity.setMaxCAssetBalance(address(cEtherToken), ~uint256(0));
         }
 
         vm.stopPrank();
