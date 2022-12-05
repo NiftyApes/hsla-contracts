@@ -85,8 +85,6 @@ contract TestRepayLoanForAccount is Test, OffersLoansRefinancesFixtures {
             //         liquidity.assetAmountToCAssetAmount(address(daiToken), totalAmount)
             // );
 
-            console.log("here 2");
-
             assertEq(daiToken.balanceOf(repayer), repayerBalanceBeforeRepay - (totalAmount));
 
             // borrower balance unchanged
@@ -112,8 +110,6 @@ contract TestRepayLoanForAccount is Test, OffersLoansRefinancesFixtures {
                 loanAuction.loanBeginTimestamp
             );
             vm.stopPrank();
-
-            console.log("here 1");
 
             // liquidity contract cToken balance
             assertEq(
