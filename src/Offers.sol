@@ -48,9 +48,16 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
     /// @inheritdoc IOffers
     address public liquidityContractAddress;
 
+    /// @dev Constant typeHash for EIP-712 hashing of Offer struct
+    ///      If the Offer struct shape changes, this will need to change as well.
+    bytes32 private constant _OFFER_TYPEHASH =
+        keccak256(
+            "Offer(address creator,uint32 duration,uint32 expiration,bool fixedTerms,bool floorTerm,bool lenderOffer,address nftContractAddress,uint256 nftId,address asset,uint128 amount,uint96 interestRatePerSecond,uint64 floorTermLimit)"
+        );
+
     /// @dev This empty reserved space is put in place to allow future versions to add new
     /// variables without shifting storage.
-    uint256[500] private __gap;
+    uint256[499] private __gap;
 
     /// @notice The initializer for the NiftyApes protocol.
     ///         NiftyApes is intended to be deployed behind a proxy and thus needs to initialize
@@ -103,23 +110,19 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
             _hashTypedDataV4(
                 keccak256(
                     abi.encode(
-                        0x428a8e8c29d93e1e11aecebd37fa09e4f7c542a1302c7ac497bf5f49662103a5,
-                        keccak256(
-                            abi.encode(
-                                offer.creator,
-                                offer.duration,
-                                offer.expiration,
-                                offer.fixedTerms,
-                                offer.floorTerm,
-                                offer.lenderOffer,
-                                offer.nftContractAddress,
-                                offer.nftId,
-                                offer.asset,
-                                offer.amount,
-                                offer.interestRatePerSecond,
-                                offer.floorTermLimit
-                            )
-                        )
+                        _OFFER_TYPEHASH,
+                        offer.creator,
+                        offer.duration,
+                        offer.expiration,
+                        offer.fixedTerms,
+                        offer.floorTerm,
+                        offer.lenderOffer,
+                        offer.nftContractAddress,
+                        offer.nftId,
+                        offer.asset,
+                        offer.amount,
+                        offer.interestRatePerSecond,
+                        offer.floorTermLimit
                     )
                 )
             );
