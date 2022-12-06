@@ -14,8 +14,8 @@ contract TestLiquidityRenounceOwnership is Test, ILiquidityEvents, OffersLoansRe
 
     function test_unit_liquidity_renounceOwnership_does_nothing() public {
         vm.prank(owner);
-        liquidity.renounceOwnership();
+        liquidityImplementation.renounceOwnership();
 
-        assertEq(liquidity.owner(), owner);
+        assertEq(liquidityImplementation.owner(), owner);
     }
 }
