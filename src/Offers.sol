@@ -24,10 +24,11 @@ import "./lib/ECDSABridge.sol";
 contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgradeable, IOffers {
     using ERC165CheckerUpgradeable for address;
 
-    /// @dev A mapping for a NFT to an Offer
-    ///      The mapping has to be broken into three parts since an NFT is denominated by its address (first part)
-    ///      and its nftId (second part), offers are referred to by their hash (see #getEIP712EncodedOffer for details) (third part).
-    mapping(bytes32 => Offer) private _offerBook;
+    /// @dev empty slot for v1.0 offer book
+    mapping(address => mapping(uint256 => mapping(bytes32 => Offer))) private _prevNftOfferBooks;
+
+    /// @dev empty slot for v1.0 floor offer book
+    mapping(address => mapping(bytes32 => Offer)) private _prevFloorOfferBooks;
 
     /// @dev A mapping for an on chain offerHash to a floor offer counter
     mapping(bytes32 => uint64) private _floorOfferCounters;
@@ -61,9 +62,12 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
             "Offer(address creator,uint32 duration,uint32 expiration,bool fixedTerms,bool floorTerm,bool lenderOffer,uint96 interestRatePerSecond,address nftContractAddress,uint256 nftId,uint256 amount,address asset,uint64 floorTermLimit)"
         );
 
+    /// @dev A mapping for storing offers with offerHash as their keys
+    mapping(bytes32 => Offer) private _nftOfferBooks;
+
     /// @dev This empty reserved space is put in place to allow future versions to add new
     /// variables without shifting storage.
-    uint256[498] private __gap;
+    uint256[497] private __gap;
 
     /// @notice The initializer for the NiftyApes protocol.
     ///         NiftyApes is intended to be deployed behind a proxy and thus needs to initialize
@@ -188,7 +192,7 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
     function getOffer(
         bytes32 offerHash
     ) public view returns (Offer memory) {
-        return _offerBook[offerHash];
+        return _nftOfferBooks[offerHash];
     }
 
     /// @inheritdoc IOffers
@@ -240,22 +244,22 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
 
         offerHash = getOfferHash(offer);
 
-        _requireOfferDoesntExist(_offerBook[offerHash].creator);
+        _requireOfferDoesntExist(_nftOfferBooks[offerHash].creator);
 
-        _offerBook[offerHash] = offer;
+        _nftOfferBooks[offerHash] = offer;
 
         emit NewOffer(offer.creator, offer.nftContractAddress, offer.nftId, offer, offerHash);
     }
 
     /// @inheritdoc IOffers
     function removeOffer(bytes32 offerHash) external whenNotPaused {
-        Offer storage offer = _offerBook[offerHash];
+        Offer storage offer = _nftOfferBooks[offerHash];
 
         _requireOfferCreatorOrExpectedContract(offer.creator, msg.sender);
 
         emit OfferRemoved(offer.creator, offer.nftContractAddress, offer.nftId, offer, offerHash);
 
-        delete _offerBook[offerHash];
+        delete _nftOfferBooks[offerHash];
     }
 
     /// @inheritdoc IOffers
