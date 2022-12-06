@@ -569,11 +569,13 @@ contract NiftyApesLending is
         require(_currentTimestamp32() >= loanAuction.loanEndTimestamp, "00008");
 
         address currentLender = loanAuction.lender;
+        address nftOwner = loanAuction.nftOwner;
         emit AssetSeized(nftContractAddress, nftId, loanAuction);
 
         delete _loanAuctions[nftContractAddress][nftId];
 
         _transferCollateral(nftContractAddress, nftId, address(this), currentLender);
+        _removeTokenFromOwnerEnumeration(nftOwner, nftContractAddress, nftId);
     }
 
     /// @inheritdoc ILending

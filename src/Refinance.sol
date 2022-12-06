@@ -171,6 +171,7 @@ contract NiftyApesRefinance is
 
         _requireIsNotSanctioned(nftOwner);
         _requireIsNotSanctioned(offer.creator);
+        _requireOpenLoan(loanAuction);
         _requireMatchingAsset(offer.asset, loanAuction.asset);
         _requireNftOwner(loanAuction, nftOwner);
         _requireNoFixedTerm(loanAuction);
@@ -178,7 +179,7 @@ contract NiftyApesRefinance is
         if (expectedLastUpdatedTimestamp != 0) {
             require(loanAuction.lastUpdatedTimestamp == expectedLastUpdatedTimestamp, "00026");
         }
-        _requireOpenLoan(loanAuction);
+
         _requireLoanNotExpired(loanAuction);
         _requireOfferNotExpired(offer);
         _requireLenderOffer(offer);
