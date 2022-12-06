@@ -30,7 +30,7 @@ contract TestGetOfferHash is Test, IOffersEvents, OffersLoansRefinancesFixtures 
 
         bytes32 functionOfferHash = offers.getOfferHash(offer);
 
-        bytes32 expectedFunctionHash = 0x474a92220f282db7420ee21e7c5cddb2df3544e13105c6fb17fe402e12426d6f;
+        bytes32 expectedFunctionHash = 0xea24157c2966e730bb916e7c12952681919a3fde9cf9ba29ce3f0e7dc2dbee02;
 
         assertEq(functionOfferHash, expectedFunctionHash);
     }
