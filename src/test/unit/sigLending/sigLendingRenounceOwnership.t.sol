@@ -12,8 +12,8 @@ contract TestOffersRenounceOwnership is Test, OffersLoansRefinancesFixtures {
 
     function test_unit_offers_renounceOwnership_does_nothing() public {
         vm.prank(owner);
-        offers.renounceOwnership();
+        offersImplementation.renounceOwnership();
 
-        assertEq(offers.owner(), owner);
+        assertEq(offersImplementation.owner(), owner);
     }
 }

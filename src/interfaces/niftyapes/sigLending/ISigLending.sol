@@ -48,4 +48,6 @@ interface ISigLending is ISigLendingAdmin, ISigLendingEvents, IOffersStructs {
         uint256 nftId,
         uint32 expectedLastUpdatedTimestamp
     ) external;
+
+    function initialize(address newOffersContractAddress) external;
 }

@@ -1,67 +1,59 @@
-// SPDX-License-Identifier: MIT
-pragma solidity 0.8.13;
+pragma solidity ^0.8.13;
+
+import "forge-std/Script.sol";
 
 import "@openzeppelin-norm/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "@openzeppelin-norm/contracts/proxy/transparent/ProxyAdmin.sol";
 
-import "../../../interfaces/niftyapes/lending/ILending.sol";
-import "../../../interfaces/niftyapes/offers/IOffers.sol";
-import "../../../interfaces/niftyapes/liquidity/ILiquidity.sol";
-import "../../../interfaces/niftyapes/sigLending/ISigLending.sol";
+import "../src/interfaces/niftyapes/lending/ILending.sol";
+import "../src/interfaces/niftyapes/offers/IOffers.sol";
+import "../src/interfaces/niftyapes/liquidity/ILiquidity.sol";
+import "../src/interfaces/niftyapes/sigLending/ISigLending.sol";
+import "../src/interfaces/ownership.sol";
 
-import "../../../Lending.sol";
-import "../../../Liquidity.sol";
-import "../../../Offers.sol";
-import "../../../SigLending.sol";
-import "./NFTAndERC20Fixtures.sol";
+import "../src/Liquidity.sol";
+import "../src/Offers.sol";
+import "../src/SigLending.sol";
+import "../src/Lending.sol";
 
-import "forge-std/Test.sol";
-
-// deploy & initializes NiftyApes contracts
-// connects them to one another
-// adds cAssets for both ETH and DAI
-// sets max cAsset balance for both to unint256 max
-contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
+contract DeployNiftyApesScript is Script {
     NiftyApesLending lendingImplementation;
     NiftyApesOffers offersImplementation;
     NiftyApesLiquidity liquidityImplementation;
     NiftyApesSigLending sigLendingImplementation;
+
     ProxyAdmin lendingProxyAdmin;
     ProxyAdmin offersProxyAdmin;
     ProxyAdmin liquidityProxyAdmin;
     ProxyAdmin sigLendingProxyAdmin;
+
     TransparentUpgradeableProxy lendingProxy;
     TransparentUpgradeableProxy offersProxy;
     TransparentUpgradeableProxy liquidityProxy;
     TransparentUpgradeableProxy sigLendingProxy;
+
     ILending lending;
     IOffers offers;
     ILiquidity liquidity;
     ISigLending sigLending;
 
-    address constant ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+    function run() external {
+        address compContractAddress = 0xc00e94Cb662C3520282E6f5717214004A7f26888;
 
-    function setUp() public virtual override {
-        super.setUp();
-
-        vm.startPrank(owner);
+        vm.startBroadcast();
 
         // deploy and initialize implementation contracts
         liquidityImplementation = new NiftyApesLiquidity();
-        liquidityImplementation.initialize(address(compToken));
+        liquidityImplementation.initialize(address(0));
 
         offersImplementation = new NiftyApesOffers();
-        offersImplementation.initialize(address(liquidityImplementation));
+        offersImplementation.initialize(address(0));
 
         sigLendingImplementation = new NiftyApesSigLending();
-        sigLendingImplementation.initialize(address(offersImplementation));
+        sigLendingImplementation.initialize(address(0));
 
         lendingImplementation = new NiftyApesLending();
-        lendingImplementation.initialize(
-            address(liquidityImplementation),
-            address(offersImplementation),
-            address(sigLendingImplementation)
-        );
+        lendingImplementation.initialize(address(0), address(0), address(0));
 
         // deploy proxy admins
         lendingProxyAdmin = new ProxyAdmin();
@@ -99,7 +91,7 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         sigLending = ISigLending(address(sigLendingProxy));
 
         // initialize proxies
-        liquidity.initialize(address(compToken));
+        liquidity.initialize(address(compContractAddress));
         offers.initialize(address(liquidity));
         sigLending.initialize(address(offers));
         lending.initialize(address(liquidity), address(offers), address(sigLending));
@@ -112,24 +104,30 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
 
         sigLending.updateLendingContractAddress(address(lending));
 
-        // set max balances
-        liquidity.setCAssetAddress(ETH_ADDRESS, address(cEtherToken));
-        liquidity.setMaxCAssetBalance(address(cEtherToken), ~uint256(0));
+        // Goerli Addresses
+        address daiToken = 0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60;
+        address cDAIToken = 0x822397d9a55d0fefd20F5c4bCaB33C5F65bd28Eb;
+        address ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+        address cEtherToken = 0x20572e4c090f15667cF7378e16FaD2eA0e2f3EfF;
 
-        liquidity.setCAssetAddress(address(daiToken), address(cDAIToken));
-        liquidity.setMaxCAssetBalance(address(cDAIToken), ~uint256(0));
+        // DAI
+        liquidity.setCAssetAddress(daiToken, cDAIToken);
 
-        // update protocol interest
-        lending.updateProtocolInterestBps(100);
-        lending.updateDefaultRefinancePremiumBps(25);
+        uint256 cDAIAmount = liquidity.assetAmountToCAssetAmount(daiToken, type(uint128).max);
 
-        if (!integration) {
-            liquidity.pauseSanctions();
-            lending.pauseSanctions();
-        }
+        liquidity.setMaxCAssetBalance(cDAIToken, cDAIAmount);
 
-        vm.stopPrank();
+        // ETH
+        liquidity.setCAssetAddress(ETH_ADDRESS, cEtherToken);
 
-        vm.label(address(0), "NULL !!!!! ");
+        uint256 cEtherAmount = liquidity.assetAmountToCAssetAmount(ETH_ADDRESS, type(uint128).max);
+
+        liquidity.setMaxCAssetBalance(cEtherToken, cEtherAmount);
+
+        // pauseSanctions for Goerli as Chainalysis contacts doent exists there
+        liquidity.pauseSanctions();
+        lending.pauseSanctions();
+
+        vm.stopBroadcast();
     }
 }
