@@ -92,7 +92,7 @@ contract OffersLoansRefinancesFixtures is
             vm.assume(fuzzed.amount < (defaultDaiLiquiditySupplied * 50) / 100);
         } else {
             vm.assume(fuzzed.amount > ~uint32(0));
-            vm.assume(fuzzed.amount < (defaultEthLiquiditySupplied * 50) / 100);
+            vm.assume(fuzzed.amount < uint256(defaultEthLiquiditySupplied / 10000));
         }
 
         vm.assume(fuzzed.duration > 1 days);

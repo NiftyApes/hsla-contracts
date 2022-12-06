@@ -64,4 +64,8 @@ interface ISellOnSeaport is
         uint256 nftId,
         bytes32 orderHash
     ) external;
+
+    /// @notice Allows a borrower to cancel their NFT listing on Seaport
+    /// @param  orderComponents Seaport orderComponent
+    function cancelNftListing(ISeaport.OrderComponents memory orderComponents) external;
 }
