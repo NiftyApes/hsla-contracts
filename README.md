@@ -141,4 +141,5 @@ The NiftyApes protocol is made up of four core contracts `Liquidity.sol`, `Offer
 "00063" == "seaport listed order not yet filled"
 "00064" == "invalid seaport listing orderHash"
 "00065" == "order cancel failed on Seaport contract"
+"00069" == "invalid index provided"
 "00070" == "ERC1155 tokenId is fungible"

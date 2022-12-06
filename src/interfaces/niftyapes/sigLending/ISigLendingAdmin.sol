@@ -5,8 +5,11 @@ import "./ISigLendingEvents.sol";
 
 /// @title NiftyApes interface for the admin role.
 interface ISigLendingAdmin {
-    /// @notice Updates the associated liquidity contract address
+    /// @notice Updates the associated lending contract address
     function updateLendingContractAddress(address newLendingContractAddress) external;
+
+    /// @notice Updates the associated refinance contract address
+    function updateRefinanceContractAddress(address newRefinanceContractAddress) external;
 
     /// @notice Pauses all interactions with the contract.
     ///         This is intended to be used as an emergency measure to avoid loosing funds.

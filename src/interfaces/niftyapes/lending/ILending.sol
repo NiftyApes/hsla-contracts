@@ -18,6 +18,9 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     /// @notice Returns the address for the associated signature lending contract
     function sigLendingContractAddress() external view returns (address);
 
+    /// @notice Returns the address for the associated refinance contract
+    function refinanceContractAddress() external view returns (address);
+
     /// @notice Returns the address for the associated flashClaim contract
     function flashClaimContractAddress() external view returns (address);
 
@@ -65,6 +68,38 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         view
         returns (LoanAuction memory auction);
 
+    /// @notice Returns the total NFTs from a given collection owned by a user which has active loans in NiftyApes.
+    /// @param owner The address of the owner
+    /// @param nftContractAddress The address of the NFT collection
+    function balanceOf(address owner, address nftContractAddress) external returns (uint256);
+
+    /// @notice Returns an NFT token ID owned by `owner` at a given `index` of its token list.
+    /// @param owner The address of the user
+    /// @param nftContractAddress The address of the NFT collection
+    /// @param index The index of the owner's token list
+    function tokenOfOwnerByIndex(address owner, address nftContractAddress, uint256 index) external returns (uint256);
+
+    /// @notice Updates the loan auction identified by the given nft.
+    ///         Function only callable by NiftyApesRefinance contract
+    /// @param nftContractAddress The address of the NFT collection
+    /// @param nftId The id of a specified NFT
+    /// @param newLoanAuction The new loanAuction struct to update values from
+    function updateLoanAuctionInternal(address nftContractAddress, uint256 nftId, LoanAuction memory newLoanAuction)
+        external;
+
+    /// @notice Emits the AmountDrawn event.
+    ///         Function only callable by NiftyApesRefinance contract.
+    /// @param nftContractAddress The address of the NFT collection
+    /// @param nftId The id of a specified NFT
+    /// @param slashedDrawAmount Amount drawn in the call
+    /// @param loanAuction Updated loanAuction
+    function emitAmountDrawnInternal(
+        address nftContractAddress,
+        uint256 nftId,
+        uint256 slashedDrawAmount,
+        LoanAuction memory loanAuction
+    ) external;
+
     /// @notice Start a loan as the borrower using an offer from the on chain offer book.
     ///         The caller of this method has to be the current owner of the NFT
     /// @param nftId The id of the specified NFT
@@ -73,19 +108,6 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         uint256 nftId,
         bytes32 offerHash
     ) external payable;
-
-    /// @notice Start a loan as the borrower using a signed offer.
-    ///         The caller of this method has to be the current owner of the NFT
-    ///         Since offers can be floorTerm offers they might not include a specific nft id,
-    ///         thus the caller has to pass an extra nft id to the method to identify the nft.
-    /// @param offer The details of the loan auction offer
-    /// @param signature A signed offerHash
-    /// @param nftId The id of a specified NFT
-    // function executeLoanByBorrowerSignature(
-    //     Offer calldata offer,
-    //     bytes memory signature,
-    //     uint256 nftId
-    // ) external payable;
 
     /// @notice Start a loan as the lender using an offer from the on chain offer book.
     ///         Borrowers can make offers for loan terms on their NFTs and thus lenders can
@@ -97,50 +119,6 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         bytes32 offerHash
     ) external payable;
 
-    /// @notice Start a loan as the lender using a borrowers offer and signature.
-    ///         Borrowers can make offers for loan terms on their NFTs and thus lenders can
-    ///         execute these offers
-    /// @param offer The details of the loan auction offer
-    /// @param signature A signed offerHash
-    // function executeLoanByLenderSignature(Offer calldata offer, bytes calldata signature)
-    //     external
-    //     payable;
-
-    /// @notice Refinance a loan against the on chain offer book as the borrower.
-    ///         The new offer has to cover the principle remaining and all lender interest owed on the loan
-    ///         Borrowers can refinance at any time even after loan default as long as their NFT collateral has not been seized
-    /// @param nftId The id of the specified NFT
-    /// @param offerHash The hash of all parameters in an offer. This is used as the unique identifier of an offer.
-    function refinanceByBorrower(
-        uint256 nftId,
-        bytes32 offerHash,
-        uint32 expectedLastUpdatedTimestamp
-    ) external;
-
-    /// @notice Refinance a loan against an off chain signed offer as the borrower.
-    ///         The new offer has to cover the principle remaining and all lender interest owed on the loan
-    ///         Borrowers can refinance at any time even after loan default as long as their NFT collateral has not been seized
-    /// @param offer The details of the loan auction offer
-    /// @param signature The signature for the offer
-    /// @param nftId The id of a specified NFT
-    // function refinanceByBorrowerSignature(
-    //     Offer calldata offer,
-    //     bytes memory signature,
-    //     uint256 nftId
-    // ) external;
-
-    /// @notice Refinance a loan against a new offer.
-    ///         The new offer must improve terms for the borrower
-    ///         Lender must improve terms by a cumulative 25 bps or pay a 25 bps premium
-    ///         For example, if termGriefingPremiumBps is 25 then the cumulative improvement of amount, interestRatePerSecond, and duration must be more than 25 bps
-    ///         If the amount is 8 bps better, interestRatePerSecond is 7 bps better, and duration is 10 bps better, then no premium is paid
-    ///         If any one of those terms is worse then a full premium is paid
-    ///         The Lender must allow 25 bps on interest to accrue or pay a gas griefing premium to the current lender
-    ///         This premium is equal to gasGriefingPremiumBps - interestEarned
-    /// @param offer The details of the loan auction offer
-    /// @param expectedLastUpdatedTimestamp The timestamp of the expected terms. This allows lenders to avoid being frontrun and forced to pay a gasGriefingPremium.
-    ///        Lenders can provide a 0 value if they are willing to pay the gasGriefingPremium in a high volume loanAuction
-    function refinanceByLender(Offer calldata offer, uint32 expectedLastUpdatedTimestamp) external;
 
     /// @notice Allows borrowers to draw a higher balance on their loan if it has been refinanced with a higher maximum amount
     ///         Drawing down value increases the maximum loan pay back amount and so is not automatically imposed on a refinance by lender, hence this function.
@@ -267,18 +245,6 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         uint256 nftId
     ) external;
 
-    /// @notice Function only callable by the NiftyApesSigLending contract
-    ///         Allows SigLending contract to refinance a loan directly
-    /// @param offer The details of the loan auction offer
-    /// @param nftId The id of the specified NFT
-    /// @param nftOwner owner of the nft in the lending.sol lendingAuction
-    function doRefinanceByBorrower(
-        Offer memory offer,
-        uint256 nftId,
-        address nftOwner,
-        uint32 expectedLastUpdatedTimestamp
-    ) external;
-
     /// @notice Function only callable by the FlashClaim and FlashSell contract
     ///         Allows the contracts to transfer an NFT directly
     /// @param nftContractAddress The address of the nft collection
@@ -321,7 +287,7 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         address seaportContractAddress,
         ISeaport.Order[] memory orders
     ) external;
-    
+
     /// @notice Function cancels the valid order listed on the Seaport for SellOnSeaport
     /// @param seaportContractAddress The address of the Seaport contract
     /// @param orderComponentsList the Seaport orderComponents struct list

@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
-import "../../interfaces/flashPurchaseIntegrations/SeaportFlashPurchaseIntegration/ISeaportFlashPurchaseIntegration.sol";
+import "../../interfaces/flashPurchaseIntegrations/seaportFlashPurchaseIntegration/ISeaportFlashPurchaseIntegration.sol";
 import "../base/FlashPurchaseIntegrationBase.sol";
 import "../../FlashPurchase.sol";
 

@@ -212,7 +212,7 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
 
         vm.startPrank(lender2);
         vm.expectRevert("00024");
-        lending.refinanceByLender(newOffer, loanAuction.lastUpdatedTimestamp);
+        refinance.refinanceByLender(newOffer, loanAuction.lastUpdatedTimestamp);
         vm.stopPrank();
     }
 
@@ -258,7 +258,7 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         vm.warp(loanAuction.loanEndTimestamp + 1);
         vm.startPrank(lender2);
         vm.expectRevert("00009");
-        lending.refinanceByLender(newOffer, loanAuction.lastUpdatedTimestamp);
+        refinance.refinanceByLender(newOffer, loanAuction.lastUpdatedTimestamp);
         vm.stopPrank();
     }
 
@@ -1043,7 +1043,7 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         vm.warp(firstLoan.loanEndTimestamp - 2);
 
         vm.startPrank(lender2);
-        lending.refinanceByLender(newOffer, 0);
+        refinance.refinanceByLender(newOffer, 0);
         vm.stopPrank();
         uint256 termGriefingToProtocol = (lending.termGriefingPremiumBps() *
             firstLoan.amountDrawn) / MAX_BPS;

@@ -16,6 +16,9 @@ interface ISigLending is ISigLendingAdmin, ISigLendingEvents, IOffersStructs {
     /// @notice Returns the address for the associated liquidity contract
     function lendingContractAddress() external view returns (address);
 
+    /// @notice Returns the address for the associated refinance contract
+    function refinanceContractAddress() external view returns (address);
+
     /// @notice Returns the address for the associated purchase with financing contract
     function flashPurchaseContractAddress() external view returns (address);
 

@@ -13,6 +13,7 @@ import "../../FlashClaim.sol";
 import "../../FlashPurchase.sol";
 import "../../FlashSell.sol";
 import "../../SellOnSeaport.sol";
+import "../../Refinance.sol";
 import "../../interfaces/niftyapes/lending/ILendingStructs.sol";
 import "../../interfaces/niftyapes/offers/IOffersStructs.sol";
 
@@ -32,6 +33,7 @@ contract NiftyApesPauseUnitTest is
     NiftyApesOffers offersContract;
     NiftyApesLiquidity liquidityProviders;
     NiftyApesSigLending sigLendingAuction;
+    NiftyApesRefinance refinance;
     NiftyApesFlashClaim flashClaim;
     NiftyApesFlashPurchase flashPurchase;
     NiftyApesFlashSell flashSell;
@@ -64,11 +66,14 @@ contract NiftyApesPauseUnitTest is
         flashPurchase = new NiftyApesFlashPurchase();
         flashPurchase.initialize();
 
+        refinance = new NiftyApesRefinance();
+        refinance.initialize();
+
         liquidityProviders = new NiftyApesLiquidity();
-        liquidityProviders.initialize(compContractAddress, address(flashPurchase));
+        liquidityProviders.initialize(compContractAddress, address(refinance), address(flashPurchase));
 
         offersContract = new NiftyApesOffers();
-        offersContract.initialize(address(liquidityProviders), address(flashPurchase));
+        offersContract.initialize(address(liquidityProviders), address(refinance), address(flashPurchase));
 
         sigLendingAuction = new NiftyApesSigLending();
         sigLendingAuction.initialize(address(offersContract), address(flashPurchase));
@@ -84,6 +89,7 @@ contract NiftyApesPauseUnitTest is
             address(liquidityProviders),
             address(offersContract),
             address(sigLendingAuction),
+            address(refinance),
             address(flashClaim),
             address(flashPurchase),
             address(flashSell),
@@ -111,6 +117,7 @@ contract NiftyApesPauseUnitTest is
         sigLendingAuction.pause();
         flashClaim.pause();
         flashSell.pause();
+        refinance.pause();
 
         acceptEth = true;
 
@@ -269,7 +276,7 @@ contract NiftyApesPauseUnitTest is
     function testCannotRefinanceByBorrower_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        lendingAuction.refinanceByBorrower(
+        refinance.refinanceByBorrower(
             1,
             bytes32(0),
             uint32(block.timestamp)
@@ -285,7 +292,7 @@ contract NiftyApesPauseUnitTest is
     function testCannotRefinanceByLender_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        lendingAuction.refinanceByLender(getOffer(), 0);
+        refinance.refinanceByLender(getOffer(), 0);
     }
 
     function testCannotDrawLoanAmount_paused() public {

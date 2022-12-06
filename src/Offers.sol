@@ -51,6 +51,9 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
     /// @inheritdoc IOffers
     address public flashPurchaseContractAddress;
 
+    /// @inheritdoc IOffers
+    address public refinanceContractAddress;
+
     /// @dev Constant typeHash for EIP-712 hashing of Offer struct
     ///      If the Offer struct shape changes, this will need to change as well.
     bytes32 private constant _OFFER_TYPEHASH =
@@ -67,11 +70,13 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
     ///         its state outside of a constructor.
     function initialize(
         address newliquidityContractAddress,
+        address newRefinanceContractAddress,
         address newFlashPurchaseContractAddress
     ) public initializer {
         EIP712Upgradeable.__EIP712_init("NiftyApes_Offers", "0.0.1");
 
         liquidityContractAddress = newliquidityContractAddress;
+        refinanceContractAddress = newRefinanceContractAddress;
         flashPurchaseContractAddress = newFlashPurchaseContractAddress;
 
         OwnableUpgradeable.__Ownable_init();
@@ -102,6 +107,19 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
     }
 
     /// @inheritdoc IOffersAdmin
+    function updateRefinanceContractAddress(address newRefinanceContractAddress)
+        external
+        onlyOwner
+    {
+        require(address(newRefinanceContractAddress) != address(0), "00035");
+        emit OffersXRefinanceContractAddressUpdated(
+            refinanceContractAddress,
+            newRefinanceContractAddress
+        );
+        refinanceContractAddress = newRefinanceContractAddress;
+    }
+
+    /// @inheritdoc IOffersAdmin
     function pause() external onlyOwner {
         _pause();
     }
@@ -124,11 +142,11 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
                         offer.fixedTerms,
                         offer.floorTerm,
                         offer.lenderOffer,
-                        offer.interestRatePerSecond,
                         offer.nftContractAddress,
                         offer.nftId,
-                        offer.amount,
                         offer.asset,
+                        offer.amount,
+                        offer.interestRatePerSecond,
                         offer.floorTermLimit
                     )
                 )
@@ -335,15 +353,17 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
         internal
         view
     {
-        if (msg.sender != lendingContractAddress) {
-            if (msg.sender != flashPurchaseContractAddress) {
-                require(signer == expected, "00024");
-            }
-        }
+        require(
+            signer == expected ||
+            msg.sender == lendingContractAddress ||
+            msg.sender == flashPurchaseContractAddress ||
+            msg.sender == refinanceContractAddress,
+            "00024"
+        );
     }
 
     function _requireExpectedContract() internal view {
-        require(msg.sender == lendingContractAddress || msg.sender == flashPurchaseContractAddress, "00024");
+        require(msg.sender == lendingContractAddress || msg.sender == flashPurchaseContractAddress || msg.sender == refinanceContractAddress, "00024");
     }
 
     function _requireSigLendingContract() internal view {
