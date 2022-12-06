@@ -115,14 +115,10 @@ contract SudoswapFlashPurchaseIntegration is
         if (numOfNfts > 1) {
             require(floorTerm, "00056");
         }
-        // fetch nft contract address
-        address nftContractAddress = address(lssvmPair.nft());
+
         Offer memory offer = _fetchOffer(
             offersContractAddress,
-            nftContractAddress,
-            offerHash,
-            floorTerm,
-            nftIds[0]
+            offerHash
         );
         
         _validateSudoswapPair(offer, lssvmPair);

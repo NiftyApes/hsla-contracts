@@ -87,4 +87,17 @@ contract TestCreateOffer is Test, IOffersEvents, OffersLoansRefinancesFixtures {
         vm.expectRevert("00024");
         offers.createOffer(offer);
     }
+
+    function test_fuzz_cannot_createOffer_erc1155_if_tokenId_fungible(FuzzedOfferFields memory fuzzed)
+        public
+        validateFuzzedOfferFields(fuzzed)
+    {
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        offer.nftContractAddress = address(mockERC1155Token);
+        offer.nftId = 2;
+
+        vm.expectRevert("00070");
+        vm.startPrank(lender1);
+        offers.createOffer(offer);
+    }
 }

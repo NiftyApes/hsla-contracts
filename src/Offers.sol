@@ -5,9 +5,11 @@ import "@openzeppelin/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155Upgradeable.sol";
+import "@openzeppelin/contracts/utils/introspection/ERC165CheckerUpgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712Upgradeable.sol";
 import "@openzeppelin/contracts/utils/math/SafeCastUpgradeable.sol";
 import "@openzeppelin/contracts/utils/AddressUpgradeable.sol";
+import "./interfaces/erc1155/IERC1155SupplyUpgradeable.sol";
 import "./interfaces/niftyapes/offers/IOffers.sol";
 import "./interfaces/niftyapes/liquidity/ILiquidity.sol";
 import "./lib/ECDSABridge.sol";
@@ -20,6 +22,8 @@ import "./lib/ECDSABridge.sol";
 /// @custom:contributor zjmiller (zjmiller.eth)
 
 contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgradeable, IOffers {
+    using ERC165CheckerUpgradeable for address;
+
     /// @dev A mapping for a NFT to an Offer
     ///      The mapping has to be broken into three parts since an NFT is denominated by its address (first part)
     ///      and its nftId (second part), offers are referred to by their hash (see #getEIP712EncodedOffer for details) (third part).
@@ -51,7 +55,7 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
     ///      If the Offer struct shape changes, this will need to change as well.
     bytes32 private constant _OFFER_TYPEHASH =
         keccak256(
-            "Offer(address creator,uint32 duration,uint32 expiration,bool fixedTerms,bool floorTerm,bool lenderOffer,uint96 interestRatePerSecond,address nftContractAddress,uint256 nftId,uint256 erc1155Amount,uint256 amount,address asset,uint64 floorTermLimit)"
+            "Offer(address creator,uint32 duration,uint32 expiration,bool fixedTerms,bool floorTerm,bool lenderOffer,uint96 interestRatePerSecond,address nftContractAddress,uint256 nftId,uint256 amount,address asset,uint64 floorTermLimit)"
         );
 
     /// @dev This empty reserved space is put in place to allow future versions to add new
@@ -123,7 +127,6 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
                         offer.interestRatePerSecond,
                         offer.nftContractAddress,
                         offer.nftId,
-                        offer.erc1155Amount,
                         offer.amount,
                         offer.asset,
                         offer.floorTermLimit
@@ -205,9 +208,15 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
                 offer.asset,
                 offer.amount
             );
+            if (offer.nftContractAddress.supportsInterface(type(IERC1155Upgradeable).interfaceId)) {
+                _requireNonFungibleToken(
+                    offer.nftContractAddress,
+                    offer.nftId
+                );
+            }
             _requireCAssetBalance(msg.sender, cAsset, offerTokens);
         } else {
-            _requireValidTokenBalance(msg.sender, offer.nftContractAddress, offer.nftId, offer.erc1155Amount);
+            _requireNftOwner(msg.sender, offer.nftContractAddress, offer.nftId);
             requireNoFloorTerms(offer);
         }
 
@@ -267,27 +276,27 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
         require(offer.expiration > SafeCastUpgradeable.toUint32(block.timestamp), "00010");
     }
 
-    function _requireValidTokenBalance(
+    function _requireNftOwner(
         address owner,
         address nftContractAddress,
-        uint256 nftId,
-        uint256 erc1155Amount
+        uint256 nftId
     ) internal view {
-        if (IERC721Upgradeable(nftContractAddress).supportsInterface(type(IERC721Upgradeable).interfaceId)) {
+        if (nftContractAddress.supportsInterface(type(IERC1155Upgradeable).interfaceId)) {
+            _requireNonFungibleToken(
+                nftContractAddress,
+                nftId
+            );
+            _require1155NftOwner(
+                owner,
+                nftContractAddress,
+                nftId
+            );
+        } else {
             _require721Owner(
                 nftContractAddress,
                 nftId,
                 owner
             );
-        } else if (IERC1155Upgradeable(nftContractAddress).supportsInterface(type(IERC1155Upgradeable).interfaceId)) {
-            _require1155Balance(
-                owner,
-                nftContractAddress,
-                nftId,
-                erc1155Amount
-            );
-        } else {
-            revert("00070");
         }
     }
 
@@ -299,13 +308,19 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
         require(IERC721Upgradeable(nftContractAddress).ownerOf(nftId) == owner, "00021");
     }
 
-    function _require1155Balance(
+    function _require1155NftOwner(
         address owner,
         address nftContractAddress,
-        uint256 nftId,
-        uint256 erc1155Amount
+        uint256 nftId
     ) internal view {
-        require(IERC1155Upgradeable(nftContractAddress).balanceOf(owner, nftId) >= erc1155Amount, "00071");
+        require(IERC1155SupplyUpgradeable(nftContractAddress).balanceOf(owner, nftId) == 1, "00021");
+    }
+
+    function _requireNonFungibleToken(
+        address nftContractAddress,
+        uint256 nftId
+    ) internal view {
+        require(IERC1155SupplyUpgradeable(nftContractAddress).totalSupply(nftId) == 1, "00070");
     }
 
     function _requireSigner(address signer, address expected) internal pure {

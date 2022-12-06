@@ -105,10 +105,7 @@ contract SeaportFlashPurchaseIntegration is
 
         Offer memory offer = _fetchOffer(
             offersContractAddress,
-            order.parameters.offer[0].token,
-            offerHash,
-            floorTerm,
-            order.parameters.offer[0].identifierOrCriteria
+            offerHash
         );
 
         _validateOrder(order, offer);

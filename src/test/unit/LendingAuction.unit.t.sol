@@ -944,7 +944,7 @@ contract LendingAuctionUnitTest is
 
         mockNft.transferFrom(address(this), address(0x0000000000000000000000000000000000000001), 1);
 
-        hevm.expectRevert("00018");
+        hevm.expectRevert("00021");
 
         lendingAuction.executeLoanByBorrower(
             offer.nftId,
@@ -1643,7 +1643,7 @@ contract LendingAuctionUnitTest is
         mockNft.transferFrom(address(this), address(0x0000000000000000000000000000000000000001), 1);
         bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
-        hevm.expectRevert("00018");
+        hevm.expectRevert("00021");
 
         sigLendingAuction.executeLoanByBorrowerSignature(offer, signature, 1);
     }
@@ -2111,7 +2111,7 @@ contract LendingAuctionUnitTest is
 
         mockNft.transferFrom(address(this), address(0x0000000000000000000000000000000000000001), 1);
 
-        hevm.expectRevert("00018");
+        hevm.expectRevert("00021");
 
         hevm.startPrank(LENDER_1);
 
@@ -2722,7 +2722,7 @@ contract LendingAuctionUnitTest is
 
         bytes memory signature = signOffer(SIGNER_PRIVATE_KEY_1, offer);
 
-        hevm.expectRevert("00018");
+        hevm.expectRevert("00021");
 
         sigLendingAuction.executeLoanByLenderSignature(offer, signature);
     }

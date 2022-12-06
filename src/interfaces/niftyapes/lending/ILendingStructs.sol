@@ -44,7 +44,5 @@ interface ILendingStructs {
         uint128 slashableLenderInterest;
         // cumulative unpaid protocol interest. Accrues per lender period of interest.
         uint128 unpaidProtocolInterest;
-        // erc1155 amount locked as collateral
-        uint256 erc1155Amount;
     }
 }

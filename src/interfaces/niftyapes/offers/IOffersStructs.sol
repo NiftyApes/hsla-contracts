@@ -17,27 +17,21 @@ interface IOffersStructs {
         bool floorTerm;
         // Whether or not this offer was made by a lender or a borrower
         bool lenderOffer;
-
         // SLOT 1 START
-        // offer interest rate per second. (Amount * InterestRate) / MAX-BPS / Duration
-        uint96 interestRatePerSecond;
         // offer NFT contract address
         address nftContractAddress;
-
         // SLOT 2 START
         // offer NFT ID
         uint256 nftId; // ignored if floorTerm is true
-
         // SLOT 3 START
-        uint256 erc1155Amount; // ignored if token is ERC-721
-
+        // offer asset type
+        address asset;
         // SLOT 4 START
         // offer loan amount
         uint128 amount;
-
+        // offer interest rate per second. (Amount * InterestRate) / MAX-BPS / Duration
+        uint96 interestRatePerSecond;
         // SLOT 5 START
-        // offer asset type
-        address asset;
         // floor offer usage limit, ignored if floorTerm is false
         uint64 floorTermLimit;
     }

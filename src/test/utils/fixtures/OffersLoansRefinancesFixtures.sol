@@ -3,6 +3,7 @@ pragma solidity 0.8.13;
 
 import "forge-std/Test.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
+import "@openzeppelin/contracts/token/ERC1155/IERC1155Upgradeable.sol";
 
 import "../../utils/fixtures/LenderLiquidityFixtures.sol";
 import "../../../interfaces/niftyapes/offers/IOffersStructs.sol";
@@ -160,7 +161,11 @@ contract OffersLoansRefinancesFixtures is
 
     function approveLending(Offer memory offer) internal {
         vm.startPrank(borrower1);
-        mockNft.approve(address(lending), offer.nftId);
+        if (IERC1155Upgradeable(offer.nftContractAddress).supportsInterface(type(IERC1155Upgradeable).interfaceId)) {
+            mockERC1155Token.setApprovalForAll(address(lending), true);
+        } else {
+            mockNft.approve(address(lending), offer.nftId);
+        }
         vm.stopPrank();
     }
 

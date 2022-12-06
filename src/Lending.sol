@@ -6,9 +6,12 @@ import "@openzeppelin/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155Upgradeable.sol";
+import "@openzeppelin/contracts/utils/introspection/ERC165CheckerUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
+import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155HolderUpgradeable.sol";
 import "@openzeppelin/contracts/utils/math/SafeCastUpgradeable.sol";
 import "@openzeppelin/contracts/utils/AddressUpgradeable.sol";
+import "./interfaces/erc1155/IERC1155SupplyUpgradeable.sol";
 import "./interfaces/niftyapes/lending/ILending.sol";
 import "./interfaces/niftyapes/liquidity/ILiquidity.sol";
 import "./interfaces/niftyapes/offers/IOffers.sol";
@@ -26,9 +29,11 @@ contract NiftyApesLending is
     PausableUpgradeable,
     ReentrancyGuardUpgradeable,
     ERC721HolderUpgradeable,
+    ERC1155HolderUpgradeable,
     ILending
 {
     using AddressUpgradeable for address payable;
+    using ERC165CheckerUpgradeable for address;
 
     /// @dev Internal address used for for ETH in our mappings
     address private constant ETH_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
@@ -261,12 +266,12 @@ contract NiftyApesLending is
         require(loanAuction.lastUpdatedTimestamp == 0, "00006");
         _requireOfferNotExpired(offer);
         _requireMinDurationForOffer(offer);
-        // require721OwnerOr1155Balance
-        _require721OwnerOr1155Balance(borrower, offer.nftContractAddress, offer.nftId, offer.erc1155Amount);
+        // requireNftOwner
+        _require721Or1155NftOwner(borrower, offer.nftContractAddress, nftId);
 
         _createLoan(loanAuction, offer, lender, borrower);
 
-        _transferCollateral(offer.nftContractAddress, nftId, offer.erc1155Amount, borrower, address(this));
+        _transferCollateral(offer.nftContractAddress, nftId, borrower, address(this));
 
         uint256 cTokensBurned = ILiquidity(liquidityContractAddress).burnCErc20(
             offer.asset,
@@ -649,7 +654,7 @@ contract NiftyApesLending is
     {
         LoanAuction memory loanAuction = _getLoanAuctionInternal(nftContractAddress, nftId);
         _repayLoanAmount(nftContractAddress, nftId, true, 0, true);
-        _transferCollateral(nftContractAddress, nftId, loanAuction.erc1155Amount, address(this), loanAuction.nftOwner);
+        _transferCollateral(nftContractAddress, nftId, address(this), loanAuction.nftOwner);
     }
 
     /// @inheritdoc ILending
@@ -664,7 +669,7 @@ contract NiftyApesLending is
         _requireIsNotSanctioned(msg.sender);
 
         _repayLoanAmount(nftContractAddress, nftId, true, 0, false);
-        _transferCollateral(nftContractAddress, nftId, loanAuction.erc1155Amount, address(this), loanAuction.nftOwner);
+        _transferCollateral(nftContractAddress, nftId, address(this), loanAuction.nftOwner);
     }
 
     /// @inheritdoc ILending
@@ -807,7 +812,7 @@ contract NiftyApesLending is
 
         delete _loanAuctions[nftContractAddress][nftId];
 
-        _transferCollateral(nftContractAddress, nftId, loanAuction.erc1155Amount, address(this), currentLender);
+        _transferCollateral(nftContractAddress, nftId, address(this), currentLender);
     }
 
     /// @inheritdoc ILending
@@ -1089,27 +1094,27 @@ contract NiftyApesLending is
         require(creator == offer.creator, "00024");
     }
 
-    function _require721OwnerOr1155Balance(
+    function _require721Or1155NftOwner(
         address owner,
         address nftContractAddress,
-        uint256 nftId,
-        uint256 erc1155Amount
+        uint256 nftId
     ) internal view {
-        if (IERC721Upgradeable(nftContractAddress).supportsInterface(type(IERC721Upgradeable).interfaceId)) {
+        if (nftContractAddress.supportsInterface(type(IERC1155Upgradeable).interfaceId)) {
+            _requireNonFungibleToken(
+                nftContractAddress,
+                nftId
+            );
+            _require1155NftOwner(
+                owner,
+                nftContractAddress,
+                nftId
+            );
+        } else {    
             _require721Owner(
                 nftContractAddress,
                 nftId,
                 owner
             );
-        } else if (IERC1155Upgradeable(nftContractAddress).supportsInterface(type(IERC1155Upgradeable).interfaceId)) {
-            _require1155Balance(
-                owner,
-                nftContractAddress,
-                nftId,
-                erc1155Amount
-            );
-        } else {
-            revert("00070");
         }
     }
 
@@ -1121,13 +1126,19 @@ contract NiftyApesLending is
         require(IERC721Upgradeable(nftContractAddress).ownerOf(nftId) == owner, "00021");
     }
 
-    function _require1155Balance(
+    function _require1155NftOwner(
         address owner,
         address tokenContractAddress,
-        uint256 tokenId,
-        uint256 erc1155Amount
+        uint256 tokenId
     ) internal view {
-        require(IERC1155Upgradeable(tokenContractAddress).balanceOf(owner, tokenId) >= erc1155Amount, "00071");
+        require(IERC1155SupplyUpgradeable(tokenContractAddress).balanceOf(owner, tokenId) == 1, "00021");
+    }
+
+    function _requireNonFungibleToken(
+        address nftContractAddress,
+        uint256 nftId
+    ) internal view {
+        require(IERC1155SupplyUpgradeable(nftContractAddress).totalSupply(nftId) == 1, "00070");
     }
 
     function _requireSigLendingContract() internal view {
@@ -1242,27 +1253,23 @@ contract NiftyApesLending is
     function _transferCollateral(
         address nftContractAddress,
         uint256 nftId,
-        uint256 erc1155Amount,
         address from,
         address to
     ) internal {
-        if (IERC721Upgradeable(nftContractAddress).supportsInterface(type(IERC721Upgradeable).interfaceId)) {
+        if (IERC1155SupplyUpgradeable(nftContractAddress).supportsInterface(type(IERC1155Upgradeable).interfaceId)) {
+            _transferERC1155Token(
+                nftContractAddress,
+                nftId,
+                from,
+                to
+            );
+        } else {
             _transferNft(
                 nftContractAddress,
                 nftId,
                 from,
                 to
             );
-        } else if (IERC1155Upgradeable(nftContractAddress).supportsInterface(type(IERC1155Upgradeable).interfaceId)) {
-            _transferERC1155Token(
-                nftContractAddress,
-                nftId,
-                erc1155Amount,
-                from,
-                to
-            );
-        } else {
-            revert("00070");
         }
     }
 
@@ -1278,11 +1285,10 @@ contract NiftyApesLending is
     function _transferERC1155Token(
         address nftContractAddress,
         uint256 nftId,
-        uint256 erc1155Amount,
         address from,
         address to
     ) internal {
-        IERC1155Upgradeable(nftContractAddress).safeTransferFrom(from, to, nftId, erc1155Amount, bytes(""));
+        IERC1155SupplyUpgradeable(nftContractAddress).safeTransferFrom(from, to, nftId, 1, bytes(""));
     }
 
     /// @inheritdoc ILending
