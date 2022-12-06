@@ -138,16 +138,12 @@ contract NiftyApesRefinance is
 
     /// @inheritdoc IRefinance
     function refinanceByBorrower(
-        address nftContractAddress,
         uint256 nftId,
-        bool floorTerm,
         bytes32 offerHash,
         uint32 expectedLastUpdatedTimestamp
     ) external whenNotPaused nonReentrant {
         Offer memory offer = _offerNftIdAndCountChecks(
-            nftContractAddress,
             nftId,
-            floorTerm,
             offerHash
         );
 
@@ -435,26 +431,14 @@ contract NiftyApesRefinance is
     }
 
     function _offerNftIdAndCountChecks(
-        address nftContractAddress,
         uint256 nftId,
-        bool floorTerm,
         bytes32 offerHash
     ) internal returns (Offer memory) {
-        Offer memory offer = IOffers(offersContractAddress).getOffer(
-            nftContractAddress,
-            nftId,
-            offerHash,
-            floorTerm
-        );
+        Offer memory offer = IOffers(offersContractAddress).getOffer(offerHash);
 
         if (!offer.floorTerm) {
             _requireMatchingNftId(offer, nftId);
-            IOffers(offersContractAddress).removeOffer(
-                nftContractAddress,
-                nftId,
-                offerHash,
-                floorTerm
-            );
+            IOffers(offersContractAddress).removeOffer(offerHash);
         } else {
             require(
                 IOffers(offersContractAddress).getFloorOfferCount(offerHash) < offer.floorTermLimit,

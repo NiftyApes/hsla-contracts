@@ -23,14 +23,11 @@ interface IRefinance is IRefinanceAdmin, IRefinanceEvents, IOffersStructs {
     /// @notice Refinance a loan against the on chain offer book as the borrower.
     ///         The new offer has to cover the principle remaining and all lender interest owed on the loan
     ///         Borrowers can refinance at any time even after loan default as long as their NFT collateral has not been seized
-    /// @param nftContractAddress The address of the NFT collection
     /// @param nftId The id of the specified NFT
-    /// @param floorTerm Indicates whether this is a floor or individual NFT offer.
     /// @param offerHash The hash of all parameters in an offer. This is used as the unique identifier of an offer.
+    /// @param expectedLastUpdatedTimestamp The timestamp of the expected terms. This allows lenders to avoid being frontrun and forced to pay a gasGriefingPremium.
     function refinanceByBorrower(
-        address nftContractAddress,
         uint256 nftId,
-        bool floorTerm,
         bytes32 offerHash,
         uint32 expectedLastUpdatedTimestamp
     ) external;
