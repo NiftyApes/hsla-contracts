@@ -59,7 +59,7 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
     ///      If the Offer struct shape changes, this will need to change as well.
     bytes32 private constant _OFFER_TYPEHASH =
         keccak256(
-            "Offer(address creator,uint32 duration,uint32 expiration,bool fixedTerms,bool floorTerm,bool lenderOffer,uint96 interestRatePerSecond,address nftContractAddress,uint256 nftId,uint256 amount,address asset,uint64 floorTermLimit)"
+            "Offer(address creator,uint32 duration,uint32 expiration,bool fixedTerms,bool floorTerm,bool lenderOffer,address nftContractAddress,uint256 nftId,address asset,uint128 amount,uint96 interestRatePerSecond,uint64 floorTermLimit)"
         );
 
     /// @dev A mapping for storing offers with offerHash as their keys
