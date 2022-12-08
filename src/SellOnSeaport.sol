@@ -6,12 +6,14 @@ import "@openzeppelin/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Upgradeable.sol";
 import "@openzeppelin/contracts/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts/utils/math/SafeCastUpgradeable.sol";
 import "./interfaces/niftyapes/sellOnSeaport/ISellOnSeaport.sol";
 import "./interfaces/niftyapes/lending/ILending.sol";
 import "./interfaces/niftyapes/liquidity/ILiquidity.sol";
 import "./interfaces/sanctions/SanctionsList.sol";
+import "./flashSell/interfaces/IFlashSellReceiver.sol";
 
 /// @notice Extension of NiftApes lending contract to allow sale of NFTs on Seaport for closure of loans
 /// @title SellOnSeaport
@@ -76,7 +78,7 @@ contract NiftyApesSellOnSeaport is
         OwnableUpgradeable.__Ownable_init();
         PausableUpgradeable.__Pausable_init();
         ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
-        
+
         seaportZone = 0x004C00500000aD104D7DBd00e3ae0A5C00560C00;
         seaportFeeRecepient = 0x0000a26b00c1F0DF003000390027140000fAa719;
         seaportZoneHash = bytes32(0x0000000000000000000000000000000000000000000000000000000000000000);
@@ -184,7 +186,7 @@ contract NiftyApesSellOnSeaport is
         _requireNftOwner(loanAuction);
         _requireIsNotSanctioned(msg.sender);
         _requireOpenLoan(loanAuction);
-        _requireListingValueGreaterThanLoanRepaymentAmountUntilListingExpiry(loanAuction, listingPrice, seaportFeeAmount, listingEndTime);        
+        _requireListingValueGreaterThanLoanRepaymentAmountUntilListingExpiry(loanAuction, listingPrice, seaportFeeAmount, listingEndTime);
         
         // construct Seaport Order
         ISeaport.Order[] memory order  = _constructOrder(
@@ -288,7 +290,7 @@ contract NiftyApesSellOnSeaport is
         // emit orderHash with it's listing
         emit ListingCancelledSeaport(nftContractAddress, nftId, orderHash, loanAuction);
     }
-
+    
     function _constructOrder(
         address nftContractAddress,
         uint256 nftId,

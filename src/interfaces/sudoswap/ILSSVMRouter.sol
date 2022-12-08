@@ -28,4 +28,11 @@ interface ILSSVMRouter {
         address nftRecipient,
         uint256 deadline
     ) external returns (uint256 remainingValue);
+
+    function swapNFTsForToken(
+        PairSwapSpecific[] calldata swapList,
+        uint256 minOutput,
+        address tokenRecipient,
+        uint256 deadline
+    ) external returns (uint256 outputAmount);
 }
