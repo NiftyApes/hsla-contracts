@@ -8,6 +8,7 @@ import "../../../SigLending.sol";
 import "../../../FlashClaim.sol";
 import "./FlashClaimReceivers/FlashClaimReceiverTestHappy.sol";
 import "./FlashClaimReceivers/FlashClaimReceiverTestNoReturn.sol";
+import "./FlashClaimReceivers/FlashClaimReceiverTestReturnsFalse.sol";
 import "../../../FlashPurchase.sol";
 import "../../../flashPurchase/integrations/SeaportFlashPurchaseIntegration.sol";
 import "../../../flashPurchase/integrations/SudoswapFlashPurchaseIntegration.sol";
@@ -34,6 +35,7 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
     NiftyApesFlashClaim flashClaim;
     FlashClaimReceiverBaseHappy flashClaimReceiverHappy;
     FlashClaimReceiverBaseNoReturn flashClaimReceiverNoReturn;
+    FlashClaimReceiverBaseReturnsFalse flashClaimReceiverReturnsFalse;
     NiftyApesFlashPurchase flashPurchase;
     SeaportFlashPurchaseIntegration seaportFlashPurchase;
     SudoswapFlashPurchaseIntegration sudoswapFlashPurchase;
@@ -54,6 +56,7 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
 
         flashClaimReceiverHappy = new FlashClaimReceiverBaseHappy();
         flashClaimReceiverNoReturn = new FlashClaimReceiverBaseNoReturn();
+        flashClaimReceiverReturnsFalse = new FlashClaimReceiverBaseReturnsFalse();
 
         flashClaim = new NiftyApesFlashClaim();
         flashClaim.initialize();

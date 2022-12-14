@@ -79,4 +79,21 @@ contract TestFlashClaim is Test, ILendingEvents, OffersLoansRefinancesFixtures {
         fixedForSpeed.randomAsset = 1;
         _test_unit_cannot_flashClaim_noReturn(fixedForSpeed);
     }
+
+    function test_unit_cannot_flashClaim_ReturnsFalse() public {
+        FuzzedOfferFields memory fixedForSpeed = defaultFixedFuzzedFieldsForFastUnitTesting;
+        fixedForSpeed.randomAsset = 1;
+        Offer memory offer = offerStructFromFields(fixedForSpeed, defaultFixedOfferFields);
+        createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
+
+        vm.startPrank(borrower1);
+        vm.expectRevert("00058");
+        flashClaim.flashClaim(
+            address(flashClaimReceiverReturnsFalse),
+            offer.nftContractAddress,
+            offer.nftId,
+            bytes("")
+        );
+        vm.stopPrank();
+    }
 }
