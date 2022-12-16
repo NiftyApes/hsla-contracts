@@ -16,12 +16,10 @@ contract TestGetLoanAuction is Test, OffersLoansRefinancesFixtures {
 
     function _test_getLoanAuction_works(FuzzedOfferFields memory fuzzed) private {
         Offer memory offerToCreate = offerStructFromFields(fuzzed, defaultFixedOfferFields);
-
         (Offer memory offer, LoanAuction memory loan) = createOfferAndTryToExecuteLoanByBorrower(
             offerToCreate,
             "should work"
         );
-
         assertEq(loan.nftOwner, borrower1);
         assertEq(loan.lender, offer.creator);
         assertEq(loan.asset, offer.asset);

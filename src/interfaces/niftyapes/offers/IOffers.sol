@@ -110,4 +110,6 @@ interface IOffers is IOffersAdmin, IOffersEvents, IOffersStructs, ILendingStruct
     /// @notice Checks that an offer is not a floor term offer
     /// @param offer The details of the offer
     function requireNoFloorTerms(Offer memory offer) external pure;
+
+    function initialize(address newliquidityContractAddress) external;
 }

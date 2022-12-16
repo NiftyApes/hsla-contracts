@@ -14,8 +14,8 @@ contract TestLendingRenounceOwnership is Test, ILendingEvents, OffersLoansRefina
 
     function test_unit_lending_renounceOwnership_does_nothing() public {
         vm.prank(owner);
-        lending.renounceOwnership();
+        lendingImplementation.renounceOwnership();
 
-        assertEq(lending.owner(), owner);
+        assertEq(lendingImplementation.owner(), owner);
     }
 }

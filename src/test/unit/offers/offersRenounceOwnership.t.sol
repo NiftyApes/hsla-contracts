@@ -12,8 +12,8 @@ contract TestSigLendingRenounceOwnership is Test, OffersLoansRefinancesFixtures 
 
     function test_unit_sigLending_renounceOwnership_does_nothing() public {
         vm.prank(owner);
-        sigLending.renounceOwnership();
+        sigLendingImplementation.renounceOwnership();
 
-        assertEq(sigLending.owner(), owner);
+        assertEq(sigLendingImplementation.owner(), owner);
     }
 }

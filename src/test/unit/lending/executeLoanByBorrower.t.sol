@@ -433,18 +433,18 @@ contract TestExecuteLoanByBorrower is Test, OffersLoansRefinancesFixtures {
 
         if (integration) {
             vm.startPrank(daiWhale);
-            daiToken.transfer(SANCTIONED_ADDRESS, defaultDaiLiquiditySupplied);
+            daiToken.transfer(SANCTIONED_ADDRESS, defaultDaiLiquiditySupplied / 2);
             vm.stopPrank();
         } else {
             vm.startPrank(SANCTIONED_ADDRESS);
-            daiToken.mint(SANCTIONED_ADDRESS, defaultDaiLiquiditySupplied);
+            daiToken.mint(SANCTIONED_ADDRESS, defaultDaiLiquiditySupplied / 2);
             vm.stopPrank();
         }
 
         vm.startPrank(SANCTIONED_ADDRESS);
-        daiToken.approve(address(liquidity), defaultDaiLiquiditySupplied);
+        daiToken.approve(address(liquidity), defaultDaiLiquiditySupplied / 2);
 
-        liquidity.supplyErc20(address(daiToken), defaultDaiLiquiditySupplied);
+        liquidity.supplyErc20(address(daiToken), defaultDaiLiquiditySupplied / 2);
         vm.stopPrank();
 
         defaultFixedOfferFields.lenderOffer = true;

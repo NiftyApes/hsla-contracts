@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
@@ -10,17 +9,12 @@ import "../src/interfaces/niftyapes/lending/ILending.sol";
 import "../src/interfaces/niftyapes/offers/IOffers.sol";
 import "../src/interfaces/niftyapes/liquidity/ILiquidity.sol";
 import "../src/interfaces/niftyapes/sigLending/ISigLending.sol";
-import "../src/interfaces/ownership.sol";
+import "../src/interfaces/Ownership.sol";
 
 import "../src/Liquidity.sol";
 import "../src/Offers.sol";
 import "../src/SigLending.sol";
 import "../src/Lending.sol";
-import "../src/FlashClaim.sol";
-import "../src/FlashPurchase.sol";
-import "../src/FlashSell.sol";
-import "../src/SellOnSeaport.sol";
-import "../src/Refinance.sol";
 
 contract DeployNiftyApesScript is Script {
     NiftyApesLending lendingImplementation;
@@ -43,33 +37,12 @@ contract DeployNiftyApesScript is Script {
     ILiquidity liquidity;
     ISigLending sigLending;
 
-    NiftyApesRefinance refinance;
-    NiftyApesFlashClaim flashClaim;
-    NiftyApesFlashPurchase flashPurchase;
-    NiftyApesFlashSell flashSell;
-    NiftyApesSellOnSeaport sellOnSeaport;
-
     function run() external {
-        address compContractAddress = 0xc00e94Cb662C3520282E6f5717214004A7f26888;
-        address goerliMultisigAddress = 0x213dE8CcA7C414C0DE08F456F9c4a2Abc4104028;
-        address seaportContractAddress = 0x00000000006c3852cbEf3e08E8dF289169EdE581;
+        //to update once compound deployed on gnosis
+        address bCompContractAddress = 0x267a3d54dF81207D951C495deBd4933Bc5689538;
+        address gnosisMultisigAddress = 0xA407aD41B5703432823f3694f857097542812E5a;
 
         vm.startBroadcast();
-
-        flashClaim = new NiftyApesFlashClaim();
-        flashClaim.initialize();
-
-        flashPurchase = new NiftyApesFlashPurchase();
-        flashPurchase.initialize();
-
-        flashSell = new NiftyApesFlashSell();
-        flashSell.initialize();
-
-        sellOnSeaport = new NiftyApesSellOnSeaport();
-        sellOnSeaport.initialize();
-
-        refinance = new NiftyApesRefinance();
-        refinance.initialize();
 
         // deploy and initialize implementation contracts
         liquidityImplementation = new NiftyApesLiquidity();
@@ -120,7 +93,7 @@ contract DeployNiftyApesScript is Script {
         sigLending = ISigLending(address(sigLendingProxy));
 
         // initialize proxies
-        liquidity.initialize(address(compContractAddress));
+        liquidity.initialize(address(bCompContractAddress));
         offers.initialize(address(liquidity));
         sigLending.initialize(address(offers));
         lending.initialize(address(liquidity), address(offers), address(sigLending));
@@ -133,59 +106,38 @@ contract DeployNiftyApesScript is Script {
 
         sigLending.updateLendingContractAddress(address(lending));
 
-        flashClaim.updateLendingContractAddress(address(lending));
-
-        flashPurchase.updateLiquidityContractAddress(address(liquidity));
-        flashPurchase.updateOffersContractAddress(address(offers));
-        flashPurchase.updateLendingContractAddress(address(lending));
-        flashPurchase.updateSigLendingContractAddress(address(sigLending));
-
-        flashSell.updateLendingContractAddress(address(lending));
-        flashSell.updateLiquidityContractAddress(address(liquidity));
-
-        sellOnSeaport.updateLendingContractAddress(address(lending));
-        sellOnSeaport.updateLiquidityContractAddress(address(liquidity));
-        sellOnSeaport.updateSeaportContractAddress(seaportContractAddress);
-
-        refinance.updateLendingContractAddress(address(lending));
-        refinance.updateLiquidityContractAddress(address(liquidity));
-        refinance.updateOffersContractAddress(address(offers));
-        refinance.updateSigLendingContractAddress(address(sigLending));
-
         // Goerli Addresses
-        address daiToken = 0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60;
-        address cDAIToken = 0x822397d9a55d0fefd20F5c4bCaB33C5F65bd28Eb;
-        address ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
-        address cEtherToken = 0x20572e4c090f15667cF7378e16FaD2eA0e2f3EfF;
+        address wxDaiToken = 0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d;
+        address bwxDaiToken = 0x67ECb3C872941241F21839Ec9111C7Ca6678342e;
 
         // DAI
-        liquidity.setCAssetAddress(daiToken, cDAIToken);
+        liquidity.setCAssetAddress(wxDaiToken, bwxDaiToken);
 
-        uint256 cDAIAmount = liquidity.assetAmountToCAssetAmount(daiToken, type(uint128).max);
+        uint256 bwxDAIAmount = liquidity.assetAmountToCAssetAmount(wxDaiToken, type(uint128).max);
 
-        liquidity.setMaxCAssetBalance(cDAIToken, cDAIAmount);
+        liquidity.setMaxCAssetBalance(bwxDaiToken, bwxDAIAmount);
 
-        // ETH
-        liquidity.setCAssetAddress(ETH_ADDRESS, cEtherToken);
-
-        uint256 cEtherAmount = liquidity.assetAmountToCAssetAmount(ETH_ADDRESS, type(uint128).max);
-
-        liquidity.setMaxCAssetBalance(cEtherToken, cEtherAmount);
-
-        // pauseSanctions for Goerli as Chainalysis contacts doent exists there
+        // pauseSanctions for Gnosis as Chainalysis contacts doesnt exists there
         liquidity.pauseSanctions();
         lending.pauseSanctions();
 
-        liquidity.transferOwnership(goerliMultisigAddress);
-        lending.transferOwnership(goerliMultisigAddress);
-        offers.transferOwnership(goerliMultisigAddress);
-        sigLending.transferOwnership(goerliMultisigAddress);
-        flashClaim.transferOwnership(goerliMultisigAddress);
-        flashPurchase.transferOwnership(goerliMultisigAddress);
-        flashSell.transferOwnership(goerliMultisigAddress);
-        sellOnSeaport.transferOwnership(goerliMultisigAddress);
-        refinance.transferOwnership(goerliMultisigAddress);
+        // change ownership of implementation contracts
+        liquidityImplementation.transferOwnership(gnosisMultisigAddress);
+        lendingImplementation.transferOwnership(gnosisMultisigAddress);
+        offersImplementation.transferOwnership(gnosisMultisigAddress);
+        sigLendingImplementation.transferOwnership(gnosisMultisigAddress);
 
+        // change ownership of proxies
+        IOwnership(address(lendingProxy)).transferOwnership(gnosisMultisigAddress);
+        IOwnership(address(offersProxy)).transferOwnership(gnosisMultisigAddress);
+        IOwnership(address(liquidityProxy)).transferOwnership(gnosisMultisigAddress);
+        IOwnership(address(sigLendingProxy)).transferOwnership(gnosisMultisigAddress);
+
+        // change ownership of proxyAdmin
+        lendingProxyAdmin.transferOwnership(gnosisMultisigAddress);
+        offersProxyAdmin.transferOwnership(gnosisMultisigAddress);
+        liquidityProxyAdmin.transferOwnership(gnosisMultisigAddress);
+        sigLendingProxyAdmin.transferOwnership(gnosisMultisigAddress);
 
         vm.stopBroadcast();
     }

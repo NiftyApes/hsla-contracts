@@ -253,6 +253,12 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         uint256 nftId
     ) external;
 
+    function initialize(
+        address newLiquidityContractAddress,
+        address newOffersContractAddress,
+        address newSigLendingContractAddress
+    ) external;
+
     /// @notice Function only callable by the FlashClaim and FlashSell contract
     ///         Allows the contracts to transfer an NFT directly
     /// @param nftContractAddress The address of the nft collection
