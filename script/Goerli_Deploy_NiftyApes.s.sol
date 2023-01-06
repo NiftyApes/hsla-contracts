@@ -2,6 +2,13 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
+import "@openzeppelin-norm/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import "@openzeppelin-norm/contracts/proxy/transparent/ProxyAdmin.sol";
+import "../src/interfaces/niftyapes/lending/ILending.sol";
+import "../src/interfaces/niftyapes/offers/IOffers.sol";
+import "../src/interfaces/niftyapes/liquidity/ILiquidity.sol";
+import "../src/interfaces/niftyapes/sigLending/ISigLending.sol";
+import "../src/interfaces/ownership.sol";
 import "../src/Liquidity.sol";
 import "../src/Offers.sol";
 import "../src/SigLending.sol";
@@ -13,17 +20,32 @@ import "../src/SellOnSeaport.sol";
 import "../src/Refinance.sol";
 
 contract DeployNiftyApesScript is Script {
-    function run() external {
-        NiftyApesLending lending;
-        NiftyApesOffers offers;
-        NiftyApesLiquidity liquidity;
-        NiftyApesSigLending sigLending;
-        NiftyApesRefinance refinance;
-        NiftyApesFlashClaim flashClaim;
-        NiftyApesFlashPurchase flashPurchase;
-        NiftyApesFlashSell flashSell;
-        NiftyApesSellOnSeaport sellOnSeaport;
+    NiftyApesLending lendingImplementation;
+    NiftyApesOffers offersImplementation;
+    NiftyApesLiquidity liquidityImplementation;
+    NiftyApesSigLending sigLendingImplementation;
 
+    ProxyAdmin lendingProxyAdmin;
+    ProxyAdmin offersProxyAdmin;
+    ProxyAdmin liquidityProxyAdmin;
+    ProxyAdmin sigLendingProxyAdmin;
+
+    TransparentUpgradeableProxy lendingProxy;
+    TransparentUpgradeableProxy offersProxy;
+    TransparentUpgradeableProxy liquidityProxy;
+    TransparentUpgradeableProxy sigLendingProxy;
+
+    ILending lending;
+    IOffers offers;
+    ILiquidity liquidity;
+    ISigLending sigLending;
+
+    NiftyApesFlashClaim flashClaim;
+    NiftyApesFlashPurchase flashPurchase;
+    NiftyApesFlashSell flashSell;
+    NiftyApesSellOnSeaport sellOnSeaport;
+
+    function run() external {
         address compContractAddress = 0xc00e94Cb662C3520282E6f5717214004A7f26888;
         address goerliMultisigAddress = 0x213dE8CcA7C414C0DE08F456F9c4a2Abc4104028;
         address seaportContractAddress = 0x00000000006c3852cbEf3e08E8dF289169EdE581;
@@ -45,16 +67,58 @@ contract DeployNiftyApesScript is Script {
         refinance = new NiftyApesRefinance();
         refinance.initialize();
 
-        liquidity = new NiftyApesLiquidity();
+        // deploy and initialize implementation contracts
+        liquidityImplementation = new NiftyApesLiquidity();
+        liquidityImplementation.initialize(address(0));
+
+        offersImplementation = new NiftyApesOffers();
+        offersImplementation.initialize(address(0));
+
+        sigLendingImplementation = new NiftyApesSigLending();
+        sigLendingImplementation.initialize(address(0));
+
+        lendingImplementation = new NiftyApesLending();
+        lendingImplementation.initialize(address(0), address(0), address(0));
+
+        // deploy proxy admins
+        lendingProxyAdmin = new ProxyAdmin();
+        offersProxyAdmin = new ProxyAdmin();
+        liquidityProxyAdmin = new ProxyAdmin();
+        sigLendingProxyAdmin = new ProxyAdmin();
+
+        // deploy proxies
+        lendingProxy = new TransparentUpgradeableProxy(
+            address(lendingImplementation),
+            address(lendingProxyAdmin),
+            bytes("")
+        );
+        offersProxy = new TransparentUpgradeableProxy(
+            address(offersImplementation),
+            address(offersProxyAdmin),
+            bytes("")
+        );
+        liquidityProxy = new TransparentUpgradeableProxy(
+            address(liquidityImplementation),
+            address(liquidityProxyAdmin),
+            bytes("")
+        );
+
+        sigLendingProxy = new TransparentUpgradeableProxy(
+            address(sigLendingImplementation),
+            address(sigLendingProxyAdmin),
+            bytes("")
+        );
+
+        // declare interfaces
+        lending = ILending(address(lendingProxy));
+        liquidity = ILiquidity(address(liquidityProxy));
+        offers = IOffers(address(offersProxy));
+        sigLending = ISigLending(address(sigLendingProxy));
+
+        // initialize proxies
         liquidity.initialize(address(compContractAddress), address(flashPurchase), address(refinance));
-
-        offers = new NiftyApesOffers();
         offers.initialize(address(liquidity), address(flashPurchase), address(refinance));
-
-        sigLending = new NiftyApesSigLending();
         sigLending.initialize(address(offers), address(flashPurchase));
-
-        lending = new NiftyApesLending();
         lending.initialize(
             address(liquidity),
             address(offers),
@@ -102,8 +166,16 @@ contract DeployNiftyApesScript is Script {
         // DAI
         liquidity.setCAssetAddress(daiToken, cDAIToken);
 
+        uint256 cDAIAmount = liquidity.assetAmountToCAssetAmount(daiToken, type(uint128).max);
+
+        liquidity.setMaxCAssetBalance(cDAIToken, cDAIAmount);
+
         // ETH
         liquidity.setCAssetAddress(ETH_ADDRESS, cEtherToken);
+
+        uint256 cEtherAmount = liquidity.assetAmountToCAssetAmount(ETH_ADDRESS, type(uint128).max);
+
+        liquidity.setMaxCAssetBalance(cEtherToken, cEtherAmount);
 
         // pauseSanctions for Goerli as Chainalysis contacts doent exists there
         liquidity.pauseSanctions();
@@ -118,7 +190,6 @@ contract DeployNiftyApesScript is Script {
         flashSell.transferOwnership(goerliMultisigAddress);
         sellOnSeaport.transferOwnership(goerliMultisigAddress);
         refinance.transferOwnership(goerliMultisigAddress);
-
 
         vm.stopBroadcast();
     }

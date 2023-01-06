@@ -1,6 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
+import "@openzeppelin-norm/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import "@openzeppelin-norm/contracts/proxy/transparent/ProxyAdmin.sol";
+
+import "../../../interfaces/niftyapes/lending/ILending.sol";
+import "../../../interfaces/niftyapes/offers/IOffers.sol";
+import "../../../interfaces/niftyapes/liquidity/ILiquidity.sol";
+import "../../../interfaces/niftyapes/sigLending/ISigLending.sol";
+
 import "../../../Lending.sol";
 import "../../../Liquidity.sol";
 import "../../../Offers.sol";
@@ -24,23 +32,36 @@ import "forge-std/Test.sol";
 // deploy & initializes NiftyApes contracts
 // connects them to one another
 // adds cAssets for both ETH and DAI
-// sets max cAsset balance for both to unint256 max
+// sets max cAsset balance for both to uint256 max
 contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
-    NiftyApesLending lending;
-    NiftyApesOffers offers;
-    NiftyApesLiquidity liquidity;
-    NiftyApesSigLending sigLending;
-    NiftyApesRefinance refinance;
-    NiftyApesFlashClaim flashClaim;
-    FlashClaimReceiverBaseHappy flashClaimReceiverHappy;
-    FlashClaimReceiverBaseNoReturn flashClaimReceiverNoReturn;
-    NiftyApesFlashPurchase flashPurchase;
-    SeaportFlashPurchaseIntegration seaportFlashPurchase;
-    SudoswapFlashPurchaseIntegration sudoswapFlashPurchase;
-    NiftyApesFlashSell flashSell;
-    SeaportFlashSellIntegration seaportFlashSell;
-    NiftyApesSellOnSeaport sellOnSeaport;
-    SudoswapFlashSellIntegration sudoswapFlashSell;
+    NiftyApesLending lendingImplementation;
+        NiftyApesOffers offersImplementation;
+        NiftyApesLiquidity liquidityImplementation;
+        NiftyApesSigLending sigLendingImplementation;
+        ProxyAdmin lendingProxyAdmin;
+        ProxyAdmin offersProxyAdmin;
+        ProxyAdmin liquidityProxyAdmin;
+        ProxyAdmin sigLendingProxyAdmin;
+        TransparentUpgradeableProxy lendingProxy;
+        TransparentUpgradeableProxy offersProxy;
+        TransparentUpgradeableProxy liquidityProxy;
+        TransparentUpgradeableProxy sigLendingProxy;
+        ILending lending;
+        IOffers offers;
+        ILiquidity liquidity;
+        ISigLending sigLending;
+
+        NiftyApesRefinance refinance;
+        NiftyApesFlashClaim flashClaim;
+        FlashClaimReceiverBaseHappy flashClaimReceiverHappy;
+        FlashClaimReceiverBaseNoReturn flashClaimReceiverNoReturn;
+        NiftyApesFlashPurchase flashPurchase;
+        SeaportFlashPurchaseIntegration seaportFlashPurchase;
+        SudoswapFlashPurchaseIntegration sudoswapFlashPurchase;
+        NiftyApesFlashSell flashSell;
+        SeaportFlashSellIntegration seaportFlashSell;
+        NiftyApesSellOnSeaport sellOnSeaport;
+        SudoswapFlashSellIntegration sudoswapFlashSell;
 
     address constant ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     address constant SEAPORT_ADDRESS = 0x00000000006c3852cbEf3e08E8dF289169EdE581;
@@ -103,26 +124,66 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         refinance = new NiftyApesRefinance();
         refinance.initialize();
 
-        liquidity = new NiftyApesLiquidity();
-        liquidity.initialize(address(compToken), address(refinance), address(flashPurchase));
+        // deploy and initialize implementation contracts
+        liquidityImplementation = new NiftyApesLiquidity();
+        liquidityImplementation.initialize(address(compToken));
 
-        offers = new NiftyApesOffers();
-        offers.initialize(address(liquidity), address(refinance), address(flashPurchase));
+        offersImplementation = new NiftyApesOffers();
+        offersImplementation.initialize(address(liquidityImplementation));
 
-        sigLending = new NiftyApesSigLending();
-        sigLending.initialize(address(offers), address(flashPurchase));
+        sigLendingImplementation = new NiftyApesSigLending();
+        sigLendingImplementation.initialize(address(offersImplementation));
 
-        lending = new NiftyApesLending();
-        lending.initialize(
-            address(liquidity),
-            address(offers),
-            address(sigLending),
-            address(refinance),
-            address(flashClaim),
-            address(flashPurchase),
-            address(flashSell),
-            address(sellOnSeaport)
+        lendingImplementation = new NiftyApesLending();
+        lendingImplementation.initialize(
+            address(liquidityImplementation),
+            address(offersImplementation),
+            address(sigLendingImplementation)
         );
+
+        // deploy proxy admins
+        lendingProxyAdmin = new ProxyAdmin();
+        offersProxyAdmin = new ProxyAdmin();
+        liquidityProxyAdmin = new ProxyAdmin();
+        sigLendingProxyAdmin = new ProxyAdmin();
+
+        // deploy proxies
+        lendingProxy = new TransparentUpgradeableProxy(
+            address(lendingImplementation),
+            address(lendingProxyAdmin),
+            bytes("")
+        );
+        offersProxy = new TransparentUpgradeableProxy(
+            address(offersImplementation),
+            address(offersProxyAdmin),
+            bytes("")
+        );
+        liquidityProxy = new TransparentUpgradeableProxy(
+            address(liquidityImplementation),
+            address(liquidityProxyAdmin),
+            bytes("")
+        );
+
+        sigLendingProxy = new TransparentUpgradeableProxy(
+            address(sigLendingImplementation),
+            address(sigLendingProxyAdmin),
+            bytes("")
+        );
+
+        // declare interfaces
+        lending = ILending(address(lendingProxy));
+        liquidity = ILiquidity(address(liquidityProxy));
+        offers = IOffers(address(offersProxy));
+        sigLending = ISigLending(address(sigLendingProxy));
+
+
+        liquidity.initialize(address(compToken));
+
+        offers.initialize(address(liquidity));
+
+        sigLending.initialize(address(offers));
+
+        lending.initialize(address(liquidity), address(offers), address(sigLending));
 
         sigLending.updateLendingContractAddress(address(lending));
         sigLending.updateRefinanceContractAddress(address(refinance));
@@ -152,18 +213,21 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         seaportFlashSell.updateFlashSellContractAddress(address(flashSell));
         seaportFlashSell.updateWethContractAddress(address(wethToken));
 
-        liquidity.setCAssetAddress(ETH_ADDRESS, address(cEtherToken));
-        liquidity.setMaxCAssetBalance(address(cEtherToken), ~uint256(0));
-
-        liquidity.setCAssetAddress(address(daiToken), address(cDAIToken));
-        liquidity.setMaxCAssetBalance(address(cDAIToken), ~uint256(0));
-
         flashClaimReceiverHappy.updateFlashClaimContractAddress(address(flashClaim));
 
         sellOnSeaport.updateLendingContractAddress(address(lending));
         sellOnSeaport.updateLiquidityContractAddress(address(liquidity));
 
+        // update protocol interest
         lending.updateProtocolInterestBps(100);
+        lending.updateDefaultRefinancePremiumBps(25);
+
+        // set max balances
+        liquidity.setCAssetAddress(ETH_ADDRESS, address(cEtherToken));
+        liquidity.setMaxCAssetBalance(address(cEtherToken), ~uint256(0));
+
+        liquidity.setCAssetAddress(address(daiToken), address(cDAIToken));
+        liquidity.setMaxCAssetBalance(address(cDAIToken), ~uint256(0));
 
         if (!integration) {
             liquidity.pauseSanctions();
@@ -175,28 +239,5 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         vm.stopPrank();
 
         vm.label(address(0), "NULL !!!!! ");
-    }
-
-    function logBalances(address account) public {
-        console.log(account, "ETH", account.balance);
-        console.log(account, "DAI", daiToken.balanceOf(account));
-        console.log(account, "cETH", liquidity.getCAssetBalance(account, address(cEtherToken)));
-        console.log(account, "cDAI", liquidity.getCAssetBalance(account, address(cDAIToken)));
-        console.log(
-            account,
-            "cETH -> ETH",
-            liquidity.cAssetAmountToAssetAmount(
-                address(cEtherToken),
-                liquidity.getCAssetBalance(account, address(cEtherToken))
-            )
-        );
-        console.log(
-            account,
-            "cDAI -> DAI",
-            liquidity.cAssetAmountToAssetAmount(
-                address(cDAIToken),
-                liquidity.getCAssetBalance(account, address(cDAIToken))
-            )
-        );
     }
 }

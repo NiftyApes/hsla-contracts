@@ -49,12 +49,6 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
     /// @inheritdoc IOffers
     address public liquidityContractAddress;
 
-    /// @inheritdoc IOffers
-    address public flashPurchaseContractAddress;
-
-    /// @inheritdoc IOffers
-    address public refinanceContractAddress;
-
     /// @dev Constant typeHash for EIP-712 hashing of Offer struct
     ///      If the Offer struct shape changes, this will need to change as well.
     bytes32 private constant _OFFER_TYPEHASH =
@@ -62,12 +56,18 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
             "Offer(address creator,uint32 duration,uint32 expiration,bool fixedTerms,bool floorTerm,bool lenderOffer,address nftContractAddress,uint256 nftId,address asset,uint128 amount,uint96 interestRatePerSecond,uint64 floorTermLimit)"
         );
 
+    /// @inheritdoc IOffers
+    address public flashPurchaseContractAddress;
+
+    /// @inheritdoc IOffers
+    address public refinanceContractAddress;
+
     /// @dev A mapping for storing offers with offerHash as their keys
     mapping(bytes32 => Offer) private _nftOfferBooks;
 
     /// @dev This empty reserved space is put in place to allow future versions to add new
     /// variables without shifting storage.
-    uint256[497] private __gap;
+    uint256[496] private __gap;
 
     /// @notice The initializer for the NiftyApes protocol.
     ///         NiftyApes is intended to be deployed behind a proxy and thus needs to initialize

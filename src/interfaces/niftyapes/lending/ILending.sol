@@ -280,6 +280,12 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         address borrower
     ) external;
 
+    function initialize(
+        address newLiquidityContractAddress,
+        address newOffersContractAddress,
+        address newSigLendingContractAddress
+    ) external;
+
     /// @notice Function validate the order listing on the Seaport contract for SellOnSeaport
     /// @param seaportContractAddress The address of the Seaport contract
     /// @param orders the Seaport order struct

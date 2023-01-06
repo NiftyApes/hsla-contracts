@@ -57,7 +57,9 @@ interface ISigLending is ISigLendingAdmin, ISigLendingEvents, IOffersStructs {
         uint32 expectedLastUpdatedTimestamp
     ) external;
 
-    /// @notice Allows FlashPurchase contract to verify and consume offer and its signature 
+    function initialize(address newOffersContractAddress) external;
+
+    /// @notice Allows FlashPurchase contract to verify and consume offer and its signature
     /// @dev Only callable by the flashPurchase contract
     /// @param offer The details of the loan auction offer
     /// @param signature The signature for the offer
@@ -65,5 +67,5 @@ interface ISigLending is ISigLendingAdmin, ISigLendingEvents, IOffersStructs {
         Offer memory offer,
         bytes memory signature
     ) external;
-    
+
 }

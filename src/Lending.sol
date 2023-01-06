@@ -63,18 +63,6 @@ contract NiftyApesLending is
     address public sigLendingContractAddress;
 
     /// @inheritdoc ILending
-    address public flashClaimContractAddress;
-
-    /// @inheritdoc ILending
-    address public flashPurchaseContractAddress;
-
-    /// @inheritdoc ILending
-    address public flashSellContractAddress;
-
-    /// @inheritdoc ILending
-    address public sellOnSeaportContractAddress;
-
-    /// @inheritdoc ILending
     uint16 public protocolInterestBps;
 
     /// @inheritdoc ILending
@@ -92,6 +80,18 @@ contract NiftyApesLending is
     /// @dev The status of sanctions checks. Can be set to false if oracle becomes malicious.
     bool internal _sanctionsPause;
 
+    /// @inheritdoc ILending
+    address public flashClaimContractAddress;
+
+    /// @inheritdoc ILending
+    address public flashPurchaseContractAddress;
+
+    /// @inheritdoc ILending
+    address public flashSellContractAddress;
+
+    /// @inheritdoc ILending
+    address public sellOnSeaportContractAddress;
+
     // Mapping owner to nftContractAddress to token count
     mapping(address => mapping(address => uint256)) private _balances;
 
@@ -106,7 +106,7 @@ contract NiftyApesLending is
 
     /// @dev This empty reserved space is put in place to allow future versions to add new
     /// variables without shifting storage.
-    uint256[496] private __gap;
+    uint256[492] private __gap;
 
     /// @notice The initializer for the NiftyApes protocol.
     ///         Nifty Apes is intended to be deployed behind a proxy amd thus needs to initialize
@@ -125,7 +125,7 @@ contract NiftyApesLending is
         originationPremiumBps = 25;
         gasGriefingPremiumBps = 25;
         termGriefingPremiumBps = 25;
-        defaultRefinancePremiumBps = 25;
+        defaultRefinancePremiumBps = 0;
 
         liquidityContractAddress = newLiquidityContractAddress;
         offersContractAddress = newOffersContractAddress;

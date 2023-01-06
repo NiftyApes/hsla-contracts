@@ -153,4 +153,6 @@ interface ILiquidity is ILiquidityAdmin, ILiquidityEvents {
     /// @param cAsset The compound token address
     /// @param amount The amount of asset to convert to cAsset
     function cAssetAmountToAssetAmount(address cAsset, uint256 amount) external returns (uint256);
+
+    function initialize(address newCompContractAddress) external;
 }
