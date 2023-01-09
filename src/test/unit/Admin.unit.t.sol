@@ -37,27 +37,41 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
     NiftyApesOffers offersImplementation;
     NiftyApesLiquidity liquidityImplementation;
     NiftyApesSigLending sigLendingImplementation;
+    NiftyApesRefinance refinanceImplementation;
+    NiftyApesFlashClaim flashClaimImplementation;
+    NiftyApesFlashPurchase flashPurchaseImplementation;
+    NiftyApesFlashSell flashSellImplementation;
+    NiftyApesSellOnSeaport sellOnSeaportImplementation;
 
     ProxyAdmin lendingProxyAdmin;
     ProxyAdmin offersProxyAdmin;
     ProxyAdmin liquidityProxyAdmin;
     ProxyAdmin sigLendingProxyAdmin;
+    ProxyAdmin refinanceProxyAdmin;
+    ProxyAdmin flashClaimProxyAdmin;
+    ProxyAdmin flashPurchaseProxyAdmin;
+    ProxyAdmin flashSellProxyAdmin;
+    ProxyAdmin sellOnSeaportProxyAdmin;
 
     TransparentUpgradeableProxy lendingProxy;
     TransparentUpgradeableProxy offersProxy;
     TransparentUpgradeableProxy liquidityProxy;
     TransparentUpgradeableProxy sigLendingProxy;
+    TransparentUpgradeableProxy refinanceProxy;
+    TransparentUpgradeableProxy flashClaimProxy;
+    TransparentUpgradeableProxy flashPurchaseProxy;
+    TransparentUpgradeableProxy flashSellProxy;
+    TransparentUpgradeableProxy sellOnSeaportProxy;
 
     ILending niftyApes;
     IOffers offersContract;
     ILiquidity liquidityProviders;
     ISigLending sigLendingAuction;
-
-    NiftyApesRefinance refinance;
-    NiftyApesFlashClaim flashClaim;
-    NiftyApesFlashPurchase flashPurchase;
-    NiftyApesFlashSell flashSell;
-    NiftyApesSellOnSeaport sellOnSeaport;
+    IRefinance refinance;
+    IFlashClaim flashClaim;
+    IFlashPurchase flashPurchase;
+    IFlashSell flashSell;
+    ISellOnSeaport sellOnSeaport;
 
     address compContractAddress = 0xbbEB7c67fa3cfb40069D19E598713239497A3CA5;
     address seaportContractAddress = 0x00000000006c3852cbEf3e08E8dF289169EdE581;
@@ -75,12 +89,22 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
         offersImplementation = new NiftyApesOffers();
         sigLendingImplementation = new NiftyApesSigLending();
         lendingImplementation = new NiftyApesLending();
+        flashClaimImplementation = new NiftyApesFlashClaim();
+        flashPurchaseImplementation = new NiftyApesFlashPurchase();
+        flashSellImplementation = new NiftyApesFlashSell();
+        sellOnSeaportImplementation = new NiftyApesSellOnSeaport();
+        refinanceImplementation = new NiftyApesRefinance();
 
         // deploy proxy admins
         lendingProxyAdmin = new ProxyAdmin();
         offersProxyAdmin = new ProxyAdmin();
         liquidityProxyAdmin = new ProxyAdmin();
         sigLendingProxyAdmin = new ProxyAdmin();
+        refinanceProxyAdmin = new ProxyAdmin();
+        flashClaimProxyAdmin = new ProxyAdmin();
+        flashPurchaseProxyAdmin = new ProxyAdmin();
+        flashSellProxyAdmin = new ProxyAdmin();
+        sellOnSeaportProxyAdmin = new ProxyAdmin();
 
         // deploy proxies
         lendingProxy = new TransparentUpgradeableProxy(
@@ -104,27 +128,46 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
             address(sigLendingProxyAdmin),
             bytes("")
         );
+        refinanceProxy = new TransparentUpgradeableProxy(
+            address(refinanceImplementation),
+            address(refinanceProxyAdmin),
+            bytes("")
+        );
+
+        flashClaimProxy = new TransparentUpgradeableProxy(
+            address(flashClaimImplementation),
+            address(flashClaimProxyAdmin),
+            bytes("")
+        );
+
+        flashPurchaseProxy = new TransparentUpgradeableProxy(
+            address(flashPurchaseImplementation),
+            address(flashPurchaseProxyAdmin),
+            bytes("")
+        );
+
+        flashSellProxy = new TransparentUpgradeableProxy(
+            address(flashSellImplementation),
+            address(flashSellProxyAdmin),
+            bytes("")
+        );
+
+        sellOnSeaportProxy = new TransparentUpgradeableProxy(
+            address(sellOnSeaportImplementation),
+            address(sellOnSeaportProxyAdmin),
+            bytes("")
+        );
 
         // declare interfaces
         niftyApes = ILending(address(lendingProxy));
         liquidityProviders = ILiquidity(address(liquidityProxy));
         offersContract = IOffers(address(offersProxy));
         sigLendingAuction = ISigLending(address(sigLendingProxy));
-
-        flashClaim = new NiftyApesFlashClaim();
-        flashClaim.initialize();
-
-        flashPurchase = new NiftyApesFlashPurchase();
-        flashPurchase.initialize();
-
-        refinance = new NiftyApesRefinance();
-        refinance.initialize();
-
-        flashSell = new NiftyApesFlashSell();
-        flashSell.initialize();
-
-        sellOnSeaport = new NiftyApesSellOnSeaport();
-        sellOnSeaport.initialize();
+        refinance = IRefinance(address(refinanceProxy));
+        flashClaim = IFlashClaim(address(flashClaimProxy));
+        flashPurchase = IFlashPurchase(address(flashPurchaseProxy));
+        flashSell = IFlashSell(address(flashSellProxy));
+        sellOnSeaport = ISellOnSeaport(address(sellOnSeaportProxy));
 
         liquidityProviders.initialize(compContractAddress, address(refinance), address(flashPurchase));
         offersContract.initialize(address(liquidityProviders), address(refinance), address(flashPurchase));
@@ -140,6 +183,11 @@ contract AdminUnitTest is BaseTest, ILendingEvents, ILiquidityEvents {
             address(flashSell),
             address(sellOnSeaport)
         );
+        refinance.initialize();
+        flashClaim.initialize();
+        flashPurchase.initialize();
+        flashSell.initialize();
+        sellOnSeaport.initialize();
 
         daiToken = new ERC20Mock();
         daiToken.initialize("USD Coin", "DAI");

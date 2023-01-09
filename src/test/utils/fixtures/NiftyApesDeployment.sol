@@ -35,33 +35,48 @@ import "forge-std/Test.sol";
 // sets max cAsset balance for both to uint256 max
 contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
     NiftyApesLending lendingImplementation;
-        NiftyApesOffers offersImplementation;
-        NiftyApesLiquidity liquidityImplementation;
-        NiftyApesSigLending sigLendingImplementation;
-        ProxyAdmin lendingProxyAdmin;
-        ProxyAdmin offersProxyAdmin;
-        ProxyAdmin liquidityProxyAdmin;
-        ProxyAdmin sigLendingProxyAdmin;
-        TransparentUpgradeableProxy lendingProxy;
-        TransparentUpgradeableProxy offersProxy;
-        TransparentUpgradeableProxy liquidityProxy;
-        TransparentUpgradeableProxy sigLendingProxy;
-        ILending lending;
-        IOffers offers;
-        ILiquidity liquidity;
-        ISigLending sigLending;
+    NiftyApesOffers offersImplementation;
+    NiftyApesLiquidity liquidityImplementation;
+    NiftyApesSigLending sigLendingImplementation;
+    NiftyApesRefinance refinanceImplementation;
+    NiftyApesFlashClaim flashClaimImplementation;
+    NiftyApesFlashPurchase flashPurchaseImplementation;
+    NiftyApesFlashSell flashSellImplementation;
+    NiftyApesSellOnSeaport sellOnSeaportImplementation;
+    ProxyAdmin lendingProxyAdmin;
+    ProxyAdmin offersProxyAdmin;
+    ProxyAdmin liquidityProxyAdmin;
+    ProxyAdmin sigLendingProxyAdmin;
+    ProxyAdmin refinanceProxyAdmin;
+    ProxyAdmin flashClaimProxyAdmin;
+    ProxyAdmin flashPurchaseProxyAdmin;
+    ProxyAdmin flashSellProxyAdmin;
+    ProxyAdmin sellOnSeaportProxyAdmin;
+    TransparentUpgradeableProxy lendingProxy;
+    TransparentUpgradeableProxy offersProxy;
+    TransparentUpgradeableProxy liquidityProxy;
+    TransparentUpgradeableProxy sigLendingProxy;
+    TransparentUpgradeableProxy refinanceProxy;
+    TransparentUpgradeableProxy flashClaimProxy;
+    TransparentUpgradeableProxy flashPurchaseProxy;
+    TransparentUpgradeableProxy flashSellProxy;
+    TransparentUpgradeableProxy sellOnSeaportProxy;
+    ILending lending;
+    IOffers offers;
+    ILiquidity liquidity;
+    ISigLending sigLending;
+    IRefinance refinance;
+    IFlashClaim flashClaim;
+    IFlashPurchase flashPurchase;
+    IFlashSell flashSell;
+    ISellOnSeaport sellOnSeaport;
 
-        NiftyApesRefinance refinance;
-        NiftyApesFlashClaim flashClaim;
-        FlashClaimReceiverBaseHappy flashClaimReceiverHappy;
-        FlashClaimReceiverBaseNoReturn flashClaimReceiverNoReturn;
-        NiftyApesFlashPurchase flashPurchase;
-        SeaportFlashPurchaseIntegration seaportFlashPurchase;
-        SudoswapFlashPurchaseIntegration sudoswapFlashPurchase;
-        NiftyApesFlashSell flashSell;
-        SeaportFlashSellIntegration seaportFlashSell;
-        NiftyApesSellOnSeaport sellOnSeaport;
-        SudoswapFlashSellIntegration sudoswapFlashSell;
+    FlashClaimReceiverBaseHappy flashClaimReceiverHappy;
+    FlashClaimReceiverBaseNoReturn flashClaimReceiverNoReturn;
+    SeaportFlashPurchaseIntegration seaportFlashPurchase;
+    SudoswapFlashPurchaseIntegration sudoswapFlashPurchase;
+    SeaportFlashSellIntegration seaportFlashSell;
+    SudoswapFlashSellIntegration sudoswapFlashSell;
 
     address constant ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     address constant SEAPORT_ADDRESS = 0x00000000006c3852cbEf3e08E8dF289169EdE581;
@@ -76,53 +91,11 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         flashClaimReceiverHappy = new FlashClaimReceiverBaseHappy();
         flashClaimReceiverNoReturn = new FlashClaimReceiverBaseNoReturn();
 
-        flashClaim = new NiftyApesFlashClaim();
-        flashClaim.initialize();
-
-        flashSell = new NiftyApesFlashSell();
-        flashSell.initialize();
-
         seaportFlashSell = new SeaportFlashSellIntegration();
         seaportFlashSell.initialize();
 
         sudoswapFlashSell = new SudoswapFlashSellIntegration();
         sudoswapFlashSell.initialize();
-
-        sellOnSeaport = new NiftyApesSellOnSeaport();
-        sellOnSeaport.initialize();
-
-        flashPurchase = new NiftyApesFlashPurchase();
-        flashPurchase.initialize();
-
-        if (integration) {
-            seaportFlashPurchase = new SeaportFlashPurchaseIntegration();
-            seaportFlashPurchase.initialize(
-                address(offers),
-                address(flashPurchase),
-                SEAPORT_ADDRESS
-            );
-
-            sudoswapFlashPurchase = new SudoswapFlashPurchaseIntegration();
-            sudoswapFlashPurchase.initialize(
-                address(offers),
-                address(flashPurchase),
-                SUDOSWAP_FACTORY_ADDRESS,
-                SUDOSWAP_ROUTER_ADDRESS
-            );
-
-            sellOnSeaport.updateSeaportContractAddress(SEAPORT_ADDRESS);
-            seaportFlashSell.updateSeaportContractAddress(SEAPORT_ADDRESS);
-
-            sudoswapFlashSell.updateFlashSellContractAddress(address(flashSell));
-            sudoswapFlashSell.updateSudoswapFactoryContractAddress(SUDOSWAP_FACTORY_ADDRESS);
-            sudoswapFlashSell.updateSudoswapRouterContractAddress(SUDOSWAP_ROUTER_ADDRESS);
-        } else {
-            seaportFlashPurchase = new SeaportFlashPurchaseIntegration();
-            sudoswapFlashPurchase = new SudoswapFlashPurchaseIntegration();
-        }
-
-        refinance = new NiftyApesRefinance();
-        refinance.initialize();
 
         // deploy and initialize implementation contracts
         liquidityImplementation = new NiftyApesLiquidity();
@@ -133,11 +106,26 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
 
         lendingImplementation = new NiftyApesLending();
 
+        flashClaimImplementation = new NiftyApesFlashClaim();
+
+        flashPurchaseImplementation = new NiftyApesFlashPurchase();
+
+        flashSellImplementation = new NiftyApesFlashSell();
+
+        sellOnSeaportImplementation = new NiftyApesSellOnSeaport();
+
+        refinanceImplementation = new NiftyApesRefinance();
+
         // deploy proxy admins
         lendingProxyAdmin = new ProxyAdmin();
         offersProxyAdmin = new ProxyAdmin();
         liquidityProxyAdmin = new ProxyAdmin();
         sigLendingProxyAdmin = new ProxyAdmin();
+        refinanceProxyAdmin = new ProxyAdmin();
+        flashClaimProxyAdmin = new ProxyAdmin();
+        flashPurchaseProxyAdmin = new ProxyAdmin();
+        flashSellProxyAdmin = new ProxyAdmin();
+        sellOnSeaportProxyAdmin = new ProxyAdmin();
 
         // deploy proxies
         lendingProxy = new TransparentUpgradeableProxy(
@@ -161,12 +149,42 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
             address(sigLendingProxyAdmin),
             bytes("")
         );
+        refinanceProxy = new TransparentUpgradeableProxy(
+            address(refinanceImplementation),
+            address(refinanceProxyAdmin),
+            bytes("")
+        );
+        flashClaimProxy = new TransparentUpgradeableProxy(
+            address(flashClaimImplementation),
+            address(flashClaimProxyAdmin),
+            bytes("")
+        );
+        flashPurchaseProxy = new TransparentUpgradeableProxy(
+            address(flashPurchaseImplementation),
+            address(flashPurchaseProxyAdmin),
+            bytes("")
+        );
+        flashSellProxy = new TransparentUpgradeableProxy(
+            address(flashSellImplementation),
+            address(flashSellProxyAdmin),
+            bytes("")
+        );
+        sellOnSeaportProxy = new TransparentUpgradeableProxy(
+            address(sellOnSeaportImplementation),
+            address(sellOnSeaportProxyAdmin),
+            bytes("")
+        );
 
         // declare interfaces
         lending = ILending(address(lendingProxy));
         liquidity = ILiquidity(address(liquidityProxy));
         offers = IOffers(address(offersProxy));
         sigLending = ISigLending(address(sigLendingProxy));
+        refinance = IRefinance(address(refinanceProxy));
+        flashClaim = IFlashClaim(address(flashClaimProxy));
+        flashPurchase = IFlashPurchase(address(flashPurchaseProxy));
+        flashSell = IFlashSell(address(flashSellProxy));
+        sellOnSeaport = ISellOnSeaport(address(sellOnSeaportProxy));
 
 
         liquidity.initialize(address(compToken), address(refinance), address(flashPurchase));
@@ -182,6 +200,37 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
             address(flashSell),
             address(sellOnSeaport)
         );
+        refinance.initialize();
+        flashClaim.initialize();
+        flashPurchase.initialize();
+        flashSell.initialize();
+        sellOnSeaport.initialize();
+
+        if (integration) {
+            seaportFlashPurchase = new SeaportFlashPurchaseIntegration();
+            seaportFlashPurchase.initialize(
+                address(offers),
+                address(flashPurchase),
+                SEAPORT_ADDRESS
+            );
+
+            sudoswapFlashPurchase = new SudoswapFlashPurchaseIntegration();
+            sudoswapFlashPurchase.initialize(
+                address(offers),
+                address(flashPurchase),
+                SUDOSWAP_FACTORY_ADDRESS,
+                SUDOSWAP_ROUTER_ADDRESS
+            );
+
+            seaportFlashSell.updateSeaportContractAddress(SEAPORT_ADDRESS);
+
+            sudoswapFlashSell.updateFlashSellContractAddress(address(flashSell));
+            sudoswapFlashSell.updateSudoswapFactoryContractAddress(SUDOSWAP_FACTORY_ADDRESS);
+            sudoswapFlashSell.updateSudoswapRouterContractAddress(SUDOSWAP_ROUTER_ADDRESS);
+        } else {
+            seaportFlashPurchase = new SeaportFlashPurchaseIntegration();
+            sudoswapFlashPurchase = new SudoswapFlashPurchaseIntegration();
+        }
 
         sigLending.updateLendingContractAddress(address(lending));
         sigLending.updateRefinanceContractAddress(address(refinance));
@@ -213,6 +262,7 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
 
         flashClaimReceiverHappy.updateFlashClaimContractAddress(address(flashClaim));
 
+        sellOnSeaport.updateSeaportContractAddress(SEAPORT_ADDRESS);
         sellOnSeaport.updateLendingContractAddress(address(lending));
         sellOnSeaport.updateLiquidityContractAddress(address(liquidity));
 
