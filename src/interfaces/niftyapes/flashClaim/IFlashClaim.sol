@@ -22,4 +22,6 @@ interface IFlashClaim is IFlashClaimAdmin, IFlashClaimEvents {
         uint256 nftId,
         bytes calldata data
     ) external;
+
+    function initialize() external;
 }
