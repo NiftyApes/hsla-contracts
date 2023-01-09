@@ -65,7 +65,7 @@ contract NiftyApesPauseUnitTest is
     NiftyApesFlashClaim flashClaim;
     NiftyApesFlashPurchase flashPurchase;
     NiftyApesFlashSell flashSell;
-    NiftyApeqsSellOnSeaport sellOnSeaport;
+    NiftyApesSellOnSeaport sellOnSeaport;
 
     address compContractAddress = 0xbbEB7c67fa3cfb40069D19E598713239497A3CA5;
     address seaportContractAddress = 0x00000000006c3852cbEf3e08E8dF289169EdE581;

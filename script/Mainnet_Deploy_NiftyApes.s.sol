@@ -26,27 +26,41 @@ contract DeployNiftyApesScript is Script {
     NiftyApesOffers offersImplementation;
     NiftyApesLiquidity liquidityImplementation;
     NiftyApesSigLending sigLendingImplementation;
+    NiftyApesRefinance refinanceImplementation;
+    NiftyApesFlashClaim flashClaimImplementation;
+    NiftyApesFlashPurchase flashPurchaseImplementation;
+    NiftyApesFlashSell flashSellImplementation;
+    NiftyApesSellOnSeaport sellOnSeaportImplementation;
 
     ProxyAdmin lendingProxyAdmin;
     ProxyAdmin offersProxyAdmin;
     ProxyAdmin liquidityProxyAdmin;
     ProxyAdmin sigLendingProxyAdmin;
+    ProxyAdmin refinanceProxyAdmin;
+    ProxyAdmin flashClaimProxyAdmin;
+    ProxyAdmin flashPurchaseProxyAdmin;
+    ProxyAdmin flashSellProxyAdmin;
+    ProxyAdmin sellOnSeaportProxyAdmin;
 
     TransparentUpgradeableProxy lendingProxy;
     TransparentUpgradeableProxy offersProxy;
     TransparentUpgradeableProxy liquidityProxy;
     TransparentUpgradeableProxy sigLendingProxy;
+    TransparentUpgradeableProxy refinanceProxy;
+    TransparentUpgradeableProxy flashClaimProxy;
+    TransparentUpgradeableProxy flashPurchaseProxy;
+    TransparentUpgradeableProxy flashSellProxy;
+    TransparentUpgradeableProxy sellOnSeaportProxy;
 
     ILending lending;
     IOffers offers;
     ILiquidity liquidity;
     ISigLending sigLending;
-
-    NiftyApesRefinance refinance;
-    NiftyApesFlashClaim flashClaim;
-    NiftyApesFlashPurchase flashPurchase;
-    NiftyApesFlashSell flashSell;
-    NiftyApesSellOnSeaport sellOnSeaport;
+    IRefinance refinance;
+    IFlashClaim flashClaim;
+    IFlashPurchase flashPurchase;
+    IFlashSell flashSell;
+    ISellOnSeaport sellOnSeaport;
 
     function run() external {
         address compContractAddress = 0xc00e94Cb662C3520282E6f5717214004A7f26888;
@@ -54,39 +68,44 @@ contract DeployNiftyApesScript is Script {
 
         vm.startBroadcast();
 
-        flashClaim = new NiftyApesFlashClaim();
-        flashClaim.initialize();
-
-        flashPurchase = new NiftyApesFlashPurchase();
-        flashPurchase.initialize();
-
-        flashSell = new NiftyApesFlashSell();
-        flashSell.initialize();
-
-        sellOnSeaport = new NiftyApesSellOnSeaport();
-        sellOnSeaport.initialize();
-
-        refinance = new NiftyApesRefinance();
-        refinance.initialize();
-
         // deploy and initialize implementation contracts
+        flashClaimImplementation = new NiftyApesFlashClaim();
+        flashClaimImplementation.initialize();
+
+        flashPurchaseImplementation = new NiftyApesFlashPurchase();
+        flashPurchaseImplementation.initialize();
+
+        flashSellImplementation = new NiftyApesFlashSell();
+        flashSellImplementation.initialize();
+
+        sellOnSeaportImplementation = new NiftyApesSellOnSeaport();
+        sellOnSeaportImplementation.initialize();
+
+        refinanceImplementation = new NiftyApesRefinance();
+        refinanceImplementation.initialize();
+
         liquidityImplementation = new NiftyApesLiquidity();
-        liquidityImplementation.initialize(address(0));
+        liquidityImplementation.initialize(address(0), address(0), address(0));
 
         offersImplementation = new NiftyApesOffers();
-        offersImplementation.initialize(address(0));
+        offersImplementation.initialize(address(0), address(0), address(0));
 
         sigLendingImplementation = new NiftyApesSigLending();
-        sigLendingImplementation.initialize(address(0));
+        sigLendingImplementation.initialize(address(0), address(0));
 
         lendingImplementation = new NiftyApesLending();
-        lendingImplementation.initialize(address(0), address(0), address(0));
+        lendingImplementation.initialize(address(0), address(0), address(0), address(0), address(0), address(0), address(0), address(0));
 
         // deploy proxy admins
         lendingProxyAdmin = new ProxyAdmin();
         offersProxyAdmin = new ProxyAdmin();
         liquidityProxyAdmin = new ProxyAdmin();
         sigLendingProxyAdmin = new ProxyAdmin();
+        refinanceProxyAdmin = new ProxyAdmin();
+        flashClaimProxyAdmin = new ProxyAdmin();
+        flashPurchaseProxyAdmin = new ProxyAdmin();
+        flashSellProxyAdmin = new ProxyAdmin();
+        sellOnSeaportProxyAdmin = new ProxyAdmin();
 
         // deploy proxies
         lendingProxy = new TransparentUpgradeableProxy(
@@ -111,11 +130,46 @@ contract DeployNiftyApesScript is Script {
             bytes("")
         );
 
+        refinanceProxy = new TransparentUpgradeableProxy(
+            address(refinanceImplementation),
+            address(refinanceProxyAdmin),
+            bytes("")
+        );
+
+        flashClaimProxy = new TransparentUpgradeableProxy(
+            address(flashClaimImplementation),
+            address(flashClaimProxyAdmin),
+            bytes("")
+        );
+
+        flashPurchaseProxy = new TransparentUpgradeableProxy(
+            address(flashPurchaseImplementation),
+            address(flashPurchaseProxyAdmin),
+            bytes("")
+        );
+
+        flashSellProxy = new TransparentUpgradeableProxy(
+            address(flashSellImplementation),
+            address(flashSellProxyAdmin),
+            bytes("")
+        );
+
+        sellOnSeaportProxy = new TransparentUpgradeableProxy(
+            address(sellOnSeaportImplementation),
+            address(sellOnSeaportProxyAdmin),
+            bytes("")
+        );
+
         // declare interfaces
         lending = ILending(address(lendingProxy));
         liquidity = ILiquidity(address(liquidityProxy));
         offers = IOffers(address(offersProxy));
         sigLending = ISigLending(address(sigLendingProxy));
+        refinance = IRefinance(address(refinanceProxy));
+        flashClaim = IFlashClaim(address(flashClaimProxy));
+        flashPurchase = IFlashPurchase(address(flashPurchaseProxy));
+        flashSell = IFlashSell(address(flashSellProxy));
+        sellOnSeaport = ISellOnSeaport(address(sellOnSeaportProxy));
 
         liquidity.initialize(address(compContractAddress), address(refinance), address(flashPurchase));
         offers.initialize(address(liquidity), address(refinance), address(flashPurchase));
@@ -130,6 +184,11 @@ contract DeployNiftyApesScript is Script {
             address(flashSell),
             address(sellOnSeaport)
         );
+        refinance.initialize();
+        flashClaim.initialize();
+        flashPurchase.initialize();
+        flashSell.initialize();
+        sellOnSeaport.initialize();
 
         liquidity.updateLendingContractAddress(address(lending));
         liquidity.updateRefinanceContractAddress(address(refinance));
@@ -178,27 +237,27 @@ contract DeployNiftyApesScript is Script {
 
         liquidity.setMaxCAssetBalance(cEtherToken, cEtherAmount);
 
-        liquidity.transferOwnership(mainnetMultisigAddress);
-        lending.transferOwnership(mainnetMultisigAddress);
-        offers.transferOwnership(mainnetMultisigAddress);
-        sigLending.transferOwnership(mainnetMultisigAddress);
-        flashClaim.transferOwnership(mainnetMultisigAddress);
-        flashPurchase.transferOwnership(mainnetMultisigAddress);
-        flashSell.transferOwnership(mainnetMultisigAddress);
-        sellOnSeaport.transferOwnership(mainnetMultisigAddress);
-        refinance.transferOwnership(mainnetMultisigAddress);
-
         // change ownership of proxies
         IOwnership(address(lendingProxy)).transferOwnership(mainnetMultisigAddress);
         IOwnership(address(offersProxy)).transferOwnership(mainnetMultisigAddress);
         IOwnership(address(liquidityProxy)).transferOwnership(mainnetMultisigAddress);
         IOwnership(address(sigLendingProxy)).transferOwnership(mainnetMultisigAddress);
+        IOwnership(address(refinance)).transferOwnership(mainnetMultisigAddress);
+        IOwnership(address(flashClaim)).transferOwnership(mainnetMultisigAddress);
+        IOwnership(address(flashPurchase)).transferOwnership(mainnetMultisigAddress);
+        IOwnership(address(flashSell)).transferOwnership(mainnetMultisigAddress);
+        IOwnership(address(sellOnSeaport)).transferOwnership(mainnetMultisigAddress);
 
         // change ownership of proxyAdmin
         lendingProxyAdmin.transferOwnership(mainnetMultisigAddress);
         offersProxyAdmin.transferOwnership(mainnetMultisigAddress);
         liquidityProxyAdmin.transferOwnership(mainnetMultisigAddress);
         sigLendingProxyAdmin.transferOwnership(mainnetMultisigAddress);
+        refinanceProxyAdmin.transferOwnership(mainnetMultisigAddress);
+        flashClaimProxyAdmin.transferOwnership(mainnetMultisigAddress);
+        flashPurchaseProxyAdmin.transferOwnership(mainnetMultisigAddress);
+        flashSellProxyAdmin.transferOwnership(mainnetMultisigAddress);
+        sellOnSeaportProxyAdmin.transferOwnership(mainnetMultisigAddress);
 
         vm.stopBroadcast();
     }

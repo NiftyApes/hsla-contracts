@@ -283,7 +283,12 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
     function initialize(
         address newLiquidityContractAddress,
         address newOffersContractAddress,
-        address newSigLendingContractAddress
+        address newSigLendingContractAddress,
+        address newRefinanceContractAddress,
+        address newFlashClaimContractAddress,
+        address newFlashPurchaseAddress,
+        address newFlashSellContractAddress,
+        address newSellOnSeaportContractAddress
     ) external;
 
     /// @notice Function validate the order listing on the Seaport contract for SellOnSeaport

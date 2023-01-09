@@ -97,5 +97,9 @@ interface IOffers is IOffersAdmin, IOffersEvents, IOffersStructs, ILendingStruct
     /// @param offer The details of the offer
     function requireNoFloorTerms(Offer memory offer) external pure;
 
-    function initialize(address newliquidityContractAddress) external;
+    function initialize(
+        address newliquidityContractAddress,
+        address newRefinanceContractAddress,
+        address newFlashPurchaseContractAddress
+    ) external;
 }

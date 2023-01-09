@@ -68,4 +68,6 @@ interface ISellOnSeaport is
     /// @notice Allows a borrower to cancel their NFT listing on Seaport
     /// @param  orderComponents Seaport orderComponent
     function cancelNftListing(ISeaport.OrderComponents memory orderComponents) external;
+
+    function initialize() external;
 }

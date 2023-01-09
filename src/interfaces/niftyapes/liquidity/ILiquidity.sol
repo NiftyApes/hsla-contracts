@@ -154,5 +154,9 @@ interface ILiquidity is ILiquidityAdmin, ILiquidityEvents {
     /// @param amount The amount of asset to convert to cAsset
     function cAssetAmountToAssetAmount(address cAsset, uint256 amount) external returns (uint256);
 
-    function initialize(address newCompContractAddress) external;
+    function initialize(
+        address newCompContractAddress,
+        address newRefinanceContractAddress,
+        address newFlashPurchaseContractAddress
+    ) external;
 }

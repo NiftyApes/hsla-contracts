@@ -126,20 +126,12 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
 
         // deploy and initialize implementation contracts
         liquidityImplementation = new NiftyApesLiquidity();
-        liquidityImplementation.initialize(address(compToken));
 
         offersImplementation = new NiftyApesOffers();
-        offersImplementation.initialize(address(liquidityImplementation));
 
         sigLendingImplementation = new NiftyApesSigLending();
-        sigLendingImplementation.initialize(address(offersImplementation));
 
         lendingImplementation = new NiftyApesLending();
-        lendingImplementation.initialize(
-            address(liquidityImplementation),
-            address(offersImplementation),
-            address(sigLendingImplementation)
-        );
 
         // deploy proxy admins
         lendingProxyAdmin = new ProxyAdmin();
@@ -177,13 +169,19 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         sigLending = ISigLending(address(sigLendingProxy));
 
 
-        liquidity.initialize(address(compToken));
-
-        offers.initialize(address(liquidity));
-
-        sigLending.initialize(address(offers));
-
-        lending.initialize(address(liquidity), address(offers), address(sigLending));
+        liquidity.initialize(address(compToken), address(refinance), address(flashPurchase));
+        offers.initialize(address(liquidity), address(refinance), address(flashPurchase));
+        sigLending.initialize(address(offers), address(flashPurchase));
+        lending.initialize(
+            address(liquidity),
+            address(offers),
+            address(sigLending),
+            address(refinance),
+            address(flashClaim),
+            address(flashPurchase),
+            address(flashSell),
+            address(sellOnSeaport)
+        );
 
         sigLending.updateLendingContractAddress(address(lending));
         sigLending.updateRefinanceContractAddress(address(refinance));

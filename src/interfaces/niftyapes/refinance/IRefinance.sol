@@ -57,4 +57,6 @@ interface IRefinance is IRefinanceAdmin, IRefinanceEvents, IOffersStructs {
         address nftOwner,
         uint32 expectedLastUpdatedTimestamp
     ) external;
+
+    function initialize() external;
 }
