@@ -9,7 +9,7 @@ import "../src/interfaces/niftyapes/lending/ILending.sol";
 import "../src/interfaces/niftyapes/offers/IOffers.sol";
 import "../src/interfaces/niftyapes/liquidity/ILiquidity.sol";
 import "../src/interfaces/niftyapes/sigLending/ISigLending.sol";
-import "../src/interfaces/ownership.sol";
+import "../src/interfaces/Ownership.sol";
 
 import "../src/Liquidity.sol";
 import "../src/Offers.sol";
