@@ -55,4 +55,6 @@ interface IFlashPurchase is
         address borrower,
         bytes calldata data
     ) external;
+
+    function initialize() external;
 }
