@@ -9,8 +9,9 @@ import "@openzeppelin/contracts/utils/AddressUpgradeable.sol";
 import "../../utils/fixtures/OffersLoansRefinancesFixtures.sol";
 import "../../mock/FlashSellReceiverMock.sol";
 import "../../../interfaces/niftyapes/lending/ILendingStructs.sol";
+import "../../../interfaces/niftyapes/flashSell/IFlashSellEvents.sol";
 
-contract TestFlashSell is Test, ILendingStructs, OffersLoansRefinancesFixtures {
+contract TestFlashSell is Test, ILendingStructs, OffersLoansRefinancesFixtures, IFlashSellEvents {
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using AddressUpgradeable for address payable;
 
@@ -105,6 +106,53 @@ contract TestFlashSell is Test, ILendingStructs, OffersLoansRefinancesFixtures {
         _test_unit_flashSell_simplest_case(fuzzedOfferData);
     }
 
+    function _test_cannot_flashSell_emits_FlashSell(FuzzedOfferFields memory fuzzed) private {
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
+
+        LoanAuction memory loanBefore = lending.getLoanAuction(
+            offer.nftContractAddress,
+            offer.nftId
+        );
+
+        FlashSellReceiverMock flashSellReceiverHappyMock = _createFlashSellReceiverMock(
+            true,
+            offer.nftContractAddress,
+            offer.nftId,
+            loanBefore
+        );
+
+        vm.startPrank(borrower1);
+        vm.expectEmit(true, true, true, false);
+        emit FlashSell(
+            offer.nftContractAddress,
+            offer.nftId,
+            address(flashSellReceiverHappyMock)
+        );
+        flashSell.borrowNFTForSale(
+            offer.nftContractAddress,
+            offer.nftId,
+            address(flashSellReceiverHappyMock),
+            bytes("")
+        );
+        vm.stopPrank();
+    }
+
+    function test_unit_cannot_flashSell_emits_FlashSell() public {
+        FuzzedOfferFields memory fixedForSpeed = defaultFixedFuzzedFieldsForFastUnitTesting;
+        fixedForSpeed.randomAsset = 1;
+        _test_cannot_flashSell_emits_FlashSell(fixedForSpeed);
+    }
+
+    function test_fuzz_cannot_flashSell_emits_FlashSell(FuzzedOfferFields memory fuzzedOfferData)
+        public
+        validateFuzzedOfferFields(fuzzedOfferData)
+    {
+        FuzzedOfferFields memory fixedForSpeed = defaultFixedFuzzedFieldsForFastUnitTesting;
+        fixedForSpeed.randomAsset = 1;
+        _test_cannot_flashSell_emits_FlashSell(fixedForSpeed);
+    }
+
     function _test_unit_cannot_flashSell_notNftOwner(FuzzedOfferFields memory fuzzed) private {
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
         createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
@@ -138,7 +186,7 @@ contract TestFlashSell is Test, ILendingStructs, OffersLoansRefinancesFixtures {
         _test_unit_cannot_flashSell_notNftOwner(fixedForSpeed);
     }
 
-    function _test_unit_cannot_flashSell_noReturn(FuzzedOfferFields memory fuzzed) private {
+    function _test_cannot_flashSell_InsufficientValueRecieved(FuzzedOfferFields memory fuzzed) private {
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
         createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
 
@@ -165,10 +213,61 @@ contract TestFlashSell is Test, ILendingStructs, OffersLoansRefinancesFixtures {
         vm.stopPrank();
     }
 
-    function test_unit_cannot_flashSell_noReturn() public {
+    function test_unit_cannot_flashSell_InsufficientValueRecieved() public {
         FuzzedOfferFields memory fixedForSpeed = defaultFixedFuzzedFieldsForFastUnitTesting;
         fixedForSpeed.randomAsset = 1;
-        _test_unit_cannot_flashSell_noReturn(fixedForSpeed);
+        _test_cannot_flashSell_InsufficientValueRecieved(fixedForSpeed);
+    }
+
+    function test_fuzz_cannot_flashSell_InsufficientValueRecieved(FuzzedOfferFields memory fuzzedOfferData)
+        public
+        validateFuzzedOfferFields(fuzzedOfferData)
+    {
+        FuzzedOfferFields memory fixedForSpeed = defaultFixedFuzzedFieldsForFastUnitTesting;
+        fixedForSpeed.randomAsset = 1;
+        _test_cannot_flashSell_InsufficientValueRecieved(fixedForSpeed);
+    }
+
+    function _test_cannot_flashSell_ExecuteOperationFailed(FuzzedOfferFields memory fuzzed) private {
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
+
+        LoanAuction memory loanBefore = lending.getLoanAuction(
+            offer.nftContractAddress,
+            offer.nftId
+        );
+
+        FlashSellReceiverMock flashSellReceiverNotHappyMock = _createFlashSellReceiverMock(
+            false,
+            offer.nftContractAddress,
+            offer.nftId,
+            loanBefore
+        );
+
+        vm.startPrank(borrower1);
+        vm.expectRevert("00052");
+        flashSell.borrowNFTForSale(
+            offer.nftContractAddress,
+            offer.nftId,
+            address(flashSellReceiverNotHappyMock),
+            bytes("1")
+        );
+        vm.stopPrank();
+    }
+
+    function test_unit_cannot_flashSell_ExecuteOperationFailed() public {
+        FuzzedOfferFields memory fixedForSpeed = defaultFixedFuzzedFieldsForFastUnitTesting;
+        fixedForSpeed.randomAsset = 1;
+        _test_cannot_flashSell_ExecuteOperationFailed(fixedForSpeed);
+    }
+
+    function test_fuzz_cannot_flashSell_ExecuteOperationFailed(FuzzedOfferFields memory fuzzedOfferData)
+        public
+        validateFuzzedOfferFields(fuzzedOfferData)
+    {
+        FuzzedOfferFields memory fixedForSpeed = defaultFixedFuzzedFieldsForFastUnitTesting;
+        fixedForSpeed.randomAsset = 1;
+        _test_cannot_flashSell_ExecuteOperationFailed(fixedForSpeed);
     }
 
     function _createFlashSellReceiverMock(
