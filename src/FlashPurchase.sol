@@ -225,6 +225,11 @@ contract NiftyApesFlashPurchase is
             lendingContractAddress
         );
 
+        loanAuction = ILending(lendingContractAddress).getLoanAuction(
+            offer.nftContractAddress,
+            nftId
+        );
+
         emit LoanExecutedForPurchase(
             offer.nftContractAddress,
             nftId,

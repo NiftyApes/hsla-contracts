@@ -157,6 +157,129 @@ contract TestValidateSaleAndWithdraw is Test, OffersLoansRefinancesFixtures, ERC
     function test_fuzz_validateSaleAndWithdraw_notFulfilled_not_happy(FuzzedOfferFields memory fuzzedOfferData) public validateFuzzedOfferFields(fuzzedOfferData) {
         _test_unit_validateSaleAndWithdraw_notFulfilled_not_happy(fuzzedOfferData);
     }
+
+    function _test_cannot_validateSaleAndWithdraw_NftNotListed(FuzzedOfferFields memory fuzzed) private {
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
+
+        LoanAuction memory loanAuction = lending.getLoanAuction(offer.nftContractAddress, offer.nftId);
+        // skip time to accrue interest
+        skip(uint256(loanAuction.loanEndTimestamp - loanAuction.loanBeginTimestamp) / 2);
+
+        uint256 listingValueToBePaidToNiftyApes = _calculateTotalLoanPaymentAmountAtTimestamp(loanAuction, loanAuction.loanEndTimestamp);
+        // adding 2.5% opnesea fee amount
+        uint256 listingPrice = ((listingValueToBePaidToNiftyApes) * 40 + 38) / 39;
+
+        vm.startPrank(borrower1);
+        bytes32 orderHash = sellOnSeaport.listNftForSale(
+            offer.nftContractAddress,
+            offer.nftId,
+            listingPrice,
+            block.timestamp,
+            loanAuction.loanEndTimestamp,
+            1
+        );
+
+        vm.expectRevert("00064");
+        sellOnSeaport.validateSaleAndWithdraw(offer.nftContractAddress, offer.nftId, bytes32("1"));
+        vm.stopPrank();
+    }
+
+    function test_unit_cannot_validateSaleAndWithdraw_NftNotListed() public {
+        FuzzedOfferFields memory fixedForSpeed = defaultFixedFuzzedFieldsForFastUnitTesting;
+        _test_cannot_validateSaleAndWithdraw_NftNotListed(fixedForSpeed);
+    }
+
+    function test_fuzz_cannot_validateSaleAndWithdraw_NftNotListed(FuzzedOfferFields memory fuzzedOfferData) public validateFuzzedOfferFields(fuzzedOfferData) {
+        _test_cannot_validateSaleAndWithdraw_NftNotListed(fuzzedOfferData);
+    }
+    
+    function _test_cannot_validateSaleAndWithdraw_NotBorrowerOrLender(FuzzedOfferFields memory fuzzed) private {
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
+
+        LoanAuction memory loanAuction = lending.getLoanAuction(offer.nftContractAddress, offer.nftId);
+        // skip time to accrue interest
+        skip(uint256(loanAuction.loanEndTimestamp - loanAuction.loanBeginTimestamp) / 2);
+
+        uint256 listingValueToBePaidToNiftyApes = _calculateTotalLoanPaymentAmountAtTimestamp(loanAuction, loanAuction.loanEndTimestamp);
+        // adding 2.5% opnesea fee amount
+        uint256 listingPrice = ((listingValueToBePaidToNiftyApes) * 40 + 38) / 39;
+
+        vm.prank(borrower1);
+        bytes32 orderHash = sellOnSeaport.listNftForSale(
+            offer.nftContractAddress,
+            offer.nftId,
+            listingPrice,
+            block.timestamp,
+            loanAuction.loanEndTimestamp,
+            1
+        );
+
+        vm.expectRevert("00061");
+        sellOnSeaport.validateSaleAndWithdraw(offer.nftContractAddress, offer.nftId, orderHash);
+    }
+
+    function test_unit_cannot_validateSaleAndWithdraw_NotBorrowerOrLender() public {
+        FuzzedOfferFields memory fixedForSpeed = defaultFixedFuzzedFieldsForFastUnitTesting;
+        _test_cannot_validateSaleAndWithdraw_NotBorrowerOrLender(fixedForSpeed);
+    }
+
+    function test_fuzz_cannot_validateSaleAndWithdraw_NotBorrowerOrLender(FuzzedOfferFields memory fuzzedOfferData) public validateFuzzedOfferFields(fuzzedOfferData) {
+        _test_cannot_validateSaleAndWithdraw_NotBorrowerOrLender(fuzzedOfferData);
+    }
+
+    function _test_cannot_validateSaleAndWithdraw_OrderCancelled(FuzzedOfferFields memory fuzzed, bool lenderCall) private {
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
+
+        LoanAuction memory loanAuction = lending.getLoanAuction(offer.nftContractAddress, offer.nftId);
+        // skip time to accrue interest
+        skip(uint256(loanAuction.loanEndTimestamp - loanAuction.loanBeginTimestamp) / 2);
+
+        
+        uint256 listingValueToBePaidToNiftyApes = _calculateTotalLoanPaymentAmountAtTimestamp(loanAuction, loanAuction.loanEndTimestamp);
+        uint256 profitForTheBorrower = listingValueToBePaidToNiftyApes - _calculateTotalLoanPaymentAmountAtTimestamp(loanAuction, block.timestamp); // assume any profit the borrower wants
+        // adding 2.5% opnesea fee amount
+        uint256 listingPrice = ((listingValueToBePaidToNiftyApes) * 40 + 38) / 39;
+
+        vm.startPrank(borrower1);
+        bytes32 orderHash = sellOnSeaport.listNftForSale(
+            offer.nftContractAddress,
+            offer.nftId,
+            listingPrice,
+            block.timestamp,
+            loanAuction.loanEndTimestamp,
+            1
+        );
+        vm.stopPrank();
+
+        ISeaport.OrderComponents memory orderComponents = _createOrderComponents(
+            offer.nftContractAddress,
+            offer.nftId,
+            listingPrice,
+            loanAuction.loanEndTimestamp,
+            loanAuction.asset
+        );
+        
+        vm.startPrank(borrower1);
+        sellOnSeaport.cancelNftListing(orderComponents);
+ 
+        vm.expectRevert("00059");
+        sellOnSeaport.validateSaleAndWithdraw(offer.nftContractAddress, offer.nftId, orderHash);
+        vm.stopPrank();
+    }
+
+    function test_unit_cannot_validateSaleAndWithdraw_OrderCancelled() public {
+        FuzzedOfferFields memory fixedForSpeed = defaultFixedFuzzedFieldsForFastUnitTesting;
+        fixedForSpeed.randomAsset = 1;
+        _test_cannot_validateSaleAndWithdraw_OrderCancelled(fixedForSpeed, false);
+    }
+
+    function test_fuzz_cannot_validateSaleAndWithdraw_OrderCancelled(FuzzedOfferFields memory fuzzedOfferData) public validateFuzzedOfferFields(fuzzedOfferData) {
+        _test_cannot_validateSaleAndWithdraw_OrderCancelled(fuzzedOfferData, false);
+    }
+
     
     function _createOrder(
         address nftContractAddress,
@@ -265,5 +388,65 @@ contract TestValidateSaleAndWithdraw is Test, OffersLoansRefinancesFixtures, ERC
                 ISeaport(SEAPORT_ADDRESS).getCounter(order.parameters.offerer)
             )
         );
+    }
+
+    function _createOrderComponents(
+        address nftContractAddress,
+        uint256 nftId,
+        uint256 listingPrice,
+        uint256 listingEndTime,
+        address asset
+    ) internal view returns (ISeaport.OrderComponents memory) {
+        uint256 seaportFeeAmount = listingPrice - (listingPrice * 39) / 40;
+        ISeaport.ItemType considerationItemType = (asset == ETH_ADDRESS ? ISeaport.ItemType.NATIVE : ISeaport.ItemType.ERC20);
+        address considerationToken = (asset == ETH_ADDRESS ? address(0) : asset);
+
+        ISeaport.OrderComponents memory orderComponents = ISeaport.OrderComponents(
+            {
+                offerer: address(lending),
+                zone: 0x004C00500000aD104D7DBd00e3ae0A5C00560C00,
+                offer: new ISeaport.OfferItem[](1),
+                consideration: new ISeaport.ConsiderationItem[](2),
+                orderType: ISeaport.OrderType.FULL_OPEN,
+                startTime: block.timestamp,
+                endTime: listingEndTime,
+                zoneHash: bytes32(0x0000000000000000000000000000000000000000000000000000000000000000),
+                salt: 1,
+                conduitKey: bytes32(0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000),
+                counter: ISeaport(SEAPORT_ADDRESS).getCounter(address(lending))
+            }
+        );
+
+        orderComponents.offer[0] = ISeaport.OfferItem(
+            {
+                itemType: ISeaport.ItemType.ERC721,
+                token: nftContractAddress,
+                identifierOrCriteria: nftId,
+                startAmount: 1,
+                endAmount: 1
+            }
+        );
+        orderComponents.consideration[0] = ISeaport.ConsiderationItem(
+            {
+                itemType: considerationItemType,
+                token: considerationToken,
+                identifierOrCriteria: 0,
+                startAmount: listingPrice - seaportFeeAmount,
+                endAmount:listingPrice - seaportFeeAmount,
+                recipient: payable(address(sellOnSeaport))
+            }
+            
+        );
+        orderComponents.consideration[1] = ISeaport.ConsiderationItem(
+            {
+                itemType: considerationItemType,
+                token: considerationToken,
+                identifierOrCriteria: 0,
+                startAmount: seaportFeeAmount,
+                endAmount: seaportFeeAmount,
+                recipient: payable(0x0000a26b00c1F0DF003000390027140000fAa719)
+            }
+        );
+        return orderComponents;
     }
 }

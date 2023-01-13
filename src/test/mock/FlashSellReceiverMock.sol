@@ -39,6 +39,9 @@ contract FlashSellReceiverMock is IFlashSellReceiver, ERC721HolderUpgradeable {
         } else {
             payable(msg.sender).sendValue(loanAmount);
         }
+        if (keccak256(data) == keccak256(bytes("1"))) {
+            return false;
+        }
         return true;
     }
 

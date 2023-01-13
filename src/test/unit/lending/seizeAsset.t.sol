@@ -233,4 +233,45 @@ contract TestSeizeAsset is Test, OffersLoansRefinancesFixtures {
         assertEq(mockNft.ownerOf(offer.nftId), address(lender1));
         assertEq(lending.ownerOf(offer.nftContractAddress, offer.nftId), address(0));
     }
+
+    function _test_seizeAsset_erc1155_simplest_case(FuzzedOfferFields memory fuzzed) private {
+        uint256 initialTimestamp = block.timestamp;
+
+        vm.assume(fuzzed.floorTerm == false);
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        offer.nftContractAddress = address(mockERC1155Token);
+        offer.nftId = 1;
+        createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
+
+        // warp to end of loan
+        vm.warp(initialTimestamp + offer.duration);
+
+        // still locked in lending contract
+        assertEq(mockERC1155Token.balanceOf(address(lending), offer.nftId), 1);
+        assertEq(lending.ownerOf(offer.nftContractAddress, offer.nftId), address(borrower1));
+
+        // seize asset should work
+        vm.startPrank(lender1);
+        lending.seizeAsset(offer.nftContractAddress, offer.nftId);
+        vm.stopPrank();
+
+        // lender1 owns NFT after seize
+        assertEq(mockERC1155Token.balanceOf(address(lender1), offer.nftId), 1);
+        assertEq(lending.ownerOf(offer.nftContractAddress, offer.nftId), address(0));
+
+        // borrower's balance decrements to 0
+        assertEq(lending.balanceOf(borrower1, offer.nftContractAddress), 0);
+    }
+
+    function test_fuzz_seizeAsset_erc1155_simplest_case(FuzzedOfferFields memory fuzzed)
+        public
+        validateFuzzedOfferFields(fuzzed)
+    {
+        _test_seizeAsset_erc1155_simplest_case(fuzzed);
+    }
+
+    function test_unit_seizeAsset_erc1155_simplest_case() public {
+        FuzzedOfferFields memory fixedForSpeed = defaultFixedFuzzedFieldsForFastUnitTesting;
+        _test_seizeAsset_erc1155_simplest_case(fixedForSpeed);
+    }
 }

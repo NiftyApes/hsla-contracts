@@ -185,7 +185,6 @@ contract NiftyApesSellOnSeaport is
         // validate inputs and its price wrt listingEndTime
         _requireNftOwner(loanAuction);
         _requireIsNotSanctioned(msg.sender);
-        _requireOpenLoan(loanAuction);
         _requireListingValueGreaterThanLoanRepaymentAmountUntilListingExpiry(loanAuction, listingPrice, seaportFeeAmount, listingEndTime);
         
         // construct Seaport Order
@@ -228,7 +227,6 @@ contract NiftyApesSellOnSeaport is
         SeaportListing memory listing = _requireValidOrderHash(nftContractAddress, nftId, orderHash);
         _requireLenderOrNftOwner(loanAuction);
         _requireIsNotSanctioned(msg.sender);
-        _requireOpenLoan(loanAuction);
         
         // validate order status
         (bool valid, bool cancelled, uint256 filled, )  = ISeaport(seaportContractAddress).getOrderStatus(orderHash);

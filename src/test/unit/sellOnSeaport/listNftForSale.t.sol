@@ -8,8 +8,9 @@ import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 import "../../utils/fixtures/OffersLoansRefinancesFixtures.sol";
 import "../../../interfaces/niftyapes/offers/IOffersStructs.sol";
 import "../../../interfaces/seaport/ISeaport.sol";
+import "../../../interfaces/niftyapes/sellOnSeaport/ISellOnSeaportEvents.sol";
 
-contract TestListNftForSale is Test, OffersLoansRefinancesFixtures, ERC721HolderUpgradeable {
+contract TestListNftForSale is Test, OffersLoansRefinancesFixtures, ERC721HolderUpgradeable, ISellOnSeaportEvents {
     function setUp() public override {
         // pin block to time of writing test to reflect consistent state
         vm.rollFork(15510097);
@@ -101,6 +102,59 @@ contract TestListNftForSale is Test, OffersLoansRefinancesFixtures, ERC721Holder
     function test_fuzz_listNftForSale_happy_case(FuzzedOfferFields memory fuzzedOfferData) public validateFuzzedOfferFields(fuzzedOfferData) {
         _test_unit_listNftForSale_happy_case(fuzzedOfferData);
     }
+
+    function _test_unit_listNftForSale_emits_ListedOnSeaport(FuzzedOfferFields memory fuzzed) private {
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
+
+        LoanAuction memory loanAuction = lending.getLoanAuction(offer.nftContractAddress, offer.nftId);
+        // skip time to accrue interest
+        skip(uint256(loanAuction.loanEndTimestamp - loanAuction.loanBeginTimestamp) / 2);
+
+        
+        uint256 listingValueToBePaidToNiftyApes = _calculateTotalLoanPaymentAmountAtTimestamp(loanAuction, loanAuction.loanEndTimestamp);
+        // taking the ceil of totalLoanAmount * 40 / 39 (basically adding 2.5% opnesea fee amount)
+        uint256 listingPrice = (listingValueToBePaidToNiftyApes * 40 + 38) / 39;
+
+        address nftOwnerBefore = IERC721Upgradeable(offer.nftContractAddress).ownerOf(offer.nftId);
+        uint256 sellOnSeaportAssetBalanceBefore;
+        if (loanAuction.asset == ETH_ADDRESS) {
+            sellOnSeaportAssetBalanceBefore = address(sellOnSeaport).balance;
+        } else {
+            sellOnSeaportAssetBalanceBefore = IERC20Upgradeable(loanAuction.asset).balanceOf(address(sellOnSeaport));
+        }
+        assertEq(address(lending), nftOwnerBefore);
+
+        
+        vm.expectEmit(true, true, false, false);
+        emit ListedOnSeaport(
+            offer.nftContractAddress,
+            offer.nftId,
+            bytes32(""),
+            loanAuction
+        );
+        vm.startPrank(borrower1);
+        bytes32 orderHash = sellOnSeaport.listNftForSale(
+            offer.nftContractAddress,
+            offer.nftId,
+            listingPrice,
+            block.timestamp,
+            loanAuction.loanEndTimestamp,
+            1
+        );
+        vm.stopPrank();
+    }
+
+    function test_unit_listNftForSale_emits_ListedOnSeaport() public {
+        FuzzedOfferFields memory fixedForSpeed = defaultFixedFuzzedFieldsForFastUnitTesting;
+        fixedForSpeed.randomAsset = 1;
+        _test_unit_listNftForSale_emits_ListedOnSeaport(fixedForSpeed);
+    }
+
+    function test_fuzz_listNftForSale_emits_ListedOnSeaport(FuzzedOfferFields memory fuzzedOfferData) public validateFuzzedOfferFields(fuzzedOfferData) {
+        _test_unit_listNftForSale_emits_ListedOnSeaport(fuzzedOfferData);
+    }
+
     function _test_unit_cannot_listNftForSale_listingPriceInsufficient(FuzzedOfferFields memory fuzzed) private {
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
         createOfferAndTryToExecuteLoanByBorrower(offer, "should work");

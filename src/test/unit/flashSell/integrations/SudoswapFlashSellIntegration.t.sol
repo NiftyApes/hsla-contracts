@@ -127,6 +127,34 @@ contract TestSudoswapFlashSellIntegration is Test, ILendingStructs, OffersLoansR
         _test_unit_cannot_flashSellSudoswap_InsufficientSaleValue(fixedForSpeed);
     }
 
+    function _test_cannot_SudoswapFlashSellIntegration_callerNotFlashSell(Offer memory offer) private {
+        vm.prank(borrower1);
+        vm.expectRevert("00031");
+        sudoswapFlashSell.executeOperation(
+            offer.nftContractAddress,
+            offer.nftId,
+            offer.asset,
+            offer.amount,
+            address(sudoswapFlashSell),
+            bytes("")
+        );
+    }
+
+    function test_fuzz_cannot_SudoswapFlashSellIntegration_callerNotFlashSell(
+        FuzzedOfferFields memory fuzzedOfferData
+    ) public validateFuzzedOfferFields(fuzzedOfferData) {
+        Offer memory offer = offerStructFromFields(fuzzedOfferData, defaultFixedOfferFields);
+        _test_cannot_SudoswapFlashSellIntegration_callerNotFlashSell(offer);
+    }
+
+    function test_unit_cannot_SudoswapFlashSellIntegration_callerNotFlashSell() public {
+        Offer memory offer = offerStructFromFields(
+            defaultFixedFuzzedFieldsForFastUnitTesting,
+            defaultFixedOfferFields
+        );
+        _test_cannot_SudoswapFlashSellIntegration_callerNotFlashSell(offer);
+    }
+
     function daiLssvmPair(uint256 minSalePrice) internal returns (ILSSVMPair) {
         uint256 salePricePlusProtocolFee =  minSalePrice * 101 / 100;
         
