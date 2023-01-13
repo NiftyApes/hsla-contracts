@@ -212,6 +212,34 @@ contract TestSeaportFlashSellIntegration is Test, ILendingStructs, OffersLoansRe
         _test_unit_cannot_SeaportFlashSellIntegration_invalidOrderAmount(fixedForSpeed);
     }
 
+    function _test_cannot_SeaportFlashSellIntegration_callerNotFlashSell(Offer memory offer) private {
+        vm.prank(borrower1);
+        vm.expectRevert("00031");
+        seaportFlashSell.executeOperation(
+            offer.nftContractAddress,
+            offer.nftId,
+            offer.asset,
+            offer.amount,
+            address(seaportFlashSell),
+            bytes("")
+        );
+    }
+
+    function test_fuzz_cannot_SeaportFlashSellIntegration_callerNotFlashSell(
+        FuzzedOfferFields memory fuzzedOfferData
+    ) public validateFuzzedOfferFields(fuzzedOfferData) {
+        Offer memory offer = offerStructFromFields(fuzzedOfferData, defaultFixedOfferFields);
+        _test_cannot_SeaportFlashSellIntegration_callerNotFlashSell(offer);
+    }
+
+    function test_unit_cannot_SeaportFlashSellIntegration_callerNotFlashSell() public {
+        Offer memory offer = offerStructFromFields(
+            defaultFixedFuzzedFieldsForFastUnitTesting,
+            defaultFixedOfferFields
+        );
+        _test_cannot_SeaportFlashSellIntegration_callerNotFlashSell(offer);
+    }
+
     function _createOrder(
         address nftContractAddress,
         uint256 nftId,

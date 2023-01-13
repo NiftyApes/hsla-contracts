@@ -224,6 +224,213 @@ contract TestSudoswapFlashPurchaseIntegration is Test, OffersLoansRefinancesFixt
         _test_flashPurchaseSudoswap_simplest_case(offer, lssvmPair, nftIds, true);
     }
 
+    function _test_cannot_flashPurchaseSudoswap_MultipleNftsWithoutFloorTerm(
+        Offer memory offer,
+        ILSSVMPair lssvmPair,
+        uint256[] memory nftIds
+    ) private {
+        address nftContractAddress = address(lssvmPair.nft());
+        offer.nftContractAddress = nftContractAddress;
+        offer.nftId = nftIds[0];
+        offer.floorTerm = false;
+
+        ILSSVMPairFactoryLike.PairVariant pairVariant = lssvmPair.pairVariant();
+        if (pairVariant == ILSSVMPairFactoryLike.PairVariant.ENUMERABLE_ERC20 || pairVariant == ILSSVMPairFactoryLike.PairVariant.MISSING_ENUMERABLE_ERC20) {
+            offer.asset = address(lssvmPair.token());
+        } else {
+            offer.asset = ETH_ADDRESS;
+        }
+        ( , , , uint256 totalConsiderationAmount, ) = lssvmPair.getBuyNFTQuote(nftIds.length);
+        offer.amount = uint128(totalConsiderationAmount / (nftIds.length * 2));
+        offer.expiration = uint32(block.timestamp + 1);
+
+        createOfferAndTryFlashPurchase(
+            offer,
+            lssvmPair,
+            nftIds,
+            "00056"
+        );
+        
+    }
+
+    function test_fuzz_cannot_FlashPurchaseSudoswap_MultipleNftsWithoutFloorTerm(
+        FuzzedOfferFields memory fuzzedOfferData
+    ) public validateFuzzedOfferFields(fuzzedOfferData) {
+        Offer memory offer = offerStructFromFields(fuzzedOfferData, defaultFixedOfferFields);
+        (ILSSVMPair lssvmPair, uint256[] memory nftIds) = createAndValidateLssvmPairWithETH(2);
+
+        _test_cannot_flashPurchaseSudoswap_MultipleNftsWithoutFloorTerm(offer, lssvmPair, nftIds);
+    }
+
+    function test_unit_cannot_FlashPurchaseSudoswap_MultipleNftsWithoutFloorTerm() public {
+        Offer memory offer = offerStructFromFields(
+            defaultFixedFuzzedFieldsForFastUnitTesting,
+            defaultFixedOfferFields
+        );
+        (ILSSVMPair lssvmPair, uint256[] memory nftIds) = createAndValidateLssvmPairWithETH(2);
+
+        _test_cannot_flashPurchaseSudoswap_MultipleNftsWithoutFloorTerm(offer, lssvmPair, nftIds);
+    }
+
+    function _test_cannot_flashPurchaseSudoswap_InvalidSudoswapPair(
+        Offer memory offer,
+        ILSSVMPair lssvmPair,
+        uint256[] memory nftIds
+    ) private {
+        address nftContractAddress = address(lssvmPair.nft());
+        offer.nftContractAddress = nftContractAddress;
+        offer.nftId = nftIds[0];
+        // fixing offer asset to be not DAI as lssvmPair asset is set to be DAI
+        offer.asset = ETH_ADDRESS;
+
+        ( , , , uint256 totalConsiderationAmount, ) = lssvmPair.getBuyNFTQuote(nftIds.length);
+        offer.amount = uint128(totalConsiderationAmount / (nftIds.length * 2));
+        offer.expiration = uint32(block.timestamp + 1);
+
+        createOfferAndTryFlashPurchase(
+            offer,
+            lssvmPair,
+            nftIds,
+            "00019"
+        );
+        
+    }
+
+    function test_fuzz_cannot_FlashPurchaseSudoswap_InvalidSudoswapPair(
+        FuzzedOfferFields memory fuzzedOfferData
+    ) public validateFuzzedOfferFields(fuzzedOfferData) {
+        Offer memory offer = offerStructFromFields(fuzzedOfferData, defaultFixedOfferFields);
+        (ILSSVMPair lssvmPair, uint256[] memory nftIds) = createAndValidateLssvmPairWithDAI(1);
+
+        _test_cannot_flashPurchaseSudoswap_InvalidSudoswapPair(offer, lssvmPair, nftIds);
+    }
+
+    function test_unit_cannot_FlashPurchaseSudoswap_InvalidSudoswapPair() public {
+        Offer memory offer = offerStructFromFields(
+            defaultFixedFuzzedFieldsForFastUnitTesting,
+            defaultFixedOfferFields
+        );
+        (ILSSVMPair lssvmPair, uint256[] memory nftIds) = createAndValidateLssvmPairWithDAI(1);
+
+        _test_cannot_flashPurchaseSudoswap_InvalidSudoswapPair(offer, lssvmPair, nftIds);
+    }
+
+    function _test_cannot_flashPurchaseSudoswapSignature_MultipleNftsWithoutFloorTerm(
+        Offer memory offer,
+        ILSSVMPair lssvmPair,
+        uint256[] memory nftIds
+    ) private {
+        address nftContractAddress = address(lssvmPair.nft());
+        offer.nftContractAddress = nftContractAddress;
+        offer.nftId = nftIds[0];
+        offer.floorTerm = false;
+
+        ILSSVMPairFactoryLike.PairVariant pairVariant = lssvmPair.pairVariant();
+        if (pairVariant == ILSSVMPairFactoryLike.PairVariant.ENUMERABLE_ERC20 || pairVariant == ILSSVMPairFactoryLike.PairVariant.MISSING_ENUMERABLE_ERC20) {
+            offer.asset = address(lssvmPair.token());
+        } else {
+            offer.asset = ETH_ADDRESS;
+        }
+        ( , , , uint256 totalConsiderationAmount, ) = lssvmPair.getBuyNFTQuote(nftIds.length);
+        offer.amount = uint128(totalConsiderationAmount / (nftIds.length * 2));
+        offer.expiration = uint32(block.timestamp + 1);
+
+        signOfferAndTryFlashPurchaseSignature(
+            offer,
+            lssvmPair,
+            nftIds,
+            "00056"
+        );
+        
+    }
+
+    function test_fuzz_cannot_FlashPurchaseSudoswapSignature_MultipleNftsWithoutFloorTerm(
+        FuzzedOfferFields memory fuzzedOfferData
+    ) public validateFuzzedOfferFields(fuzzedOfferData) {
+        Offer memory offer = offerStructFromFields(fuzzedOfferData, defaultFixedOfferFields);
+        (ILSSVMPair lssvmPair, uint256[] memory nftIds) = createAndValidateLssvmPairWithETH(2);
+
+        _test_cannot_flashPurchaseSudoswapSignature_MultipleNftsWithoutFloorTerm(offer, lssvmPair, nftIds);
+    }
+
+    function test_unit_cannot_FlashPurchaseSudoswapSignature_MultipleNftsWithoutFloorTerm() public {
+        Offer memory offer = offerStructFromFields(
+            defaultFixedFuzzedFieldsForFastUnitTesting,
+            defaultFixedOfferFields
+        );
+        (ILSSVMPair lssvmPair, uint256[] memory nftIds) = createAndValidateLssvmPairWithETH(2);
+
+        _test_cannot_flashPurchaseSudoswapSignature_MultipleNftsWithoutFloorTerm(offer, lssvmPair, nftIds);
+    }
+
+    function _test_cannot_flashPurchaseSudoswapSignature_InvalidSudoswapPair(
+        Offer memory offer,
+        ILSSVMPair lssvmPair,
+        uint256[] memory nftIds
+    ) private {
+        address nftContractAddress = address(lssvmPair.nft());
+        offer.nftContractAddress = nftContractAddress;
+        offer.nftId = nftIds[0];
+        // fixing offer asset to be not DAI as lssvmPair asset is set to be DAI
+        offer.asset = ETH_ADDRESS;
+
+        ( , , , uint256 totalConsiderationAmount, ) = lssvmPair.getBuyNFTQuote(nftIds.length);
+        offer.amount = uint128(totalConsiderationAmount / (nftIds.length * 2));
+        offer.expiration = uint32(block.timestamp + 1);
+
+        signOfferAndTryFlashPurchaseSignature(
+            offer,
+            lssvmPair,
+            nftIds,
+            "00019"
+        );
+        
+    }
+
+    function test_fuzz_cannot_FlashPurchaseSudoswapSignature_InvalidSudoswapPair(
+        FuzzedOfferFields memory fuzzedOfferData
+    ) public validateFuzzedOfferFields(fuzzedOfferData) {
+        Offer memory offer = offerStructFromFields(fuzzedOfferData, defaultFixedOfferFields);
+        (ILSSVMPair lssvmPair, uint256[] memory nftIds) = createAndValidateLssvmPairWithDAI(1);
+
+        _test_cannot_flashPurchaseSudoswapSignature_InvalidSudoswapPair(offer, lssvmPair, nftIds);
+    }
+
+    function test_unit_cannot_FlashPurchaseSudoswapSignature_InvalidSudoswapPair() public {
+        Offer memory offer = offerStructFromFields(
+            defaultFixedFuzzedFieldsForFastUnitTesting,
+            defaultFixedOfferFields
+        );
+        (ILSSVMPair lssvmPair, uint256[] memory nftIds) = createAndValidateLssvmPairWithDAI(1);
+
+        _test_cannot_flashPurchaseSudoswapSignature_InvalidSudoswapPair(offer, lssvmPair, nftIds);
+    }
+
+    function _test_cannot_executeOperation_callerNotFlashPurchase(Offer memory offer) private {
+        vm.prank(borrower1);
+        vm.expectRevert("00031");
+        sudoswapFlashPurchase.executeOperation(
+            offer.nftContractAddress,
+            offer.nftId,
+            address(sudoswapFlashPurchase),
+            bytes("")
+        );
+    }
+
+    function test_fuzz_cannot_executeOperation_callerNotFlashPurchase(
+        FuzzedOfferFields memory fuzzedOfferData
+    ) public validateFuzzedOfferFields(fuzzedOfferData) {
+        Offer memory offer = offerStructFromFields(fuzzedOfferData, defaultFixedOfferFields);
+        _test_cannot_executeOperation_callerNotFlashPurchase(offer);
+    }
+
+    function test_unit_cannot_executeOperation_callerNotFlashPurchase() public {
+        Offer memory offer = offerStructFromFields(
+            defaultFixedFuzzedFieldsForFastUnitTesting,
+            defaultFixedOfferFields
+        );
+        _test_cannot_executeOperation_callerNotFlashPurchase(offer);
+    }
 
     //
     // HELPERS
@@ -256,17 +463,17 @@ contract TestSudoswapFlashPurchaseIntegration is Test, OffersLoansRefinancesFixt
     ) internal {
         bytes32 offerHash = offers.getOfferHash(offer);
 
-        if (bytes16(errorCode) != bytes16("should work")) {
-            vm.expectRevert(errorCode);
-        }
+        
         ( , , , uint256 totalConsiderationAmount, ) = lssvmPair.getBuyNFTQuote(nftIds.length);
         uint256 borrowerPays = totalConsiderationAmount - (uint256(offer.amount) * nftIds.length );
 
+        if (bytes16(errorCode) != bytes16("should work")) {
+            vm.expectRevert(errorCode);
+        }
         if (offer.asset == ETH_ADDRESS) {
             vm.startPrank(borrower1);
             sudoswapFlashPurchase.flashPurchaseSudoswap{ value: borrowerPays }(
                 offerHash,
-                offer.floorTerm,
                 lssvmPair,
                 nftIds
             );
@@ -277,7 +484,6 @@ contract TestSudoswapFlashPurchaseIntegration is Test, OffersLoansRefinancesFixt
             daiToken.approve(address(sudoswapFlashPurchase), borrowerPays);
             sudoswapFlashPurchase.flashPurchaseSudoswap(
                 offerHash,
-                offer.floorTerm,
                 lssvmPair,
                 nftIds
             );
@@ -292,14 +498,14 @@ contract TestSudoswapFlashPurchaseIntegration is Test, OffersLoansRefinancesFixt
         uint256[] memory nftIds,
         bytes memory errorCode
     ) internal {
-        if (bytes16(errorCode) != bytes16("should work")) {
-            vm.expectRevert(errorCode);
-        }
         ( , , , uint256 totalConsiderationAmount, ) = lssvmPair.getBuyNFTQuote(nftIds.length);
         uint256 borrowerPays =  totalConsiderationAmount - (uint256(offer.amount) * nftIds.length );
 
         if (offer.asset == ETH_ADDRESS) {
             vm.startPrank(borrower1);
+            if (bytes16(errorCode) != bytes16("should work")) {
+                vm.expectRevert(errorCode);
+            }
             sudoswapFlashPurchase.flashPurchaseSudoswapSignature{ value: borrowerPays }(
                 offer,
                 signature,
@@ -311,6 +517,9 @@ contract TestSudoswapFlashPurchaseIntegration is Test, OffersLoansRefinancesFixt
             mintDai(borrower1, borrowerPays);
             vm.startPrank(borrower1);
             daiToken.approve(address(sudoswapFlashPurchase), borrowerPays);
+            if (bytes16(errorCode) != bytes16("should work")) {
+                vm.expectRevert(errorCode);
+            }
             sudoswapFlashPurchase.flashPurchaseSudoswapSignature(
                 offer,
                 signature,
