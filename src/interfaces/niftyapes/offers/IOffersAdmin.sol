@@ -9,6 +9,9 @@ interface IOffersAdmin {
     /// @notice Updates the associated signature lending contract address
     function updateSigLendingContractAddress(address newSigLendingContractAddress) external;
 
+    /// @notice Updates the associated refinance contract address
+    function updateRefinanceContractAddress(address newRefinanceContractAddress) external;
+
     /// @notice Pauses all interactions with the contract.
     ///         This is intended to be used as an emergency measure to avoid loosing funds.
     function pause() external;

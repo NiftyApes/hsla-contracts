@@ -55,11 +55,27 @@ The NiftyApes protocol is made up of four core contracts `Liquidity.sol`, `Offer
    Siglending: 0x13066734874c538606e5589eE9BB6BbC3C018fAF
    Lending: 0xd830dcFC57816aDeB9Bf34A5dA38197810fA8Fd4
 
-5. For deployment to Mainnet:
-   a. `forge script script/NiftyApes.s.sol:NiftyApesScript --optimize --slow --rpc-url $MAINNET_RPC_URL --ledger --broadcast`
+5. For deployment to Goerli via the Goerli Protocol Multisig wallet:
+   b. Add the Goerli Multisig address to to `.env`.
+   c. If you have made any changes to the `.env` run: `source .env`
+   d. Then run:
+   `forge script script/Goerli_Deploy_NiftyApes.s.sol:DeployNiftyApesScript --optimize --rpc-url $GOERLI_RPC_URL --private-key $GOERLI_PRIVATE_KEY --slow --broadcast`
 
-6. For deploying a modified compound fork and bwxDai on Gnosis Chain:
+6. For deployment to Mainnet:
+   a. `forge script script/Mainnet_Deploy_NiftyApes.s.sol:DeployNiftyApesScript --optimize --rpc-url $MAINNET_RPC_URL --private-key $MAINNET_BURNER_PRIVATE_KEY --slow --broadcast`
+
+7. For deploying a modified compound fork and bwxDai on Gnosis Chain:
    `forge script script/Gnosis_Deploy_CompoundAndBwxDai.s.sol:CompoundDeploymentScript --optimize --slow --rpc-url $GNOSIS_RPC_URL --private-key $GNOSIS_PRIVATE_KEY --broadcast`
+
+## Pause
+
+1. To pause Mainnet protocol:
+   a.
+
+## Unpause
+
+4. To unpause Mainnet protocol:
+   a.
 
 ## NiftyApes Error Messages
 
@@ -109,4 +125,27 @@ The NiftyApes protocol is made up of four core contracts `Liquidity.sol`, `Offer
 "00044" == "max casset"
 "00045" == "amount 0"
 "00046" == "offer already exists"
+"00047" == "not enough value"
+"00048" == "seaport fulfillBasicOrder failed"
+"00049" == "not a basic seaport order"
+"00050" == "invalid sudoswap pair pool"
 "00051" == "cannot exceed floor offer limit count"
+"00052" == "FlashPurchaseContract: receiver.executeOperation() failed"
+"00053" == "Sudoswap Bonding curve error"
+"00054" == "invalid initiator"
+"00055" == "FlashPurchaseContract: cannot be address(0)"
+"00056" == "multiple NFT purchase not allowed for non floor offer"
+"00057" == "FlashSell: amount received insufficient"
+"00058" == "flashClaim operation failed"
+"00059" == "Seaport listing order validation failed"
+"00060" == "listing value less than loan repayment amount at expiry"
+"00061" == "msg.sender is neither nftOwner nor lender"
+"00062" == "seaport listed order is cancelled"
+"00063" == "seaport listed order not yet filled"
+"00064" == "invalid seaport listing orderHash"
+"00065" == "order cancel failed on Seaport contract"
+"00066" == "NFT Sale value insufficient to close the loan"
+"00067" == "invalid seaport purchase order"
+"00068" == "WETH withdraw failed"
+"00069" == "invalid index provided"
+"00070" == "ERC1155 tokenId is fungible"

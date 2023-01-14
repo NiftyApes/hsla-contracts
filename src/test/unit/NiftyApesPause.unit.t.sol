@@ -9,6 +9,11 @@ import "../../Lending.sol";
 import "../../Liquidity.sol";
 import "../../Offers.sol";
 import "../../SigLending.sol";
+import "../../FlashClaim.sol";
+import "../../FlashPurchase.sol";
+import "../../FlashSell.sol";
+import "../../SellOnSeaport.sol";
+import "../../Refinance.sol";
 import "../../interfaces/niftyapes/lending/ILendingStructs.sol";
 import "../../interfaces/niftyapes/offers/IOffersStructs.sol";
 
@@ -40,23 +45,44 @@ contract NiftyApesPauseUnitTest is
     NiftyApesOffers offersImplementation;
     NiftyApesLiquidity liquidityImplementation;
     NiftyApesSigLending sigLendingImplementation;
+    NiftyApesRefinance refinanceImplementation;
+    NiftyApesFlashClaim flashClaimImplementation;
+    NiftyApesFlashPurchase flashPurchaseImplementation;
+    NiftyApesFlashSell flashSellImplementation;
+    NiftyApesSellOnSeaport sellOnSeaportImplementation;
 
     ProxyAdmin lendingProxyAdmin;
     ProxyAdmin offersProxyAdmin;
     ProxyAdmin liquidityProxyAdmin;
     ProxyAdmin sigLendingProxyAdmin;
+    ProxyAdmin refinanceProxyAdmin;
+    ProxyAdmin flashClaimProxyAdmin;
+    ProxyAdmin flashPurchaseProxyAdmin;
+    ProxyAdmin flashSellProxyAdmin;
+    ProxyAdmin sellOnSeaportProxyAdmin;
 
     TransparentUpgradeableProxy lendingProxy;
     TransparentUpgradeableProxy offersProxy;
     TransparentUpgradeableProxy liquidityProxy;
     TransparentUpgradeableProxy sigLendingProxy;
+    TransparentUpgradeableProxy refinanceProxy;
+    TransparentUpgradeableProxy flashClaimProxy;
+    TransparentUpgradeableProxy flashPurchaseProxy;
+    TransparentUpgradeableProxy flashSellProxy;
+    TransparentUpgradeableProxy sellOnSeaportProxy;
 
     ILending lendingAuction;
     IOffers offersContract;
     ILiquidity liquidityProviders;
     ISigLending sigLendingAuction;
+    IRefinance refinance;
+    IFlashClaim flashClaim;
+    IFlashPurchase flashPurchase;
+    IFlashSell flashSell;
+    ISellOnSeaport sellOnSeaport;
 
     address compContractAddress = 0xbbEB7c67fa3cfb40069D19E598713239497A3CA5;
+    address seaportContractAddress = 0x00000000006c3852cbEf3e08E8dF289169EdE581;
 
     ERC721Mock mockNft;
 
@@ -78,12 +104,22 @@ contract NiftyApesPauseUnitTest is
         offersImplementation = new NiftyApesOffers();
         sigLendingImplementation = new NiftyApesSigLending();
         lendingImplementation = new NiftyApesLending();
+        refinanceImplementation = new NiftyApesRefinance();
+        flashClaimImplementation = new NiftyApesFlashClaim();
+        flashPurchaseImplementation = new NiftyApesFlashPurchase();
+        flashSellImplementation = new NiftyApesFlashSell();
+        sellOnSeaportImplementation = new NiftyApesSellOnSeaport();
 
         // deploy proxy admins
         lendingProxyAdmin = new ProxyAdmin();
         offersProxyAdmin = new ProxyAdmin();
         liquidityProxyAdmin = new ProxyAdmin();
         sigLendingProxyAdmin = new ProxyAdmin();
+        refinanceProxyAdmin = new ProxyAdmin();
+        flashClaimProxyAdmin = new ProxyAdmin();
+        flashPurchaseProxyAdmin = new ProxyAdmin();
+        flashSellProxyAdmin = new ProxyAdmin();
+        sellOnSeaportProxyAdmin = new ProxyAdmin();
 
         // deploy proxies
         lendingProxy = new TransparentUpgradeableProxy(
@@ -107,22 +143,65 @@ contract NiftyApesPauseUnitTest is
             address(sigLendingProxyAdmin),
             bytes("")
         );
+        refinanceProxy = new TransparentUpgradeableProxy(
+            address(refinanceImplementation),
+            address(refinanceProxyAdmin),
+            bytes("")
+        );
+
+        flashClaimProxy = new TransparentUpgradeableProxy(
+            address(flashClaimImplementation),
+            address(flashClaimProxyAdmin),
+            bytes("")
+        );
+
+        flashPurchaseProxy = new TransparentUpgradeableProxy(
+            address(flashPurchaseImplementation),
+            address(flashPurchaseProxyAdmin),
+            bytes("")
+        );
+
+        flashSellProxy = new TransparentUpgradeableProxy(
+            address(flashSellImplementation),
+            address(flashSellProxyAdmin),
+            bytes("")
+        );
+
+        sellOnSeaportProxy = new TransparentUpgradeableProxy(
+            address(sellOnSeaportImplementation),
+            address(sellOnSeaportProxyAdmin),
+            bytes("")
+        );
 
         // declare interfaces
         lendingAuction = ILending(address(lendingProxy));
         liquidityProviders = ILiquidity(address(liquidityProxy));
         offersContract = IOffers(address(offersProxy));
         sigLendingAuction = ISigLending(address(sigLendingProxy));
+        refinance = IRefinance(address(refinanceProxy));
+        flashClaim = IFlashClaim(address(flashClaimProxy));
+        flashPurchase = IFlashPurchase(address(flashPurchaseProxy));
+        flashSell = IFlashSell(address(flashSellProxy));
+        sellOnSeaport = ISellOnSeaport(address(sellOnSeaportProxy));
 
-        // initialize proxies
-        liquidityProviders.initialize(address(compContractAddress));
-        offersContract.initialize(address(liquidityProviders));
-        sigLendingAuction.initialize(address(offersContract));
+        liquidityProviders.initialize(compContractAddress, address(refinance), address(flashPurchase));
+        offersContract.initialize(address(liquidityProviders), address(refinance), address(flashPurchase));
+        sigLendingAuction.initialize(address(offersContract), address(flashPurchase));
         lendingAuction.initialize(
             address(liquidityProviders),
             address(offersContract),
-            address(sigLendingAuction)
+            address(sigLendingAuction),
+            address(refinance),
+            address(flashClaim),
+            address(flashPurchase),
+            address(flashSell),
+            address(sellOnSeaport)
         );
+        refinance.initialize();
+        flashClaim.initialize();
+        flashPurchase.initialize();
+        flashSell.initialize();
+        sellOnSeaport.initialize();
 
         offersContract.updateLendingContractAddress(address(lendingAuction));
 
@@ -143,6 +222,9 @@ contract NiftyApesPauseUnitTest is
         liquidityProviders.pause();
         offersContract.pause();
         sigLendingAuction.pause();
+        flashClaim.pause();
+        flashSell.pause();
+        refinance.pause();
 
         acceptEth = true;
 
@@ -277,7 +359,7 @@ contract NiftyApesPauseUnitTest is
     function testCannotExecuteLoanByBorrower_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        lendingAuction.executeLoanByBorrower(address(0), 1, bytes32(0), false);
+        lendingAuction.executeLoanByBorrower(1, bytes32(0));
     }
 
     function testCannotExecuteLoanByBorrowerSignature_paused() public {
@@ -289,7 +371,7 @@ contract NiftyApesPauseUnitTest is
     function testCannotExecuteLoanByLender_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        lendingAuction.executeLoanByLender(address(0), 1, bytes32(0), false);
+        lendingAuction.executeLoanByLender(1, bytes32(0));
     }
 
     function testCannotExecuteLoanByLenderSignature_paused() public {
@@ -301,10 +383,8 @@ contract NiftyApesPauseUnitTest is
     function testCannotRefinanceByBorrower_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        lendingAuction.refinanceByBorrower(
-            address(0),
+        refinance.refinanceByBorrower(
             1,
-            false,
             bytes32(0),
             uint32(block.timestamp)
         );
@@ -319,7 +399,7 @@ contract NiftyApesPauseUnitTest is
     function testCannotRefinanceByLender_paused() public {
         hevm.expectRevert("Pausable: paused");
 
-        lendingAuction.refinanceByLender(getOffer(), 0);
+        refinance.refinanceByLender(getOffer(), 0);
     }
 
     function testCannotDrawLoanAmount_paused() public {

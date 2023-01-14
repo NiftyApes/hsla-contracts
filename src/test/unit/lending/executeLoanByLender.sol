@@ -20,8 +20,25 @@ contract TestExecuteLoanByLender is Test, OffersLoansRefinancesFixtures {
         }
         // lending contract has NFT
         assertEq(mockNft.ownerOf(1), address(lending));
+        // balance increments to one
+        assertEq(lending.balanceOf(borrower1, address(mockNft)), 1);
+        // nftId exists at index 0
+        assertEq(lending.tokenOfOwnerByIndex(borrower1, address(mockNft), 0), 1);
         // loan auction exists
         assertEq(lending.getLoanAuction(address(mockNft), 1).lastUpdatedTimestamp, block.timestamp);
+    }
+
+    function assertionsForExecutedERC1155Loan(Offer memory offer) private {
+        // borrower has money
+        if (offer.asset == address(daiToken)) {
+            assertEq(daiToken.balanceOf(borrower1), offer.amount);
+        } else {
+            assertEq(borrower1.balance, defaultInitialEthBalance + offer.amount);
+        }
+        // lending contract has the erc1155 nft corresponding to nftId
+        assertEq(mockERC1155Token.balanceOf(address(lending), offer.nftId), 1);
+        // loan auction exists
+        assertEq(lending.getLoanAuction(offer.nftContractAddress, offer.nftId).lastUpdatedTimestamp, block.timestamp);
     }
 
     function _test_executeLoanByLender_simplest_case(FuzzedOfferFields memory fuzzed) private {
@@ -41,6 +58,22 @@ contract TestExecuteLoanByLender is Test, OffersLoansRefinancesFixtures {
     function test_unit_executeLoanByLender_simplest_case() public {
         FuzzedOfferFields memory fixedForSpeed = defaultFixedFuzzedFieldsForFastUnitTesting;
         _test_executeLoanByLender_simplest_case(fixedForSpeed);
+    }
+
+    function _test_executeLoanByBorrower_ERC1155_simplest_case(FuzzedOfferFields memory fuzzed) private {
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedBorrowerOfferFields);
+        offer.nftContractAddress = address(mockERC1155Token);
+        offer.nftId = 1;
+        createOfferAndTryToExecuteLoanByLender(offer, "should work");
+        assertionsForExecutedERC1155Loan(offer);
+    }
+
+    function test_fuzz_executeLoanByBorrower_ERC1155_simplest_case(FuzzedOfferFields memory fuzzed)
+        public
+        validateFuzzedOfferFields(fuzzed)
+    {
+        vm.assume(fuzzed.floorTerm == false);
+        _test_executeLoanByBorrower_ERC1155_simplest_case(fuzzed);
     }
 
     function _test_executeLoanByLender_events(FuzzedOfferFields memory fuzzed) private {

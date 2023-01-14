@@ -256,7 +256,7 @@ contract TestRefinanceLoanByBorrowerSignature is
             1;
         bytes memory signature = signOffer(lender1_private_key, offer);
 
-        vm.expectEmit(true, true, false, true); // OfferSignatureUsed has two indexes
+        vm.expectEmit(true, true, false, false); // OfferSignatureUsed has two indexes
         emit OfferSignatureUsed(offer.nftContractAddress, offer.nftId, newOffer, signature);
 
         vm.startPrank(borrower1);

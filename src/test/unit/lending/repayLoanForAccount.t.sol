@@ -23,6 +23,15 @@ contract TestRepayLoanForAccount is Test, OffersLoansRefinancesFixtures {
         assertEq(lending.getLoanAuction(address(mockNft), 1).lastUpdatedTimestamp, block.timestamp);
     }
 
+    function nftOwnershipAssertionsForClosedLoans(address expectedNftOwner) private {
+        // expected address has NFT
+        assertEq(mockNft.ownerOf(1), expectedNftOwner);
+        // balance decrements to 0
+        assertEq(lending.balanceOf(borrower1, address(mockNft)), 0);
+        // loan auction doesn't exist anymore
+        assertEq(lending.getLoanAuction(address(mockNft), 1).lastUpdatedTimestamp, 0);
+    }
+
     function test_fuzz_repayLoanForAccount_simplest_case(
         FuzzedOfferFields memory fuzzedOffer,
         uint16 secondsBeforeRepayment,
@@ -52,8 +61,10 @@ contract TestRepayLoanForAccount is Test, OffersLoansRefinancesFixtures {
 
         uint256 interestDelta = 0;
 
-        if (interestThreshold > accruedLenderInterest) {
-            interestDelta = interestThreshold - accruedLenderInterest;
+        if (loanAuction.loanEndTimestamp - 1 days > uint32(block.timestamp)) {
+            if (interestThreshold > accruedLenderInterest) {
+                interestDelta = interestThreshold - accruedLenderInterest;
+            }
         }
 
         uint256 interest = (offer.interestRatePerSecond * secondsBeforeRepayment) +
@@ -131,6 +142,7 @@ contract TestRepayLoanForAccount is Test, OffersLoansRefinancesFixtures {
                 assetBalancePlusOneCToken(lender1, address(ETH_ADDRESS))
             );
         }
+        nftOwnershipAssertionsForClosedLoans(borrower1);
     }
 
     function test_unit_CANNOT_repayLoanForAccount_expectedLoanNotActive() public {

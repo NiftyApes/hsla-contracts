@@ -46,16 +46,16 @@ contract DeployNiftyApesScript is Script {
 
         // deploy and initialize implementation contracts
         liquidityImplementation = new NiftyApesLiquidity();
-        liquidityImplementation.initialize(address(0));
+        liquidityImplementation.initialize(address(0), address(0), address(0));
 
         offersImplementation = new NiftyApesOffers();
-        offersImplementation.initialize(address(0));
+        offersImplementation.initialize(address(0), address(0), address(0));
 
         sigLendingImplementation = new NiftyApesSigLending();
-        sigLendingImplementation.initialize(address(0));
+        sigLendingImplementation.initialize(address(0), address(0));
 
         lendingImplementation = new NiftyApesLending();
-        lendingImplementation.initialize(address(0), address(0), address(0));
+        lendingImplementation.initialize(address(0), address(0), address(0), address(0), address(0), address(0), address(0), address(0));
 
         // deploy proxy admins
         lendingProxyAdmin = new ProxyAdmin();
@@ -93,10 +93,10 @@ contract DeployNiftyApesScript is Script {
         sigLending = ISigLending(address(sigLendingProxy));
 
         // initialize proxies
-        liquidity.initialize(address(bCompContractAddress));
-        offers.initialize(address(liquidity));
-        sigLending.initialize(address(offers));
-        lending.initialize(address(liquidity), address(offers), address(sigLending));
+        liquidity.initialize(address(bCompContractAddress), address(0), address(0));
+        offers.initialize(address(liquidity), address(0), address(0));
+        sigLending.initialize(address(offers), address(0));
+        lending.initialize(address(liquidity), address(offers), address(sigLending), address(0), address(0), address(0), address(0), address(0));
 
         // associate proxies
         liquidity.updateLendingContractAddress(address(lending));

@@ -13,61 +13,122 @@ import "../../../Lending.sol";
 import "../../../Liquidity.sol";
 import "../../../Offers.sol";
 import "../../../SigLending.sol";
+import "../../../FlashClaim.sol";
+import "./FlashClaimReceivers/FlashClaimReceiverTestHappy.sol";
+import "./FlashClaimReceivers/FlashClaimReceiverTestNoReturn.sol";
+import "./FlashClaimReceivers/FlashClaimReceiverTestReturnsFalse.sol";
+import "../../../FlashPurchase.sol";
+import "../../../flashPurchase/integrations/SeaportFlashPurchaseIntegration.sol";
+import "../../../flashPurchase/integrations/SudoswapFlashPurchaseIntegration.sol";
+import "../../../FlashSell.sol";
+import "../../../flashSell/integrations/SeaportFlashSellIntegration.sol";
+import "../../../SellOnSeaport.sol";
+import "../../../Refinance.sol";
+import "../../../flashSell/integrations/SudoswapFlashSellIntegration.sol";
 import "./NFTAndERC20Fixtures.sol";
+import "../../../interfaces/seaport/ISeaport.sol";
 
 import "forge-std/Test.sol";
 
 // deploy & initializes NiftyApes contracts
 // connects them to one another
 // adds cAssets for both ETH and DAI
-// sets max cAsset balance for both to unint256 max
+// sets max cAsset balance for both to uint256 max
 contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
     NiftyApesLending lendingImplementation;
     NiftyApesOffers offersImplementation;
     NiftyApesLiquidity liquidityImplementation;
     NiftyApesSigLending sigLendingImplementation;
+    NiftyApesRefinance refinanceImplementation;
+    NiftyApesFlashClaim flashClaimImplementation;
+    NiftyApesFlashPurchase flashPurchaseImplementation;
+    NiftyApesFlashSell flashSellImplementation;
+    NiftyApesSellOnSeaport sellOnSeaportImplementation;
     ProxyAdmin lendingProxyAdmin;
     ProxyAdmin offersProxyAdmin;
     ProxyAdmin liquidityProxyAdmin;
     ProxyAdmin sigLendingProxyAdmin;
+    ProxyAdmin refinanceProxyAdmin;
+    ProxyAdmin flashClaimProxyAdmin;
+    ProxyAdmin flashPurchaseProxyAdmin;
+    ProxyAdmin flashSellProxyAdmin;
+    ProxyAdmin sellOnSeaportProxyAdmin;
     TransparentUpgradeableProxy lendingProxy;
     TransparentUpgradeableProxy offersProxy;
     TransparentUpgradeableProxy liquidityProxy;
     TransparentUpgradeableProxy sigLendingProxy;
+    TransparentUpgradeableProxy refinanceProxy;
+    TransparentUpgradeableProxy flashClaimProxy;
+    TransparentUpgradeableProxy flashPurchaseProxy;
+    TransparentUpgradeableProxy flashSellProxy;
+    TransparentUpgradeableProxy sellOnSeaportProxy;
     ILending lending;
     IOffers offers;
     ILiquidity liquidity;
     ISigLending sigLending;
+    IRefinance refinance;
+    IFlashClaim flashClaim;
+    IFlashPurchase flashPurchase;
+    IFlashSell flashSell;
+    ISellOnSeaport sellOnSeaport;
+
+    FlashClaimReceiverBaseHappy flashClaimReceiverHappy;
+    FlashClaimReceiverBaseNoReturn flashClaimReceiverNoReturn;
+    FlashClaimReceiverBaseReturnsFalse flashClaimReceiverReturnsFalse;
+    SeaportFlashPurchaseIntegration seaportFlashPurchase;
+    SudoswapFlashPurchaseIntegration sudoswapFlashPurchase;
+    SeaportFlashSellIntegration seaportFlashSell;
+    SudoswapFlashSellIntegration sudoswapFlashSell;
 
     address constant ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+    address constant SEAPORT_ADDRESS = 0x00000000006c3852cbEf3e08E8dF289169EdE581;
+    address constant SUDOSWAP_FACTORY_ADDRESS = 0xb16c1342E617A5B6E4b631EB114483FDB289c0A4;
+    address constant SUDOSWAP_ROUTER_ADDRESS = 0x2B2e8cDA09bBA9660dCA5cB6233787738Ad68329;
 
     function setUp() public virtual override {
         super.setUp();
 
         vm.startPrank(owner);
 
+        flashClaimReceiverHappy = new FlashClaimReceiverBaseHappy();
+        flashClaimReceiverNoReturn = new FlashClaimReceiverBaseNoReturn();
+        flashClaimReceiverReturnsFalse = new FlashClaimReceiverBaseReturnsFalse();
+
+        seaportFlashSell = new SeaportFlashSellIntegration();
+        seaportFlashSell.initialize();
+
+        sudoswapFlashSell = new SudoswapFlashSellIntegration();
+        sudoswapFlashSell.initialize();
+
         // deploy and initialize implementation contracts
         liquidityImplementation = new NiftyApesLiquidity();
-        liquidityImplementation.initialize(address(compToken));
 
         offersImplementation = new NiftyApesOffers();
-        offersImplementation.initialize(address(liquidityImplementation));
 
         sigLendingImplementation = new NiftyApesSigLending();
-        sigLendingImplementation.initialize(address(offersImplementation));
 
         lendingImplementation = new NiftyApesLending();
-        lendingImplementation.initialize(
-            address(liquidityImplementation),
-            address(offersImplementation),
-            address(sigLendingImplementation)
-        );
+
+        flashClaimImplementation = new NiftyApesFlashClaim();
+
+        flashPurchaseImplementation = new NiftyApesFlashPurchase();
+
+        flashSellImplementation = new NiftyApesFlashSell();
+
+        sellOnSeaportImplementation = new NiftyApesSellOnSeaport();
+
+        refinanceImplementation = new NiftyApesRefinance();
 
         // deploy proxy admins
         lendingProxyAdmin = new ProxyAdmin();
         offersProxyAdmin = new ProxyAdmin();
         liquidityProxyAdmin = new ProxyAdmin();
         sigLendingProxyAdmin = new ProxyAdmin();
+        refinanceProxyAdmin = new ProxyAdmin();
+        flashClaimProxyAdmin = new ProxyAdmin();
+        flashPurchaseProxyAdmin = new ProxyAdmin();
+        flashSellProxyAdmin = new ProxyAdmin();
+        sellOnSeaportProxyAdmin = new ProxyAdmin();
 
         // deploy proxies
         lendingProxy = new TransparentUpgradeableProxy(
@@ -91,26 +152,126 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
             address(sigLendingProxyAdmin),
             bytes("")
         );
+        refinanceProxy = new TransparentUpgradeableProxy(
+            address(refinanceImplementation),
+            address(refinanceProxyAdmin),
+            bytes("")
+        );
+        flashClaimProxy = new TransparentUpgradeableProxy(
+            address(flashClaimImplementation),
+            address(flashClaimProxyAdmin),
+            bytes("")
+        );
+        flashPurchaseProxy = new TransparentUpgradeableProxy(
+            address(flashPurchaseImplementation),
+            address(flashPurchaseProxyAdmin),
+            bytes("")
+        );
+        flashSellProxy = new TransparentUpgradeableProxy(
+            address(flashSellImplementation),
+            address(flashSellProxyAdmin),
+            bytes("")
+        );
+        sellOnSeaportProxy = new TransparentUpgradeableProxy(
+            address(sellOnSeaportImplementation),
+            address(sellOnSeaportProxyAdmin),
+            bytes("")
+        );
 
         // declare interfaces
         lending = ILending(address(lendingProxy));
         liquidity = ILiquidity(address(liquidityProxy));
         offers = IOffers(address(offersProxy));
         sigLending = ISigLending(address(sigLendingProxy));
+        refinance = IRefinance(address(refinanceProxy));
+        flashClaim = IFlashClaim(address(flashClaimProxy));
+        flashPurchase = IFlashPurchase(address(flashPurchaseProxy));
+        flashSell = IFlashSell(address(flashSellProxy));
+        sellOnSeaport = ISellOnSeaport(address(sellOnSeaportProxy));
 
-        // initialize proxies
-        liquidity.initialize(address(compToken));
-        offers.initialize(address(liquidity));
-        sigLending.initialize(address(offers));
-        lending.initialize(address(liquidity), address(offers), address(sigLending));
 
-        // associate proxies
-        liquidity.updateLendingContractAddress(address(lending));
+        liquidity.initialize(address(compToken), address(refinance), address(flashPurchase));
+        offers.initialize(address(liquidity), address(refinance), address(flashPurchase));
+        sigLending.initialize(address(offers), address(flashPurchase));
+        lending.initialize(
+            address(liquidity),
+            address(offers),
+            address(sigLending),
+            address(refinance),
+            address(flashClaim),
+            address(flashPurchase),
+            address(flashSell),
+            address(sellOnSeaport)
+        );
+        refinance.initialize();
+        flashClaim.initialize();
+        flashPurchase.initialize();
+        flashSell.initialize();
+        sellOnSeaport.initialize();
+
+        if (integration) {
+            seaportFlashPurchase = new SeaportFlashPurchaseIntegration();
+            seaportFlashPurchase.initialize(
+                address(offers),
+                address(flashPurchase),
+                SEAPORT_ADDRESS
+            );
+
+            sudoswapFlashPurchase = new SudoswapFlashPurchaseIntegration();
+            sudoswapFlashPurchase.initialize(
+                address(offers),
+                address(flashPurchase),
+                SUDOSWAP_FACTORY_ADDRESS,
+                SUDOSWAP_ROUTER_ADDRESS
+            );
+
+            seaportFlashSell.updateSeaportContractAddress(SEAPORT_ADDRESS);
+
+            sudoswapFlashSell.updateFlashSellContractAddress(address(flashSell));
+            sudoswapFlashSell.updateSudoswapFactoryContractAddress(SUDOSWAP_FACTORY_ADDRESS);
+            sudoswapFlashSell.updateSudoswapRouterContractAddress(SUDOSWAP_ROUTER_ADDRESS);
+        } else {
+            seaportFlashPurchase = new SeaportFlashPurchaseIntegration();
+            sudoswapFlashPurchase = new SudoswapFlashPurchaseIntegration();
+        }
+
+        sigLending.updateLendingContractAddress(address(lending));
+        sigLending.updateRefinanceContractAddress(address(refinance));
+
+        refinance.updateLendingContractAddress(address(lending));
+        refinance.updateLiquidityContractAddress(address(liquidity));
+        refinance.updateOffersContractAddress(address(offers));
+        refinance.updateSigLendingContractAddress(address(sigLending));
 
         offers.updateLendingContractAddress(address(lending));
         offers.updateSigLendingContractAddress(address(sigLending));
 
-        sigLending.updateLendingContractAddress(address(lending));
+        liquidity.updateLendingContractAddress(address(lending));
+
+        flashClaim.updateLendingContractAddress(address(lending));
+
+        flashPurchase.updateLiquidityContractAddress(address(liquidity));
+        flashPurchase.updateOffersContractAddress(address(offers));
+        flashPurchase.updateLendingContractAddress(address(lending));
+        flashPurchase.updateSigLendingContractAddress(address(sigLending));
+        seaportFlashPurchase.updateOffersContractAddress(address(offers));
+        sudoswapFlashPurchase.updateOffersContractAddress(address(offers));
+
+        flashSell.updateLendingContractAddress(address(lending));
+        flashSell.updateLiquidityContractAddress(address(liquidity));
+
+        seaportFlashSell.updateFlashSellContractAddress(address(flashSell));
+        seaportFlashSell.updateWethContractAddress(address(wethToken));
+
+        flashClaimReceiverHappy.updateFlashClaimContractAddress(address(flashClaim));
+
+        sellOnSeaport.updateSeaportContractAddress(SEAPORT_ADDRESS);
+        sellOnSeaport.updateLendingContractAddress(address(lending));
+        sellOnSeaport.updateLiquidityContractAddress(address(liquidity));
+
+        // update protocol interest
+        lending.updateProtocolInterestBps(100);
+        lending.updateDefaultRefinancePremiumBps(25);
 
         // set max balances
         liquidity.setCAssetAddress(ETH_ADDRESS, address(cEtherToken));
@@ -119,13 +280,11 @@ contract NiftyApesDeployment is Test, NFTAndERC20Fixtures {
         liquidity.setCAssetAddress(address(daiToken), address(cDAIToken));
         liquidity.setMaxCAssetBalance(address(cDAIToken), ~uint256(0));
 
-        // update protocol interest
-        lending.updateProtocolInterestBps(100);
-        lending.updateDefaultRefinancePremiumBps(25);
-
         if (!integration) {
             liquidity.pauseSanctions();
             lending.pauseSanctions();
+            flashClaim.pauseSanctions();
+            flashSell.pauseSanctions();
         }
 
         vm.stopPrank();

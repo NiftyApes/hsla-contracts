@@ -4,6 +4,8 @@ pragma solidity 0.8.13;
 import "./ISigLendingAdmin.sol";
 import "./ISigLendingEvents.sol";
 import "../offers/IOffersStructs.sol";
+import "../../seaport/ISeaport.sol";
+import "../../sudoswap/ILSSVMPair.sol";
 
 /// @title The signature lending interface for Nifty Apes
 ///        This interface is intended to be used for interacting with loans on the protocol.
@@ -13,6 +15,12 @@ interface ISigLending is ISigLendingAdmin, ISigLendingEvents, IOffersStructs {
 
     /// @notice Returns the address for the associated liquidity contract
     function lendingContractAddress() external view returns (address);
+
+    /// @notice Returns the address for the associated refinance contract
+    function refinanceContractAddress() external view returns (address);
+
+    /// @notice Returns the address for the associated purchase with financing contract
+    function flashPurchaseContractAddress() external view returns (address);
 
     /// @notice Start a loan as the borrower using a signed offer.
     ///         The caller of this method has to be the current owner of the NFT
@@ -49,5 +57,18 @@ interface ISigLending is ISigLendingAdmin, ISigLendingEvents, IOffersStructs {
         uint32 expectedLastUpdatedTimestamp
     ) external;
 
-    function initialize(address newOffersContractAddress) external;
+    function initialize(
+        address newOffersContractAddress,
+        address newFlashPurchaseContractAddress
+    ) external;
+
+    /// @notice Allows FlashPurchase contract to verify and consume offer and its signature
+    /// @dev Only callable by the flashPurchase contract
+    /// @param offer The details of the loan auction offer
+    /// @param signature The signature for the offer
+    function validateAndUseOfferSignatureFlashPurchase(
+        Offer memory offer,
+        bytes memory signature
+    ) external;
+
 }

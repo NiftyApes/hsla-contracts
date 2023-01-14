@@ -3,6 +3,7 @@ pragma solidity 0.8.13;
 
 import "forge-std/Test.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
+import "@openzeppelin/contracts/token/ERC1155/IERC1155Upgradeable.sol";
 
 import "../../utils/fixtures/LenderLiquidityFixtures.sol";
 import "../../../interfaces/niftyapes/offers/IOffersStructs.sol";
@@ -92,14 +93,14 @@ contract OffersLoansRefinancesFixtures is
             vm.assume(fuzzed.amount < (defaultDaiLiquiditySupplied * 50) / 100);
         } else {
             vm.assume(fuzzed.amount > ~uint32(0));
-            vm.assume(fuzzed.amount < (defaultEthLiquiditySupplied * 50) / 100);
+            vm.assume(fuzzed.amount < uint256(defaultEthLiquiditySupplied / 10000));
         }
 
         vm.assume(fuzzed.duration > 1 days);
         // to avoid overflow when loanAuction.loanEndTimestamp = _currentTimestamp32() + offer.duration;
         vm.assume(fuzzed.duration < (~uint32(0) - block.timestamp));
         vm.assume(fuzzed.expiration > block.timestamp);
-        // to avoid "Division or m  odulo by 0"
+        // to avoid "Division or modulo by 0"
         vm.assume(fuzzed.interestRatePerSecond > 0);
         // don't want interest to be too much for refinancing lender
         vm.assume(fuzzed.interestRatePerSecond < (fuzzed.randomAsset % 2 == 0 ? 100 : 10**13));
@@ -148,19 +149,23 @@ contract OffersLoansRefinancesFixtures is
         offer.creator = lender;
         bytes32 offerHash = offers.createOffer(offer);
         vm.stopPrank();
-        return offers.getOffer(offer.nftContractAddress, offer.nftId, offerHash, offer.floorTerm);
+        return offers.getOffer(offerHash);
     }
 
     function createBorrowerOffer(Offer memory offer) internal returns (Offer memory) {
         vm.startPrank(offer.creator);
         bytes32 offerHash = offers.createOffer(offer);
         vm.stopPrank();
-        return offers.getOffer(offer.nftContractAddress, offer.nftId, offerHash, offer.floorTerm);
+        return offers.getOffer(offerHash);
     }
 
     function approveLending(Offer memory offer) internal {
         vm.startPrank(borrower1);
-        mockNft.approve(address(lending), offer.nftId);
+        if (IERC1155Upgradeable(offer.nftContractAddress).supportsInterface(type(IERC1155Upgradeable).interfaceId)) {
+            mockERC1155Token.setApprovalForAll(address(lending), true);
+        } else {
+            mockNft.approve(address(lending), offer.nftId);
+        }
         vm.stopPrank();
     }
 
@@ -176,10 +181,8 @@ contract OffersLoansRefinancesFixtures is
         }
 
         lending.executeLoanByBorrower(
-            offer.nftContractAddress,
             offer.nftId,
-            offerHash,
-            offer.floorTerm
+            offerHash
         );
         vm.stopPrank();
 
@@ -199,10 +202,8 @@ contract OffersLoansRefinancesFixtures is
         }
 
         lending.executeLoanByLender(
-            offer.nftContractAddress,
             offer.nftId,
-            offerHash,
-            offer.floorTerm
+            offerHash
         );
         vm.stopPrank();
 
@@ -240,10 +241,8 @@ contract OffersLoansRefinancesFixtures is
         }
 
         vm.startPrank(borrower1);
-        lending.refinanceByBorrower(
-            newOffer.nftContractAddress,
+        refinance.refinanceByBorrower(
             newOffer.nftId,
-            newOffer.floorTerm,
             offerHash,
             lending.getLoanAuction(address(mockNft), 1).lastUpdatedTimestamp
         );
@@ -259,7 +258,7 @@ contract OffersLoansRefinancesFixtures is
         if (bytes16(errorCode) != bytes16("should work")) {
             vm.expectRevert(errorCode);
         }
-        lending.refinanceByLender(
+        refinance.refinanceByLender(
             newOffer,
             lending.getLoanAuction(address(mockNft), 1).lastUpdatedTimestamp
         );

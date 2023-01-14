@@ -14,7 +14,7 @@ contract OffersUpgradeScript is Script {
 
         // deploy and initialize implementation contracts
         offersImplementation = new NiftyApesOffers();
-        offersImplementation.initialize(address(0));
+        offersImplementation.initialize(address(0), address(0), address(0));
 
         // change ownership of implementation contracts
         offersImplementation.transferOwnership(goerliMultisigAddress);
