@@ -27,6 +27,19 @@ contract TestRepayLoan is Test, OffersLoansRefinancesFixtures {
         assertEq(lending.getLoanAuction(address(mockNft), 1).lastUpdatedTimestamp, block.timestamp);
     }
 
+    function assertionsForExecutedERC1155Loan(Offer memory offer) private {
+        // borrower has money
+        if (offer.asset == address(daiToken)) {
+            assertEq(daiToken.balanceOf(borrower1), offer.amount);
+        } else {
+            assertEq(borrower1.balance, defaultInitialEthBalance + offer.amount);
+        }
+        // lending contract has the erc1155 nft corresponding to nftId
+        assertEq(mockERC1155Token.balanceOf(address(lending), offer.nftId), 1);
+        // loan auction exists
+        assertEq(lending.getLoanAuction(offer.nftContractAddress, offer.nftId).lastUpdatedTimestamp, block.timestamp);
+    }
+
     function nftOwnershipAssertionsForClosedLoans(address expectedNftOwner) private {
         // expected address has NFT
         assertEq(mockNft.ownerOf(1), expectedNftOwner);
@@ -36,30 +49,42 @@ contract TestRepayLoan is Test, OffersLoansRefinancesFixtures {
         assertEq(lending.getLoanAuction(address(mockNft), 1).lastUpdatedTimestamp, 0);
     }
 
-    function test_fuzz_repayLoan_simplest_case(
-        FuzzedOfferFields memory fuzzedOffer,
-        uint16 secondsBeforeRepayment
-    ) public validateFuzzedOfferFields(fuzzedOffer) {
-        Offer memory offerToCreate = offerStructFromFields(fuzzedOffer, defaultFixedOfferFields);
+    function nftOwnershipAssertionsForClosedERC1155Loans(address expectedNftOwner) private {
+        // expected address has NFT
+        assertEq(mockERC1155Token.balanceOf(expectedNftOwner, 1), 1);
+        // balance decrements to 0
+        assertEq(lending.balanceOf(borrower1, address(mockERC1155Token)), 0);
+        // loan auction doesn't exist anymore
+        assertEq(lending.getLoanAuction(address(mockERC1155Token), 1).lastUpdatedTimestamp, 0);
+    }
 
+    function _test_repayLoan_simplest_case(
+        Offer memory fuzzedOffer,
+        uint16 secondsBeforeRepayment
+    ) private {
         (Offer memory offer, ) = createOfferAndTryToExecuteLoanByBorrower(
-            offerToCreate,
+            fuzzedOffer,
             "should work"
         );
 
         LoanAuction memory loanAuction = lending.getLoanAuction(
-            defaultFixedOfferFields.nftContractAddress,
-            defaultFixedOfferFields.nftId
+            offer.nftContractAddress,
+            offer.nftId
         );
 
-        assertionsForExecutedLoan(offer);
+        if (offer.nftContractAddress == address(mockNft)) {
+            assertionsForExecutedLoan(offer);
+        } else {
+            assertionsForExecutedERC1155Loan(offer);
+        }
+        
 
         vm.warp(block.timestamp + secondsBeforeRepayment);
 
         (uint256 accruedLenderInterest, uint256 accruedProtocolInterest) = lending
             .calculateInterestAccrued(
-                defaultFixedOfferFields.nftContractAddress,
-                defaultFixedOfferFields.nftId
+                offer.nftContractAddress,
+                offer.nftId
             );
 
         uint256 interestThreshold = (uint256(loanAuction.amountDrawn) *
@@ -89,8 +114,8 @@ contract TestRepayLoan is Test, OffersLoansRefinancesFixtures {
             vm.startPrank(borrower1);
             daiToken.approve(address(liquidity), ~uint256(0));
             lending.repayLoan(
-                defaultFixedOfferFields.nftContractAddress,
-                defaultFixedOfferFields.nftId
+                offer.nftContractAddress,
+                offer.nftId
             );
             vm.stopPrank();
 
@@ -120,13 +145,13 @@ contract TestRepayLoan is Test, OffersLoansRefinancesFixtures {
             vm.expectRevert("00030");
             //  subtract 1 in order to fail when 0 interest
             lending.repayLoan{ value: loanAuction.amountDrawn - 1 }(
-                defaultFixedOfferFields.nftContractAddress,
-                defaultFixedOfferFields.nftId
+                offer.nftContractAddress,
+                offer.nftId
             );
 
             lending.repayLoan{ value: loanAuction.amountDrawn + interest + interestDelta }(
-                defaultFixedOfferFields.nftContractAddress,
-                defaultFixedOfferFields.nftId
+                offer.nftContractAddress,
+                offer.nftId
             );
             vm.stopPrank();
 
@@ -153,6 +178,28 @@ contract TestRepayLoan is Test, OffersLoansRefinancesFixtures {
                 assetBalancePlusOneCToken(lender1, address(ETH_ADDRESS))
             );
         }
-        nftOwnershipAssertionsForClosedLoans(borrower1);
+        if (offer.nftContractAddress == address(mockNft)) {
+            nftOwnershipAssertionsForClosedLoans(borrower1);
+        } else {
+            nftOwnershipAssertionsForClosedERC1155Loans(borrower1);
+        }
+    }
+
+    function test_fuzz_repayLoan_721_simplest_case(
+        FuzzedOfferFields memory fuzzedOffer,
+        uint16 secondsBeforeRepayment
+    ) public validateFuzzedOfferFields(fuzzedOffer) {
+        Offer memory offerToCreate = offerStructFromFields(fuzzedOffer, defaultFixedOfferFields);
+        _test_repayLoan_simplest_case(offerToCreate, secondsBeforeRepayment);
+    }
+
+    function test_fuzz_repayLoan_1155_simplest_case(
+        FuzzedOfferFields memory fuzzedOffer,
+        uint16 secondsBeforeRepayment
+    ) public validateFuzzedOfferFields(fuzzedOffer) {
+        Offer memory offerToCreate = offerStructFromFields(fuzzedOffer, defaultFixedOfferFields);
+        offerToCreate.nftContractAddress = address(mockERC1155Token);
+        offerToCreate.nftId = 1;
+        _test_repayLoan_simplest_case(offerToCreate, secondsBeforeRepayment);
     }
 }

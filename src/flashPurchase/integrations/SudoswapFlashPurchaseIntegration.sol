@@ -107,23 +107,18 @@ contract SudoswapFlashPurchaseIntegration is
     /// @inheritdoc ISudoswapFlashPurchaseIntegration
     function flashPurchaseSudoswap(
         bytes32 offerHash,
-        bool floorTerm,
         ILSSVMPair lssvmPair,
         uint256[] memory nftIds
     ) external payable nonReentrant {
-        uint256 numOfNfts = nftIds.length;
-        if (numOfNfts > 1) {
-            require(floorTerm, "00056");
-        }
-        // fetch nft contract address
-        address nftContractAddress = address(lssvmPair.nft());
         Offer memory offer = _fetchOffer(
             offersContractAddress,
-            nftContractAddress,
-            offerHash,
-            floorTerm,
-            nftIds[0]
+            offerHash
         );
+
+        uint256 numOfNfts = nftIds.length;
+        if (numOfNfts > 1) {
+            require(offer.floorTerm, "00056");
+        }
         
         _validateSudoswapPair(offer, lssvmPair);
         uint256 totalConsiderationAmount = _getConsiderationAmount(lssvmPair, numOfNfts);
@@ -136,9 +131,7 @@ contract SudoswapFlashPurchaseIntegration is
             _ethTransferable = true;
             IFlashPurchase(flashPurchaseContractAddress).borrowFundsForPurchase(
                 offerHash,
-                nftContractAddress,
                 nftIds[i],
-                floorTerm,
                 address(this),
                 msg.sender,
                 abi.encode(lssvmPair, offer.asset)

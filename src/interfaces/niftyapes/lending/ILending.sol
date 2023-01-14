@@ -102,29 +102,21 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
 
     /// @notice Start a loan as the borrower using an offer from the on chain offer book.
     ///         The caller of this method has to be the current owner of the NFT
-    /// @param nftContractAddress The address of the NFT collection
     /// @param nftId The id of the specified NFT
     /// @param offerHash The hash of all parameters in an offer
-    /// @param floorTerm Indicates whether this is a floor or individual NFT offer.
     function executeLoanByBorrower(
-        address nftContractAddress,
         uint256 nftId,
-        bytes32 offerHash,
-        bool floorTerm
+        bytes32 offerHash
     ) external payable;
 
     /// @notice Start a loan as the lender using an offer from the on chain offer book.
     ///         Borrowers can make offers for loan terms on their NFTs and thus lenders can
     ///         execute these offers
-    /// @param nftContractAddress The address of the NFT collection
     /// @param nftId The id of the specified NFT
     /// @param offerHash The hash of all parameters in an offer
-    /// @param floorTerm Indicates whether this is a floor or individual NFT offer.
     function executeLoanByLender(
-        address nftContractAddress,
         uint256 nftId,
-        bytes32 offerHash,
-        bool floorTerm
+        bytes32 offerHash
     ) external payable;
 
 
@@ -286,6 +278,17 @@ interface ILending is ILendingAdmin, ILendingEvents, ILendingStructs, IOffersStr
         uint256 nftId,
         address lender,
         address borrower
+    ) external;
+
+    function initialize(
+        address newLiquidityContractAddress,
+        address newOffersContractAddress,
+        address newSigLendingContractAddress,
+        address newRefinanceContractAddress,
+        address newFlashClaimContractAddress,
+        address newFlashPurchaseAddress,
+        address newFlashSellContractAddress,
+        address newSellOnSeaportContractAddress
     ) external;
 
     /// @notice Function validate the order listing on the Seaport contract for SellOnSeaport

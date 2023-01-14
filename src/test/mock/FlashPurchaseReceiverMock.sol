@@ -15,7 +15,11 @@ contract FlashPurchaseReceiverMock is IFlashPurchaseReceiver, ERC721HolderUpgrad
         initiator;
         data;
         IERC721Upgradeable(nftContractAddress).approve(msg.sender, nftId);
-        return true;
+        if (keccak256(data) == keccak256(bytes(""))) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     receive() external payable {}

@@ -790,7 +790,7 @@ contract TestRefinanceByLender is Test, OffersLoansRefinancesFixtures {
         vm.startPrank(borrower1);
         mockNft.safeTransferFrom(borrower1, borrower2, 1);
         vm.stopPrank();
-        tryToExecuteLoanByBorrower(offer, "00018");
+        tryToExecuteLoanByBorrower(offer, "00021");
     }
 
     function test_fuzz_cannot_refinanceByLender_if_dont_own_nft(FuzzedOfferFields memory fuzzed)

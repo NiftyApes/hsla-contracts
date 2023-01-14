@@ -105,10 +105,7 @@ contract SeaportFlashPurchaseIntegration is
 
         Offer memory offer = _fetchOffer(
             offersContractAddress,
-            order.parameters.offer[0].token,
-            offerHash,
-            floorTerm,
-            order.parameters.offer[0].identifierOrCriteria
+            offerHash
         );
 
         _validateOrder(order, offer);
@@ -121,9 +118,7 @@ contract SeaportFlashPurchaseIntegration is
         // call the FlashPurchase to take fund from the lender side
         IFlashPurchase(flashPurchaseContractAddress).borrowFundsForPurchase(
             offerHash,
-            offer.nftContractAddress,
             order.parameters.offer[0].identifierOrCriteria,
-            floorTerm,
             address(this),
             msg.sender,
             abi.encode(order, fulfillerConduitKey)

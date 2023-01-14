@@ -3,6 +3,7 @@ pragma solidity 0.8.13;
 
 import "forge-std/Test.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
+import "@openzeppelin/contracts/token/ERC1155/IERC1155Upgradeable.sol";
 
 import "../../utils/fixtures/LenderLiquidityFixtures.sol";
 import "../../../interfaces/niftyapes/offers/IOffersStructs.sol";
@@ -148,19 +149,23 @@ contract OffersLoansRefinancesFixtures is
         offer.creator = lender;
         bytes32 offerHash = offers.createOffer(offer);
         vm.stopPrank();
-        return offers.getOffer(offer.nftContractAddress, offer.nftId, offerHash, offer.floorTerm);
+        return offers.getOffer(offerHash);
     }
 
     function createBorrowerOffer(Offer memory offer) internal returns (Offer memory) {
         vm.startPrank(offer.creator);
         bytes32 offerHash = offers.createOffer(offer);
         vm.stopPrank();
-        return offers.getOffer(offer.nftContractAddress, offer.nftId, offerHash, offer.floorTerm);
+        return offers.getOffer(offerHash);
     }
 
     function approveLending(Offer memory offer) internal {
         vm.startPrank(borrower1);
-        mockNft.approve(address(lending), offer.nftId);
+        if (IERC1155Upgradeable(offer.nftContractAddress).supportsInterface(type(IERC1155Upgradeable).interfaceId)) {
+            mockERC1155Token.setApprovalForAll(address(lending), true);
+        } else {
+            mockNft.approve(address(lending), offer.nftId);
+        }
         vm.stopPrank();
     }
 
@@ -176,10 +181,8 @@ contract OffersLoansRefinancesFixtures is
         }
 
         lending.executeLoanByBorrower(
-            offer.nftContractAddress,
             offer.nftId,
-            offerHash,
-            offer.floorTerm
+            offerHash
         );
         vm.stopPrank();
 
@@ -199,10 +202,8 @@ contract OffersLoansRefinancesFixtures is
         }
 
         lending.executeLoanByLender(
-            offer.nftContractAddress,
             offer.nftId,
-            offerHash,
-            offer.floorTerm
+            offerHash
         );
         vm.stopPrank();
 
@@ -241,9 +242,7 @@ contract OffersLoansRefinancesFixtures is
 
         vm.startPrank(borrower1);
         refinance.refinanceByBorrower(
-            newOffer.nftContractAddress,
             newOffer.nftId,
-            newOffer.floorTerm,
             offerHash,
             lending.getLoanAuction(address(mockNft), 1).lastUpdatedTimestamp
         );

@@ -64,6 +64,9 @@ The NiftyApes protocol is made up of four core contracts `Liquidity.sol`, `Offer
 6. For deployment to Mainnet:
    a. `forge script script/Mainnet_Deploy_NiftyApes.s.sol:DeployNiftyApesScript --optimize --rpc-url $MAINNET_RPC_URL --private-key $MAINNET_BURNER_PRIVATE_KEY --slow --broadcast`
 
+7. For deploying a modified compound fork and bwxDai on Gnosis Chain:
+   `forge script script/Gnosis_Deploy_CompoundAndBwxDai.s.sol:CompoundDeploymentScript --optimize --slow --rpc-url $GNOSIS_RPC_URL --private-key $GNOSIS_PRIVATE_KEY --broadcast`
+
 ## Pause
 
 1. To pause Mainnet protocol:
@@ -145,3 +148,4 @@ The NiftyApes protocol is made up of four core contracts `Liquidity.sol`, `Offer
 "00067" == "invalid seaport purchase order"
 "00068" == "WETH withdraw failed"
 "00069" == "invalid index provided"
+"00070" == "ERC1155 tokenId is fungible"

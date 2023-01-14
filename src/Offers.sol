@@ -4,9 +4,12 @@ pragma solidity 0.8.13;
 import "@openzeppelin/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Upgradeable.sol";
+import "@openzeppelin/contracts/token/ERC1155/IERC1155Upgradeable.sol";
+import "@openzeppelin/contracts/utils/introspection/ERC165CheckerUpgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712Upgradeable.sol";
 import "@openzeppelin/contracts/utils/math/SafeCastUpgradeable.sol";
 import "@openzeppelin/contracts/utils/AddressUpgradeable.sol";
+import "./interfaces/erc1155/IERC1155SupplyUpgradeable.sol";
 import "./interfaces/niftyapes/offers/IOffers.sol";
 import "./interfaces/niftyapes/liquidity/ILiquidity.sol";
 import "./lib/ECDSABridge.sol";
@@ -19,15 +22,13 @@ import "./lib/ECDSABridge.sol";
 /// @custom:contributor zjmiller (zjmiller.eth)
 
 contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgradeable, IOffers {
-    /// @dev A mapping for a NFT to an Offer
-    ///      The mapping has to be broken into three parts since an NFT is denominated by its address (first part)
-    ///      and its nftId (second part), offers are referred to by their hash (see #getEIP712EncodedOffer for details) (third part).
-    mapping(address => mapping(uint256 => mapping(bytes32 => Offer))) private _nftOfferBooks;
+    using ERC165CheckerUpgradeable for address;
 
-    /// @dev A mapping for a NFT to a floor offer
-    ///      Floor offers are different from offers on a specific NFT since they are valid on any NFT fro the same address.
-    ///      Thus this mapping skips the nftId, see _nftOfferBooks above.
-    mapping(address => mapping(bytes32 => Offer)) private _floorOfferBooks;
+    /// @dev empty slot for v1.0 offer book
+    mapping(address => mapping(uint256 => mapping(bytes32 => Offer))) private _prevNftOfferBooks;
+
+    /// @dev empty slot for v1.0 floor offer book
+    mapping(address => mapping(bytes32 => Offer)) private _prevFloorOfferBooks;
 
     /// @dev A mapping for an on chain offerHash to a floor offer counter
     mapping(bytes32 => uint64) private _floorOfferCounters;
@@ -48,15 +49,25 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
     /// @inheritdoc IOffers
     address public liquidityContractAddress;
 
+    /// @dev Constant typeHash for EIP-712 hashing of Offer struct
+    ///      If the Offer struct shape changes, this will need to change as well.
+    bytes32 private constant _OFFER_TYPEHASH =
+        keccak256(
+            "Offer(address creator,uint32 duration,uint32 expiration,bool fixedTerms,bool floorTerm,bool lenderOffer,address nftContractAddress,uint256 nftId,address asset,uint128 amount,uint96 interestRatePerSecond,uint64 floorTermLimit)"
+        );
+
     /// @inheritdoc IOffers
     address public flashPurchaseContractAddress;
 
     /// @inheritdoc IOffers
     address public refinanceContractAddress;
 
+    /// @dev A mapping for storing offers with offerHash as their keys
+    mapping(bytes32 => Offer) private _nftOfferBooks;
+
     /// @dev This empty reserved space is put in place to allow future versions to add new
     /// variables without shifting storage.
-    uint256[499] private __gap;
+    uint256[496] private __gap;
 
     /// @notice The initializer for the NiftyApes protocol.
     ///         NiftyApes is intended to be deployed behind a proxy and thus needs to initialize
@@ -128,23 +139,19 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
             _hashTypedDataV4(
                 keccak256(
                     abi.encode(
-                        0x428a8e8c29d93e1e11aecebd37fa09e4f7c542a1302c7ac497bf5f49662103a5,
-                        keccak256(
-                            abi.encode(
-                                offer.creator,
-                                offer.duration,
-                                offer.expiration,
-                                offer.fixedTerms,
-                                offer.floorTerm,
-                                offer.lenderOffer,
-                                offer.nftContractAddress,
-                                offer.nftId,
-                                offer.asset,
-                                offer.amount,
-                                offer.interestRatePerSecond,
-                                offer.floorTermLimit
-                            )
-                        )
+                        _OFFER_TYPEHASH,
+                        offer.creator,
+                        offer.duration,
+                        offer.expiration,
+                        offer.fixedTerms,
+                        offer.floorTerm,
+                        offer.lenderOffer,
+                        offer.nftContractAddress,
+                        offer.nftId,
+                        offer.asset,
+                        offer.amount,
+                        offer.interestRatePerSecond,
+                        offer.floorTermLimit
                     )
                 )
             );
@@ -181,34 +188,11 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
         _markSignatureUsed(offer, signature);
     }
 
-    function _getOfferBook(
-        address nftContractAddress,
-        uint256 nftId,
-        bool floorTerm
-    ) internal view returns (mapping(bytes32 => Offer) storage) {
-        return
-            floorTerm
-                ? _floorOfferBooks[nftContractAddress]
-                : _nftOfferBooks[nftContractAddress][nftId];
-    }
-
     /// @inheritdoc IOffers
     function getOffer(
-        address nftContractAddress,
-        uint256 nftId,
-        bytes32 offerHash,
-        bool floorTerm
+        bytes32 offerHash
     ) public view returns (Offer memory) {
-        return _getOfferInternal(nftContractAddress, nftId, offerHash, floorTerm);
-    }
-
-    function _getOfferInternal(
-        address nftContractAddress,
-        uint256 nftId,
-        bytes32 offerHash,
-        bool floorTerm
-    ) internal view returns (Offer storage) {
-        return _getOfferBook(nftContractAddress, nftId, floorTerm)[offerHash];
+        return _nftOfferBooks[offerHash];
     }
 
     /// @inheritdoc IOffers
@@ -246,47 +230,36 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
                 offer.asset,
                 offer.amount
             );
+            if (offer.nftContractAddress.supportsInterface(type(IERC1155Upgradeable).interfaceId)) {
+                _requireNonFungibleToken(
+                    offer.nftContractAddress,
+                    offer.nftId
+                );
+            }
             _requireCAssetBalance(msg.sender, cAsset, offerTokens);
         } else {
-            _require721Owner(offer.nftContractAddress, offer.nftId, msg.sender);
+            _requireNftOwner(msg.sender, offer.nftContractAddress, offer.nftId);
             requireNoFloorTerms(offer);
         }
 
-        mapping(bytes32 => Offer) storage offerBook = _getOfferBook(
-            offer.nftContractAddress,
-            offer.nftId,
-            offer.floorTerm
-        );
-
         offerHash = getOfferHash(offer);
 
-        _requireOfferDoesntExist(offerBook[offerHash].creator);
+        _requireOfferDoesntExist(_nftOfferBooks[offerHash].creator);
 
-        offerBook[offerHash] = offer;
+        _nftOfferBooks[offerHash] = offer;
 
         emit NewOffer(offer.creator, offer.nftContractAddress, offer.nftId, offer, offerHash);
     }
 
     /// @inheritdoc IOffers
-    function removeOffer(
-        address nftContractAddress,
-        uint256 nftId,
-        bytes32 offerHash,
-        bool floorTerm
-    ) external whenNotPaused {
-        mapping(bytes32 => Offer) storage offerBook = _getOfferBook(
-            nftContractAddress,
-            nftId,
-            floorTerm
-        );
-
-        Offer storage offer = offerBook[offerHash];
+    function removeOffer(bytes32 offerHash) external whenNotPaused {
+        Offer storage offer = _nftOfferBooks[offerHash];
 
         _requireOfferCreatorOrExpectedContract(offer.creator, msg.sender);
 
-        emit OfferRemoved(offer.creator, offer.nftContractAddress, nftId, offer, offerHash);
+        emit OfferRemoved(offer.creator, offer.nftContractAddress, offer.nftId, offer, offerHash);
 
-        delete offerBook[offerHash];
+        delete _nftOfferBooks[offerHash];
     }
 
     /// @inheritdoc IOffers
@@ -325,12 +298,51 @@ contract NiftyApesOffers is OwnableUpgradeable, PausableUpgradeable, EIP712Upgra
         require(offer.expiration > SafeCastUpgradeable.toUint32(block.timestamp), "00010");
     }
 
+    function _requireNftOwner(
+        address owner,
+        address nftContractAddress,
+        uint256 nftId
+    ) internal view {
+        if (nftContractAddress.supportsInterface(type(IERC1155Upgradeable).interfaceId)) {
+            _requireNonFungibleToken(
+                nftContractAddress,
+                nftId
+            );
+            _require1155NftOwner(
+                owner,
+                nftContractAddress,
+                nftId
+            );
+        } else {
+            _require721Owner(
+                nftContractAddress,
+                nftId,
+                owner
+            );
+        }
+    }
+
     function _require721Owner(
         address nftContractAddress,
         uint256 nftId,
         address owner
     ) internal view {
         require(IERC721Upgradeable(nftContractAddress).ownerOf(nftId) == owner, "00021");
+    }
+
+    function _require1155NftOwner(
+        address owner,
+        address nftContractAddress,
+        uint256 nftId
+    ) internal view {
+        require(IERC1155SupplyUpgradeable(nftContractAddress).balanceOf(owner, nftId) == 1, "00021");
+    }
+
+    function _requireNonFungibleToken(
+        address nftContractAddress,
+        uint256 nftId
+    ) internal view {
+        require(IERC1155SupplyUpgradeable(nftContractAddress).totalSupply(nftId) == 1, "00070");
     }
 
     function _requireSigner(address signer, address expected) internal pure {

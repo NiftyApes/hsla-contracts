@@ -32,6 +32,26 @@ contract TestTokenOfOwnerByIndex is Test, OffersLoansRefinancesFixtures {
         _test_tokenOfOwnerByIndex_withANewLoan(defaultFixedFuzzedFieldsForFastUnitTesting);
     }
 
+    function _test_tokenOfOwnerByIndex_withANewLoan_ERC1155(FuzzedOfferFields memory fuzzed) private {
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        offer.nftContractAddress = address(mockERC1155Token);
+        offer.nftId = 1;
+        createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
+
+        assertEq(lending.tokenOfOwnerByIndex(borrower1, address(mockERC1155Token), 0), 1);
+    }
+
+    function test_fuzz_tokenOfOwnerByIndex_withANewLoan_ERC1155(FuzzedOfferFields memory fuzzed)
+        public
+        validateFuzzedOfferFields(fuzzed)
+    {
+        _test_tokenOfOwnerByIndex_withANewLoan_ERC1155(fuzzed);
+    }
+
+    function test_unit_tokenOfOwnerByIndex_withANewLoan_ERC1155() public {
+        _test_tokenOfOwnerByIndex_withANewLoan_ERC1155(defaultFixedFuzzedFieldsForFastUnitTesting);
+    }
+
     function _test_cannot_tokenOfOwnerByIndex_afterClosingAnActiveLoan(FuzzedOfferFields memory fuzzed) private {
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
         createOfferAndTryToExecuteLoanByBorrower(offer, "should work");

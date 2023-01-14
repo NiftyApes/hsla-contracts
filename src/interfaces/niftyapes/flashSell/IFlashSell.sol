@@ -28,4 +28,6 @@ interface IFlashSell is
         address receiver,
         bytes calldata data
     ) external;
+
+    function initialize() external;
 }

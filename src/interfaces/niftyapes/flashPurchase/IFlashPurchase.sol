@@ -27,17 +27,13 @@ interface IFlashPurchase is
     /// @notice Allows a user to borrow ETH/Tokens to purchase NFTs with the condition that
     ///         the purchased NFT is approved to be added as collateral.
     /// @param  offerHash Hash of the existing offer in NiftyApes on-chain offerBook.
-    /// @param  nftContractAddress Address of the NFT collection to be pruchased
     /// @param  nftId Token id of the NFT user intends to provide as collateral
-    /// @param  floorTerm Determines if this is a floor offer or not.
     /// @param  receiver The address of the external contract that will receive the finance and return the nft.
     /// @param  borrower The address that will be able to later repay the borrowed funds and unlock the nft.
     /// @param  data Arbitrary data structure, intended to contain user-defined parameters, to be passed on to the receiver.
     function borrowFundsForPurchase(
         bytes32 offerHash,
-        address nftContractAddress,
         uint256 nftId,
-        bool floorTerm,
         address receiver,
         address borrower,
         bytes calldata data
@@ -59,4 +55,6 @@ interface IFlashPurchase is
         address borrower,
         bytes calldata data
     ) external;
+
+    function initialize() external;
 }

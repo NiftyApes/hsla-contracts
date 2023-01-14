@@ -8,6 +8,7 @@ import "./UsersFixtures.sol";
 import "../../mock/ERC20Mock.sol";
 import "../../mock/CERC20Mock.sol";
 import "../../mock/ERC721Mock.sol";
+import "../../mock/ERC1155Mock.sol";
 import "../../mock/CEtherMock.sol";
 
 import "forge-std/Test.sol";
@@ -21,6 +22,8 @@ contract NFTAndERC20Fixtures is Test, UsersFixtures {
     CERC20Mock internal cDAIToken;
     CEtherMock internal cEtherToken;
     ERC721Mock internal mockNft;
+    ERC1155Mock internal mockERC1155Token;
+
 
     bool internal integration = false;
 
@@ -95,6 +98,13 @@ contract NFTAndERC20Fixtures is Test, UsersFixtures {
         mockNft.safeMint(address(borrower1), 1);
         mockNft.safeMint(address(borrower2), 2);
         mockNft.safeMint(SANCTIONED_ADDRESS, 3);
+
+        mockERC1155Token = new ERC1155Mock();
+        mockERC1155Token.initialize();
+
+        mockERC1155Token.mint(address(borrower1), 1, 1);
+        mockERC1155Token.mint(address(borrower1), 2, 100);
+        mockERC1155Token.mint(SANCTIONED_ADDRESS, 3, 1);
     }
 
     function mintDai(address recipient, uint256 amount) internal {

@@ -8,8 +8,9 @@ import "@openzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 import "../../utils/fixtures/OffersLoansRefinancesFixtures.sol";
 import "../../../interfaces/niftyapes/offers/IOffersStructs.sol";
 import "../../../interfaces/seaport/ISeaport.sol";
+import "../../../interfaces/niftyapes/sellOnSeaport/ISellOnSeaportEvents.sol";
 
-contract TestCancelNftListing is Test, OffersLoansRefinancesFixtures, ERC721HolderUpgradeable {
+contract TestCancelNftListing is Test, OffersLoansRefinancesFixtures, ERC721HolderUpgradeable, ISellOnSeaportEvents {
     function setUp() public override {
         // pin block to time of writing test to reflect consistent state
         vm.rollFork(15510097);
@@ -55,6 +56,13 @@ contract TestCancelNftListing is Test, OffersLoansRefinancesFixtures, ERC721Hold
         bytes32 orderHashCreated = _getOrderHash(orderComponents);
         assertEq(orderHash, orderHashCreated);
         
+        vm.expectEmit(true, true, false, false);
+        emit ListingCancelledSeaport(
+            offer.nftContractAddress,
+            offer.nftId,
+            bytes32(""),
+            loanAuction
+        );
         vm.startPrank(borrower1);
         sellOnSeaport.cancelNftListing(orderComponents);
         vm.stopPrank();
@@ -134,6 +142,106 @@ contract TestCancelNftListing is Test, OffersLoansRefinancesFixtures, ERC721Hold
 
     function test_fuzz_cannot_cancelNftListing_callerNotBorrower(FuzzedOfferFields memory fuzzedOfferData) public validateFuzzedOfferFields(fuzzedOfferData) {
         _test_unit_cannot_cancelNftListing_callerNotBorrower(fuzzedOfferData);
+    }
+
+    function _test_cannot_cancelNftListing_InvalidOrderHash(FuzzedOfferFields memory fuzzed, bool lenderCall) private {
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
+
+        LoanAuction memory loanAuction = lending.getLoanAuction(offer.nftContractAddress, offer.nftId);
+        // skip time to accrue interest
+        skip(uint256(loanAuction.loanEndTimestamp - loanAuction.loanBeginTimestamp) / 2);
+
+        
+        uint256 listingValueToBePaidToNiftyApes = _calculateTotalLoanPaymentAmountAtTimestamp(loanAuction, loanAuction.loanEndTimestamp);
+        uint256 profitForTheBorrower = listingValueToBePaidToNiftyApes - _calculateTotalLoanPaymentAmountAtTimestamp(loanAuction, block.timestamp); // assume any profit the borrower wants
+        // adding 2.5% opnesea fee amount
+        uint256 listingPrice = ((listingValueToBePaidToNiftyApes) * 40 + 38) / 39;
+
+        vm.startPrank(borrower1);
+        bytes32 orderHash = sellOnSeaport.listNftForSale(
+            offer.nftContractAddress,
+            offer.nftId,
+            listingPrice,
+            block.timestamp,
+            loanAuction.loanEndTimestamp,
+            1
+        );
+        vm.stopPrank();
+
+        ISeaport.OrderComponents memory orderComponents = _createOrderComponents(
+            offer.nftContractAddress,
+            offer.nftId,
+            listingPrice,
+            loanAuction.loanEndTimestamp-1,
+            loanAuction.asset
+        );
+        
+        vm.startPrank(borrower1);
+        vm.expectRevert("00064");
+        sellOnSeaport.cancelNftListing(orderComponents);
+        vm.stopPrank();
+    }
+
+    function test_unit_cannot_cancelNftListing_InvalidOrderHash() public {
+        FuzzedOfferFields memory fixedForSpeed = defaultFixedFuzzedFieldsForFastUnitTesting;
+        fixedForSpeed.randomAsset = 1;
+        _test_cannot_cancelNftListing_InvalidOrderHash(fixedForSpeed, false);
+    }
+
+    function test_fuzz_cannot_cancelNftListing_InvalidOrderHash(FuzzedOfferFields memory fuzzedOfferData) public validateFuzzedOfferFields(fuzzedOfferData) {
+        _test_cannot_cancelNftListing_InvalidOrderHash(fuzzedOfferData, false);
+    }
+
+    function _test_cannot_cancelNftListing_AlreadyCancelled(FuzzedOfferFields memory fuzzed, bool lenderCall) private {
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
+
+        LoanAuction memory loanAuction = lending.getLoanAuction(offer.nftContractAddress, offer.nftId);
+        // skip time to accrue interest
+        skip(uint256(loanAuction.loanEndTimestamp - loanAuction.loanBeginTimestamp) / 2);
+
+        
+        uint256 listingValueToBePaidToNiftyApes = _calculateTotalLoanPaymentAmountAtTimestamp(loanAuction, loanAuction.loanEndTimestamp);
+        uint256 profitForTheBorrower = listingValueToBePaidToNiftyApes - _calculateTotalLoanPaymentAmountAtTimestamp(loanAuction, block.timestamp); // assume any profit the borrower wants
+        // adding 2.5% opnesea fee amount
+        uint256 listingPrice = ((listingValueToBePaidToNiftyApes) * 40 + 38) / 39;
+
+        vm.startPrank(borrower1);
+        bytes32 orderHash = sellOnSeaport.listNftForSale(
+            offer.nftContractAddress,
+            offer.nftId,
+            listingPrice,
+            block.timestamp,
+            loanAuction.loanEndTimestamp,
+            1
+        );
+        vm.stopPrank();
+
+        ISeaport.OrderComponents memory orderComponents = _createOrderComponents(
+            offer.nftContractAddress,
+            offer.nftId,
+            listingPrice,
+            loanAuction.loanEndTimestamp,
+            loanAuction.asset
+        );
+        
+        vm.startPrank(borrower1);
+        sellOnSeaport.cancelNftListing(orderComponents);
+
+        vm.expectRevert("00059");
+        sellOnSeaport.cancelNftListing(orderComponents);
+        vm.stopPrank();
+    }
+
+    function test_unit_cannot_cancelNftListing_AlreadyCancelled() public {
+        FuzzedOfferFields memory fixedForSpeed = defaultFixedFuzzedFieldsForFastUnitTesting;
+        fixedForSpeed.randomAsset = 1;
+        _test_cannot_cancelNftListing_AlreadyCancelled(fixedForSpeed, false);
+    }
+
+    function test_fuzz_cannot_cancelNftListing_AlreadyCancelled(FuzzedOfferFields memory fuzzedOfferData) public validateFuzzedOfferFields(fuzzedOfferData) {
+        _test_cannot_cancelNftListing_AlreadyCancelled(fuzzedOfferData, false);
     }
 
     function _createOrderComponents(

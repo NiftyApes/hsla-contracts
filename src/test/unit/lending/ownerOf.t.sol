@@ -31,4 +31,24 @@ contract TestOwnerOf is Test, OffersLoansRefinancesFixtures {
     function test_unit_ownerOf_works() public {
         _test_ownerOf_works(defaultFixedFuzzedFieldsForFastUnitTesting);
     }
+
+    function _test_ownerOf_ERC1155_works(FuzzedOfferFields memory fuzzed) private {
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        offer.nftContractAddress = address(mockERC1155Token);
+        offer.nftId = 1;
+        createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
+
+        assertEq(lending.ownerOf(offer.nftContractAddress, offer.nftId), borrower1);
+    }
+
+    function test_fuzz_ownerOf_ERC1155_works(FuzzedOfferFields memory fuzzed)
+        public
+        validateFuzzedOfferFields(fuzzed)
+    {
+        _test_ownerOf_works(fuzzed);
+    }
+
+    function test_unit_ownerOf_ERC1155_works() public {
+        _test_ownerOf_works(defaultFixedFuzzedFieldsForFastUnitTesting);
+    }
 }

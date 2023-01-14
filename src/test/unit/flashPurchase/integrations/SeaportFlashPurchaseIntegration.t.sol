@@ -142,6 +142,137 @@ contract TestSeaportFlashPurchaseIntegration is Test, OffersLoansRefinancesFixtu
         _test_flashPurchaseSeaport_simplest_case(offer, order, true);
     }
 
+    function _test_cannot_flashPurchaseSeaport_invalidOrder(
+        Offer memory offer,
+        ISeaport.Order memory order,
+        bool withSignature
+    ) private {
+        uint256 considerationAmount;
+
+        for (uint256 i = 0; i < order.parameters.totalOriginalConsiderationItems; i++) {
+            considerationAmount += order.parameters.consideration[i].endAmount;
+        }
+
+        offer.nftContractAddress = order.parameters.offer[0].token;
+        offer.nftId = order.parameters.offer[0].identifierOrCriteria;
+        if (order.parameters.consideration[0].token == address(0)) {
+            offer.asset = ETH_ADDRESS;
+        } else {
+            offer.asset = order.parameters.consideration[0].token;
+        }
+        offer.amount = uint128(considerationAmount / 2);
+        offer.expiration = uint32(block.timestamp + 1);
+
+        // making order invalid
+        order.parameters.offer[0].itemType = ISeaport.ItemType.NATIVE;
+
+        createOfferAndTryFlashPurchase(
+            offer,
+            order,
+            "00049"
+        );
+
+    }
+
+    function test_fuzz_cannot_FlashPurchaseSeaport_invalidOrder(
+        FuzzedOfferFields memory fuzzedOfferData
+    ) public validateFuzzedOfferFields(fuzzedOfferData) {
+        Offer memory offer = offerStructFromFields(fuzzedOfferData, defaultFixedOfferFields);
+        ISeaport.Order memory order = createAndValidateETHOffer();
+
+        _test_cannot_flashPurchaseSeaport_invalidOrder(offer, order, false);
+    }
+
+    function test_unit_cannot_FlashPurchaseSeaport_invalidOrder() public {
+        Offer memory offer = offerStructFromFields(
+            defaultFixedFuzzedFieldsForFastUnitTesting,
+            defaultFixedOfferFields
+        );
+        ISeaport.Order memory order = createAndValidateETHOffer();
+
+        _test_cannot_flashPurchaseSeaport_invalidOrder(offer, order, false);
+    }
+
+    function _test_cannot_flashPurchaseSeaportSignature_invalidOrder(
+        Offer memory offer,
+        ISeaport.Order memory order,
+        bool withSignature
+    ) private {
+        uint256 considerationAmount;
+
+        for (uint256 i = 0; i < order.parameters.totalOriginalConsiderationItems; i++) {
+            considerationAmount += order.parameters.consideration[i].endAmount;
+        }
+
+        offer.nftContractAddress = order.parameters.offer[0].token;
+        offer.nftId = order.parameters.offer[0].identifierOrCriteria;
+        if (order.parameters.consideration[0].token == address(0)) {
+            offer.asset = ETH_ADDRESS;
+        } else {
+            offer.asset = order.parameters.consideration[0].token;
+        }
+        offer.amount = uint128(considerationAmount / 2);
+        offer.expiration = uint32(block.timestamp + 1);
+
+        // making order invalid
+        order.parameters.offer[0].itemType = ISeaport.ItemType.NATIVE;
+
+        signOfferAndTryFlashPurchaseSignature(
+            offer,
+            order,
+            "00049"
+        );
+
+    }
+
+    function test_fuzz_cannot_FlashPurchaseSeaportSignature_invalidOrder(
+        FuzzedOfferFields memory fuzzedOfferData
+    ) public validateFuzzedOfferFields(fuzzedOfferData) {
+        Offer memory offer = offerStructFromFields(fuzzedOfferData, defaultFixedOfferFields);
+        ISeaport.Order memory order = createAndValidateETHOffer();
+
+        _test_cannot_flashPurchaseSeaportSignature_invalidOrder(offer, order, false);
+    }
+
+    function test_unit_cannot_FlashPurchaseSeaportSignature_invalidOrder() public {
+        Offer memory offer = offerStructFromFields(
+            defaultFixedFuzzedFieldsForFastUnitTesting,
+            defaultFixedOfferFields
+        );
+        ISeaport.Order memory order = createAndValidateETHOffer();
+
+        _test_cannot_flashPurchaseSeaportSignature_invalidOrder(offer, order, false);
+    }
+
+    function _test_cannot_executeOperation_callerNotFlashPurchase(
+        Offer memory offer
+    ) private {
+
+        vm.prank(borrower1);
+        vm.expectRevert("00031");
+        seaportFlashPurchase.executeOperation(
+            offer.nftContractAddress,
+            offer.nftId,
+            address(seaportFlashPurchase),
+            bytes("")
+        );
+    }
+
+    function test_fuzz_cannot_executeOperation_callerNotFlashPurchase(
+        FuzzedOfferFields memory fuzzedOfferData
+    ) public validateFuzzedOfferFields(fuzzedOfferData) {
+        Offer memory offer = offerStructFromFields(fuzzedOfferData, defaultFixedOfferFields);
+        _test_cannot_executeOperation_callerNotFlashPurchase(offer);
+    }
+
+    function test_unit_cannot_executeOperation_callerNotFlashPurchase() public {
+        Offer memory offer = offerStructFromFields(
+            defaultFixedFuzzedFieldsForFastUnitTesting,
+            defaultFixedOfferFields
+        );
+        _test_cannot_executeOperation_callerNotFlashPurchase(offer);
+    }
+
     //
     // HELPERS
     //

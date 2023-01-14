@@ -120,4 +120,32 @@ contract TestExecuteLoanByBorrowerSignature is Test, OffersLoansRefinancesFixtur
         FuzzedOfferFields memory fixedForSpeed = defaultFixedFuzzedFieldsForFastUnitTesting;
         _test_executeLoanByBorrowerSignature_emits_offer_signature_used(fixedForSpeed);
     }
+
+    function _test_cannot_executeLoanByBorrower_if_fungible_ERC1155(Offer memory offer)
+        private
+    {
+        bytes memory signature = signOffer(lender1_private_key, offer);
+
+        approveLending(offer);
+        vm.expectRevert("00070");
+        vm.startPrank(borrower1);
+        sigLending.executeLoanByBorrowerSignature(offer, signature, 2);
+        vm.stopPrank();
+    }
+
+    function test_fuzz_cannot_executeLoanByBorrowerSignature_if_fungible_ERC1155(
+        FuzzedOfferFields memory fuzzed
+    ) public validateFuzzedOfferFields(fuzzed) {
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        offer.nftContractAddress = address(mockERC1155Token);
+        offer.nftId = 2;
+        _test_cannot_executeLoanByBorrower_if_fungible_ERC1155(offer);
+    }
+
+    function test_unit__cannot_executeLoanByBorrower_if_fungible_ERC1155() public {
+        Offer memory offer = offerStructFromFields(defaultFixedFuzzedFieldsForFastUnitTesting, defaultFixedOfferFields);
+        offer.nftContractAddress = address(mockERC1155Token);
+        offer.nftId = 2;
+        _test_cannot_executeLoanByBorrower_if_fungible_ERC1155(offer);
+    }
 }

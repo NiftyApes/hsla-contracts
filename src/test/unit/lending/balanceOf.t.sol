@@ -35,6 +35,29 @@ contract TestBalanceOf is Test, OffersLoansRefinancesFixtures {
         _test_balanceOf_withANewLoan(defaultFixedFuzzedFieldsForFastUnitTesting);
     }
 
+    function _test_balanceOf_withANewLoan_ERC1155(FuzzedOfferFields memory fuzzed) private {
+        Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
+        offer.nftContractAddress = address(mockERC1155Token);
+        offer.nftId = 1;
+        uint256 balanceBefore = lending.balanceOf(borrower1, address(mockERC1155Token));
+
+        createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
+
+        uint256 balanceAfter = lending.balanceOf(borrower1, address(mockERC1155Token));
+        assertEq(balanceAfter, balanceBefore + 1);
+    }
+
+    function test_fuzz_balanceOf_withANewLoan_ERC1155(FuzzedOfferFields memory fuzzed)
+        public
+        validateFuzzedOfferFields(fuzzed)
+    {
+        _test_balanceOf_withANewLoan_ERC1155(fuzzed);
+    }
+
+    function test_unit_balanceOf_withANewLoan_ERC1155() public {
+        _test_balanceOf_withANewLoan_ERC1155(defaultFixedFuzzedFieldsForFastUnitTesting);
+    }
+
     function _test_balanceOf_afterClosingAnActiveLoan(FuzzedOfferFields memory fuzzed) private {
         Offer memory offer = offerStructFromFields(fuzzed, defaultFixedOfferFields);
         createOfferAndTryToExecuteLoanByBorrower(offer, "should work");
