@@ -230,20 +230,44 @@ contract NiftyApesRefinance is
         );
         ILiquidity(liquidityContractAddress).addToCAssetBalance(owner(), cAsset, toProtocolCToken);
 
+        // update Loan struct
         uint128 currentAmountDrawn = loanAuction.amountDrawn;
 
-        // update Loan struct
+        loanAuction.amountDrawn = SafeCastUpgradeable.toUint128(
+            toLenderUnderlying + toProtocolUnderlying
+        );
+
+        if (loanAuction.interestRatePerSecond != 0) {
+            // calculate offered interest rate
+            uint256 interestBps = _calculateInterestBps(
+                offer.amount,
+                offer.interestRatePerSecond,
+                offer.duration
+            );
+            // calculate interest rate for amount drawn by ofered interest rate
+            loanAuction.interestRatePerSecond = _calculateInterestPerSecond(
+                loanAuction.amountDrawn,
+                interestBps,
+                offer.duration
+            );
+        }
+
+        if (loanAuction.protocolInterestRatePerSecond != 0) {
+            // calculate protocol interest rate for amount drawn by ofered interest rate
+            loanAuction.protocolInterestRatePerSecond = _calculateInterestPerSecond(
+                loanAuction.amountDrawn,
+                ILending(lendingContractAddress).protocolInterestBps(),
+                offer.duration
+            );
+        }
+
         if (loanAuction.lenderRefi) {
             loanAuction.lenderRefi = false;
         }
         loanAuction.lender = offer.creator;
         loanAuction.amount = offer.amount;
-        loanAuction.interestRatePerSecond = offer.interestRatePerSecond;
         loanAuction.loanEndTimestamp = _currentTimestamp32() + offer.duration;
         loanAuction.loanBeginTimestamp = _currentTimestamp32();
-        loanAuction.amountDrawn = SafeCastUpgradeable.toUint128(
-            toLenderUnderlying + toProtocolUnderlying
-        );
         loanAuction.accumulatedLenderInterest = 0;
         loanAuction.accumulatedPaidProtocolInterest = 0;
         loanAuction.unpaidProtocolInterest = 0;
