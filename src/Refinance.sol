@@ -142,10 +142,7 @@ contract NiftyApesRefinance is
         bytes32 offerHash,
         uint32 expectedLastUpdatedTimestamp
     ) external whenNotPaused nonReentrant {
-        Offer memory offer = _offerNftIdAndCountChecks(
-            nftId,
-            offerHash
-        );
+        Offer memory offer = _offerNftIdAndCountChecks(nftId, offerHash);
 
         _doRefinanceByBorrower(offer, nftId, msg.sender, expectedLastUpdatedTimestamp);
     }
@@ -167,7 +164,8 @@ contract NiftyApesRefinance is
         address nftOwner,
         uint32 expectedLastUpdatedTimestamp
     ) internal {
-        ILendingStructs.LoanAuction memory loanAuction = ILending(lendingContractAddress).getLoanAuction(offer.nftContractAddress, nftId);
+        ILendingStructs.LoanAuction memory loanAuction = ILending(lendingContractAddress)
+            .getLoanAuction(offer.nftContractAddress, nftId);
 
         _requireIsNotSanctioned(nftOwner);
         _requireIsNotSanctioned(offer.creator);
@@ -188,7 +186,8 @@ contract NiftyApesRefinance is
         address cAsset = ILiquidity(liquidityContractAddress).getCAsset(offer.asset);
 
         if (loanAuction.loanEndTimestamp - 1 days > _currentTimestamp32()) {
-            uint256 interestThresholdDelta = ILending(lendingContractAddress).checkSufficientInterestAccumulated(offer.nftContractAddress, nftId);
+            uint256 interestThresholdDelta = ILending(lendingContractAddress)
+                .checkSufficientInterestAccumulated(offer.nftContractAddress, nftId);
 
             if (interestThresholdDelta > 0) {
                 loanAuction.accumulatedLenderInterest += SafeCastUpgradeable.toUint128(
@@ -202,7 +201,8 @@ contract NiftyApesRefinance is
         uint256 toLenderUnderlying = loanAuction.amountDrawn +
             loanAuction.accumulatedLenderInterest +
             loanAuction.slashableLenderInterest +
-            ((uint256(loanAuction.amountDrawn) * ILending(lendingContractAddress).originationPremiumBps()) / MAX_BPS);
+            ((uint256(loanAuction.amountDrawn) *
+                ILending(lendingContractAddress).originationPremiumBps()) / MAX_BPS);
 
         uint256 toProtocolUnderlying = loanAuction.unpaidProtocolInterest;
 
@@ -254,7 +254,11 @@ contract NiftyApesRefinance is
             loanAuction.slashableLenderInterest = 0;
         }
 
-        ILending(lendingContractAddress).updateLoanAuctionInternal(offer.nftContractAddress, nftId, loanAuction);
+        ILending(lendingContractAddress).updateLoanAuctionInternal(
+            offer.nftContractAddress,
+            nftId,
+            loanAuction
+        );
 
         emit Refinance(offer.nftContractAddress, nftId, loanAuction);
 
@@ -272,7 +276,8 @@ contract NiftyApesRefinance is
         whenNotPaused
         nonReentrant
     {
-        ILendingStructs.LoanAuction memory loanAuction = ILending(lendingContractAddress).getLoanAuction(offer.nftContractAddress, offer.nftId);
+        ILendingStructs.LoanAuction memory loanAuction = ILending(lendingContractAddress)
+            .getLoanAuction(offer.nftContractAddress, offer.nftId);
 
         _requireIsNotSanctioned(msg.sender);
         _requireOpenLoan(loanAuction);
@@ -294,7 +299,8 @@ contract NiftyApesRefinance is
         address cAsset = ILiquidity(liquidityContractAddress).getCAsset(offer.asset);
 
         // check how much, if any, gasGriefing premium should be applied
-        uint256 interestThresholdDelta = ILending(lendingContractAddress).checkSufficientInterestAccumulated(offer.nftContractAddress, offer.nftId);
+        uint256 interestThresholdDelta = ILending(lendingContractAddress)
+            .checkSufficientInterestAccumulated(offer.nftContractAddress, offer.nftId);
 
         // check whether a termGriefing premium should apply
         bool sufficientTerms = ILending(lendingContractAddress).checkSufficientTerms(
@@ -315,7 +321,8 @@ contract NiftyApesRefinance is
 
         if (!sufficientTerms) {
             protocolInterestAndPremium +=
-                (uint256(loanAuction.amountDrawn) * ILending(lendingContractAddress).termGriefingPremiumBps()) /
+                (uint256(loanAuction.amountDrawn) *
+                    ILending(lendingContractAddress).termGriefingPremiumBps()) /
                 MAX_BPS;
         }
 
@@ -360,7 +367,8 @@ contract NiftyApesRefinance is
                 loanAuction.accumulatedLenderInterest
             ) +
                 loanAuction.accumulatedPaidProtocolInterest +
-                ((uint256(loanAuction.amountDrawn) * ILending(lendingContractAddress).originationPremiumBps()) / MAX_BPS);
+                ((uint256(loanAuction.amountDrawn) *
+                    ILending(lendingContractAddress).originationPremiumBps()) / MAX_BPS);
 
             // add protocolInterest
             protocolInterestAndPremium += loanAuction.unpaidProtocolInterest;
@@ -373,7 +381,8 @@ contract NiftyApesRefinance is
             // add default premium
             if (_currentTimestamp32() > loanAuction.loanEndTimestamp - 1 hours) {
                 protocolInterestAndPremium +=
-                    (uint256(loanAuction.amountDrawn) * ILending(lendingContractAddress).defaultRefinancePremiumBps()) /
+                    (uint256(loanAuction.amountDrawn) *
+                        ILending(lendingContractAddress).defaultRefinancePremiumBps()) /
                     MAX_BPS;
             }
 
@@ -425,16 +434,20 @@ contract NiftyApesRefinance is
             loanAuction.accumulatedPaidProtocolInterest += loanAuction.unpaidProtocolInterest;
             loanAuction.unpaidProtocolInterest = 0;
         }
-        
-        ILending(lendingContractAddress).updateLoanAuctionInternal(offer.nftContractAddress, offer.nftId, loanAuction);
+
+        ILending(lendingContractAddress).updateLoanAuctionInternal(
+            offer.nftContractAddress,
+            offer.nftId,
+            loanAuction
+        );
 
         emit Refinance(offer.nftContractAddress, offer.nftId, loanAuction);
     }
 
-    function _offerNftIdAndCountChecks(
-        uint256 nftId,
-        bytes32 offerHash
-    ) internal returns (Offer memory) {
+    function _offerNftIdAndCountChecks(uint256 nftId, bytes32 offerHash)
+        internal
+        returns (Offer memory)
+    {
         Offer memory offer = IOffers(offersContractAddress).getOffer(offerHash);
 
         if (!offer.floorTerm) {
@@ -452,9 +465,9 @@ contract NiftyApesRefinance is
         return offer;
     }
 
-    
     function _updateInterest(ILendingStructs.LoanAuction memory loanAuction)
-        internal view
+        internal
+        view
         returns (uint256 lenderInterest, uint256 protocolInterest)
     {
         (lenderInterest, protocolInterest) = _calculateInterestAccrued(loanAuction);
@@ -467,6 +480,30 @@ contract NiftyApesRefinance is
 
         loanAuction.unpaidProtocolInterest += SafeCastUpgradeable.toUint128(protocolInterest);
         loanAuction.lastUpdatedTimestamp = _currentTimestamp32();
+    }
+
+    function _calculateInterestPerSecond(
+        uint256 amount,
+        uint256 interestBps,
+        uint256 duration
+    ) private pure returns (uint96) {
+        // account for 0 protocolInterestBps
+        if (interestBps == 0) {
+            return 0;
+        }
+
+        uint96 result = SafeCastUpgradeable.toUint96((amount * interestBps) / MAX_BPS / duration);
+
+        // return 1 for cases where (amount * interestBps) / MAX_BPS < duration;
+        return result == 0 ? 1 : result;
+    }
+
+    function _calculateInterestBps(
+        uint256 amount,
+        uint96 interestRatePerSecond,
+        uint256 duration
+    ) private pure returns (uint256) {
+        return (((uint256(interestRatePerSecond) * duration) * MAX_BPS) / amount) + 1;
     }
 
     function _requireSufficientBalance(
@@ -523,7 +560,10 @@ contract NiftyApesRefinance is
         require(asset1 == asset2, "00019");
     }
 
-    function _requireNftOwner(ILendingStructs.LoanAuction memory loanAuction, address nftOwner) internal pure {
+    function _requireNftOwner(ILendingStructs.LoanAuction memory loanAuction, address nftOwner)
+        internal
+        pure
+    {
         require(nftOwner == loanAuction.nftOwner, "00021");
     }
 
