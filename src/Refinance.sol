@@ -244,7 +244,7 @@ contract NiftyApesRefinance is
                 offer.interestRatePerSecond,
                 offer.duration
             );
-            // calculate interest rate for amount drawn by ofered interest rate
+            // calculate interest rate for amount drawn by offered interest rate
             loanAuction.interestRatePerSecond = _calculateInterestPerSecond(
                 loanAuction.amountDrawn,
                 interestBps,
@@ -253,7 +253,7 @@ contract NiftyApesRefinance is
         }
 
         if (loanAuction.protocolInterestRatePerSecond != 0) {
-            // calculate protocol interest rate for amount drawn by ofered interest rate
+            // calculate protocol interest rate for amount drawn by offered interest rate
             loanAuction.protocolInterestRatePerSecond = _calculateInterestPerSecond(
                 loanAuction.amountDrawn,
                 ILending(lendingContractAddress).protocolInterestBps(),
