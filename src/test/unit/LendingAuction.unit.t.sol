@@ -4247,7 +4247,7 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.nftOwner, address(this));
         assertEq(loanAuction.lender, LENDER_2);
         assertEq(loanAuction.asset, address(daiToken));
-        assertEq(loanAuction.interestRatePerSecond, 694444444442);
+        assertEq(loanAuction.interestRatePerSecond, 601701388888);
         assertTrue(!loanAuction.fixedTerms);
 
         assertEq(loanAuction.amount, 7 ether);
@@ -5560,7 +5560,7 @@ contract LendingAuctionUnitTest is
         assertEq(loanAuction.nftOwner, address(this));
         assertEq(loanAuction.lender, SIGNER_1);
         assertEq(loanAuction.asset, address(daiToken));
-        assertEq(loanAuction.interestRatePerSecond, 694444444442);
+        assertEq(loanAuction.interestRatePerSecond, 601701388888);
         assertTrue(!loanAuction.fixedTerms);
 
         assertEq(loanAuction.amount, 7 ether);
